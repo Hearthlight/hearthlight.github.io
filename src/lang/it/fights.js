@@ -1,0 +1,41 @@
+// Italian for deeper fights (Party v3 M6): dodges, parries, elements, combos, finishers, foes, bosses and camps.
+export const FIGHTS = {
+  'Dodge': 'Schiva',
+  'PARRY!': 'PARATA!', 'Deflect!': 'Respinto!', 'COUNTER!': 'CONTRATTACCO!',
+  'Juggle!': 'Palleggio!', 'FINISHER!': 'COLPO DI GRAZIA!',
+  'COMBO': 'COMBO', 'TEAM!': 'SQUADRA!',
+  'Fire': 'Fuoco', 'Ice': 'Ghiaccio', 'Poison': 'Veleno', 'Shock': 'Scossa',
+  'Frozen!': 'Congelato!', 'Shatter!': 'In frantumi!', 'Shield broken!': 'Scudo rotto!',
+  // the phone menu
+  'Change my look': 'Cambia look',
+  // the big world's gloom creatures
+  'Dune Burrower': 'Scavadune', 'Ember Imp': 'Diavoletto di brace', 'Frost Wisp': 'Fuoco fatuo di brina',
+  'Bog Toad': 'Rospo di palude', 'Spore Shaman': 'Sciamano delle spore', 'Sporeling': 'Sporetto',
+  'Gloom Mender': 'Falena guaritrice', 'Shieldbearer': 'Portascudo', 'Armour Beetle': 'Scarabeo corazzato',
+  'Cloud Harpy': 'Arpia delle nuvole', 'Canyon Slinger': 'Fromboliere del canyon', 'Reef Crab': 'Granchio di scogliera',
+  'Drowned Sailor': 'Marinaio annegato', 'Lava Slug': 'Lumaca di lava', 'Storm Crow': 'Corvo della tempesta',
+  'Gloom Totem': 'Totem di grigiume', 'Sandworm': 'Verme delle sabbie', 'Frost Yeti': 'Yeti del gelo',
+  'Gulp!': 'Gulp!', 'Pop!': 'Pop!',
+  // gloom camps
+  'A gloom camp! ({zone})': 'Un accampamento di grigiume! ({zone})',
+  'Gloom camp cleared!': 'Accampamento ripulito!',
+  'Camps: {n} of {total}': 'Accampamenti: {n} su {total}',
+  // zone bosses & their lairs
+  'Sand Queen': 'Regina delle Sabbie', 'The Sand Queen': 'La Regina delle Sabbie',
+  'Frost Colossus': 'Colosso di Gelo', 'The Frost Colossus': 'Il Colosso di Gelo',
+  'Frog King': 'Re Ranocchio', 'The Frog King': 'Il Re Ranocchio',
+  'Magma Golem': 'Golem di Magma', 'The Magma Golem': 'Il Golem di Magma',
+  'GRRR!': 'GRRR!', 'ENOUGH!': 'BASTA!', 'My armour!': 'La mia armatura!', 'Ptooey!': 'Ptuì!',
+  'Its armour cracks!': 'La sua armatura si incrina!', 'RUMBLE…': 'RIMBOMBO…', 'Jump the flame!': 'Salta la fiamma!',
+  '*BUUURP*': '*BUUURP*',
+  'Its core is showing — hit it!': 'Il nucleo è scoperto — colpiscilo!',
+  'Something huge stirs nearby…': 'Qualcosa di enorme si muove qui vicino…',
+  'A guardian of the wild, lost in the gloom': 'Un guardiano delle terre selvagge, perso nel grigiume',
+  '{boss} gives up and goes back to its lair…': '{boss} si arrende e torna nel suo covo…',
+  'Boss defeated!': 'Boss sconfitto!',
+  '{boss} is free!': '{boss} è di nuovo in libertà!',
+  'The Sand Queen sinks back to sleep, calm at last!': 'La Regina delle Sabbie torna a dormire, finalmente in pace!',
+  'The Frost Colossus melts into a gentle snowman!': 'Il Colosso di Gelo si scioglie in un pupazzo di neve bonaccione!',
+  'The Frog King is free of the gloom — long live the King!': 'Il Re Ranocchio è libero dal grigiume — lunga vita al Re!',
+  'The Magma Golem cools down and dozes off!': 'Il Golem di Magma si raffredda e si appisola!',
+};

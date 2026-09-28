@@ -1,0 +1,41 @@
+// German for deeper fights (Party v3 M6): dodges, parries, elements, combos, finishers, the big world's foes and zone bosses.
+export const FIGHTS = {
+  'Dodge': 'Ausweichen',
+  'PARRY!': 'PARIERT!', 'Deflect!': 'Abgewehrt!', 'COUNTER!': 'KONTER!',
+  'Juggle!': 'Jongliert!', 'FINISHER!': 'GNADENSTOSS!',
+  'COMBO': 'COMBO', 'TEAM!': 'TEAM!',
+  'Fire': 'Feuer', 'Ice': 'Eis', 'Poison': 'Gift', 'Shock': 'Blitz',
+  'Frozen!': 'Eingefroren!', 'Shatter!': 'Zersplittert!', 'Shield broken!': 'Schild gebrochen!',
+  // the phone menu
+  'Change my look': 'Umziehen',
+  // the big world's gloom creatures
+  'Dune Burrower': 'Dünengräber', 'Ember Imp': 'Glutkobold', 'Frost Wisp': 'Frostirrlicht',
+  'Bog Toad': 'Moorkröte', 'Spore Shaman': 'Sporenschamane', 'Sporeling': 'Sporling',
+  'Gloom Mender': 'Trübheiler', 'Shieldbearer': 'Schildträger', 'Armour Beetle': 'Panzerkäfer',
+  'Cloud Harpy': 'Wolkenharpyie', 'Canyon Slinger': 'Canyonschleuderer', 'Reef Crab': 'Riffkrabbe',
+  'Drowned Sailor': 'Ertrunkener Matrose', 'Lava Slug': 'Lavaschnecke', 'Storm Crow': 'Sturmkrähe',
+  'Gloom Totem': 'Trübtotem', 'Sandworm': 'Sandwurm', 'Frost Yeti': 'Frostyeti',
+  'Gulp!': 'Schluck!', 'Pop!': 'Plopp!',
+  // gloom camps
+  'A gloom camp! ({zone})': 'Ein Trüblager! ({zone})',
+  'Gloom camp cleared!': 'Trüblager geräumt!',
+  'Camps: {n} of {total}': 'Lager: {n} von {total}',
+  // zone bosses & their lairs
+  'Sand Queen': 'Sandkönigin', 'The Sand Queen': 'Die Sandkönigin',
+  'Frost Colossus': 'Frostkoloss', 'The Frost Colossus': 'Der Frostkoloss',
+  'Frog King': 'Froschkönig', 'The Frog King': 'Der Froschkönig',
+  'Magma Golem': 'Magmagolem', 'The Magma Golem': 'Der Magmagolem',
+  'GRRR!': 'GRRR!', 'ENOUGH!': 'GENUG!', 'My armour!': 'Mein Panzer!', 'Ptooey!': 'Ptui!',
+  'Its armour cracks!': 'Die Panzerung bricht!', 'RUMBLE…': 'GRUMMEL…', 'Jump the flame!': 'Über die Flamme springen!',
+  '*BUUURP*': '*RÜÜÜLPS*',
+  'Its core is showing — hit it!': 'Der Kern liegt frei – drauf!',
+  'Something huge stirs nearby…': 'Ganz in der Nähe regt sich etwas Riesiges…',
+  'A guardian of the wild, lost in the gloom': 'Ein Hüter der Wildnis, der Trübsal verfallen',
+  '{boss} gives up and goes back to its lair…': '{boss} gibt auf und kehrt ins Versteck zurück…',
+  'Boss defeated!': 'Boss besiegt!',
+  '{boss} is free!': '{boss} ist frei!',
+  'The Sand Queen sinks back to sleep, calm at last!': 'Die Sandkönigin schlummert wieder ein, endlich ganz ruhig!',
+  'The Frost Colossus melts into a gentle snowman!': 'Der Frostkoloss schmilzt zu einem lieben Schneemann!',
+  'The Frog King is free of the gloom — long live the King!': 'Der Froschkönig ist die Trübsal los – lang lebe der König!',
+  'The Magma Golem cools down and dozes off!': 'Der Magmagolem kühlt ab und döst ein!',
+};

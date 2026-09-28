@@ -1,0 +1,48 @@
+// French dictionary, assembled from its parts (keys = English source text).
+import { UI } from './ui.js';
+import { STORY } from './story.js';
+import { LINES } from './lines.js';
+import { ITEMS } from './items.js';
+import { PARTY } from './party.js';
+import { COMBAT } from './combat.js';
+import { HOST } from './host.js';
+import { WORLD } from './world.js';
+import { MOVES } from './moves.js';
+import { ARENA } from './arena.js';
+import { MOUNTS_FR } from './mounts.js';
+import { FIGHTS } from './fights.js';
+import { PROGRESS } from './progress.js';
+import { TRAVEL } from './travel.js';
+import { SECRETS } from './secrets.js';
+import { RACES } from './races.js';
+import { EVENTS_FR } from './events.js';
+import { SOLO } from './solo.js';
+import { ADVENTURE } from './adventure.js';
+import { TALENTS4 } from './talents4.js';
+import { WEAPONS4 } from './weapons4.js';
+import { DINOS } from './dinos.js';
+import { COMPANIONS } from './companions.js';
+import { PHONE } from './phone.js';
+import { SAGA_UI } from './saga_ui.js';
+import { CH1_FR } from './ch1.js';
+import { WORLD7 } from './world_v7.js';
+import { CH2_FR } from './ch2.js';
+import { CH3_FR } from './ch3.js';
+import { CH4_FR } from './ch4.js';
+import { CH5_FR } from './ch5.js';
+import { CH6_FR } from './ch6.js';
+import { CH7_FR } from './ch7.js';
+import { CH8_FR } from './ch8.js';
+import { CH9_FR } from './ch9.js';
+import { CH10_FR } from './ch10.js';
+import { WORLD13_FR } from './world13.js';
+import { CONTROLS_FR } from './controls.js';
+import { RELEASE9_FR } from './release9.js';
+import { CLASSES9_FR } from './classes9.js';
+
+export const FR = { ...UI, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_FR, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_FR, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_FR, ...WORLD7, ...CH2_FR, ...CH3_FR, ...CH4_FR, ...CH5_FR, ...CH6_FR, ...CH7_FR, ...CH8_FR, ...CH9_FR, ...CH10_FR, ...WORLD13_FR, ...CONTROLS_FR, ...RELEASE9_FR, ...CLASSES9_FR };
+
+// lines said to the whole party (« vous »): looked up first in Party Mode
+export const FR_GROUP = {};
+for (const d of [SAGA_UI, CH1_FR, CH2_FR, CH3_FR, CH4_FR, CH5_FR, CH6_FR, CH7_FR, CH8_FR, CH9_FR, CH10_FR, WORLD13_FR]) if (d.__group) Object.assign(FR_GROUP, d.__group);
+delete FR.__group;

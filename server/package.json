@@ -1,0 +1,19 @@
+{
+  "name": "hearthlight-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hearthlight's Party relay: the online server and the desktop app's",
+  "type": "module",
+  "main": "relay.mjs",
+  "scripts": {
+    "start": "node relay.mjs",
+    "loadtest": "node loadtest.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "mmdb-lib": "^3.0.3",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,20 @@
+// Italian for the wild zones' secrets (plates, chimes, buried golden chests).
+export const SECRETS = {
+  'A sealed golden chest! Light all three plates at once.': 'Un forziere d’oro sigillato! Accendi tutte e tre le pedane insieme.',
+  'A sealed golden chest! Press {a} at the pedestal, then play its tune back.': 'Un forziere d’oro sigillato! Premi {a} al piedistallo, poi ripeti la sua melodia.',
+  'The crystals fall silent…': 'I cristalli tacciono…',
+  '{name} wakes the crystals — listen!': '{name} risveglia i cristalli — orecchie aperte!',
+  'Oops, not that one! Listen again…': 'Ops, non quello! Si riascolta…',
+  'Lovely! Now a longer tune… ({n}/{total})': 'Bellissimo! Ora una melodia più lunga… ({n}/{total})',
+  'The seal breaks!': 'Il sigillo si spezza!',
+  'a golden chest for the clever ones': 'un forziere d’oro per i più furbi',
+  '{name} dug up a golden chest!': '{name} ha dissotterrato un forziere d’oro!',
+  'buried treasure — one in every wild land': 'tesoro sepolto — uno in ogni terra selvaggia',
+  'Listen': 'Ascolta',
+  'The pedestal plays a tune — then ring the crystals in its order': 'Il piedistallo suona una melodia — poi suona i cristalli nello stesso ordine',
+  'Ring the crystals in the tune’s order': 'Suona i cristalli nell’ordine della melodia',
+  'A crystal that sings': 'Un cristallo che canta',
+  'Light all three plates at once — they stay lit a few seconds': 'Accendi tutte e tre le pedane insieme — restano accese pochi secondi',
+  '{name} opened a golden chest!': '{name} ha aperto un forziere d’oro!',
+  'Sealed chest': 'Forziere sigillato',
+};

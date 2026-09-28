@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hearthlight",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["tools/devserver.py", "8765"],
+      "port": 8765
+    },
+    {
+      "name": "hearthlight-alt",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["tools/devserver.py", "8766"],
+      "port": 8766
+    },
+    {
+      "name": "hearthlight-reel",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["tools/devserver.py", "8767"],
+      "port": 8767
+    }
+  ]
+}

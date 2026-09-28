@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hearthlight Audio QA</title>
+  <style>
+    :root {
+      --bg: #1b1720; --panel: #262030; --panel2: #2f2839; --ink: #f6e7c1; --dim: #b9a98a;
+      --accent: #f6c65b; --accent2: #8fd3c1; --warn: #e78a6e; --line: #3d3448;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px 16px 60px; background: var(--bg); color: var(--ink);
+      font: 14px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    h1 { font-size: 20px; margin: 0 0 4px; color: var(--accent); letter-spacing: 1px; }
+    h2 { font-size: 13px; margin: 0 0 10px; color: var(--accent2); text-transform: uppercase; letter-spacing: 2px; }
+    p.note { color: var(--dim); margin: 0 0 16px; max-width: 900px; }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+    .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+    button {
+      font: inherit; color: var(--ink); background: var(--panel2); border: 1px solid var(--line);
+      border-radius: 6px; padding: 5px 9px; cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); }
+    button:active { transform: translateY(1px); }
+    button.on { background: var(--accent); color: #231c12; border-color: var(--accent); }
+    button.big { padding: 8px 14px; font-size: 15px; }
+    .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+    .row label { min-width: 72px; color: var(--dim); }
+    .row input[type=range] { flex: 1; min-width: 120px; accent-color: var(--accent); }
+    .row output { min-width: 44px; text-align: right; }
+    select, input[type=number], input[type=text] {
+      font: inherit; background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px;
+    }
+    #status { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 16px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+    #status b { color: var(--accent); font-weight: normal; }
+    #say { min-height: 42px; padding: 8px; background: var(--bg); border-radius: 6px; margin-top: 8px; color: var(--ink); white-space: pre-wrap; }
+    .sub { color: var(--dim); font-size: 12px; margin: 8px 0 4px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hearthlight — Audio QA</h1>
+  <p class="note">Manual test bench for <code>src/engine/audio.js</code>. Audio unlocks on your first click or key press
+    (browsers require a gesture). Everything is synthesised live — try tracks, crossfades, muffle and ducking, every sfx,
+    jingles, dialogue blips, footsteps and the ambient layers.</p>
+
+  <div id="status">
+    <button id="unlock" class="big">Unlock audio</button>
+    <span>ready: <b id="st-ready">no</b></span>
+    <span>context: <b id="st-state">–</b></span>
+    <span>track: <b id="st-track">none</b></span>
+    <span>active voices: <b id="st-active">0</b></span>
+    <span>players: <b id="st-players">0</b></span>
+  </div>
+
+  <div class="grid">
+    <section>
+      <h2>Volumes</h2>
+      <div id="vols"></div>
+    </section>
+
+    <section>
+      <h2>Music</h2>
+      <div class="btns" id="tracks"></div>
+      <div class="row" style="margin-top:10px">
+        <label>fade (s)</label><input type="number" id="fade" value="2.5" min="0" max="10" step="0.5" style="width:70px">
+        <button id="stopMusic">Stop (null)</button>
+        <button id="muffle">Muffle: off</button>
+        <button id="duck">Duck 0.35 × 2.5s</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Jingles</h2>
+      <div class="btns" id="jingles"></div>
+      <div class="sub">Each jingle ducks the music automatically.</div>
+    </section>
+
+    <section style="grid-column: 1 / -1">
+      <h2>Sound effects</h2>
+      <div class="row">
+        <label>pitch</label><input type="range" id="sfxPitch" min="-12" max="12" step="1" value="0"><output id="sfxPitchV">0</output>
+        <label>volume</label><input type="range" id="sfxVol" min="0" max="1" step="0.05" value="1"><output id="sfxVolV">1</output>
+        <label>pan</label><input type="range" id="sfxPan" min="-1" max="1" step="0.1" value="0"><output id="sfxPanV">0</output>
+      </div>
+      <div class="btns" id="sfx"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="stress">Stress: 150 random sfx in 5 s</button>
+        <button id="unknown">Unknown sfx name (should warn once, not throw)</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Dialogue blips</h2>
+      <div class="btns" id="voices"></div>
+      <div class="row"><label>pitch</label><input type="range" id="bPitch" min="48" max="90" step="1" value="72"><output id="bPitchV">72</output></div>
+      <div class="row"><label>vary</label><input type="range" id="bVary" min="0" max="12" step="1" value="3"><output id="bVaryV">3</output></div>
+      <div class="row"><label>wave</label>
+        <select id="bWave"><option>square</option><option>triangle</option><option>sine</option><option>sawtooth</option></select>
+        <label>speed</label><input type="range" id="bSpeed" min="15" max="60" step="1" value="32"><output id="bSpeedV">32ms</output>
+      </div>
+      <div class="row">
+        <input type="text" id="line" style="flex:1" value="Oh! You must be the new keeper of the lighthouse. Welcome to Marigold Cove!">
+        <button id="speak">Speak</button>
+      </div>
+      <div id="say"></div>
+    </section>
+
+    <section>
+      <h2>Footsteps</h2>
+      <div class="btns" id="feet"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="walk">Walk: off</button>
+        <label>pace</label><input type="range" id="pace" min="180" max="500" step="10" value="300"><output id="paceV">300ms</output>
+      </div>
+      <div class="sub">Walking uses the last surface you clicked.</div>
+    </section>
+
+    <section>
+      <h2>Ambient layers</h2>
+      <div id="amb"></div>
+      <div class="sub">Presets</div>
+      <div class="btns" id="ambPresets"></div>
+    </section>
+  </div>
+</div>
+
+<script type="module">
+  import audio, { __debug } from './src/engine/audio.js';
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props = {}, parent) => { const n = Object.assign(document.createElement(tag), props); if (parent) parent.appendChild(n); return n; };
+
+  // Unlock on the first gesture anywhere (and via the button); unlock() is idempotent.
+  const unlock = () => audio.unlock();
+  window.addEventListener('pointerdown', unlock);
+  window.addEventListener('keydown', unlock);
+  $('unlock').onclick = unlock;
+  window.audio = audio; // handy for console experiments
+
+  // Volumes
+  for (const kind of ['master', 'music', 'sfx', 'ambient']) {
+    const row = el('div', { className: 'row' }, $('vols'));
+    el('label', { textContent: kind }, row);
+    const r = el('input', { type: 'range', min: 0, max: 1, step: 0.01, value: audio.getVolume(kind) }, row);
+    const o = el('output', { textContent: (+r.value).toFixed(2) }, row);
+    r.oninput = () => { audio.setVolume(kind, +r.value); o.textContent = audio.getVolume(kind).toFixed(2); };
+  }
+
+  // Music
+  const trackBtns = {};
+  for (const id of __debug.tracks) {
+    trackBtns[id] = el('button', { textContent: id, onclick: () => audio.playMusic(id, { fade: +$('fade').value }) }, $('tracks'));
+  }
+  $('stopMusic').onclick = () => audio.playMusic(null, { fade: +$('fade').value });
+  let muffled = false;
+  $('muffle').onclick = () => { muffled = !muffled; audio.muffle(muffled); $('muffle').textContent = 'Muffle: ' + (muffled ? 'on' : 'off'); $('muffle').classList.toggle('on', muffled); };
+  $('duck').onclick = () => audio.duck(0.35, 2.5);
+
+  // Jingles
+  for (const j of __debug.jingleNames) el('button', { textContent: j, onclick: () => audio.jingle(j) }, $('jingles'));
+
+  // SFX
+  const bindRange = (id, fmt = (v) => v) => { const r = $(id), o = $(id + 'V'); const f = () => { o.textContent = fmt(r.value); }; r.addEventListener('input', f); f(); return r; };
+  const sfxPitch = bindRange('sfxPitch'), sfxVol = bindRange('sfxVol'), sfxPan = bindRange('sfxPan');
+  const playSfx = (name) => audio.sfx(name, { pitch: +sfxPitch.value, volume: +sfxVol.value, pan: +sfxPan.value });
+  for (const name of __debug.sfxNames) el('button', { textContent: name, onclick: () => playSfx(name) }, $('sfx'));
+  $('stress').onclick = () => {
+    let n = 0;
+    const iv = setInterval(() => {
+      audio.sfx(__debug.sfxNames[(Math.random() * __debug.sfxNames.length) | 0], { pitch: (Math.random() * 6 - 3) | 0, pan: Math.random() * 2 - 1, volume: 0.6 });
+      if (++n >= 150) clearInterval(iv);
+    }, 33);
+  };
+  $('unknown').onclick = () => { audio.sfx('definitely-not-a-sound'); audio.sfx('definitely-not-a-sound'); };
+
+  // Blips
+  const bPitch = bindRange('bPitch'), bVary = bindRange('bVary'), bSpeed = bindRange('bSpeed', (v) => v + 'ms');
+  const presets = {
+    'Mayor Juniper': { pitch: 55, wave: 'triangle', vary: 2 },
+    'Fisher Bram': { pitch: 50, wave: 'square', vary: 3 },
+    'Baker Pip': { pitch: 74, wave: 'sine', vary: 4 },
+    'Kid Wren': { pitch: 84, wave: 'square', vary: 5 },
+    'Sly cat': { pitch: 68, wave: 'sawtooth', vary: 7 },
+  };
+  for (const [name, v] of Object.entries(presets)) {
+    el('button', { textContent: name, onclick: () => { bPitch.value = v.pitch; bVary.value = v.vary; $('bWave').value = v.wave; bPitch.dispatchEvent(new Event('input')); bVary.dispatchEvent(new Event('input')); speak(); } }, $('voices'));
+  }
+  let speaking = null;
+  function speak() {
+    if (speaking) clearInterval(speaking);
+    const text = $('line').value, voice = { pitch: +bPitch.value, wave: $('bWave').value, vary: +bVary.value };
+    let i = 0;
+    $('say').textContent = '';
+    speaking = setInterval(() => {
+      const ch = text[i];
+      $('say').textContent += ch;
+      if (i % 2 === 0 && /[A-Za-z0-9]/.test(ch)) audio.blip(voice); // one blip per ~2 visible characters
+      if (++i >= text.length) { clearInterval(speaking); speaking = null; }
+    }, +bSpeed.value);
+  }
+  $('speak').onclick = speak;
+
+  // Footsteps
+  let surface = 'grass', walking = null;
+  for (const s of __debug.surfaces) el('button', { textContent: s, onclick: () => { surface = s; audio.footstep(s); } }, $('feet'));
+  const pace = bindRange('pace', (v) => v + 'ms');
+  $('walk').onclick = () => {
+    if (walking) { clearTimeout(walking); walking = null; }
+    else { const step = () => { audio.footstep(surface); walking = setTimeout(step, +pace.value); }; step(); }
+    $('walk').textContent = 'Walk: ' + (walking ? 'on' : 'off');
+    $('walk').classList.toggle('on', !!walking);
+  };
+
+  // Ambient
+  const ambSliders = {};
+  for (const k of __debug.ambientKeys) {
+    const row = el('div', { className: 'row' }, $('amb'));
+    el('label', { textContent: k }, row);
+    const r = el('input', { type: 'range', min: 0, max: 1, step: 0.01, value: 0 }, row);
+    const o = el('output', { textContent: '0.00' }, row);
+    r.oninput = () => { audio.setAmbient({ [k]: +r.value }); o.textContent = (+r.value).toFixed(2); };
+    ambSliders[k] = { r, o };
+  }
+  const ambPresets = {
+    'Village morning': { birds: 0.8, waves: 0.25, wind: 0.2, crickets: 0, rain: 0, fire: 0, night: 0 },
+    'Beach': { waves: 0.9, wind: 0.45, birds: 0.3, crickets: 0, rain: 0, fire: 0, night: 0 },
+    'Rainy evening': { rain: 0.8, wind: 0.3, waves: 0.2, birds: 0, crickets: 0, fire: 0, night: 0.2 },
+    'Summer night': { crickets: 0.8, night: 0.7, waves: 0.3, birds: 0, rain: 0, wind: 0.1, fire: 0 },
+    'By the hearth': { fire: 0.9, rain: 0.3, night: 0.2, birds: 0, crickets: 0, waves: 0, wind: 0 },
+    'Silence': { birds: 0, crickets: 0, waves: 0, rain: 0, wind: 0, fire: 0, night: 0 },
+  };
+  for (const [name, lv] of Object.entries(ambPresets)) {
+    el('button', { textContent: name, onclick: () => {
+      audio.setAmbient(lv);
+      for (const [k, v] of Object.entries(lv)) { ambSliders[k].r.value = v; ambSliders[k].o.textContent = v.toFixed(2); }
+    } }, $('ambPresets'));
+  }
+
+  // Status
+  setInterval(() => {
+    const st = __debug.stats();
+    $('st-ready').textContent = audio.ready ? 'yes' : 'no';
+    $('st-state').textContent = st ? st.state : '–';
+    $('st-track').textContent = audio.currentTrack || 'none';
+    $('st-active').textContent = st ? st.active : 0;
+    $('st-players').textContent = st ? st.players : 0;
+    for (const [id, b] of Object.entries(trackBtns)) b.classList.toggle('on', audio.currentTrack === id);
+  }, 250);
+</script>
+</body>
+</html>

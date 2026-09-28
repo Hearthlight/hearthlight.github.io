@@ -1,0 +1,55 @@
+// French — Party Mode v3: the big world around the valley (zones, places,
+// weather, the world map). Keys are the English source text.
+export const WORLD = {
+  // ---- zones
+  'Marigold Valley': 'Vallée de Marigold',
+  'Deep Whisperwood': 'Bois-Murmure profond',
+  'Windy Heights': 'Hauts-Venteux',
+  'Bouncecap Woods': 'Bois des Rebondignons',
+  'Frostpeak Glacier': 'Glacier du Pic-Givré',
+  'Cloud Isles': 'Îles des Nuages',
+  'Golden Steppe': 'Steppe dorée',
+  'Red Canyon': 'Canyon rouge',
+  'Sunscorch Dunes': 'Dunes de Brûlesoleil',
+  'Sunken City': 'Cité engloutie',
+  'Coral Lagoon': 'Lagon corallien',
+  'Whirlpool Straits': 'Détroit des Tourbillons',
+  'Croakmire': 'Coassemarais',
+  'Emberpeak': 'Mont-Braise',
+  'Open Sea': 'Pleine mer',
+
+  // ---- places (waystones, runs)
+  'Market Plaza': 'Place du Marché',
+  'Foresters’ Clearing': 'Clairière des forestiers',
+  'Breezy Hill': 'Colline-Brise',
+  'the Mother Cap': 'la Mère-Chapeau',
+  'Frostpeak Camp': 'Camp du Pic-Givré',
+  'Balloon Station': 'Station des montgolfières',
+  'Cloud Harbour': 'Port des Nuages',
+  'Nomad Camp': 'Campement nomade',
+  'Canyon Gate': 'Porte du canyon',
+  'Palm Oasis': 'Oasis aux palmiers',
+  'the Old Forum': 'le Vieux Forum',
+  'Turtle Nest': 'Nid des tortues',
+  'Lighthouse Isle': 'Île du phare',
+  'Croakton': 'Coasseville',
+  'Hot Springs': 'Sources chaudes',
+  'the Hidden Glade': 'la Clairière cachée',
+  'Glacier Run': 'la Piste du glacier',
+  'Frostpeak Plunge': 'le Grand Plongeon',
+
+  // ---- weather
+  'A gust of wind!': 'Coup de vent !',
+  'Blizzard!': 'Blizzard !',
+  'the snow comes down sideways': 'la neige tombe à l’horizontale',
+  'Sandstorm!': 'Tempête de sable !',
+  'stick together until it passes': 'restez groupés en attendant que ça passe', 'hold on until it passes': 'tiens bon en attendant que ça passe',
+  'A squall blows in!': 'Grain en approche !',
+  'hold on to your hats': 'tenez bien vos chapeaux', 'hold on to your hat': 'tiens bien ton chapeau',
+  'Hot hot hot!': 'Ça brûle, ça brûle !',
+
+  // ---- the map & arrivals
+  'The world': 'Le monde',
+  '{n}% explored': '{n} % exploré',
+  '{name} reached {place}': '{name} explore : {place}',
+};

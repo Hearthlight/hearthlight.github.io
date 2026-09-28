@@ -1,0 +1,48 @@
+// Italian dictionary, assembled from its parts (keys = English source text).
+import { UI } from './ui.js';
+import { STORY } from './story.js';
+import { LINES } from './lines.js';
+import { ITEMS } from './items.js';
+import { PARTY } from './party.js';
+import { COMBAT } from './combat.js';
+import { HOST } from './host.js';
+import { WORLD } from './world.js';
+import { MOVES } from './moves.js';
+import { ARENA } from './arena.js';
+import { MOUNTS_IT } from './mounts.js';
+import { FIGHTS } from './fights.js';
+import { PROGRESS } from './progress.js';
+import { TRAVEL } from './travel.js';
+import { SECRETS } from './secrets.js';
+import { RACES } from './races.js';
+import { EVENTS_IT } from './events.js';
+import { SOLO } from './solo.js';
+import { ADVENTURE } from './adventure.js';
+import { TALENTS4 } from './talents4.js';
+import { WEAPONS4 } from './weapons4.js';
+import { DINOS } from './dinos.js';
+import { COMPANIONS } from './companions.js';
+import { PHONE } from './phone.js';
+import { SAGA_UI } from './saga_ui.js';
+import { CH1_IT } from './ch1.js';
+import { WORLD7 } from './world_v7.js';
+import { CH2_IT } from './ch2.js';
+import { CH3_IT } from './ch3.js';
+import { CH4_IT } from './ch4.js';
+import { CH5_IT } from './ch5.js';
+import { CH6_IT } from './ch6.js';
+import { CH7_IT } from './ch7.js';
+import { CH8_IT } from './ch8.js';
+import { CH9_IT } from './ch9.js';
+import { CH10_IT } from './ch10.js';
+import { WORLD13_IT } from './world13.js';
+import { CONTROLS_IT } from './controls.js';
+import { RELEASE9_IT } from './release9.js';
+import { CLASSES9_IT } from './classes9.js';
+
+export const IT = { ...UI, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_IT, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_IT, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_IT, ...WORLD7, ...CH2_IT, ...CH3_IT, ...CH4_IT, ...CH5_IT, ...CH6_IT, ...CH7_IT, ...CH8_IT, ...CH9_IT, ...CH10_IT, ...WORLD13_IT, ...CONTROLS_IT, ...RELEASE9_IT, ...CLASSES9_IT };
+
+// lines said to the whole party (voi): looked up first in Party Mode
+export const IT_GROUP = {};
+for (const d of [SAGA_UI, CH1_IT, CH2_IT, CH3_IT, CH4_IT, CH5_IT, CH6_IT, CH7_IT, CH8_IT, CH9_IT, CH10_IT, WORLD13_IT]) if (d.__group) Object.assign(IT_GROUP, d.__group);
+delete IT.__group;

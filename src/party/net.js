@@ -1,0 +1,93 @@
+// Party Mode networking (big-screen side). Talks to a relay (the dev server's /ws, the desktop
+// app's, or the online one named in config.js): we host a room with a 4-letter code, phones join
+// it as pads.
+
+const CFG = (typeof window !== 'undefined' && window.HEARTHLIGHT) || {};
+// the relay's address (`query`: role, code, id)
+export function relayUrl(query) {
+  const base = CFG.relay || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+  return `${base}?${query}`;
+}
+
+export class PartyNet {
+  constructor() {
+    this.code = null;
+    this.status = 'off';     // off | connecting | open | down | unavailable
+    this.lan = null;         // { ips, port, open }
+    this.onJoin = null;      // (padId)
+    this.onLeave = null;     // (padId)
+    this.onMsg = null;       // (padId, data)
+    this.retry = 0;
+    this.ws = null;
+  }
+
+  async start() {
+    this.stopped = false;
+    // (online: the relay is elsewhere and the phones open the public phone page)
+    this.remote = !!CFG.relay;
+    if (!this.remote) {
+      try {
+        const r = await fetch('/__lan', { cache: 'no-store' });
+        this.lan = r.ok ? await r.json() : null;
+      } catch (e) { this.lan = null; }
+      if (!this.lan) { this.status = 'unavailable'; return; }
+    }
+    this.connect();
+  }
+
+  connect() {
+    if (this.stopped) return;
+    clearTimeout(this.retryT);
+    let prev = '';
+    try { prev = sessionStorage.getItem('hl.partyCode') || ''; } catch (e) { /* ignore */ }
+    this.status = 'connecting';
+    const ws = new WebSocket(relayUrl(`role=host${prev ? '&code=' + prev : ''}`));
+    this.ws = ws;
+    ws.onmessage = (e) => {
+      let m;
+      try { m = JSON.parse(e.data); } catch (err) { return; }
+      if (m.t === 'room') {
+        this.code = m.code; this.status = 'open'; this.retry = 0;
+        try { sessionStorage.setItem('hl.partyCode', m.code); } catch (err) { /* ignore */ }
+      } else if (m.t === 'error') {
+        // (the online relay has no room left: say so, and knock again in a while)
+        this.status = m.code === 'busy' ? 'full' : 'down';
+        this.retry = Math.max(this.retry, 6);
+      } else if (m.t === 'join') { if (this.onJoin) this.onJoin(m.id); }
+      else if (m.t === 'leave') { if (this.onLeave) this.onLeave(m.id); }
+      else if (m.t === 'msg') { if (this.onMsg) this.onMsg(m.id, m.d); }
+    };
+    ws.onclose = () => {
+      if (this.ws !== ws) return;
+      this.ws = null;
+      if (this.stopped) return;
+      if (this.status !== 'full') this.status = 'down';
+      this.retryT = setTimeout(() => this.connect(), this.status === 'full' ? 30000 : Math.min(4000, 400 + this.retry++ * 600));
+    };
+  }
+
+  stop() {
+    this.stopped = true;
+    clearTimeout(this.retryT);
+    if (this.ws) { const ws = this.ws; this.ws = null; ws.close(); }
+    this.status = 'off';
+  }
+
+  send(id, d) {
+    if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify({ t: 'send', id, d }));
+  }
+
+  broadcast(d) { this.send('*', d); }
+
+  kick(id) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify({ t: 'kick', id })); }
+
+  // the address phones should open (LAN IP, never "localhost"; online, the public phone page)
+  get joinUrl() {
+    if (!this.code) return '';
+    if (CFG.pad) return `${CFG.pad}#${this.code}`;
+    if (this.remote) return `${location.origin}${location.pathname.replace(/[^/]*$/, '')}pad.html#${this.code}`;
+    const ip = (this.lan && this.lan.ips && this.lan.ips[0]) || location.hostname;
+    const port = (this.lan && this.lan.port) || location.port;
+    return `http://${ip}${port && port !== '80' ? ':' + port : ''}/pad.html#${this.code}`;
+  }
+}

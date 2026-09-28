@@ -1,0 +1,66 @@
+# The desktop app for Mac (universal dmg), Windows (installer) and Linux (AppImage), built when a
+# version tag is pushed (git tag v1.0.0 && git push origin v1.0.0) — or by hand from the Actions
+# tab. The files land in a DRAFT release: nothing is public until someone presses « Publish ».
+# (Unsigned builds: see the README for opening them on a Mac or on Windows.)
+name: Desktop app
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: Build the Mac app too (on a private repository macOS minutes count ten times)
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        # (a tag builds all three; by hand, the Mac only when asked)
+        include: ${{ fromJSON((github.event_name != 'workflow_dispatch' || inputs.mac) && '[{"os":"macos-latest","script":"dist:mac"},{"os":"windows-latest","script":"dist:win"},{"os":"ubuntu-latest","script":"dist:linux"}]' || '[{"os":"windows-latest","script":"dist:win"},{"os":"ubuntu-latest","script":"dist:linux"}]') }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - name: Install
+        working-directory: desktop
+        # (npm install, not ci: electron-builder's optional peers differ per platform)
+        run: npm install --no-audit --no-fund
+      - name: Build
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run ${{ matrix.script }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hearthlight-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            desktop/dist/*.dmg
+            desktop/dist/*.exe
+            desktop/dist/*.AppImage
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: Hearthlight ${{ github.ref_name }}
+          files: out/*
