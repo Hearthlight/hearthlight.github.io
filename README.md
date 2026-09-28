@@ -5,7 +5,7 @@
 > **This is a demo.** Hearthlight is a hobby project, playable from start to end, but it hasn't
 > been tested all the way through by real players yet: the ten chapters, the eight heroes and
 > Party Mode were played by test bots, not by crowds. Expect rough edges, a balance to tune and
-> the odd bug — and please tell us about them in the [issues](https://github.com/Hearthlight/hearthlight-public/issues).
+> the odd bug — and please tell us about them in the [issues](https://github.com/Hearthlight/hearthlight.github.io/issues).
 
 Hearthlight is a calm, funny, story-driven pixel-art game. Make your character, pick your hero,
 settle into a seaside village — then follow the lights out of the valley into two continents,
@@ -22,9 +22,9 @@ single image or audio file in the game.
 
 ## Play
 
-- **In your browser** — <https://hearthlight.github.io/hearthlight-public/> (nothing to install; a
+- **In your browser** — <https://hearthlight.github.io> (nothing to install; a
   computer is best, it plays on a phone too).
-- **Download** — for [Mac, Windows and Linux](https://github.com/Hearthlight/hearthlight-public/releases/latest).
+- **Download** — for [Mac, Windows and Linux](https://github.com/Hearthlight/hearthlight.github.io/releases/latest).
   The apps aren't signed (that costs money every year), so the first time:
   - **Mac**: right-click (or Ctrl-click) *Hearthlight* in Applications → **Open** → **Open**. On
     recent macOS, if it still refuses: System Settings → Privacy & Security → **Open Anyway**.

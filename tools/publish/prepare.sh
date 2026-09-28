@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prepare the public repository — without publishing anything: the game as it is at HEAD, in a
 # fresh folder with ONE commit (no history: no private e-mail, no old experiments) signed with the
-# GitHub no-reply address, a LICENSE, and `origin` set to Hearthlight/hearthlight. Nothing is pushed.
+# GitHub no-reply address, a LICENSE, and `origin` set to Hearthlight/hearthlight.github.io. Nothing is pushed.
 #   bash tools/publish/prepare.sh [target-dir]        (default: ../hearthlight-public)
 # The target may also be an existing clone of the public repository (empty, or already filled by
 # this script): its files are replaced by HEAD's and one more commit is made (« Update — … »).
@@ -37,6 +37,6 @@ git add -A
 if git rev-parse -q --verify HEAD >/dev/null; then MSG="Update — $SUBJECT"; else MSG="Hearthlight 1.0 (demo) — a cozy pixel-art adventure: a story in ten chapters, eight heroes, Party Mode for 1–8 players with phones, gamepads or the keyboard"; fi
 if git diff --cached --quiet; then echo "nothing new for $OUT"; exit 0; fi
 GIT_AUTHOR_NAME="$NAME" GIT_AUTHOR_EMAIL="$EMAIL" GIT_COMMITTER_NAME="$NAME" GIT_COMMITTER_EMAIL="$EMAIL" git commit -q -m "$MSG"
-git remote get-url origin >/dev/null 2>&1 || git remote add origin https://github.com/Hearthlight/hearthlight.git
+git remote get-url origin >/dev/null 2>&1 || git remote add origin https://github.com/Hearthlight/hearthlight.github.io.git
 echo "ready: $OUT ($(git ls-files | wc -l | tr -d ' ') files, $(git rev-list --count HEAD) commit(s), the last by $NAME <$EMAIL>)"
 echo "push it when you decide: cd $OUT && git push -u origin main"
