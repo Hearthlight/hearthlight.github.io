@@ -200,8 +200,8 @@ def read_message(conn):
 class Handler(SimpleHTTPRequestHandler):
     extensions_map = {
         **SimpleHTTPRequestHandler.extensions_map,
-        ".js": "application/javascript",
-        ".mjs": "application/javascript",
+        ".js": "text/javascript",
+        ".mjs": "text/javascript",
         ".json": "application/json",
         ".png": "image/png",
     }
