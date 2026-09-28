@@ -37,6 +37,10 @@
 <main>
   <h1><span>Hearthlight</span> · relay stats</h1>
   <div class="sub" id="when">loading…</div>
+  <form id="access" hidden>
+    <label>Access token <input id="token" type="password" autocomplete="off" required /></label>
+    <button type="submit">Open stats</button>
+  </form>
 
   <h2>Right now</h2>
   <div class="grid" id="now"></div>
@@ -59,9 +63,13 @@
   <p class="sub">Counted by the relay: the game says hello when it loads, parties and phones as they connect. No address is kept — only its country, and a daily-salted hash to tell today's visitors apart.</p>
 </main>
 <script>
-const token = new URLSearchParams(location.search).get('token') || '';
-const days = +(new URLSearchParams(location.search).get('days') || 30);
+let token = '';
+const params = new URLSearchParams(location.search);
+const days = Math.max(1, Math.min(365, Math.floor(Number(params.get('days')) || 30)));
+// Remove legacy token URLs from the current history entry. They are no longer accepted.
+if (params.has('token')) { params.delete('token'); history.replaceState(null, '', location.pathname + (params.size ? '?' + params : '')); }
 const $ = (id) => document.getElementById(id);
+$('access').addEventListener('submit', (event) => { event.preventDefault(); token = $('token').value.trim(); $('token').value = ''; refresh(); });
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const flag = (cc) => /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0))) : '🏳️';
 const names = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) { return null; } })();
@@ -72,8 +80,10 @@ const mins = (m) => (m >= 90 ? (m / 60).toFixed(1) + ' h' : Math.round(m) + ' mi
 
 async function refresh() {
   try {
-    const r = await fetch(`stats?days=${days}&token=${encodeURIComponent(token)}`, { cache: 'no-store' });
-    if (!r.ok) throw new Error(r.status === 403 ? 'the token is missing or wrong (…/dash?token=…)' : 'HTTP ' + r.status);
+    const r = await fetch(`stats?days=${days}`, { cache: 'no-store', headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (r.status === 403) { $('access').hidden = false; token = ''; throw new Error('Enter your access token to view the counters.'); }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    $('access').hidden = true;
     const { now, usage } = await r.json();
     $('when').textContent = `updated ${new Date().toLocaleTimeString()} · relay up ${mins(now.uptimeSec / 60)} · refreshes every 30 s`;
     $('now').innerHTML = card(now.rooms + ' / ' + now.maxRooms, 'parties on') + card(now.pads, 'phones connected') + card(now.connections, 'connections')

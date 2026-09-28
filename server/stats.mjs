@@ -9,7 +9,12 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 const dayOf = (t = Date.now()) => new Date(t).toISOString().slice(0, 10);
-const bump = (o, k, n = 1) => { if (k) o[k] = (o[k] || 0) + n; };
+const bump = (o, k, n = 1) => {
+  if (!k) return;
+  if (!Object.hasOwn(o, k) && Object.keys(o).length >= 256) k = 'other';
+  const previous = Object.hasOwn(o, k) && Number.isFinite(o[k]) ? o[k] : 0;
+  Object.defineProperty(o, k, { value: previous + n, writable: true, enumerable: true, configurable: true });
+};
 
 function fresh(day) {
   return {
@@ -35,7 +40,7 @@ export async function createStats({ dir = '', geoDb = '', log = () => {} } = {})
   if (geoDb && fs.existsSync(geoDb)) {
     try { const { Reader } = await import('mmdb-lib'); geo = new Reader(fs.readFileSync(geoDb)); log(`countries from ${path.basename(geoDb)}`); } catch (e) { log('no country database: ' + e.message); }
   }
-  if (dir) fs.mkdirSync(dir, { recursive: true });
+  if (dir) fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const file = (day) => path.join(dir, day + '.json');
   const load = (day) => { try { return { ...fresh(day), ...JSON.parse(fs.readFileSync(file(day), 'utf8')) }; } catch (e) { return null; } };
   let today = (dir && load(dayOf())) || fresh(dayOf());
@@ -56,7 +61,7 @@ export async function createStats({ dir = '', geoDb = '', log = () => {} } = {})
   const save = () => {
     if (!dir) return;
     const tmp = file(today.day) + '.tmp';
-    try { fs.writeFileSync(tmp, JSON.stringify(today)); fs.renameSync(tmp, file(today.day)); } catch (e) { log('stats not saved: ' + e.message); }
+    try { fs.writeFileSync(tmp, JSON.stringify(today), { mode: 0o600 }); fs.renameSync(tmp, file(today.day)); } catch (e) { log('stats not saved: ' + e.message); }
   };
   const timer = setInterval(() => { roll(); save(); }, 60000);
   timer.unref();

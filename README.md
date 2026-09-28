@@ -22,9 +22,10 @@ single image or audio file in the game.
 
 ## Play
 
-- **In your browser** — <https://hearthlight.github.io> (nothing to install; a
-  computer is best, it plays on a phone too).
-- **Download** — for [Mac, Windows and Linux](https://github.com/Hearthlight/hearthlight.github.io/releases/latest).
+- **Browser version** — planned at <https://hearthlight.github.io>. Until the public launch,
+  use the local instructions below. A computer is best; the game plays on a phone too.
+- **Downloads** — Mac, Windows and Linux builds will appear on the
+  [releases page](https://github.com/Hearthlight/hearthlight.github.io/releases) after validation.
   The apps aren't signed (that costs money every year), so the first time:
   - **Mac**: right-click (or Ctrl-click) *Hearthlight* in Applications → **Open** → **Open**. On
     recent macOS, if it still refuses: System Settings → Privacy & Security → **Open Anyway**.
@@ -72,7 +73,9 @@ adventure together — the camera splits the screen when you wander apart.
   directly, no internet needed.
 - **Hosting**: the web version on GitHub Pages, the relay on a small VPS (nginx, systemd).
   The relay keeps anonymous counters — visits, parties, players, their country and language — and
-  never stores an IP address (see `server/stats.mjs`).
+  never writes an IP address into those counters (see `server/stats.mjs`). IP addresses are
+  used briefly in memory for abuse prevention. Routine access logs omit IPs and URL parameters;
+  server error and SSH security logs can contain IPs. See [Privacy](PRIVACY.md).
 - **Five languages**, dictionaries keyed by the English text (`src/lang/`), each with its
   translation guide.
 - **Tested by bots**: `tools/` has bots that join through the real relay and play the whole story,
@@ -221,9 +224,9 @@ Put the game on a TV or projector, pick **Party Mode** on the title screen, and 
 with their phone: scan the QR code (or open the address shown and type the 4-letter room code) —
 or with a gamepad (press A) or the keyboard, and their own menu opens on the big screen (see
 [Controls](#controls)).
-Phones must be on the same Wi-Fi as the computer running `tools/devserver.py` — the dev server
-also relays the phones' input over a small WebSocket, and prints the address phones should use
-(on macOS, allow Python through the firewall the first time).
+With the browser version, phones join through the online relay. With the desktop app or
+`tools/devserver.py`, phones must be on the same Wi-Fi as the computer. The dev server prints
+the address phones should use (on macOS, allow Python through the firewall the first time).
 
 | | |
 |---|---|

@@ -6,11 +6,12 @@
   "type": "module",
   "main": "relay.mjs",
   "scripts": {
+    "test": "node --test relay.test.mjs",
     "start": "node relay.mjs",
     "loadtest": "node loadtest.mjs"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "dependencies": {
     "mmdb-lib": "^3.0.3",

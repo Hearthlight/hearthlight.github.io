@@ -1,0 +1,38 @@
+name: Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --ignore-scripts && npm test && npm audit --audit-level=high
+        working-directory: server
+      - run: npm ci --ignore-scripts && npm run copy && node --input-type=module -e "import('./relay.mjs')" && npm audit --audit-level=high
+        working-directory: desktop
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Scan history with Gitleaks
+        env:
+          VERSION: 8.30.1
+        run: |
+          cd "$RUNNER_TEMP"
+          curl --fail --location --silent --show-error --remote-name "https://github.com/gitleaks/gitleaks/releases/download/v$VERSION/gitleaks_${VERSION}_linux_x64.tar.gz"
+          curl --fail --location --silent --show-error --remote-name "https://github.com/gitleaks/gitleaks/releases/download/v$VERSION/gitleaks_${VERSION}_checksums.txt"
+          grep " gitleaks_${VERSION}_linux_x64.tar.gz$" "gitleaks_${VERSION}_checksums.txt" | sha256sum --check
+          tar -xzf "gitleaks_${VERSION}_linux_x64.tar.gz" gitleaks
+          ./gitleaks git --redact --log-opts=--all "$GITHUB_WORKSPACE"

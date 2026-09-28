@@ -38,17 +38,20 @@ export class PartyNet {
   connect() {
     if (this.stopped) return;
     clearTimeout(this.retryT);
-    let prev = '';
-    try { prev = sessionStorage.getItem('hl.partyCode') || ''; } catch (e) { /* ignore */ }
+    let prev = '', token = '';
+    try { prev = sessionStorage.getItem('hl.partyCode') || ''; token = sessionStorage.getItem('hl.partyToken') || ''; } catch (e) { /* ignore */ }
     this.status = 'connecting';
     const ws = new WebSocket(relayUrl(`role=host${prev ? '&code=' + prev : ''}`));
     this.ws = ws;
+    // The owner secret travels in a WebSocket frame, never in a URL or HTTP access log.
+    ws.onopen = () => { if (prev) ws.send(JSON.stringify({ t: 'resume', token })); };
     ws.onmessage = (e) => {
       let m;
       try { m = JSON.parse(e.data); } catch (err) { return; }
+      if (!m || typeof m !== 'object') return;
       if (m.t === 'room') {
         this.code = m.code; this.status = 'open'; this.retry = 0;
-        try { sessionStorage.setItem('hl.partyCode', m.code); } catch (err) { /* ignore */ }
+        try { sessionStorage.setItem('hl.partyCode', m.code); sessionStorage.setItem('hl.partyToken', m.token || ''); } catch (err) { /* ignore */ }
       } else if (m.t === 'error') {
         // (the online relay has no room left: say so, and knock again in a while)
         this.status = m.code === 'busy' ? 'full' : 'down';
@@ -57,10 +60,11 @@ export class PartyNet {
       else if (m.t === 'leave') { if (this.onLeave) this.onLeave(m.id); }
       else if (m.t === 'msg') { if (this.onMsg) this.onMsg(m.id, m.d); }
     };
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       if (this.ws !== ws) return;
       this.ws = null;
       if (this.stopped) return;
+      if (event.code === 1008) { try { sessionStorage.removeItem('hl.partyCode'); sessionStorage.removeItem('hl.partyToken'); } catch (e) { /* ignore */ } }
       if (this.status !== 'full') this.status = 'down';
       this.retryT = setTimeout(() => this.connect(), this.status === 'full' ? 30000 : Math.min(4000, 400 + this.retry++ * 600));
     };

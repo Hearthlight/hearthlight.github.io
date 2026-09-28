@@ -5,5 +5,15 @@ node_modules/
 # the desktop app's copies & builds (desktop/scripts/copy-game.mjs, icon.mjs, electron-builder)
 /desktop/game/
 /desktop/relay.mjs
+/desktop/stats.mjs
+/desktop/dash.html
 /desktop/build/
 /desktop/dist/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.log
+/server/stats/
+/server/*.mmdb

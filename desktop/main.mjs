@@ -31,7 +31,15 @@ function createWindow(port) {
   win.loadURL(`http://localhost:${port}/${SELFTEST ? '?mute=1' : ''}`);
   if (SELFTEST) selftest(port);
   // (links out of the game open in the browser)
-  win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.webContents.on('will-navigate', (event, url) => {
+    if (new URL(url).origin !== `http://localhost:${port}`) event.preventDefault();
+  });
+  win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
+  win.webContents.session.setPermissionCheckHandler(() => false);
   win.on('closed', () => { win = null; });
 }
 

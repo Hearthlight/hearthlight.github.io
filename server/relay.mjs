@@ -7,8 +7,8 @@
 //   node server/relay.mjs [--port 8787] [--host 127.0.0.1] [--static <dir>] [--lan]
 // Settings (flags or environment): PORT, HOST, STATIC (serve the game from there too), LAN=1 (the
 // /__lan answer the game asks for, for the desktop app), MAX_ROOMS (150), MAX_PADS (16),
-// ORIGINS (comma-separated, empty: any), STATS_TOKEN (/stats and /dash from elsewhere than this
-// machine), STATS_DIR (where the daily usage counters are kept), GEO_DB (a country .mmdb).
+// ORIGINS (comma-separated; otherwise same-origin browsers), STATS_TOKEN (Bearer auth for
+// /stats), STATS_DIR (where the daily usage counters are kept), GEO_DB (a country .mmdb).
 // GET /health → ok · POST /hello (the game loaded) · GET /stats → now + the days' counters ·
 // GET /dash → a dashboard of them (stats.mjs, dash.html).
 
@@ -16,6 +16,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { createStats } from './stats.mjs';
@@ -30,6 +31,8 @@ export function lanIps() {
   return out.sort((a, b) => rank(a) - rank(b));
 }
 const rank = (ip) => (ip.startsWith('192.168.') ? 0 : ip.startsWith('10.') ? 1 : ip.startsWith('172.') ? 2 : 3);
+const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const sameToken = (a, b) => typeof a === 'string' && typeof b === 'string' && !!a && Buffer.byteLength(a) === Buffer.byteLength(b) && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
 // a token bucket: `rate` a second, `burst` at once
 class Bucket {
@@ -53,6 +56,10 @@ export function createRelay(opts = {}) {
     lan: !!(opts.lan ?? (env.LAN === '1')),
     maxRooms: +(opts.maxRooms ?? env.MAX_ROOMS ?? 150),
     maxPads: +(opts.maxPads ?? env.MAX_PADS ?? 16),
+    maxRoomsPerIp: +(opts.maxRoomsPerIp ?? env.MAX_ROOMS_PER_IP ?? 8),
+    maxConnectionsPerIp: +(opts.maxConnectionsPerIp ?? env.MAX_CONNECTIONS_PER_IP ?? 128),
+    connectionRate: opts.connectionRate ?? [0.5, 60], // 30 handshakes/minute, burst 60 per IP
+    maxBufferedBytes: opts.maxBufferedBytes ?? (2 << 20),
     origins: (opts.origins ?? env.ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
     statsToken: opts.statsToken ?? env.STATS_TOKEN ?? '',
     statsDir: opts.statsDir ?? env.STATS_DIR ?? '',     // (daily counters kept there; none: in memory only)
@@ -65,6 +72,7 @@ export function createRelay(opts = {}) {
     quiet: !!opts.quiet,
   };
   const rooms = new Map();
+  const clients = new Map(); // IPs are held in memory only; inactive entries expire after five minutes.
   const stats = { msgs: 0, bytes: 0, conns: 0, rejected: 0, t0: Date.now(), rate: 0, bps: 0, peakRooms: 0 };
   const log = (...a) => { if (!O.quiet) console.log(new Date().toISOString(), ...a); };
   // (the usage counters: visits, parties, players, where from — see stats.mjs)
@@ -75,34 +83,58 @@ export function createRelay(opts = {}) {
     const a = String(req.socket.remoteAddress || '').replace(/^::ffff:/, '');
     return (a === '127.0.0.1' || a === '::1') && req.headers['x-real-ip'] ? String(req.headers['x-real-ip']) : a;
   };
-  const allowed = (req, url) => {
-    const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) && !req.headers['x-real-ip'] && !req.headers['x-forwarded-for'];
-    return local || (O.statsToken && url.searchParams.get('token') === O.statsToken);
+  const allowed = (req) => {
+    const local = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress)
+      && /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(req.headers.host || '')
+      && !req.headers['x-real-ip'] && !req.headers['x-forwarded-for']
+      && (!req.headers.origin || req.headers.origin === `http://${req.headers.host}`);
+    const auth = req.headers.authorization || '';
+    return local || (auth.startsWith('Bearer ') && sameToken(O.statsToken, auth.slice(7)));
+  };
+  const clientFor = (ip) => {
+    if (!clients.has(ip)) {
+      if (clients.size >= 10000) return null;
+      clients.set(ip, { connections: 0, rooms: 0, bucket: new Bucket(...O.connectionRate), hello: new Bucket(0.2, 6), last: Date.now() });
+    }
+    const client = clients.get(ip); client.last = Date.now(); return client;
   };
   const peaks = () => { if (usage) { let pads = 0; for (const r of rooms.values()) pads += r.pads.size; usage.peak(rooms.size, stats.conns, pads); } };
 
   const newCode = () => {
     for (let i = 0; i < 1000; i++) {
       let c = '';
-      for (let k = 0; k < 4; k++) c += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
+      for (let k = 0; k < 4; k++) c += CODE_CHARS[crypto.randomInt(CODE_CHARS.length)];
       if (!rooms.has(c)) return c;
     }
     return null;
   };
-  const sendJson = (ws, o) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); };
+  const send = (ws, payload) => {
+    if (!ws || ws.readyState !== 1) return;
+    if (ws.bufferedAmount + Buffer.byteLength(payload) > O.maxBufferedBytes) { ws.terminate(); return; }
+    ws.send(payload, (err) => { if (err) ws.terminate(); });
+  };
+  const sendJson = (ws, o) => send(ws, JSON.stringify(o));
   const count = (n) => { stats.msgs++; stats.bytes += n; };
 
   // ------------------------------------------------------------------ http: health, stats, the game
   const server = http.createServer((req, res) => {
-    const url = new URL(req.url, 'http://x');
+    req.on('error', () => res.destroy());
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Frame-Options', 'DENY');
+    let url;
+    try { url = new URL(req.url, 'http://x'); } catch { res.writeHead(400); res.end(); return; }
     if (url.pathname === '/health') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok'); return; }
     // the game says hello when it loads (navigator.sendBeacon: a small text/plain JSON)
     if (url.pathname === '/hello' && req.method === 'POST') {
-      let body = '';
-      req.on('data', (d) => { body += d; if (body.length > 2048) req.destroy(); });
+      const client = clientFor(ipOf(req));
+      if (!client || !client.hello.take()) { res.writeHead(429); res.end(); req.resume(); return; }
+      let body = '', bytes = 0;
+      req.on('data', (d) => { bytes += d.length; if (bytes > 2048) { req.destroy(); return; } body += d; });
       req.on('end', () => {
-        let m = {};
-        try { m = JSON.parse(body || '{}'); } catch (e) { /* ignore */ }
+        let m;
+        try { m = JSON.parse(body || '{}'); } catch { res.writeHead(400); res.end(); return; }
+        if (!object(m) || (m.lang !== undefined && typeof m.lang !== 'string') || (m.platform !== undefined && typeof m.platform !== 'string')) { res.writeHead(400); res.end(); return; }
         if (usage) usage.visit({ ip: ipOf(req), origin: req.headers.origin, lang: m.lang, platform: m.platform });
         res.writeHead(204, { 'Access-Control-Allow-Origin': req.headers.origin || '*', 'Cache-Control': 'no-store' });
         res.end();
@@ -110,14 +142,14 @@ export function createRelay(opts = {}) {
       return;
     }
     if (url.pathname === '/stats') {
-      if (!allowed(req, url)) { res.writeHead(403); res.end(); return; }
+      if (!allowed(req)) { res.writeHead(403); res.end(); return; }
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-      res.end(JSON.stringify({ now: snapshot(), usage: usage ? usage.snapshot(Math.min(365, +(url.searchParams.get('days') || 30))) : null }));
+      const days = Math.max(1, Math.min(365, Math.floor(Number(url.searchParams.get('days')) || 30)));
+      res.end(JSON.stringify({ now: snapshot(), usage: usage ? usage.snapshot(days) : null }));
       return;
     }
-    // the dashboard (the same token): a page that reads /stats
+    // Public sign-in page; all private data remains behind /stats authentication.
     if (url.pathname === '/dash') {
-      if (!allowed(req, url)) { res.writeHead(403); res.end('forbidden'); return; }
       fs.readFile(new URL('./dash.html', import.meta.url), (err, html) => {
         res.writeHead(err ? 500 : 200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(err ? 'no dashboard' : html);
@@ -134,32 +166,59 @@ export function createRelay(opts = {}) {
   });
 
   function serveFile(root, pathname, res) {
-    let rel = decodeURIComponent(pathname);
+    let rel;
+    try { rel = decodeURIComponent(pathname); } catch { res.writeHead(400); res.end(); return; }
+    if (rel.includes('\0') || rel.split(/[\\/]/).some((part) => part.startsWith('.'))) { res.writeHead(403); res.end(); return; }
     if (rel.endsWith('/')) rel += 'index.html';
+    try { root = fs.realpathSync(root); } catch { res.writeHead(404); res.end(); return; }
     const file = path.normalize(path.join(root, rel));
     if (!file.startsWith(path.normalize(root + path.sep)) && file !== path.normalize(root)) { res.writeHead(403); res.end(); return; }
     fs.stat(file, (err, st) => {
       if (err || !st.isFile()) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('not found'); return; }
-      res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': st.size, 'Cache-Control': 'no-cache' });
-      fs.createReadStream(file).pipe(res);
+      fs.realpath(file, (error, actual) => {
+        if (error || !actual.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
+        res.writeHead(200, { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': st.size, 'Cache-Control': 'no-cache' });
+        const stream = fs.createReadStream(file);
+        stream.on('error', () => res.destroy());
+        stream.pipe(res);
+      });
     });
   }
 
   // ------------------------------------------------------------------ the relay
   const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false, maxPayload: O.hostMsgMax });
   server.on('upgrade', (req, socket, head) => {
-    const url = new URL(req.url, 'http://x');
+    socket.on('error', () => socket.destroy());
+    let url;
+    try { url = new URL(req.url, 'http://x'); } catch { socket.destroy(); return; }
     if (url.pathname !== '/ws') { socket.destroy(); return; }
     if (O.origins.length && !O.origins.includes(req.headers.origin || '')) { stats.rejected++; socket.write('HTTP/1.1 403 Forbidden\r\n\r\n'); socket.destroy(); return; }
+    if (!O.origins.length && req.headers.origin && ![`http://${req.headers.host}`, `https://${req.headers.host}`].includes(req.headers.origin)) { socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); return; }
+    const ip = ipOf(req), client = clientFor(ip);
+    if (!client || !client.bucket.take() || client.connections >= O.maxConnectionsPerIp || stats.conns >= O.maxRooms * (O.maxPads + 1) + 32) {
+      stats.rejected++; socket.end('HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\n\r\n'); return;
+    }
     wss.handleUpgrade(req, socket, head, (ws) => {
       const role = url.searchParams.get('role') === 'host' ? 'host' : 'pad';
       const code = (url.searchParams.get('code') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
       ws.alive = true; ws.last = Date.now();
+      ws.on('error', () => ws.terminate());
       ws.on('pong', () => { ws.alive = true; });
-      stats.conns++;
-      ws.on('close', () => { stats.conns--; });
-      const who = { ip: ipOf(req), origin: req.headers.origin };
-      if (role === 'host') runHost(ws, code, who);
+      stats.conns++; client.connections++;
+      ws.on('close', () => { stats.conns--; client.connections--; client.last = Date.now(); });
+      const who = { ip, origin: req.headers.origin, client };
+      const previous = rooms.get(code);
+      if (role === 'host' && previous && (!previous.host || previous.host.readyState !== 1)) {
+        const timeout = setTimeout(() => ws.terminate(), 5000);
+        ws.once('close', () => clearTimeout(timeout));
+        ws.once('message', (data, binary) => {
+          clearTimeout(timeout);
+          let m;
+          try { m = JSON.parse(data); } catch { ws.close(1008, 'invalid resume'); return; }
+          if (binary || !object(m) || m.t !== 'resume' || !sameToken(previous.token, m.token) || rooms.get(code) !== previous || previous.host?.readyState === 1) { ws.close(1008, 'invalid resume'); return; }
+          runHost(ws, code, who);
+        });
+      } else if (role === 'host') runHost(ws, code, who);
       else runPad(ws, code, (url.searchParams.get('id') || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'p' + Math.floor(Math.random() * 1e6), who);
       peaks();
     });
@@ -167,7 +226,9 @@ export function createRelay(opts = {}) {
 
   // a room ends: how long, how many
   const ended = (room) => {
+    if (rooms.get(room.code) !== room) return;
     rooms.delete(room.code);
+    room.owner.rooms--;
     const minutes = (Date.now() - room.t0) / 60000;
     if (usage) usage.partyEnd({ minutes, players: room.maxPads });
     log(`party ${room.code} over · ${Math.round(minutes)} min · ${room.maxPads} player(s) · rooms ${rooms.size}`);
@@ -178,19 +239,21 @@ export function createRelay(opts = {}) {
     if (!room || (room.host && room.host.readyState === 1)) {
       // (a new room: is there space?)
       if (rooms.size >= O.maxRooms) { stats.rejected++; if (usage) usage.busy(); log('busy: a party turned away'); sendJson(ws, { t: 'error', code: 'busy', msg: 'The online party server is full right now.' }); ws.close(1013, 'busy'); return; }
-      const c = code && !rooms.has(code) ? code : newCode();
+      if (who.client.rooms >= O.maxRoomsPerIp) { stats.rejected++; sendJson(ws, { t: 'error', code: 'limit', msg: 'Too many parties from this network.' }); ws.close(1008, 'limit'); return; }
+      const c = newCode();
       if (!c) { sendJson(ws, { t: 'error', code: 'busy', msg: 'No free room codes.' }); ws.close(1013, 'busy'); return; }
-      room = { code: c, host: null, pads: new Map(), t0: Date.now(), maxPads: 0 };
+      room = { code: c, token: crypto.randomBytes(24).toString('hex'), owner: who.client, host: null, pads: new Map(), t0: Date.now(), maxPads: 0 };
+      who.client.rooms++;
       rooms.set(c, room);
       const cc = usage ? usage.partyStart(who) : '??';
-      log(`party ${c} opens · ${cc} · ${who.origin || 'no origin'} · rooms ${rooms.size}`);
+      log(`party ${c} opens · ${cc} · rooms ${rooms.size}`);
       stats.peakRooms = Math.max(stats.peakRooms, rooms.size);
     }
     const old = room.host;
     room.host = ws;
     if (old && old !== ws) old.close(4000, 'replaced');
     ws.bucket = new Bucket(...O.hostRate);
-    sendJson(ws, { t: 'room', code: room.code });
+    sendJson(ws, { t: 'room', code: room.code, token: room.token });
     for (const [id, p] of room.pads) { sendJson(ws, { t: 'join', id }); sendJson(p, { t: 'hostback' }); }
     ws.on('message', (data, isBinary) => {
       ws.last = Date.now();
@@ -198,10 +261,12 @@ export function createRelay(opts = {}) {
       count(data.length);
       let m;
       try { m = JSON.parse(data); } catch (e) { return; }
+      if (!object(m)) { ws.close(1008, 'invalid message'); return; }
       if (m.t === 'send') {
+        if (typeof m.id !== 'string' || !object(m.d)) { ws.close(1008, 'invalid message'); return; }
         const payload = JSON.stringify(m.d);
-        if (m.id === '*') { for (const p of room.pads.values()) if (p.readyState === 1) p.send(payload); }
-        else { const p = room.pads.get(m.id); if (p && p.readyState === 1) p.send(payload); }
+        if (m.id === '*') { for (const p of room.pads.values()) send(p, payload); }
+        else send(room.pads.get(m.id), payload);
       } else if (m.t === 'kick') {
         const p = room.pads.get(m.id);
         if (p) { room.pads.delete(m.id); sendJson(p, { t: 'kicked' }); p.close(4001, 'kicked'); }
@@ -236,7 +301,7 @@ export function createRelay(opts = {}) {
     const prefix = '{"t":"msg","id":' + JSON.stringify(id) + ',"d":';
     ws.on('message', (data, isBinary) => {
       ws.last = Date.now();
-      if (isBinary || data.length > O.padMsgMax) return;
+      if (isBinary || data.length > O.padMsgMax) { ws.close(1009, 'message too large'); return; }
       if (!ws.bucket.take()) {
         // (a phone that floods: dropped, then shown the door)
         if (++ws.over > 600) { sendJson(ws, { t: 'error', code: 'limit', msg: 'Too many messages' }); ws.close(1008, 'limit'); }
@@ -244,9 +309,9 @@ export function createRelay(opts = {}) {
       }
       count(data.length);
       const text = data.toString();
-      try { JSON.parse(text); } catch (e) { return; }
+      try { if (!object(JSON.parse(text))) { ws.close(1008, 'invalid message'); return; } } catch (e) { return; }
       const h = room.host;
-      if (h && h.readyState === 1) h.send(prefix + text + '}');
+      send(h, prefix + text + '}');
     });
     ws.on('close', () => {
       if (room.pads.get(id) !== ws) return;
@@ -260,6 +325,7 @@ export function createRelay(opts = {}) {
   let lastMsgs = 0, lastBytes = 0, lastT = Date.now(), minute = 0;
   const tick = setInterval(() => {
     const now = Date.now();
+    for (const [ip, client] of clients) if (!client.connections && !client.rooms && now - client.last > 300000) clients.delete(ip);
     for (const ws of wss.clients) {
       if (!ws.alive || now - ws.last > O.idleMs) { ws.terminate(); continue; }
       ws.alive = false;
