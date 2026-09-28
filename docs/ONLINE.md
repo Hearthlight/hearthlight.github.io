@@ -4,7 +4,7 @@ Open **Play together** on the title screen.
 
 - **Host on this screen** uses the current relay. The desktop app uses the local Wi-Fi relay and works offline.
 - **Host over the Internet** uses the public Hearthlight relay, including from the desktop app.
-- **Join remotely** accepts the complete invitation from a host.
+- **Join remotely** accepts the complete invitation from a host. The desktop app opens Internet invitations in your browser.
 
 During a party, **Invite & save** remains available. It pauses the game while the host uses the panel and restores its previous pause state when closed.
 
