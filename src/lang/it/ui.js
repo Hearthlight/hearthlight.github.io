@@ -2,7 +2,7 @@
 export const UI = {
   'Explore more': 'Scopri di più',
   'Pixel pets for your desktop': 'Compagni pixel per il tuo desktop',
-  'Code and upcoming downloads': 'Codice e download in arrivo',
+  'Code and downloads': 'Codice e download',
   // ---- dates & clock (src/ui/hud.js dayLabel / timeLabel)
   'Mon': 'Lun',
   'Tue': 'Mar',
