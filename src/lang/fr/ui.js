@@ -3,6 +3,7 @@
 // world interactions (src/ui/*, src/game.js, src/scenes/world.js) plus the
 // names they display: areas, rooms, signs, critters and character looks.
 export const UI = {
+  'Code and upcoming downloads': 'Code et téléchargements à venir',
   // ---- dates & clock (src/ui/hud.js dayLabel / timeLabel)
   'Mon': 'Lun.',
   'Tue': 'Mar.',
