@@ -21,6 +21,21 @@
     }
     #world { z-index: 0; }
     #ui { z-index: 1; cursor: default; }
+    #project-link {
+      position: fixed; top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right)); z-index: 3;
+      padding: 10px 14px; border: 1px solid #90734f;
+      background: #241b2ee8; color: #fff3c4; text-decoration: none;
+      font: 14px/1.4 ui-monospace, Menlo, monospace;
+      box-shadow: 3px 3px 0 #14121c80; touch-action: manipulation;
+    }
+    #project-link small { display: block; margin-top: 2px; color: #d9c8b0; font-size: 11px; }
+    #project-link:hover { border-color: #f6d38f; background: #38283e; }
+    #project-link:focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
+    @media (max-height: 450px) {
+      #project-link { padding: 8px 12px; }
+      #project-link small { display: none; }
+    }
     #boot {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       color: #f6e7c1; font: 14px/1.4 ui-monospace, Menlo, monospace; letter-spacing: 2px;
@@ -32,6 +47,11 @@
   <div id="boot">loading…</div>
   <canvas id="world"></canvas>
   <canvas id="ui" tabindex="0" aria-label="Hearthlight game"></canvas>
+  <a id="project-link" href="https://github.com/Hearthlight/hearthlight.github.io"
+     target="_blank" rel="noopener noreferrer" hidden>
+    GitHub <span aria-hidden="true">↗</span>
+    <small>Code and upcoming downloads</small>
+  </a>
   <script src="config.js"></script>
   <script type="module" src="./src/main.js"></script>
 </body>
