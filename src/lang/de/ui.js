@@ -1,5 +1,6 @@
 // German — the game's shell (HUD, menus, shops, creator, title, overlays, world prompts) and the names it shows.
 export const UI = {
+  'Code and upcoming downloads': 'Code und kommende Downloads',
   // ---- dates & clock (src/ui/hud.js dayLabel / timeLabel)
   'Mon': 'Mo',
   'Tue': 'Di',

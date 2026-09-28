@@ -16,10 +16,13 @@ const executable = path.join(root, binaries[process.platform]);
 if (!fs.existsSync(executable)) throw new Error('Packaged application missing: ' + executable);
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hearthlight-smoke-'));
 const screenshot = path.join(dir, 'game.png'), result = path.join(dir, 'game.json');
-// Ubuntu's hosted CI runner needs Xvfb and cannot run Chromium's OS sandbox. This flag applies
-// only to this isolated test process, never to the packaged app's normal launch configuration.
+// Hosted CI has no usable GPU. Use software rendering for this trusted, local game test.
+// Ubuntu also needs Xvfb and cannot run Chromium's OS sandbox. These flags apply only to
+// this isolated test process, never to the packaged app's normal launch configuration.
 const headless = process.platform === 'linux' && process.env.CI === 'true';
-const child = spawn(headless ? 'xvfb-run' : executable, headless ? ['-a', executable, '--no-sandbox'] : [], {
+const args = process.env.CI === 'true'
+  ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : [];
+const child = spawn(headless ? 'xvfb-run' : executable, headless ? ['-a', executable, '--no-sandbox', ...args] : args, {
   env: { ...process.env, HEARTHLIGHT_SELFTEST: screenshot }, stdio: 'inherit',
 });
 let exited = false;
