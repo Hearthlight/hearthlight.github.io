@@ -24,6 +24,7 @@ single image or audio file in the game.
 
 - **Browser version** — planned at <https://hearthlight.github.io>. Until the public launch,
   use the local instructions below. A computer is best; the game plays on a phone too.
+- **Build it yourself** — follow the [local setup and build instructions](#run-it-yourself).
 - **Downloads** — Mac, Windows and Linux builds will appear on the
   [releases page](https://github.com/Hearthlight/hearthlight.github.io/releases) after validation.
   The apps aren't signed (that costs money every year), so the first time:
@@ -89,15 +90,64 @@ database used by the relay's counters is db-ip.com's IP to Country Lite (CC BY 4
 
 ## Run it yourself
 
-The game is plain ES modules — no build step, no dependencies (Three.js is in `vendor/`).
+You can play from source or make your own desktop installer. GitHub Actions and the release
+files are optional.
 
-```bash
+### Get the source
+
+Install [Git](https://git-scm.com/downloads), then run:
+
+```sh
+git clone https://github.com/Hearthlight/hearthlight.github.io.git
+cd hearthlight.github.io
+```
+
+Alternatively, choose **Code → Download ZIP** on GitHub, extract it, and open a terminal in the
+extracted folder. While the repository is private, access to it is required for either method.
+
+### Play in your browser
+
+Install [Python 3](https://www.python.org/downloads/), then run from the repository folder:
+
+```sh
 python3 tools/devserver.py 8765
 ```
 
-Then open <http://localhost:8765>; phones on the same Wi-Fi join Party Mode at the address the
-lobby shows. The production relay (`server/relay.mjs`, Node) and the desktop app (`desktop/`,
-Electron) are described in their folders.
+On Windows, use `py -3 tools/devserver.py 8765` in PowerShell. Open <http://localhost:8765> and
+leave the terminal running; **Ctrl+C** stops the server. Open the URL instead of double-clicking
+`index.html`: the game uses JavaScript modules. No npm install or compilation is needed;
+Three.js and the other browser libraries are included in `vendor/`.
+
+The server includes the Party relay. Phones on the same Wi-Fi join at the address shown in the
+lobby. Add `--local` to the command to accept connections only from your own computer. This is
+a development server for your machine or trusted local network; use the [Node relay guide](server/README.md)
+for a hosted service.
+
+### Run or build the desktop app
+
+Install [Node.js 24 with npm](https://nodejs.org/en/download), then, from the repository folder:
+
+```sh
+cd desktop
+npm ci
+npm start
+```
+
+This opens the game with its local Party relay. To create an installer, close the app and run
+**one command for your operating system**, from the same `desktop` folder:
+
+| Build on | Command | File created in `desktop/dist/` |
+| --- | --- | --- |
+| macOS | `npm run dist:mac` | `Hearthlight-<version>-universal.dmg` (Intel + Apple silicon) |
+| Windows | `npm run dist:win` | `Hearthlight-Setup-<version>.exe` (x64) |
+| Linux | `npm run dist:linux` | `Hearthlight-<version>-<arch>.AppImage` (x86_64 on an x64 machine) |
+
+The first install/build needs internet access to download the tools. The finished app runs
+locally, including phones on the same Wi-Fi. These commands create unsigned files on your
+machine and do not publish them.
+
+See the **[step-by-step desktop build guide](desktop/README.md)** for prerequisites, testing
+your package, updating your source copy and troubleshooting.
 
 ## The Grand Monde: a story in ten chapters (World v7)
 
@@ -207,8 +257,8 @@ farm, shops, home, festival) carries on as before at its heart.
   something new every day. By a campfire at night, you can sleep out under the stars too.
 - **Play with your phone**: *Settings → Play with your phone* shows a QR code; your phone becomes
   the controller (stick, A / B / X / Y with live labels, bag · map · journal · hero, the hotbar,
-  your health, taming, talents & gear). Same Wi-Fi and `tools/devserver.py` needed, as for
-  Party Mode.
+  your health, taming, talents & gear). When running locally, phones use the same Wi-Fi and
+  the relay included in the desktop app or `tools/devserver.py`.
 
 | | |
 |---|---|
