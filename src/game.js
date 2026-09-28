@@ -55,7 +55,7 @@ export class Game {
     // nothing else — config.js names where; the desktop app and the dev server don't)
     try {
       const S = window.HEARTHLIGHT && window.HEARTHLIGHT.stats;
-      if (S && navigator.sendBeacon) navigator.sendBeacon(S, JSON.stringify({ lang: this.settings.lang, platform: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone browser' : 'computer browser' }));
+      if (S && navigator.sendBeacon) navigator.sendBeacon(S, JSON.stringify({ lang: this.settings.lang, platform: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'phone' : 'computer' }));
     } catch (e) { /* no counting */ }
     this.r3d = new R3D();
     this.display.onResize((d) => this.r3d.resize(d.ww, d.wh));

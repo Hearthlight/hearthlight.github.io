@@ -443,7 +443,7 @@ function drawJoin() {
   if (S.error) {
     const lines = wrap(S.error, pw - 24);
     lines.slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 86 + i * 11, { color: '#c8454f', align: 'center' }));
-  } else drawText(ctx, t('Same Wi-Fi as the big screen'), px + pw / 2, py + 90, { color: UI.inkSoft, align: 'center' });
+  } else drawText(ctx, window.HEARTHLIGHT && window.HEARTHLIGHT.relay ? t('Works from anywhere, over the internet') : t('Same Wi-Fi as the big screen'), px + pw / 2, py + 90, { color: UI.inkSoft, align: 'center' });
   const hy = py + ph + 12;
   const tip = t('Scan the QR code on the big screen, or type the code it shows.');
   wrap(tip, Math.min(W - 24, 220)).forEach((l, i) => drawText(ctx, l, W / 2, hy + i * 11, { color: '#b9a2e3', align: 'center' }));

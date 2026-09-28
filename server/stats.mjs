@@ -69,7 +69,7 @@ export async function createStats({ dir = '', geoDb = '', log = () => {} } = {})
       const c = country(ip);
       today.visits++;
       bump(today.country.visits, c); bump(today.site.visits, siteOf(origin));
-      bump(today.lang, String(lang || '??').slice(0, 5)); bump(today.platform, String(platform || 'web').slice(0, 12));
+      bump(today.lang, String(lang || '??').slice(0, 5)); bump(today.platform, String(platform || 'web').slice(0, 16));
       const h = crypto.createHash('sha256').update(salt).update(String(ip)).digest('base64').slice(0, 12);
       if (!seen.has(h)) { seen.add(h); today.uniques++; }
       return c;

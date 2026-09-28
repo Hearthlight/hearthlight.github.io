@@ -259,6 +259,7 @@ export const COMBAT = {
   'Joining…': 'Conectando…',
   'Join the party ♥': 'Unirse a la fiesta ♥',
   'Same Wi-Fi as the big screen': 'Misma red Wi-Fi que la pantalla grande',
+  'Works from anywhere, over the internet': 'Funciona desde cualquier lugar, por internet',
   'Scan the QR code on the big screen, or type the code it shows.': 'Escanea el código QR de la pantalla grande o escribe el código que muestra.',
   'Room {code}': 'Sala {code}',
   '★ Surprise me': '★ Sorpréndeme',

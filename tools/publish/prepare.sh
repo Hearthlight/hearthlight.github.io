@@ -28,7 +28,7 @@ for p in "${EXCLUDE[@]}"; do rm -rf "$OUT/$p"; done
 [[ -f "$OUT/LICENSE" ]] || cp "$ROOT/tools/publish/LICENSE.proposed" "$OUT/LICENSE"
 rm -f "$OUT/tools/publish/LICENSE.proposed"
 # (a last look for anything personal)
-if grep -rnIE "gmail\.com|/Users/[a-z]|alexandre\.|lunati\b|149\.56\." "$OUT" --exclude-dir=node_modules | grep -v "vendor/"; then
+if grep -rnIE "gmail\.com|/Users/[a-z]|alexandre\.|lunati\b|149\.56\." "$OUT" --exclude-dir=node_modules --exclude-dir=.git | grep -v "vendor/"; then
   echo "↑ personal traces found: fix them before going on" >&2; exit 1
 fi
 cd "$OUT"
