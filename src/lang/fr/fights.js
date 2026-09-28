@@ -1,0 +1,42 @@
+// French for deeper fights (Party v3 M6): dodges, parries, elements, combos,
+// finishers — and, further down, new foes, bosses, gear and talents.
+export const FIGHTS = {
+  'Dodge': 'Esquive',
+  'PARRY!': 'PARADE !', 'Deflect!': 'Renvoyé !', 'COUNTER!': 'CONTRE !',
+  'Juggle!': 'Jonglage !', 'FINISHER!': 'COUP DE GRÂCE !',
+  'COMBO': 'COMBO', 'TEAM!': 'ÉQUIPE !',
+  'Fire': 'Feu', 'Ice': 'Glace', 'Poison': 'Poison', 'Shock': 'Foudre',
+  'Frozen!': 'Gelé !', 'Shatter!': 'Brisé !', 'Shield broken!': 'Bouclier brisé !',
+  // the phone menu
+  'Change my look': 'Changer de tenue',
+  // the big world's gloom creatures
+  'Dune Burrower': 'Creuse-dune', 'Ember Imp': 'Diablotin de braise', 'Frost Wisp': 'Feu follet de givre',
+  'Bog Toad': 'Crapaud des tourbières', 'Spore Shaman': 'Chaman des spores', 'Sporeling': 'Sporelin',
+  'Gloom Mender': 'Papillon guérisseur', 'Shieldbearer': 'Porte-bouclier', 'Armour Beetle': 'Scarabée blindé',
+  'Cloud Harpy': 'Harpie des nuages', 'Canyon Slinger': 'Frondeur du canyon', 'Reef Crab': 'Crabe de récif',
+  'Drowned Sailor': 'Marin noyé', 'Lava Slug': 'Limace de lave', 'Storm Crow': 'Corbeau d’orage',
+  'Gloom Totem': 'Totem de grisaille', 'Sandworm': 'Ver des sables', 'Frost Yeti': 'Yéti du givre',
+  'Gulp!': 'Gloups !', 'Pop!': 'Pop !',
+  // gloom camps
+  'A gloom camp! ({zone})': 'Un camp de grisaille ! ({zone})',
+  'Gloom camp cleared!': 'Camp de grisaille nettoyé !',
+  'Camps: {n} of {total}': 'Camps : {n} sur {total}',
+  // zone bosses & their lairs
+  'Sand Queen': 'Reine des sables', 'The Sand Queen': 'La Reine des sables',
+  'Frost Colossus': 'Colosse de givre', 'The Frost Colossus': 'Le Colosse de givre',
+  'Frog King': 'Roi Grenouille', 'The Frog King': 'Le Roi Grenouille',
+  'Magma Golem': 'Golem de magma', 'The Magma Golem': 'Le Golem de magma',
+  'GRRR!': 'GRRR !', 'ENOUGH!': 'ÇA SUFFIT !', 'My armour!': 'Mon armure !', 'Ptooey!': 'Ptou !',
+  'Its armour cracks!': 'Son armure se fend !', 'RUMBLE…': 'GRONDEMENT…', 'Jump the flame!': 'Sautez par-dessus la flamme !',
+  '*BUUURP*': '*BUUURP*',
+  'Its core is showing — hit it!': 'Son cœur est à nu — frappe-le !',
+  'Something huge stirs nearby…': 'Quelque chose d’énorme remue tout près…',
+  'A guardian of the wild, lost in the gloom': 'Un gardien des terres sauvages, perdu dans la grisaille',
+  '{boss} gives up and goes back to its lair…': '{boss} abandonne et retourne dans son repaire…',
+  'Boss defeated!': 'Boss vaincu !',
+  '{boss} is free!': '{boss} est libre !',
+  'The Sand Queen sinks back to sleep, calm at last!': 'La Reine des sables se rendort, enfin apaisée !',
+  'The Frost Colossus melts into a gentle snowman!': 'Le Colosse de givre fond en un gentil bonhomme de neige !',
+  'The Frog King is free of the gloom — long live the King!': 'Le Roi Grenouille est libéré de la grisaille — vive le Roi !',
+  'The Magma Golem cools down and dozes off!': 'Le Golem de magma refroidit et s’assoupit !',
+};

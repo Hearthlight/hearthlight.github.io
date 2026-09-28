@@ -1,0 +1,9 @@
+# local test captures from the dev server (game.debug.shot)
+/screenshots/
+.DS_Store
+node_modules/
+# the desktop app's copies & builds (desktop/scripts/copy-game.mjs, icon.mjs, electron-builder)
+/desktop/game/
+/desktop/relay.mjs
+/desktop/build/
+/desktop/dist/

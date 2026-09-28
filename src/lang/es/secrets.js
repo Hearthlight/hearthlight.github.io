@@ -1,0 +1,20 @@
+// Spanish — Party mode: the wild zones’ secrets (plates, chimes, buried golden chests).
+export const SECRETS = {
+  'A sealed golden chest! Light all three plates at once.': '¡Un cofre dorado sellado! Enciende las tres losas a la vez.',
+  'A sealed golden chest! Press {a} at the pedestal, then play its tune back.': '¡Un cofre dorado sellado! Presiona {a} en el pedestal y luego repite su melodía.',
+  'The crystals fall silent…': 'Los cristales se quedan en silencio…',
+  '{name} wakes the crystals — listen!': '{name} despierta los cristales — ¡atención!',
+  'Oops, not that one! Listen again…': '¡Uy, ese no! A escuchar otra vez…',
+  'Lovely! Now a longer tune… ({n}/{total})': '¡Precioso! Ahora, una melodía más larga… ({n}/{total})',
+  'The seal breaks!': '¡El sello se rompe!',
+  'a golden chest for the clever ones': 'un cofre dorado para mentes brillantes',
+  '{name} dug up a golden chest!': '¡{name} desenterró un cofre dorado!',
+  'buried treasure — one in every wild land': 'un tesoro enterrado — hay uno en cada tierra salvaje',
+  'Listen': 'Escuchar',
+  'The pedestal plays a tune — then ring the crystals in its order': 'El pedestal toca una melodía — luego haz sonar los cristales en el mismo orden',
+  'Ring the crystals in the tune’s order': 'Haz sonar los cristales en el orden de la melodía',
+  'A crystal that sings': 'Un cristal que canta',
+  'Light all three plates at once — they stay lit a few seconds': 'Enciende las tres losas a la vez — se quedan encendidas unos segundos',
+  '{name} opened a golden chest!': '¡{name} abrió un cofre dorado!',
+  'Sealed chest': 'Cofre sellado',
+};

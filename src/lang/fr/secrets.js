@@ -1,0 +1,20 @@
+// Party mode: the wild zones' secrets (plates, chimes, buried golden chests).
+export const SECRETS = {
+  'A sealed golden chest! Light all three plates at once.': 'Un coffre doré scellé ! Allumez les trois dalles en même temps.',
+  'A sealed golden chest! Press {a} at the pedestal, then play its tune back.': 'Un coffre doré scellé ! Appuie sur {a} au piédestal, puis rejoue son air.',
+  'The crystals fall silent…': 'Les cristaux se taisent…',
+  '{name} wakes the crystals — listen!': '{name} réveille les cristaux — écoutez !',
+  'Oops, not that one! Listen again…': 'Oups, pas celui-là ! On réécoute…',
+  'Lovely! Now a longer tune… ({n}/{total})': 'Joli ! Maintenant, un air plus long… ({n}/{total})',
+  'The seal breaks!': 'Le sceau se brise !',
+  'a golden chest for the clever ones': 'un coffre doré pour les petits malins',
+  '{name} dug up a golden chest!': '{name} a déterré un coffre doré !',
+  'buried treasure — one in every wild land': 'un trésor enfoui — il y en a un dans chaque contrée sauvage',
+  'Listen': 'Écouter',
+  'The pedestal plays a tune — then ring the crystals in its order': 'Le piédestal joue un air — fais ensuite sonner les cristaux dans le même ordre',
+  'Ring the crystals in the tune’s order': 'Fais sonner les cristaux dans l’ordre de l’air',
+  'A crystal that sings': 'Un cristal qui chante',
+  'Light all three plates at once — they stay lit a few seconds': 'Allume les trois dalles en même temps — elles restent allumées quelques secondes',
+  '{name} opened a golden chest!': '{name} a ouvert un coffre doré !',
+  'Sealed chest': 'Coffre scellé',
+};

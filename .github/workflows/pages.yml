@@ -1,0 +1,44 @@
+# The web version on GitHub Pages — NOT ACTIVE: it only runs by hand (Actions → « Web version » →
+# Run workflow), once the repository is public and Settings → Pages → Source is « GitHub Actions ».
+# It publishes the game (index.html, pad.html, src/, vendor/) with a config.js that points the
+# Party Mode at the online relay, and the QR code at the public phone page.
+name: Web version
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  RELAY: wss://vps-ec093ef6.vps.ovh.ca/ws
+  STATS: https://vps-ec093ef6.vps.ovh.ca/hello
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp -r index.html pad.html src vendor _site/
+          owner="${{ github.repository_owner }}"; owner="${owner,,}"; repo="${{ github.event.repository.name }}"
+          # (a <owner>.github.io repository is the site's root; any other is a folder of it)
+          if [ "${repo,,}" = "$owner.github.io" ]; then site="https://$owner.github.io"; else site="https://$owner.github.io/$repo"; fi
+          printf "window.HEARTHLIGHT = { relay: '%s', pad: '%s', stats: '%s' };\n" "$RELAY" "$site/pad.html" "$STATS" > _site/config.js
+          touch _site/.nojekyll
+          cat _site/config.js
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: deployment
+        uses: actions/deploy-pages@v4

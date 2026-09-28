@@ -1,0 +1,24 @@
+{
+ "fps": 30, "music": "festival", "fadeOut": 2.4, "clips": "screenshots/reel",
+ "shots": [
+  {"clip": "opening", "from": 0.0, "to": 4.3},
+  {"clip": "lobby", "from": 0.0, "to": 6.43, "fade": 0.35},
+  {"clip": "vote", "from": 0.2, "to": 3.45},
+  {"clip": "b_bouncecap", "from": 0.1, "to": 1.17},
+  {"clip": "b_glacier", "from": 0.1, "to": 1.17},
+  {"clip": "b_dunes", "from": 0.1, "to": 1.17},
+  {"clip": "b_ember", "from": 0.1, "to": 1.17},
+  {"clip": "b_cloud", "from": 0.1, "to": 1.17},
+  {"clip": "b_lagoon", "from": 0.1, "to": 1.17},
+  {"clip": "split", "from": 0.2, "to": 4.5},
+  {"clip": "v_sail", "from": 0.1, "to": 1.7},
+  {"clip": "v_balloon", "from": 0.1, "to": 1.7},
+  {"clip": "v_ride", "from": 0.1, "to": 1.7},
+  {"clip": "camp", "from": 0.2, "to": 4.5},
+  {"clip": "boss", "from": 0.2, "to": 4.5},
+  {"clip": "arena", "from": 0.2, "to": 4.5},
+  {"clip": "hens", "from": 0.2, "to": 4.5},
+  {"clip": "campfire", "from": 0.2, "to": 4.5},
+  {"clip": "ending", "from": 0.0, "to": 5.6, "fade": 0.5}
+ ]
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Hearthlight · relay stats</title>
+<style>
+  :root { --bg: #17131f; --panel: #221c2e; --ink: #f3e9d8; --soft: #b6a7c8; --gold: #ffd66b; --blue: #8fc7ff; --green: #8fd67a; --line: #3a3048; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 20px; margin: 0 0 4px; } h1 span { color: var(--gold); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--soft); margin: 28px 0 10px; }
+  .sub { color: var(--soft); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .card b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+  .card small { color: var(--soft); }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  td, th { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+  td:first-child, th:first-child { text-align: left; }
+  th { color: var(--soft); font-weight: 500; font-size: 12px; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 140px; padding-top: 8px; }
+  .bar { flex: 1; display: flex; flex-direction: column-reverse; gap: 1px; min-width: 6px; max-width: 36px; position: relative; }
+  .bar i { display: block; border-radius: 2px 2px 0 0; }
+  .bar .v { background: var(--blue); } .bar .p { background: var(--gold); }
+  .bar:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #000c; padding: 3px 6px; border-radius: 4px; white-space: nowrap; font-size: 11px; z-index: 2; }
+  .legend { font-size: 12px; color: var(--soft); } .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 10px; vertical-align: -1px; }
+  .err { color: #ff9a8a; }
+  .hours { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; align-items: end; height: 70px; }
+  .hours i { background: var(--green); border-radius: 2px 2px 0 0; display: block; }
+</style>
+</head>
+<body>
+<main>
+  <h1><span>Hearthlight</span> · relay stats</h1>
+  <div class="sub" id="when">loading…</div>
+
+  <h2>Right now</h2>
+  <div class="grid" id="now"></div>
+
+  <h2 id="periodTitle">Last 30 days</h2>
+  <div class="grid" id="total"></div>
+
+  <h2>Day by day <span class="legend"><i style="background:var(--blue)"></i>visits<i style="background:var(--gold)"></i>parties</span></h2>
+  <div class="card"><div class="bars" id="days"></div></div>
+
+  <div class="cols">
+    <div><h2>Countries</h2><div class="card"><table id="countries"></table></div></div>
+    <div><h2>Where from</h2><div class="card"><table id="sites"></table></div>
+      <h2>Languages · platforms</h2><div class="card"><table id="langs"></table></div></div>
+  </div>
+
+  <h2>Parties started, by hour (UTC)</h2>
+  <div class="card"><div class="hours" id="hours"></div><div class="sub" style="display:flex;justify-content:space-between"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div></div>
+
+  <p class="sub">Counted by the relay: the game says hello when it loads, parties and phones as they connect. No address is kept — only its country, and a daily-salted hash to tell today's visitors apart.</p>
+</main>
+<script>
+const token = new URLSearchParams(location.search).get('token') || '';
+const days = +(new URLSearchParams(location.search).get('days') || 30);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const flag = (cc) => /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...[...cc].map((c) => 127397 + c.charCodeAt(0))) : '🏳️';
+const names = (() => { try { return new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) { return null; } })();
+const cname = (cc) => (names && /^[A-Z]{2}$/.test(cc) ? names.of(cc) : cc === '??' ? 'unknown' : cc);
+const card = (n, label) => `<div class="card"><b>${esc(n)}</b><small>${esc(label)}</small></div>`;
+const topN = (o, n = 15) => Object.entries(o || {}).sort((a, b) => b[1] - a[1]).slice(0, n);
+const mins = (m) => (m >= 90 ? (m / 60).toFixed(1) + ' h' : Math.round(m) + ' min');
+
+async function refresh() {
+  try {
+    const r = await fetch(`stats?days=${days}&token=${encodeURIComponent(token)}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status === 403 ? 'the token is missing or wrong (…/dash?token=…)' : 'HTTP ' + r.status);
+    const { now, usage } = await r.json();
+    $('when').textContent = `updated ${new Date().toLocaleTimeString()} · relay up ${mins(now.uptimeSec / 60)} · refreshes every 30 s`;
+    $('now').innerHTML = card(now.rooms + ' / ' + now.maxRooms, 'parties on') + card(now.pads, 'phones connected') + card(now.connections, 'connections')
+      + card(now.msgsPerSecNow, 'messages / s') + card(now.kibPerSec + ' KiB/s', 'traffic') + card(now.rssMiB + ' MiB', 'memory') + card(now.rejected, 'turned away (since start)');
+    if (!usage) { $('total').innerHTML = '<div class="err">no counters yet</div>'; return; }
+    const T = usage.total, D = usage.days, t0 = D[0];
+    $('periodTitle').textContent = `Last ${D.length} day${D.length > 1 ? 's' : ''} (today: ${t0.visits} visits, ${t0.parties} parties, ${t0.players} players)`;
+    $('total').innerHTML = card(T.visits, 'visits (game loaded)') + card(T.uniques, 'visitors (distinct a day)') + card(T.parties, 'parties')
+      + card(T.players, 'phones that joined') + card(T.partiesEnded ? mins(T.partyMinutes / T.partiesEnded) : '–', 'average party') + card(T.partiesEnded ? (T.playersInParties / T.partiesEnded).toFixed(1) : '–', 'phones per party')
+      + card(T.biggestParty, 'biggest party') + card(T.peakRooms, 'most parties at once') + card(T.peakConnections, 'most connections at once') + card(T.busy, 'turned away (full)');
+    const list = D.slice().reverse(), max = Math.max(1, ...list.map((d) => Math.max(d.visits, d.parties)));
+    $('days').innerHTML = list.map((d) => `<div class="bar" data-tip="${d.day}: ${d.visits} visits · ${d.parties} parties · ${d.players} players"><i class="v" style="height:${(d.visits / max) * 130}px"></i><i class="p" style="height:${(d.parties / max) * 130}px"></i></div>`).join('');
+    const cs = new Set([...Object.keys(T.country.visits), ...Object.keys(T.country.parties), ...Object.keys(T.country.players)]);
+    const rows = [...cs].map((c) => [c, T.country.visits[c] || 0, T.country.parties[c] || 0, T.country.players[c] || 0]).sort((a, b) => (b[1] + b[2] * 5) - (a[1] + a[2] * 5)).slice(0, 25);
+    $('countries').innerHTML = '<tr><th>country</th><th>visits</th><th>parties</th><th>players</th></tr>' + (rows.map(([c, v, p, pl]) => `<tr><td>${flag(c)} ${esc(cname(c))}</td><td>${v}</td><td>${p}</td><td>${pl}</td></tr>`).join('') || '<tr><td colspan="4">–</td></tr>');
+    const ss = new Set([...Object.keys(T.site.visits), ...Object.keys(T.site.parties)]);
+    $('sites').innerHTML = '<tr><th>site</th><th>visits</th><th>parties</th></tr>' + ([...ss].map((s) => `<tr><td>${esc(s)}</td><td>${T.site.visits[s] || 0}</td><td>${T.site.parties[s] || 0}</td></tr>`).join('') || '<tr><td colspan="3">–</td></tr>');
+    $('langs').innerHTML = '<tr><th>language</th><th>visits</th></tr>' + topN(T.lang).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${n}</td></tr>`).join('')
+      + '<tr><th>platform</th><th></th></tr>' + topN(T.platform).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${n}</td></tr>`).join('');
+    const hm = Math.max(1, ...T.hours);
+    $('hours').innerHTML = T.hours.map((n, h) => `<i title="${h}h UTC: ${n}" style="height:${Math.max(2, (n / hm) * 70)}px"></i>`).join('');
+  } catch (e) { $('when').innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+}
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

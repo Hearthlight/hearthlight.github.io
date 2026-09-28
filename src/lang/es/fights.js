@@ -1,0 +1,41 @@
+// Spanish for deeper fights (Party v3 M6): dodges, parries, elements, combos, finishers, the big world’s foes, gloom camps and zone bosses.
+export const FIGHTS = {
+  'Dodge': 'Esquivar',
+  'PARRY!': '¡BLOQUEO!', 'Deflect!': '¡Desviado!', 'COUNTER!': '¡CONTRA!',
+  'Juggle!': '¡Malabares!', 'FINISHER!': '¡GOLPE FINAL!',
+  'COMBO': 'COMBO', 'TEAM!': '¡EQUIPO!',
+  'Fire': 'Fuego', 'Ice': 'Hielo', 'Poison': 'Veneno', 'Shock': 'Rayo',
+  'Frozen!': '¡Congelado!', 'Shatter!': '¡Añicos!', 'Shield broken!': '¡Escudo roto!',
+  // the phone menu
+  'Change my look': 'Cambiar de atuendo',
+  // the big world’s gloom creatures
+  'Dune Burrower': 'Excavadunas', 'Ember Imp': 'Diablillo de brasa', 'Frost Wisp': 'Fuego fatuo helado',
+  'Bog Toad': 'Sapo de ciénaga', 'Spore Shaman': 'Chamán de esporas', 'Sporeling': 'Esporín',
+  'Gloom Mender': 'Curandero de grisalla', 'Shieldbearer': 'Portaescudos', 'Armour Beetle': 'Escarabajo acorazado',
+  'Cloud Harpy': 'Arpía de las nubes', 'Canyon Slinger': 'Hondero del cañón', 'Reef Crab': 'Cangrejo de arrecife',
+  'Drowned Sailor': 'Marinero ahogado', 'Lava Slug': 'Babosa de lava', 'Storm Crow': 'Cuervo de tormenta',
+  'Gloom Totem': 'Tótem de grisalla', 'Sandworm': 'Gusano de arena', 'Frost Yeti': 'Yeti de escarcha',
+  'Gulp!': '¡Glup!', 'Pop!': '¡Pop!',
+  // gloom camps
+  'A gloom camp! ({zone})': '¡Un campamento de grisalla! ({zone})',
+  'Gloom camp cleared!': '¡Campamento de grisalla despejado!',
+  'Camps: {n} of {total}': 'Campamentos: {n} de {total}',
+  // zone bosses & their lairs
+  'Sand Queen': 'Reina de las Arenas', 'The Sand Queen': 'La Reina de las Arenas',
+  'Frost Colossus': 'Coloso de Escarcha', 'The Frost Colossus': 'El Coloso de Escarcha',
+  'Frog King': 'Rey Rana', 'The Frog King': 'El Rey Rana',
+  'Magma Golem': 'Gólem de magma', 'The Magma Golem': 'El Gólem de magma',
+  'GRRR!': '¡GRRR!', 'ENOUGH!': '¡BASTA!', 'My armour!': '¡Mi armadura!', 'Ptooey!': '¡Ptuí!',
+  'Its armour cracks!': '¡Su armadura se agrieta!', 'RUMBLE…': 'RETUMBA…', 'Jump the flame!': '¡A saltar la llama!',
+  '*BUUURP*': '*BUUURP*',
+  'Its core is showing — hit it!': 'Su núcleo queda al descubierto — ¡golpéalo!',
+  'Something huge stirs nearby…': 'Algo enorme se mueve cerca…',
+  'A guardian of the wild, lost in the gloom': 'Un guardián de las tierras salvajes, perdido en la grisalla',
+  '{boss} gives up and goes back to its lair…': '{boss} se rinde y vuelve a su guarida…',
+  'Boss defeated!': '¡Jefe derrotado!',
+  '{boss} is free!': '¡{boss} es libre!',
+  'The Sand Queen sinks back to sleep, calm at last!': '¡La Reina de las Arenas vuelve a dormirse, por fin en calma!',
+  'The Frost Colossus melts into a gentle snowman!': '¡El Coloso de Escarcha se derrite y queda en un tierno muñeco de nieve!',
+  'The Frog King is free of the gloom — long live the King!': 'El Rey Rana se libra de la grisalla — ¡viva el Rey!',
+  'The Magma Golem cools down and dozes off!': '¡El Gólem de magma se enfría y se queda dormido!',
+};
