@@ -301,7 +301,11 @@ export class Game {
     // menu
     const items = this.titleItems().map(([label, key]) => [t(label), key]);
     const mw = Math.max(130, ...items.map(([label]) => measure(label) + 44)), mh = items.length * 16 + 10;
-    const mx = Math.round(W / 2 - mw / 2), my = Math.round(H * 0.6);
+    // Reserve the actual footer height, including wrapped translations and the phone safe area.
+    const footerTop = this.projectLinks && !this.projectLinks.hidden
+      ? this.projectLinks.getBoundingClientRect().top * H / window.innerHeight : H;
+    const hintY = Math.floor(footerTop - 17);
+    const mx = Math.round(W / 2 - mw / 2), my = Math.round(Math.min(H * 0.6, hintY - mh - 12));
     ctx.fillStyle = 'rgba(30,20,40,0.55)';
     ctx.fillRect(mx, my, mw, mh);
     ctx.fillStyle = 'rgba(255,240,200,0.2)';
@@ -329,7 +333,7 @@ export class Game {
       this.confirmRects = [{ x: x0, y: py + 30 + extra, w: bw, h: 14, i: 0 }, { x: x1, y: py + 30 + extra, w: bw, h: 14, i: 1 }];
     }
     const how = this.input.touchMode ? t('Tap to choose · best with sound on ♪') : device() === 'pad' ? t('Stick + {a} to choose · best with sound on ♪', { a: ctl('interact') }) : t('Arrows + E, or click · best with sound on ♪');
-    drawText(ctx, fitText(how, W - 8), W / 2, H - 14, { color: '#d9c8b0', align: 'center', shadow: '#2a1f33' });
+    drawText(ctx, fitText(how, W - 8), W / 2, hintY, { color: '#d9c8b0', align: 'center', shadow: '#2a1f33' });
   }
 
   drawLanternIcon(ctx, x, y, t) {

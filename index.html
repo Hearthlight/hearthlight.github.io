@@ -22,14 +22,14 @@
     #world { z-index: 0; }
     #ui { z-index: 1; cursor: default; }
     #project-links {
-      position: fixed; top: max(12px, env(safe-area-inset-top));
-      right: max(12px, env(safe-area-inset-right)); z-index: 3;
-      display: flex; gap: 10px; max-width: calc(100% - 24px);
+      position: fixed; bottom: max(12px, env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%); z-index: 3;
+      display: flex; gap: 10px; width: max-content; max-width: calc(100% - 24px);
     }
     #project-links[hidden] { display: none; }
     .project-link {
       display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 10px; row-gap: 2px;
-      align-content: center; padding: 10px 14px; border: 1px solid #90734f;
+      align-content: center; min-width: 0; padding: 10px 14px; border: 1px solid #90734f;
       background: #241b2ee8; color: #fff3c4; text-decoration: none;
       font: 14px/1.4 ui-monospace, Menlo, monospace;
       box-shadow: 3px 3px 0 #14121c80; touch-action: manipulation;
@@ -41,13 +41,13 @@
     .project-link small { grid-column: 2; color: #d9c8b0; font-size: 11px; }
     .project-link:hover { border-color: #f6d38f; background: #38283e; }
     .project-link:focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
-    .project-link--toplings { border-color: #b77e91; background: #342331ed; }
-    .project-link--toplings .project-icon { color: #f3afc3; }
+    .project-link--toplings { grid-template-columns: 32px minmax(0, 1fr); border-color: #b77e91; background: #342331ed; }
+    .project-link--toplings .project-icon { width: 32px; height: 32px; object-fit: contain; image-rendering: pixelated; }
     .project-link--toplings:hover { border-color: #ffcada; background: #4a2b3e; }
     @media (max-width: 600px) {
       #project-links {
-        left: max(12px, env(safe-area-inset-left));
-        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+        left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right));
+        width: auto; transform: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
       }
       .project-link { padding: 9px 10px; column-gap: 8px; }
       .project-icon { grid-row: 1; }
@@ -81,10 +81,8 @@
     </a>
     <a id="toplings-link" class="project-link project-link--toplings" href="https://toplings.com/"
        target="_blank" rel="noopener noreferrer">
-      <svg class="project-icon" viewBox="0 0 24 24" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
-        <path d="M4 4h5v2h2v2h2V6h2V4h5v2h2v7h-2v2h-2v2h-2v2h-2v2h-4v-2H8v-2H6v-2H4v-2H2V6h2z" />
-        <path fill="#ffe4ec" d="M5 7h3v2H5zM4 9h2v3H4z" />
-      </svg>
+      <!-- Toplings emblem, bundled from toplings.com/sprites/gallery/axolotl/walk_0.png. -->
+      <img class="project-icon" width="32" height="32" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAwFBMVEWeWWXRUWZvWV+VITZWFB+iMUfVlqGplpphOEfk1NjuZ43eK1WfbY3xrsUyJSviwr1SRD2tgH3CHTwAAAD91NMIAwX8ysr4lqqxZ5DwiKX6prT7+Pf1d5LwR2r2V3b65+b6aIb1hpvOdpYqCRD6usQuGSX6tLsrFRo1JCpMJy+rW4fsO2PRKU/KapHWhKa6c5fQeqP94dxsRk/SNlbnNltMGSUZEhaRZ3JMNzmRWW9vJzTwZHpxFSdQRUeuWm/Pp6ulZINXAAAAQHRSTlP/////////////////////////AP//////////////////////////////////////////////////////////l+yu0wAADfBJREFUeNrtmmmXosqyhpNRtIbe95YBgoCMAqWWJc7z//9XNyIRRUu7j137rLofzLV6u8uBeDIy4o3IBPb2w4M9AB4AD4AHwAPgAfAAeAA8AB4AD4AHwAPgAfAAeAA8AB4A/98BAMePAmRZlvwgQAK+7cnwcwC5bPwkACRKw/S8EKY/AgAZAPNM15VD+b8YiL8BgJ3Qs03H6Tkr+BEPAHMdEwEmY0h/JAYWIDim3esJDH4mCBMYI8BkIsvyn68Df6tY7NZVwhDCsWPYTxJA+CfjScZ832Zh9k0ANHoEAHklc4B+Ev5+almCiAPfdsd/44MqAKw8z5seLgKC4Ajmi+k66zX8dmaJKig4f08Q/uSqPwBkIHmeWwIksHIcgwCk6e8vnASebeMvpU3yrRgAkCW34W7Cow46rhHZjgOhcNO3MN3FU8E2PbfXC78VhAAKE5SG522mq8M7kuNaCNCTJQY35paEMpMVwfY9dzKBbwI0HLfnNjyXhQn/WxgXAJOnPixuhb8voFy5tr12pM33ARwHATzGXYkeQYCXyO5NMBHFW9XKDmTBXds2RgqmLXwDYJqFynjieLYvSAlVv6m8GrvGS2MiyaF248dytl67rud6nkND+BvJrgRhpvRdzzQFgVEcMgAEsNx+CNqtBVCZ5LrIgA4g+wy+lQV5Io893zBdYcrzHkKph7Wo59xKQk2bhoqLY+3itxwn/KYUM5AFdIDpjKeQoPpnoTSxzV7vqAznYwqBjb8gAOepjwDud2sBsLXjOigok7GT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" />
       <span class="project-title"><strong>Toplings</strong><span aria-hidden="true">↗</span></span>
       <small data-i18n="Pixel pets for your desktop">Pixel pets for your desktop</small>
     </a>
