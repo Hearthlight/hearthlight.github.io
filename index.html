@@ -21,20 +21,43 @@
     }
     #world { z-index: 0; }
     #ui { z-index: 1; cursor: default; }
-    #project-link {
+    #project-links {
       position: fixed; top: max(12px, env(safe-area-inset-top));
       right: max(12px, env(safe-area-inset-right)); z-index: 3;
-      padding: 10px 14px; border: 1px solid #90734f;
+      display: flex; gap: 10px; max-width: calc(100% - 24px);
+    }
+    #project-links[hidden] { display: none; }
+    .project-link {
+      display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 10px; row-gap: 2px;
+      align-content: center; padding: 10px 14px; border: 1px solid #90734f;
       background: #241b2ee8; color: #fff3c4; text-decoration: none;
       font: 14px/1.4 ui-monospace, Menlo, monospace;
       box-shadow: 3px 3px 0 #14121c80; touch-action: manipulation;
     }
-    #project-link small { display: block; margin-top: 2px; color: #d9c8b0; font-size: 11px; }
-    #project-link:hover { border-color: #f6d38f; background: #38283e; }
-    #project-link:focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
+    .project-icon { width: 24px; height: 24px; grid-row: 1 / 3; align-self: center; }
+    .project-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .project-title strong { font-weight: 600; }
+    .project-title > span { color: #c7ac83; }
+    .project-link small { grid-column: 2; color: #d9c8b0; font-size: 11px; }
+    .project-link:hover { border-color: #f6d38f; background: #38283e; }
+    .project-link:focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
+    .project-link--toplings { border-color: #b77e91; background: #342331ed; }
+    .project-link--toplings .project-icon { color: #f3afc3; }
+    .project-link--toplings:hover { border-color: #ffcada; background: #4a2b3e; }
+    @media (max-width: 600px) {
+      #project-links {
+        left: max(12px, env(safe-area-inset-left));
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+      }
+      .project-link { padding: 9px 10px; column-gap: 8px; }
+      .project-icon { grid-row: 1; }
+      .project-title { font-size: 13px; gap: 4px; }
+      .project-link small { grid-column: 1 / -1; min-height: 2.8em; margin-top: 4px; }
+    }
     @media (max-height: 450px) {
-      #project-link { padding: 8px 12px; }
-      #project-link small { display: none; }
+      .project-link { padding: 8px 12px; }
+      .project-icon { grid-row: 1; }
+      .project-link small { display: none; }
     }
     #boot {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -47,11 +70,25 @@
   <div id="boot">loading…</div>
   <canvas id="world"></canvas>
   <canvas id="ui" tabindex="0" aria-label="Hearthlight game"></canvas>
-  <a id="project-link" href="https://github.com/Hearthlight/hearthlight.github.io"
-     target="_blank" rel="noopener noreferrer" hidden>
-    GitHub <span aria-hidden="true">↗</span>
-    <small>Code and upcoming downloads</small>
-  </a>
+  <nav id="project-links" aria-label="Explore more" hidden>
+    <a id="project-link" class="project-link" href="https://github.com/Hearthlight/hearthlight.github.io"
+       target="_blank" rel="noopener noreferrer">
+      <svg class="project-icon" viewBox="0 0 24 24" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+        <path fill-rule="evenodd" d="M8 1h8v1h3v1h2v2h1v3h1v8h-1v3h-2v2h-3v1H8v-1H5v-1H3v-2H2v-3H1V8h1V5h2V3h2V2h2z M6 5h3v1h6V5h3v3h1v5h-1v2h-3v2h1v5H8v-4H6v-1H4v-2H3v-2h2v2h2v1h1v-1h1v-1H6v-2H5V8h1z" />
+      </svg>
+      <span class="project-title"><strong>GitHub</strong><span aria-hidden="true">↗</span></span>
+      <small data-i18n="Code and upcoming downloads">Code and upcoming downloads</small>
+    </a>
+    <a id="toplings-link" class="project-link project-link--toplings" href="https://toplings.com/"
+       target="_blank" rel="noopener noreferrer">
+      <svg class="project-icon" viewBox="0 0 24 24" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+        <path d="M4 4h5v2h2v2h2V6h2V4h5v2h2v7h-2v2h-2v2h-2v2h-2v2h-4v-2H8v-2H6v-2H4v-2H2V6h2z" />
+        <path fill="#ffe4ec" d="M5 7h3v2H5zM4 9h2v3H4z" />
+      </svg>
+      <span class="project-title"><strong>Toplings</strong><span aria-hidden="true">↗</span></span>
+      <small data-i18n="Pixel pets for your desktop">Pixel pets for your desktop</small>
+    </a>
+  </nav>
   <script src="config.js"></script>
   <script type="module" src="./src/main.js"></script>
 </body>

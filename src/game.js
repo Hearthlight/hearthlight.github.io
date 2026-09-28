@@ -37,7 +37,7 @@ export class Game {
     this.settings = loadSettings();
     setLang(this.settings.lang);
     this.mode = 'boot';
-    this.projectLink = document.getElementById('project-link');
+    this.projectLinks = document.getElementById('project-links');
     this.t = 0;
     this.overlay = null;
     this.phone = new SoloPhone(this);       // a phone as the solo game's controller (Settings)
@@ -107,9 +107,9 @@ export class Game {
   }
 
   draw() {
-    if (this.projectLink) {
+    if (this.projectLinks) {
       const hidden = this.mode !== 'title' || this.world.menu.open || this.controls.open || this.phone.panelOpen || this.confirmNew;
-      if (this.projectLink.hidden !== hidden) this.projectLink.hidden = hidden;
+      if (this.projectLinks.hidden !== hidden) this.projectLinks.hidden = hidden;
     }
     if (this.mode === 'title') this.drawTitle();
     else if (this.mode === 'creator') this.drawCreator();
@@ -146,7 +146,10 @@ export class Game {
   applySettings() {
     const st = this.settings;
     setLang(st.lang);
-    if (this.projectLink) this.projectLink.querySelector('small').textContent = t('Code and upcoming downloads');
+    if (this.projectLinks) {
+      this.projectLinks.setAttribute('aria-label', t('Explore more'));
+      for (const label of this.projectLinks.querySelectorAll('[data-i18n]')) label.textContent = t(label.dataset.i18n);
+    }
     // (?mute=1: a silent game — tests running while someone works nearby)
     audio.setVolume('master', MUTE ? 0 : st.master);
     audio.setVolume('music', st.music);

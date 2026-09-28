@@ -1,5 +1,7 @@
 // Italian — the game's shell (HUD, menus, shops, creator, title, overlays, world prompts) and the names it shows.
 export const UI = {
+  'Explore more': 'Scopri di più',
+  'Pixel pets for your desktop': 'Compagni pixel per il tuo desktop',
   'Code and upcoming downloads': 'Codice e download in arrivo',
   // ---- dates & clock (src/ui/hud.js dayLabel / timeLabel)
   'Mon': 'Lun',

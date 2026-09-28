@@ -1,5 +1,7 @@
 // Spanish for the game's shell: HUD, menus, shops, creator, title, overlays, world prompts and the names they display.
 export const UI = {
+  'Explore more': 'Descubre más',
+  'Pixel pets for your desktop': 'Mascotas pixel para tu escritorio',
   'Code and upcoming downloads': 'Código y próximas descargas',
   // ---- dates & clock (src/ui/hud.js dayLabel / timeLabel)
   'Mon': 'Lun',
