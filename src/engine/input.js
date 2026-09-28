@@ -72,6 +72,9 @@ export class Input {
 
     const canvas = display.canvas;
     window.addEventListener('keydown', (e) => {
+      // Let the title screen's real link keep normal keyboard focus and activation.
+      const projectLink = document.getElementById('project-link');
+      if (projectLink && !projectLink.hidden && (e.code === 'Tab' || projectLink.contains(e.target))) return;
       this._gesture();
       this.lastDevice = 'keyboard';
       if (this.textHandler) {

@@ -9,9 +9,9 @@
   "scripts": {
     "copy": "node scripts/copy-game.mjs && node scripts/icon.mjs",
     "start": "npm run copy && electron .",
-    "dist:mac": "npm run copy && electron-builder --mac dmg --universal",
-    "dist:win": "npm run copy && electron-builder --win nsis",
-    "dist:linux": "npm run copy && electron-builder --linux AppImage"
+    "dist:mac": "npm run copy && electron-builder --mac dmg --universal --publish never",
+    "dist:win": "npm run copy && electron-builder --win nsis --publish never",
+    "dist:linux": "npm run copy && electron-builder --linux AppImage --publish never"
   },
   "dependencies": {
     "ws": "^8.18.0"
