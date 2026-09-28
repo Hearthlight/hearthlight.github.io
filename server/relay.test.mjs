@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import WebSocket from 'ws';
 import http from 'node:http';
+import crypto from 'node:crypto';
 import { createRelay } from './relay.mjs';
 import { createStats } from './stats.mjs';
 
@@ -19,8 +20,8 @@ async function fixture(t, opts = {}) {
     const ws = new WebSocket(`ws://127.0.0.1:${port}/ws?${query}`, options);
     const queue = [], waiting = [];
     ws.on('error', () => {});
-    ws.on('message', (data) => {
-      const m = JSON.parse(data), i = waiting.findIndex((w) => w.type === m.t);
+    ws.on('message', (data, binary) => {
+      const m = binary ? { t: 'frame', data } : JSON.parse(data), i = waiting.findIndex((w) => w.type === m.t);
       if (i < 0) queue.push(m);
       else { const w = waiting.splice(i, 1)[0]; clearTimeout(w.timer); w.resolve(m); }
     });
@@ -147,4 +148,49 @@ test('untrusted counter labels cannot overwrite prototypes or grow without a bou
   assert.equal(counts.__proto__, 1);
   assert.ok(Object.keys(counts).length <= 257);
   assert.equal(Object.values(counts).reduce((a, b) => a + b, 0), 401);
+});
+
+test('a brief disconnect of everyone keeps the room and only its owner can resume it', async (t) => {
+  const f = await fixture(t, { roomGraceMs: 100 }), host = await f.connect('role=host'), room = await host.next('room');
+  const closed = once(host.ws, 'close'); host.ws.close(); await closed;
+  assert.ok(f.relay.rooms.has(room.code));
+  const owner = await f.connect(`role=host&code=${room.code}`); owner.ws.send(JSON.stringify({ t: 'resume', token: room.token }));
+  assert.equal((await owner.next('room')).code, room.code);
+  const ended = once(owner.ws, 'close'); owner.ws.close(); await ended;
+  await new Promise((r) => setTimeout(r, 140));
+  assert.ok(!f.relay.rooms.has(room.code));
+});
+test('ending a party tells guests to stop reconnecting and releases its room immediately', async (t) => {
+  const f = await fixture(t), host = await f.connect('role=host'), room = await host.next('room');
+  const pad = await f.connect(`role=pad&code=${room.code}&id=phone`); await pad.next('hello');
+  host.ws.send(JSON.stringify({ t: 'end' })); await pad.next('ended');
+  assert.ok(!f.relay.rooms.has(room.code));
+});
+test('remote video is opt-in per guest and cannot be sent by a guest', async (t) => {
+  const f = await fixture(t), host = await f.connect('role=host'), room = await host.next('room');
+  const pad = await f.connect(`role=pad&code=${room.code}&id=remote`); await pad.next('hello');
+  assert.equal(f.relay.rooms.get(room.code).pads.get('remote').remoteView, undefined);
+  host.ws.send(JSON.stringify({ t: 'remote', id: 'remote', on: true }));
+  host.ws.send(JSON.stringify({ t: 'send', id: 'remote', d: { t: 'barrier' } })); await pad.next('barrier');
+  assert.equal(f.relay.rooms.get(room.code).pads.get('remote').remoteView, true);
+  const phone = await f.connect(`role=pad&code=${room.code}&id=ordinary`); await phone.next('hello');
+  let leaked = false; phone.ws.on('message', (_, binary) => { if (binary) leaked = true; });
+  const image = Buffer.from([255,216,255,217]); host.ws.send(image);
+  assert.deepEqual((await pad.next('frame')).data, image);
+  host.ws.send(JSON.stringify({ t: 'send', id: 'ordinary', d: { t: 'barrier' } })); await phone.next('barrier');
+  assert.equal(leaked, false);
+  const closed = once(pad.ws, 'close'); pad.ws.send(Buffer.from([255,216,255,217])); assert.equal((await closed)[0], 1009);
+  assert.equal((await fetch(f.http + '/health')).status, 200);
+});
+
+test('TURN credentials are short-lived and issued only to room owners', async (t) => {
+  const secret = 'test-only-turn-secret', urls = 'turn:example.invalid:3478';
+  const f = await fixture(t, { turnSecret: secret, turnUrls: urls });
+  const host = await f.connect('role=host'), room = await host.next('room');
+  const ice = room.iceServers[0], expiry = Number(ice.username.split(':')[0]);
+  assert.deepEqual(ice.urls, [urls]);
+  assert.equal(ice.credential, crypto.createHmac('sha1', secret).update(ice.username).digest('base64'));
+  assert.ok(expiry > Date.now() / 1000 && expiry <= Date.now() / 1000 + 12 * 3600);
+  const pad = await f.connect(`role=pad&code=${room.code}&id=phone`);
+  assert.equal((await pad.next('hello')).iceServers, undefined);
 });

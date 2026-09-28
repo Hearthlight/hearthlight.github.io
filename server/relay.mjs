@@ -20,6 +20,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { createStats } from './stats.mjs';
+import { createSaveStore } from './saves.mjs';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.md': 'text/plain; charset=utf-8', '.webmanifest': 'application/manifest+json' };
@@ -37,12 +38,12 @@ const sameToken = (a, b) => typeof a === 'string' && typeof b === 'string' && !!
 // a token bucket: `rate` a second, `burst` at once
 class Bucket {
   constructor(rate, burst) { this.rate = rate; this.burst = burst; this.n = burst; this.t = Date.now(); }
-  take() {
+  take(cost = 1) {
     const now = Date.now();
     this.n = Math.min(this.burst, this.n + ((now - this.t) / 1000) * this.rate);
     this.t = now;
-    if (this.n < 1) return false;
-    this.n -= 1;
+    if (this.n < cost) return false;
+    this.n -= cost;
     return true;
   }
 }
@@ -70,8 +71,22 @@ export function createRelay(opts = {}) {
     hostRate: [1500, 3000],       // (the big screen talks to eight phones)
     idleMs: 30 * 60 * 1000,       // nothing from a connection for that long: goodbye
     quiet: !!opts.quiet,
+    roomGraceMs: opts.roomGraceMs ?? 90000,
+    maxVideoRooms: opts.maxVideoRooms ?? 12,
+    savesDir: opts.savesDir ?? env.SAVES_DIR ?? '',
+    turnSecret: opts.turnSecret ?? env.TURN_SECRET ?? '',
+    turnUrls: (opts.turnUrls ?? env.TURN_URLS ?? '').split(',').filter(Boolean),
   };
+  const iceServers = () => {
+    if (!O.turnSecret || !O.turnUrls.length) return [];
+    const username = Math.floor(Date.now() / 1000 + 12 * 3600) + ':' + crypto.randomBytes(6).toString('hex');
+    return [{ urls: O.turnUrls, username, credential: crypto.createHmac('sha1', O.turnSecret).update(username).digest('base64') }];
+  };
+  let shuttingDown = false;
   const rooms = new Map();
+  const saves = createSaveStore({ dir: O.savesDir, maxSaves: opts.maxSaves });
+  const videoBudget = new Bucket(1024 * 1024, 2 * 1024 * 1024);
+
   const clients = new Map(); // IPs are held in memory only; inactive entries expire after five minutes.
   const stats = { msgs: 0, bytes: 0, conns: 0, rejected: 0, t0: Date.now(), rate: 0, bps: 0, peakRooms: 0 };
   const log = (...a) => { if (!O.quiet) console.log(new Date().toISOString(), ...a); };
@@ -94,7 +109,7 @@ export function createRelay(opts = {}) {
   const clientFor = (ip) => {
     if (!clients.has(ip)) {
       if (clients.size >= 10000) return null;
-      clients.set(ip, { connections: 0, rooms: 0, bucket: new Bucket(...O.connectionRate), hello: new Bucket(0.2, 6), last: Date.now() });
+      clients.set(ip, { connections: 0, rooms: 0, bucket: new Bucket(...O.connectionRate), hello: new Bucket(0.2, 6), saves: new Bucket(0.2, 12), last: Date.now() });
     }
     const client = clients.get(ip); client.last = Date.now(); return client;
   };
@@ -124,6 +139,11 @@ export function createRelay(opts = {}) {
     res.setHeader('X-Frame-Options', 'DENY');
     let url;
     try { url = new URL(req.url, 'http://x'); } catch { res.writeHead(400); res.end(); return; }
+    if (url.pathname === '/saves' || url.pathname.startsWith('/saves/')) {
+      const origin = req.headers.origin || '';
+      const permitted = !origin || (O.origins.length ? O.origins.includes(origin) : [`http://${req.headers.host}`, `https://${req.headers.host}`].includes(origin));
+      saves.handle(req, res, { id: url.pathname.slice(7), origin, permitted, rate: clientFor(ipOf(req))?.saves }); return;
+    }
     if (url.pathname === '/health') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok'); return; }
     // the game says hello when it loads (navigator.sendBeacon: a small text/plain JSON)
     if (url.pathname === '/hello' && req.method === 'POST') {
@@ -227,12 +247,21 @@ export function createRelay(opts = {}) {
   // a room ends: how long, how many
   const ended = (room) => {
     if (rooms.get(room.code) !== room) return;
+    clearTimeout(room.expiry);
     rooms.delete(room.code);
     room.owner.rooms--;
     const minutes = (Date.now() - room.t0) / 60000;
     if (usage) usage.partyEnd({ minutes, players: room.maxPads });
     log(`party ${room.code} over · ${Math.round(minutes)} min · ${room.maxPads} player(s) · rooms ${rooms.size}`);
   };
+
+  function suspend(room) {
+    if (shuttingDown || room.expiry) return;
+    room.expiry = setTimeout(() => {
+      for (const p of room.pads.values()) { sendJson(p, { t: 'ended' }); p.close(1000, 'party ended'); }
+      ended(room);
+    }, O.roomGraceMs);
+  }
 
   function runHost(ws, code, who = {}) {
     let room = code ? rooms.get(code) : null;
@@ -242,7 +271,7 @@ export function createRelay(opts = {}) {
       if (who.client.rooms >= O.maxRoomsPerIp) { stats.rejected++; sendJson(ws, { t: 'error', code: 'limit', msg: 'Too many parties from this network.' }); ws.close(1008, 'limit'); return; }
       const c = newCode();
       if (!c) { sendJson(ws, { t: 'error', code: 'busy', msg: 'No free room codes.' }); ws.close(1013, 'busy'); return; }
-      room = { code: c, token: crypto.randomBytes(24).toString('hex'), owner: who.client, host: null, pads: new Map(), t0: Date.now(), maxPads: 0 };
+      room = { code: c, token: crypto.randomBytes(24).toString('hex'), remoteKey: crypto.randomBytes(16).toString('hex'), videoRate: new Bucket(12, 2), owner: who.client, host: null, pads: new Map(), t0: Date.now(), maxPads: 0 };
       who.client.rooms++;
       rooms.set(c, room);
       const cc = usage ? usage.partyStart(who) : '??';
@@ -251,17 +280,39 @@ export function createRelay(opts = {}) {
     }
     const old = room.host;
     room.host = ws;
+    clearTimeout(room.expiry); room.expiry = null;
     if (old && old !== ws) old.close(4000, 'replaced');
     ws.bucket = new Bucket(...O.hostRate);
-    sendJson(ws, { t: 'room', code: room.code, token: room.token });
+    sendJson(ws, { t: 'room', code: room.code, token: room.token, remoteKey: room.remoteKey, remote: true, iceServers: iceServers() });
     for (const [id, p] of room.pads) { sendJson(ws, { t: 'join', id }); sendJson(p, { t: 'hostback' }); }
     ws.on('message', (data, isBinary) => {
       ws.last = Date.now();
-      if (isBinary || !ws.bucket.take()) return;
+      if (isBinary) {
+        // Images only come from the host and go to explicitly admitted remote players.
+        if (data.length > 128 * 1024 || data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8 || !room.videoRate.take()) return;
+        const viewers = [...room.pads.values()].filter((p) => p.remoteView && p.readyState === 1);
+        if (!viewers.length || !videoBudget.take(data.length * viewers.length)) return;
+        count(data.length * viewers.length);
+        for (const p of viewers) if (p.bufferedAmount < 128 * 1024) p.send(data, { binary: true }, () => {});
+        return;
+      }
+      if (!ws.bucket.take()) return;
       count(data.length);
       let m;
       try { m = JSON.parse(data); } catch (e) { return; }
       if (!object(m)) { ws.close(1008, 'invalid message'); return; }
+      if (m.t === 'end') {
+        for (const p of room.pads.values()) { sendJson(p, { t: 'ended' }); p.close(1000, 'party ended'); }
+        room.host = null; ended(room); ws.close(1000); return;
+      }
+      if (m.t === 'remote') {
+        const p = room.pads.get(m.id);
+        const active = [...rooms.values()].filter((r) => [...r.pads.values()].some((q) => q.remoteView)).length;
+        const already = [...room.pads.values()].some((q) => q.remoteView);
+        if (p && (!m.on || already || active < O.maxVideoRooms)) p.remoteView = !!m.on;
+        else if (p) sendJson(p, { t: 'remoteError', message: 'Remote play is full. Please try again later.' });
+        return;
+      }
       if (m.t === 'send') {
         if (typeof m.id !== 'string' || !object(m.d)) { ws.close(1008, 'invalid message'); return; }
         const payload = JSON.stringify(m.d);
@@ -275,8 +326,8 @@ export function createRelay(opts = {}) {
     ws.on('close', () => {
       if (room.host !== ws) return;
       room.host = null;
-      if (!room.pads.size) ended(room);
-      else for (const p of room.pads.values()) sendJson(p, { t: 'hostgone' });
+      suspend(room);
+      for (const p of room.pads.values()) sendJson(p, { t: 'hostgone' });
     });
   }
 
@@ -317,7 +368,7 @@ export function createRelay(opts = {}) {
       if (room.pads.get(id) !== ws) return;
       room.pads.delete(id);
       if (room.host && room.host.readyState === 1) sendJson(room.host, { t: 'leave', id });
-      else if (!room.host && !room.pads.size) ended(room);
+      else if (!room.host) suspend(room);
     });
   }
 
@@ -363,7 +414,7 @@ export function createRelay(opts = {}) {
         });
       });
     },
-    close() { clearInterval(tick); if (usage) usage.close(); for (const ws of wss.clients) ws.terminate(); return new Promise((r) => { if (!server.listening) { r(); return; } server.close(() => r()); }); },
+    async close() { shuttingDown = true; for (const room of rooms.values()) clearTimeout(room.expiry); clearInterval(tick); if (usage) usage.close(); for (const ws of wss.clients) ws.terminate(); await new Promise((r) => { if (!server.listening) { r(); return; } server.close(() => r()); }); await saves.close(); },
   };
 }
 

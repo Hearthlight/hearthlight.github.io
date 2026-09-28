@@ -27,6 +27,7 @@
       "main.mjs",
       "relay.mjs",
       "stats.mjs",
+      "saves.mjs",
       "dash.html",
       "game/**/*",
       "package.json"

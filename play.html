@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#2a1f33" />
+  <title>Hearthlight · Remote play</title>
+  <link rel="stylesheet" href="src/pad/remote.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23f6c65b' d='M3 0h2v1h1v2h1v3H6v1H2V6H1V3h1V1h1z'/%3E%3Cpath fill='%23fff3c4' d='M3 2h2v3H3z'/%3E%3C/svg%3E" />
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%; overflow: hidden; background: #1c1428;
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      overscroll-behavior: none; -webkit-tap-highlight-color: transparent;
+    }
+    #pad { position: fixed; left: 0; top: 0; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+    .field {
+      position: fixed; display: none; box-sizing: border-box; margin: 0; padding: 0 10px;
+      font: 700 16px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: 1px;
+      color: #3b2a2e; background: #fff8ea; border: 3px solid #8e5d3e; border-radius: 0; outline: none;
+      touch-action: manipulation; user-select: text; -webkit-user-select: text;
+    }
+    .field:focus { border-color: #e0a526; }
+    #code { text-transform: uppercase; text-align: center; letter-spacing: 6px; }
+  </style>
+</head>
+<body class="remote-play">
+  <header id="remote-header"><a href="./">Hearthlight</a><span id="remote-status" role="status">…</span><button id="remote-retry" type="button">Reconnect</button><button id="remote-sound" type="button">Sound</button><button id="remote-fullscreen" type="button">Fullscreen</button></header>
+  <main id="remote-layout"><section id="remote-screen" aria-label="Game"><video id="remote-video" autoplay playsinline muted></video><canvas id="remote-fallback" hidden></canvas><p id="remote-help"></p></section><aside id="remote-controls" aria-label="Your controller">
+  <canvas id="pad"></canvas>
+  <input id="code" class="field" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="CODE" />
+  <input id="name" class="field" maxlength="12" autocomplete="nickname" autocorrect="off" spellcheck="false" placeholder="Your name" />
+  </aside></main>
+  <script src="config.js"></script>
+  <script type="module" src="./src/pad/pad.js"></script>
+</body>
+</html>

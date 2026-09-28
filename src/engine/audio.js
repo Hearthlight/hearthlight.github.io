@@ -2732,6 +2732,11 @@ function safe(name, fn) {
 const live = () => !!E && !state.disabled;
 
 export const audio = {
+  captureStream() {
+    if (!E) return null;
+    if (!E.remoteOut) { E.remoteOut = E.ctx.createMediaStreamDestination(); E.master.connect(E.remoteOut); }
+    return E.remoteOut.stream;
+  },
   /** Call from a user gesture (keydown/pointerdown). Idempotent; safe without Web Audio. */
   unlock: safe('unlock', unlock),
 

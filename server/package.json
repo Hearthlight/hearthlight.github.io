@@ -6,7 +6,7 @@
   "type": "module",
   "main": "relay.mjs",
   "scripts": {
-    "test": "node --test relay.test.mjs",
+    "test": "node --test *.test.mjs",
     "start": "node relay.mjs",
     "loadtest": "node loadtest.mjs"
   },

@@ -57,6 +57,18 @@ adventure together — the camera splits the screen when you wander apart.
 | ![Eight heroes: Knight, Mage, Ranger, Bard, Lamplighter, Gardener, Cook, Tinkerer](docs/screenshots/heroes8.png) | ![Ram her arms at full speed](docs/screenshots/worldboss_kraken_ram.png) |
 | ![A real pause menu](docs/screenshots/solo_pause.png) | ![The compact HUD leaves room for the game](docs/screenshots/solo_hud_compact.png) |
 
+## Invite friends and resume an adventure
+
+Use **Play together** on the title screen, then **Invite & save** during a party.
+Share the **Play from home** invitation for guests who need the game image on their own
+computer or phone. The host keeps the game running; each guest controls a character through
+keyboard, gamepad or touch. Remote Play shares the host's game view and audio, with a
+reduced-frame-rate, silent fallback for browsers or networks without live video support.
+
+**Resume our adventure**, local export/import and an optional online backup make it possible
+to return later or move a save to another host. Keep the online recovery key private.
+See [online play and saves](docs/ONLINE.md) for controls, limitations and self-hosting.
+
 ## How it's made
 
 - **Plain JavaScript, no build step** — ES modules straight in the browser (about 74 000 lines of
@@ -68,8 +80,8 @@ adventure together — the camera splits the screen when you wander apart.
   icons, the pixel font, the music (a small synth and data-driven tracks) and the sound effects are
   all generated in code at load time. A 1728×512-tile world streams in chunks painted in workers.
 - **Party Mode**: the game runs on the big screen; phones join through a tiny WebSocket relay
-  (`server/relay.mjs`, Node + `ws`) that only passes small messages — a full party of eight is
-  ~500 messages a second, 0.3 Mbit/s. The online relay holds 150 parties at once.
+  (`server/relay.mjs`, Node + `ws`) that passes controller messages — a controller-only party of eight is
+  ~500 messages a second, 0.3 Mbit/s. The online relay allows up to 150 controller rooms. Remote video has separate bandwidth limits; this is not a promise of 150 streamed games.
 - **The desktop app** (`desktop/`, Electron) has the relay built in: phones on the same Wi-Fi join
   directly, no internet needed.
 - **Hosting**: the web version on GitHub Pages, the relay on a small VPS (nginx, systemd).

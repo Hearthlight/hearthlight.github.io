@@ -17,3 +17,6 @@ node_modules/
 *.log
 /server/stats/
 /server/*.mmdb
+
+/desktop/saves.mjs
+/server/saves/

@@ -6,6 +6,7 @@ import { THREE } from '../render/r3d.js';
 import { SEE, SEE_MAX } from '../render/seethrough.js';
 import { Player, Npc } from '../entities/actors.js';
 import { PartyNet } from './net.js';
+import { RemoteHost } from './remote-host.js';
 import { RemoteInput, KeyInput, PadInput, KEY_LAYOUTS } from './inputs.js';
 import { TvMenus, keyOf } from './tvmenu.js';
 import { SplitCam, Zoom } from './camera.js';
@@ -124,15 +125,20 @@ export class PartyPlayer {
 }
 
 export class Party {
-  constructor(game) {
+  constructor(game, options = {}) {
+    this.pendingSaves = new Map();
+    this.options = options;
+    this.resumePending = !!options.resume;
     this.game = game;
     this.r3d = game.r3d;
     this.display = game.display;
     this.lighting = game.lighting;
     this.settings = game.settings;
     this.net = new PartyNet();
+    this.remotePlay = new RemoteHost(this);
     this.net.onJoin = (id) => this.onPadJoin(id);
     this.net.onLeave = (id) => this.onPadLeave(id);
+    this.net.onRoom = () => { this.refreshQr(); this.remotePlay.dispose(); };
     this.net.onMsg = (id, d) => this.onPadMsg(id, d);
     this.players = [];
     this.byId = new Map();
@@ -190,7 +196,9 @@ export class Party {
     try { return JSON.parse(v); } catch (e) { return v; }
   }
   writeSave(name, v) {
-    try { localStorage.setItem('hearthlight.party.' + name + '.v1', typeof v === 'string' ? v : JSON.stringify(v)); } catch (e) { /* ignore */ }
+    const raw = typeof v === 'string' ? v : JSON.stringify(v), key = 'hearthlight.party.' + name + '.v1';
+    this.pendingSaves.set(key, raw);
+    try { localStorage.setItem(key, raw); return true; } catch (e) { this.saveFailed(); return false; }
   }
   get active() { return this.players.filter((p) => p.connected || this.t - p.goneAt < 1); }
 
@@ -252,13 +260,15 @@ export class Party {
     this.sceneMusic = null;
     this.act = null;
     this.loadProfiles();
-    this.net.start().then(() => this.refreshQr());
+    this.net.start(this.options);
     audio.playMusic('day', { fade: 1.5 });
     audio.setAmbient({ birds: 0.7, crickets: 0, waves: 0.35, rain: 0, wind: 0.15, fire: 0, night: 0 });
     this.fade = 1; this.fadeTarget = 0;
   }
 
   exit() {
+    this.saveNow();
+    this.remotePlay?.dispose();
     setAudience('one');
     this.net.broadcast({ t: 'screen', s: 'message', title: t('Party over'), text: t('The big screen closed the party. Thanks for playing!') });
     this.net.broadcast({ t: 'phase', p: 'adventure' });
@@ -308,10 +318,10 @@ export class Party {
   }
 
   async refreshQr() {
-    if (!this.net.code) { setTimeout(() => this.refreshQr(), 300); return; }
+    if (!this.net.code || this.game.party !== this) return;
     const url = this.net.joinUrl;
     if (this.qr && this.qr.text === url) return;
-    try { this.qr = await qrCanvas(url); } catch (e) { this.qr = null; this.qrError = true; }
+    try { const qr = await qrCanvas(url); if (this.net.joinUrl === url && this.game.party === this) { this.qr = qr; this.qrError = false; } } catch (e) { this.qr = null; this.qrError = true; }
   }
 
   // ------------------------------------------------------------------ players
@@ -322,6 +332,7 @@ export class Party {
   }
 
   onPadLeave(id) {
+    this.remotePlay.stop(id);
     if (this.waiting) this.waiting.delete(id);
     const p = this.byId.get(id);
     if (!p) return;
@@ -333,7 +344,10 @@ export class Party {
   onPadMsg(id, d) {
     if (!d || typeof d !== 'object') return;
     let p = this.byId.get(id);
+    if (d.t === 'rtc') { this.remotePlay.signal(id, d); return; }
     if (d.t === 'hi') {
+      const remote = d.remote === true;
+      if (remote && (!this.net.remoteKey || d.key !== this.net.remoteKey)) { this.net.send(id, { t: 'remoteError', message: 'Ask the host for a new remote invitation.' }); return; }
       if (!p) {
         p = this.addPlayer({ id, kind: 'phone', input: new RemoteInput(), name: d.name, look: d.look, cls: d.cls });
         if (!p) {
@@ -347,6 +361,7 @@ export class Party {
       }
       this.host.onJoin(p);
       this.syncPad(p);
+      if (remote) this.remotePlay.start(id);
       return;
     }
     if (!p) return;
@@ -464,6 +479,8 @@ export class Party {
   }
 
   removePlayer(p) {
+    this.saveProfile(p); this.flushProfiles();
+    this.remotePlay.stop(p.id);
     // a seat is free: phones that found the party full get asked again
     if (this.waiting) { for (const id of this.waiting) this.net.send(id, { t: 'who' }); this.waiting.clear(); }
     this.r3d.scene.remove(p.actor.model.root);
@@ -697,6 +714,8 @@ export class Party {
     const zk = ['Equal', 'NumpadAdd', 'Minus', 'NumpadSubtract', 'Digit0', 'Numpad0'].find((c) => g.input.keys.has(c)) || null;
     if (zk && zk !== this.prevZoomKey && !this.host.menu) this.host.act(zk.startsWith('Digit0') || zk === 'Numpad0' ? 'zauto' : 'zoom', zk === 'Equal' || zk === 'NumpadAdd' ? 1 : -1);
     this.prevZoomKey = zk;
+    this.saveT = (this.saveT || 0) + dt;
+    if (this.saveT >= 30) { this.saveT = 0; this.saveNow(); }
     if (this.paused) { this.updatePaused(dt); return; }
     w.t += dt;
     if (this.waits.length) {
@@ -966,6 +985,7 @@ export class Party {
 
   // everyone’s ready: what shall we play? (a vote on the phones)
   async chooseActivity() {
+    if (this.options.resume) { this.options.resume = false; this.startAct('explore'); return; }
     this.choosing = true;
     this.countdown = 0;
     // (World v7: the Adventure — the saga — comes first, where the party left it)
@@ -1041,8 +1061,45 @@ export class Party {
     this.profileDirty = true;
   }
   flushProfiles() {
-    this.profileDirty = false; this.profileT = 2;
-    try { localStorage.setItem('hearthlight.party.v1', JSON.stringify(this.profiles)); } catch (e) { /* ignore */ }
+    this.profileT = 2;
+    const raw = JSON.stringify(this.profiles); this.pendingSaves.set('hearthlight.party.v1', raw);
+    try { localStorage.setItem('hearthlight.party.v1', raw); this.profileDirty = false; return true; } catch (e) { this.saveFailed(); return false; }
+  }
+
+  restorePositions() {
+    if (!this.resumePending) return false;
+    this.resumePending = false;
+    const positions = this.loadSave('session', {}).positions || {}, m = this.big.map;
+    let restored = false;
+    for (const p of this.players) {
+      const pos = positions[p.id];
+      if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.z) || pos.x < m.X0 || pos.z < m.Z0 || pos.x >= m.X0 + m.W || pos.z >= m.Z0 + m.H) continue;
+      const at = !this.world.overCol.blocked(pos.x, pos.z, 0.8) ? pos : findUnstuck(this.world.overCol, pos.x, pos.z);
+      if (at) { p.actor.pos = { x: at.x, z: at.z }; restored = true; }
+    }
+    return restored;
+  }
+
+  saveFailed() {
+    this.saveError = true;
+    if (!this.saveWarnAt || Date.now() - this.saveWarnAt > 30000) { this.saveWarnAt = Date.now(); this.toast(t('Save failed. Export a backup before leaving.'), '#ef6479'); }
+  }
+
+  saveNow() {
+    this.saveError = false;
+    for (const p of this.players) this.saveProfile(p);
+    this.flushProfiles();
+    if (this.saga) this.saga.save();
+    if (this.big?.worldMap) this.big.worldMap.save();
+    const previous = this.loadSave('session', {});
+    const positions = { ...previous.positions };
+    if (this.exploring() && !this.busy && !this.cinematic) for (const p of this.players) {
+      const pos = this.rooms ? this.rooms.mapPos(p) : p.pos;
+      if (Number.isFinite(pos.x) && Number.isFinite(pos.z)) positions[p.id] = { x: pos.x, z: pos.z };
+    }
+    this.writeSave('session', { savedAt: Date.now(), players: this.players.map((p) => p.name), positions, activity: this.actKind || previous.activity || 'explore' });
+    this.game.partySaveAvailable = true;
+    return !this.saveError;
   }
 
   // ------------------------------------------------------------------ votes (on the phones)

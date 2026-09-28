@@ -4,8 +4,8 @@
 
 const CFG = (typeof window !== 'undefined' && window.HEARTHLIGHT) || {};
 // the relay's address (`query`: role, code, id)
-export function relayUrl(query) {
-  const base = CFG.relay || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+export function relayUrl(query, override) {
+  const base = override || CFG.relay || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
   return `${base}?${query}`;
 }
 
@@ -21,10 +21,11 @@ export class PartyNet {
     this.ws = null;
   }
 
-  async start() {
+  async start({ online = false } = {}) {
+    this.override = online ? CFG.onlineRelay || CFG.relay : null;
     this.stopped = false;
     // (online: the relay is elsewhere and the phones open the public phone page)
-    this.remote = !!CFG.relay;
+    this.remote = !!(this.override || CFG.relay);
     if (!this.remote) {
       try {
         const r = await fetch('/__lan', { cache: 'no-store' });
@@ -41,7 +42,7 @@ export class PartyNet {
     let prev = '', token = '';
     try { prev = sessionStorage.getItem('hl.partyCode') || ''; token = sessionStorage.getItem('hl.partyToken') || ''; } catch (e) { /* ignore */ }
     this.status = 'connecting';
-    const ws = new WebSocket(relayUrl(`role=host${prev ? '&code=' + prev : ''}`));
+    const ws = new WebSocket(relayUrl(`role=host${prev ? '&code=' + prev : ''}`, this.override));
     this.ws = ws;
     // The owner secret travels in a WebSocket frame, never in a URL or HTTP access log.
     ws.onopen = () => { if (prev) ws.send(JSON.stringify({ t: 'resume', token })); };
@@ -50,7 +51,8 @@ export class PartyNet {
       try { m = JSON.parse(e.data); } catch (err) { return; }
       if (!m || typeof m !== 'object') return;
       if (m.t === 'room') {
-        this.code = m.code; this.status = 'open'; this.retry = 0;
+        this.code = m.code; this.remoteKey = m.remoteKey || ''; this.remoteSupported = !!m.remote; this.iceServers = m.iceServers || []; this.status = 'open'; this.retry = 0;
+        if (this.onRoom) this.onRoom(m);
         try { sessionStorage.setItem('hl.partyCode', m.code); sessionStorage.setItem('hl.partyToken', m.token || ''); } catch (err) { /* ignore */ }
       } else if (m.t === 'error') {
         // (the online relay has no room left: say so, and knock again in a while)
@@ -73,7 +75,9 @@ export class PartyNet {
   stop() {
     this.stopped = true;
     clearTimeout(this.retryT);
-    if (this.ws) { const ws = this.ws; this.ws = null; ws.close(); }
+    if (this.ws) { const ws = this.ws; this.ws = null; if (ws.readyState === 1) ws.send(JSON.stringify({ t: 'end' })); ws.close(); }
+    try { sessionStorage.removeItem('hl.partyCode'); sessionStorage.removeItem('hl.partyToken'); } catch {}
+    this.code = null;
     this.status = 'off';
   }
 
@@ -85,9 +89,19 @@ export class PartyNet {
 
   kick(id) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify({ t: 'kick', id })); }
 
+  video(id, on) { if (this.ws?.readyState === 1) this.ws.send(JSON.stringify({ t: 'remote', id, on })); }
+
+  frame(blob) { if (this.ws?.readyState === 1 && this.ws.bufferedAmount < 128 * 1024) this.ws.send(blob); }
+
+  get playUrl() {
+    if (!this.joinUrl || !this.remoteKey) return '';
+    const url = new URL(this.joinUrl); url.pathname = url.pathname.replace(/pad\.html$/, 'play.html'); url.hash = this.code + '.' + this.remoteKey; return url.href;
+  }
+
   // the address phones should open (LAN IP, never "localhost"; online, the public phone page)
   get joinUrl() {
     if (!this.code) return '';
+    if (this.override && CFG.onlinePad) return `${CFG.onlinePad}#${this.code}`;
     if (CFG.pad) return `${CFG.pad}#${this.code}`;
     if (this.remote) return `${location.origin}${location.pathname.replace(/[^/]*$/, '')}pad.html#${this.code}`;
     const ip = (this.lan && this.lan.ips && this.lan.ips[0]) || location.hostname;

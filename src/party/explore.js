@@ -333,6 +333,7 @@ export class ExploreAct {
     await P.fadeTo(1, 0.4);
     this.setupCombat();
     P.gatherAt(PLAZA.x, PLAZA.z + 2.2, 2.2);
+    P.restorePositions?.();
     if (P.state.hour < 9 || P.state.hour > 16) P.state.hour = 11;
     P.busy--;
     if (!S.st.q.c1_intro) { S.start('c1_intro', { silent: true }); }

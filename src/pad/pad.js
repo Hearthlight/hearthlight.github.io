@@ -13,6 +13,7 @@ import { itemName, itemDesc, UPGRADE, ROMAN, LEVEL_COLOR, BAG, itemBorder, itemT
 import { t, setLang, detectLang, onLang } from '../i18n.js';
 import { relayUrl } from '../party/net.js';
 import { PadMap } from './padmap.js';
+import { RemoteGuest } from './remote.js';
 
 const PM = new PadMap();
 
@@ -28,9 +29,9 @@ const store = {
 };
 setLang(store.get('lang', detectLang()));
 let padId = store.get('id', null);
-if (!padId) { padId = 'p' + Math.random().toString(36).slice(2, 10); store.set('id', padId); }
+if (!padId) { padId = 'p' + crypto.randomUUID().replace(/-/g, '').slice(0, 24); store.set('id', padId); }
 
-const urlCode = (location.hash.slice(1) || new URLSearchParams(location.search).get('c') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+const urlCode = (location.hash.slice(1).split('.')[0] || new URLSearchParams(location.search).get('c') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 
 const S = {
   joined: false,         // we have (or had) a live seat at the party
@@ -62,6 +63,12 @@ const S = {
   t: 0,
 };
 
+const remote = document.getElementById('remote-video') ? new RemoteGuest(S, send, {
+  retry: () => { S.kicked = false; S.error = ''; if (ws?.readyState === 1) hi(); else connect(); },
+  menu: () => { S.menu = !S.menu; },
+  ready: () => { S.ready = !S.ready; S.view = S.ready ? 'pad' : 'look'; send({ t: 'ready', v: S.ready }); },
+}) : null;
+
 // ------------------------------------------------------------------ network
 let ws = null, retry = 0, retryT = 0, lastSend = 0, gaveUpAt = 0;
 
@@ -72,11 +79,12 @@ function connect() {
   S.status = 'connecting';
   const sock = new WebSocket(relayUrl(`role=pad&code=${S.code}&id=${padId}`));
   ws = sock;
-  sock.onmessage = (e) => { let m; try { m = JSON.parse(e.data); } catch (err) { return; } onMessage(m); };
+  sock.onmessage = (e) => { if (typeof e.data !== 'string') { remote?.frame(e.data); return; } let m; try { m = JSON.parse(e.data); } catch (err) { return; } if (m && typeof m === 'object') onMessage(m); };
   sock.onclose = () => {
     if (ws !== sock) return;
     ws = null;
     S.status = 'closed';
+    remote?.disconnect();
     if (S.kicked) return;
     if (S.joined) scheduleRetry();
     else if (!S.error) S.error = window.HEARTHLIGHT && window.HEARTHLIGHT.relay ? t('Can’t reach the party server. Check your connection.') : t('Can’t reach the big screen. Same Wi-Fi?');
@@ -93,6 +101,7 @@ function send(obj) {
 }
 
 function onMessage(m) {
+  remote?.message(m);
   switch (m.t) {
     case 'hello':
       S.status = 'open'; retry = 0; S.error = '';
@@ -153,6 +162,7 @@ function onMessage(m) {
     case 'wmapBase': PM.onBase(m); break;
     case 'wmap': PM.onUpdate(m); break;
     case 'pause': S.paused = m.v ? { by: m.by || '' } : null; break;
+    case 'ended': S.kicked = true; S.joined = false; S.error = t('The party has ended. Ask the host for a new invitation.'); break;
     case 'hostgone': S.hostGone = true; break;
     case 'hostback': S.hostGone = false; hi(); break;
     case 'who': hi(); break;
@@ -161,7 +171,7 @@ function onMessage(m) {
   }
 }
 
-function hi() { send({ t: 'hi', name: S.name, look: S.look, cls: S.cls }); }
+function hi() { send({ t: 'hi', name: S.name, look: S.look, cls: S.cls, ...(remote ? { remote: true, key: remote.key } : {}) }); }
 
 function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* not supported */ } }
 
@@ -173,7 +183,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && S.
 let W = 240, H = 400, scale = 3, dpr = 1;
 function resize() {
   dpr = window.devicePixelRatio || 1;
-  const dw = Math.floor(window.innerWidth * dpr), dh = Math.floor(window.innerHeight * dpr);
+  const box = document.getElementById('remote-controls')?.getBoundingClientRect();
+  const dw = Math.floor((box?.width || window.innerWidth) * dpr), dh = Math.floor((box?.height || window.innerHeight) * dpr);
   scale = Math.max(1, Math.round(Math.min(dw, dh) / 215));
   W = Math.floor(dw / scale); H = Math.floor(dh / scale);
   cv.width = W; cv.height = H;
@@ -184,12 +195,13 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-const toUi = (e) => ({ x: (e.clientX * dpr) / scale, y: (e.clientY * dpr) / scale });
+const toUi = (e) => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; };
 function placeField(el, r) {
   if (!r) { el.style.display = 'none'; return; }
   const k = scale / dpr;
   el.style.display = 'block';
-  el.style.left = `${r.x * k}px`; el.style.top = `${r.y * k}px`;
+  const origin = cv.getBoundingClientRect();
+  el.style.left = `${origin.left + r.x * k}px`; el.style.top = `${origin.top + r.y * k}px`;
   el.style.width = `${r.w * k}px`; el.style.height = `${r.h * k}px`;
 }
 codeIn.value = S.code;
@@ -1424,6 +1436,7 @@ function drawHeroMenu() {
 }
 
 function leave() {
+  remote?.disconnect();
   send({ t: 'bye' });
   S.joined = false; S.menu = false; S.me = null; S.portrait = null;
   clearTimeout(retryT);
@@ -1513,6 +1526,7 @@ function frame(now) {
 }
 
 function drawScreen() {
+  remote?.update(performance.now());
   if (!S.joined) {
     if (S.status === 'connecting' || (S.status === 'open' && !S.me)) drawWaiting('Joining');
     else drawJoin();
@@ -1538,9 +1552,10 @@ if (urlCode && S.name) join();
 
 // scanning a new code while this page is still open only changes the hash
 window.addEventListener('hashchange', () => {
-  const c = location.hash.slice(1).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+  const c = location.hash.slice(1).split('.')[0].toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
   if (!c || c === S.code) return;
   if (S.joined || ws) leave();
+  if (remote) remote.key = location.hash.slice(1).split('.')[1] || '';
   S.code = c;
   codeIn.value = c;
   if (S.name) join();

@@ -1,0 +1,24 @@
+.party-tools { position: fixed; z-index: 4; top: max(12px,env(safe-area-inset-top)); right: max(12px,env(safe-area-inset-right)); display: flex; flex-direction: column; align-items: end; gap: 6px; font: 13px/1.4 ui-monospace,monospace; }
+.party-tools[hidden] { display: none; }
+.party-tools button, .party-dialog button { color: #fff3c4; background: #34263e; border: 2px solid #967651; box-shadow: 2px 2px #14121c; padding: 10px 14px; font: bold 14px/1.4 ui-monospace,monospace; cursor: pointer; }
+.party-tools button:hover, .party-dialog button:hover { background: #514052; border-color: #f6d38f; }
+.save-status { max-width: 260px; color: #fff3c4; background: #241b2ee8; }
+.save-status:empty { display: none; }
+.party-dialog { color: #fff3c4; background: #241b2e; border: 3px solid #b28d5e; padding: 20px; width: min(640px,calc(100vw - 48px)); max-height: calc(100dvh - 72px); font: 14px/1.6 ui-monospace,monospace; touch-action: auto; }
+.party-dialog::backdrop { background: #100c1bcc; }
+.party-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.party-dialog h2 { margin: 0; font-size: 22px; }
+.party-dialog h3 { margin: 0 0 8px; color: #f6d38f; }
+.party-dialog h4 { margin: 0 0 8px; }
+.party-dialog section { border-top: 1px solid #765765; padding: 16px 0; }
+.party-dialog p { color: #dacabc; }
+.party-dialog button { margin: 5px 8px 5px 0; }
+.party-dialog label { display: block; margin: 12px 0; }
+.party-dialog input { display: block; box-sizing: border-box; width: 100%; color: #302238; background: #fff5df; border: 2px solid #b28d5e; border-radius: 0; padding: 10px; margin: 6px 0; font: 14px/1.4 ui-monospace,monospace; user-select: text; }
+.party-dialog a { display: block; color: #aad7ff; margin: 12px 0; }
+.invite-card { background: #322339; padding: 12px; margin-bottom: 12px; }
+.invite-card canvas { display: block; width: 140px; height: 140px; image-rendering: pixelated; margin: 12px auto; }
+.hub-notice { color: #aee9bc !important; }
+.hub-notice.error, .save-status.error { color: #ffb8b8 !important; }
+.party-dialog :focus-visible, .party-tools :focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
+@media(max-width:600px) { .party-tools { top: 8px; right: 8px; } .party-tools button { padding: 6px 8px; font-size: 11px; } .save-status { font-size: 10px; } .party-dialog { padding: 12px; } }

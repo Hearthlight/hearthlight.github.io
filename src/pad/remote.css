@@ -1,0 +1,15 @@
+.remote-play { display: flex; flex-direction: column; color: #fff3c4; font: 13px/1.4 ui-monospace,monospace; }
+#remote-header { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 12px; background: #2a1f33; border-bottom: 2px solid #97714e; }
+#remote-header a { font-weight: bold; color: #fff3c4; text-decoration: none; }
+#remote-status { flex: 1; color: #d5c3db; font-size: 11px; }
+#remote-header button { color: #fff3c4; background: #443047; border: 1px solid #aa865d; padding: 8px 10px; cursor: pointer; font: inherit; }
+#remote-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(280px,28vw); flex: 1; min-height: 0; }
+#remote-screen { position: relative; background: #110e17; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#remote-video, #remote-fallback { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+#remote-video[hidden], #remote-fallback[hidden] { display: none; }
+#remote-help { position: absolute; bottom: 0; left: 0; right: 0; margin: 0; padding: 6px 10px; color: #d8c8b6; background: #211828e8; font-size: 11px; text-align: center; pointer-events: none; }
+#remote-controls { position: relative; min-width: 0; min-height: 0; border-left: 2px solid #97714e; }
+.remote-play #pad { position: absolute; }
+#remote-header :focus-visible { outline: 3px solid #f6d38f; }
+@media(max-width:650px) and (orientation:portrait) { #remote-layout { grid-template-columns: 1fr; grid-template-rows: 32vh minmax(0,1fr); } #remote-controls { border-left: 0; border-top: 2px solid #97714e; } #remote-header { gap: 6px; flex-wrap: wrap; } #remote-status { font-size: 10px; } #remote-help { display: none; } }
+@media(max-height:480px) { #remote-header { min-height: 32px; } #remote-help { display: none; } #remote-layout { grid-template-columns: minmax(0,1fr) minmax(300px,45vw); } }

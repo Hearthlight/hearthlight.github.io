@@ -22,6 +22,8 @@ import { drawIcon } from './art/icons.js';
 import { OX, OZ } from './world/overworld.js';
 import { applyHomeLevel } from './world/interiors.js';
 import { Party } from './party/party.js';
+import { PartyHub } from './party/hub.js';
+import { partySummary } from './party/saves.mjs';
 import { setLang, loadLang, t, tn, num } from './i18n.js';
 import { SoloPhone } from './solo/phone.js';
 import { ControlsPanel } from './ui/controls.js';
@@ -37,6 +39,7 @@ export class Game {
     this.settings = loadSettings();
     setLang(this.settings.lang);
     this.mode = 'boot';
+    this.partyHub = new PartyHub(this);
     this.projectLinks = document.getElementById('project-links');
     this.t = 0;
     this.overlay = null;
@@ -86,7 +89,8 @@ export class Game {
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
-    const autosave = () => { if (this.mode === 'game' && this.world.player) this.world.save('quiet'); };
+    const autosave = () => { if (this.mode === 'party') this.party.saveNow(); else if (this.mode === 'game' && this.world.player) this.world.save('quiet'); };
+    window.addEventListener('pagehide', autosave);
     document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
     window.addEventListener('beforeunload', autosave);
   }
@@ -96,6 +100,8 @@ export class Game {
     if (this.mode !== 'game') this.input.touchUi = true;
     this.input.update(dt);
     this.phone.update(dt);
+    if (this.partyHub.dialog.open) { this.input.keys.clear(); this.input.consume(); }
+    if (this.partyHub.dialog.open && this.mode !== 'party') { this.draw(); this.partyHub.update(); return; }
     if (this.phone.panelOpen) this.phone.updatePanel(dt, this.input);
     else if (this.controls.open) this.controls.update(dt, this.input);
     else if (this.mode === 'title') this.updateTitle(dt);
@@ -104,6 +110,7 @@ export class Game {
     else if (this.mode === 'party') this.party.update(dt);
     this.input.mouse.moved = false;
     this.draw();
+    this.partyHub.update();
   }
 
   draw() {
@@ -120,6 +127,7 @@ export class Game {
     if (this.controls.open) this.controls.draw(this.display.ctx);
     if (this.phone.panelOpen) this.phone.drawPanel(this.display.ctx);
     this.drawPadNote(this.display.ctx);
+    if (this.mode === 'party') this.party.remotePlay.capture();
   }
 
   openControls() { if (this.world.menu.open && this.mode === 'title') this.world.menu.close(); this.controls.show(); }
@@ -189,6 +197,7 @@ export class Game {
     this.lighting.lampMats = w.overLampMats || (w.overLampMats = collectLamp(w.over.root));
     this.lighting.indoor = null;
     this.hasSave = hasSave();
+    this.partySaveAvailable = !!partySummary();
     audio.playMusic('title', { fade: 2 });
     audio.setAmbient({ birds: 0, crickets: 0.4, waves: 0.6, rain: 0, wind: 0.2, fire: 0, night: 0.3 });
   }
@@ -198,6 +207,7 @@ export class Game {
     if (this.hasSave) items.push(['Continue', 'continue']);
     items.push(['New Game', 'new']);
     items.push(['Party Mode ♥ 1–8', 'party']);
+    if (this.partySaveAvailable) items.push(['Resume our adventure', 'partyResume']);
     items.push(['Controls', 'controls']);
     items.push(['Settings', 'settings']);
     return items;
@@ -246,13 +256,15 @@ export class Game {
     else if (what === 'settings') this.world.menu.show('settings');
     else if (what === 'controls') this.openControls();
     else if (what === 'party') this.toParty();
+    else if (what === 'partyResume') this.toParty({ resume: true });
   }
 
   // ------------------------------------------------------------------ party mode
-  toParty() {
+  toParty(options = {}) {
+    audio.unlock();
     this.overlay = null;
     this.phone.stop();           // (Party Mode hosts its own room)
-    this.party = new Party(this);
+    this.party = new Party(this, options);
     this.party.enter();
   }
 

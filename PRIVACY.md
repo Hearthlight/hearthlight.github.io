@@ -31,3 +31,9 @@ The relay is hosted on an OVH VPS. The desktop version's local Party Mode works 
 contacting the online relay when used on the same Wi-Fi.
 
 For security concerns, see [Security](SECURITY.md).
+
+## Remote Play and optional online backups
+
+Remote Play transmits the game canvases and generated game audio to invited guests. It never requests camera, microphone or desktop capture. WebRTC traffic can pass through the authenticated TURN service on the same VPS; fallback game images pass through the WebSocket relay. Media is forwarded, not recorded. TURN operational/security logs may contain connection IP addresses and temporary session identifiers.
+
+Choosing Save online uploads game progress, including player nicknames, to private storage on the VPS. No email or account is required. The recovery key authorizes access; the server stores a hash of its secret. Backups expire after 90 days without an update; expired files are reclaimed when new backups are created. Disabling automatic backups stops future uploads but keeps the existing backup until expiry. Local exports exclude relay and online recovery credentials.
