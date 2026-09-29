@@ -106,6 +106,7 @@ export class World3D {
       if (res.spinner) this.spinners.push(res.spinner);
       this.chimneys.push(...res.chimneys);
       this.colliders.push({ rect: [b.x, b.y, b.w, b.h], building: b.id });
+      for (const c of res.colliders || []) this.colliders.push(c);
       res.group.traverse((o) => { if (o.userData.flag || o.userData.swing) this.anims.push(o); });
     }
     onProgress(0.88);
@@ -199,6 +200,17 @@ export class World3D {
       if (a.kind === 'bob') a.obj.position.y = a.base + Math.sin(t * 2 + a.phase) * 0.04;
       else if (a.kind === 'sway' && a.part) a.part.rotation.z = Math.sin(t * 1.4 + a.phase) * 0.05;
       else if (a.kind === 'swing' && a.part) a.part.forEach((sw, i) => { sw.rotation.x = Math.sin(t * 1.9 + i * 2.1) * (0.12 + 0.1 * Math.sin(t * 0.3 + i)); });
+      else if (a.kind === 'fountain' && a.part) {
+        // (the falls run down, the water turns, the foam churns)
+        const P = a.part;
+        P.stream.map.offset.y = (t * 1.25) % 1;
+        P.discs.forEach((d, i) => { d.rotation.y = t * (i % 2 ? -0.3 : 0.18); });
+        const k = 1 + Math.sin(t * 5) * 0.035;
+        P.foam.scale.set(k, k, 1); P.foam.rotation.z = -t * 0.35;
+      }
+      else if (a.kind === 'flag' && a.part) a.part.rotation.y = Math.sin(t * 3.1 + a.phase) * 0.3;
+      else if (a.kind === 'rock' && a.part) a.part.rotation.x = Math.sin(t * 1.3 + a.phase) * 0.09;
+      else if (a.kind === 'laundry' && a.part) a.part.forEach((c, i) => { c.rotation.x = Math.sin(t * 2.1 + i * 1.3 + a.phase) * 0.14 + 0.05; c.rotation.y = Math.sin(t * 1.3 + i) * 0.08; });
       else if (a.kind === 'fall' && a.part) {
         const P = a.part.sheet ? a.part : { sheet: a.part };
         P.sheet.material.map.offset.y = (t * 1.6) % 1;            // (streaks running down)

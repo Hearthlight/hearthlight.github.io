@@ -3,7 +3,8 @@
 
 import { THREE, pixelTexture, toon } from '../render/r3d.js';
 import { Painter, paintWood, paintPlanks, paintWall } from '../art/surfaces.js';
-import { ramp } from '../engine/color.js';
+import { ramp, mix as mixHex } from '../engine/color.js';
+import { softBoxGeo } from './geom.js';
 import { rng } from '../engine/util.js';
 
 let R = null;
@@ -529,17 +530,24 @@ Object.assign(FURN, {
     };
   },
   chicken(o) {
+    // a hen: a plump soft body, a tail of feathers cocked up, a wing folded on each side, a red comb
+    // & wattle, a yellow beak and legs
     const g = new THREE.Group();
-    const w = col(o.color || '#f4efe4'), red = col('#d9364a'), y = col('#f2c14e');
+    const c = o.color || '#f4efe4';
+    const w = col(c), wd = col(mixHex(c, '#6b4a34', 0.25)), red = col('#d9364a'), y = col('#f2c14e');
     const bodyG = new THREE.Group();
     g.add(bodyG);
-    mk(0.3, 0.24, 0.24, w, 0, 0.26, 0, bodyG);
-    mk(0.1, 0.16, 0.2, w, -0.17, 0.36, 0, bodyG);
-    mk(0.16, 0.16, 0.16, w, 0.14, 0.44, 0, bodyG);
-    mk(0.08, 0.06, 0.04, red, 0.14, 0.55, 0, bodyG);
-    mk(0.06, 0.04, 0.05, y, 0.25, 0.44, 0, bodyG);
-    mk(0.03, 0.05, 0.02, col('#3b2a2e'), 0.2, 0.47, 0.08, bodyG); mk(0.03, 0.05, 0.02, col('#3b2a2e'), 0.2, 0.47, -0.08, bodyG);
-    mk(0.04, 0.14, 0.04, y, 0, 0.07, 0.06, g); mk(0.04, 0.14, 0.04, y, 0, 0.07, -0.06, g);
+    const soft = (sw, sh, sd, mat, x, yy, z, parent) => { const m = new THREE.Mesh(softBoxGeo(sw, sh, sd, 0.3), mat); m.position.set(x, yy, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
+    soft(0.3, 0.24, 0.24, w, 0, 0.26, 0, bodyG);
+    const tail = soft(0.12, 0.18, 0.18, wd, -0.16, 0.38, 0, bodyG); tail.rotation.z = 0.4;
+    for (const z of [-0.12, 0.12]) soft(0.18, 0.12, 0.03, wd, -0.02, 0.28, z, bodyG);
+    soft(0.16, 0.16, 0.15, w, 0.14, 0.44, 0, bodyG);
+    mk(0.09, 0.05, 0.035, red, 0.13, 0.54, 0, bodyG);
+    mk(0.03, 0.05, 0.03, red, 0.23, 0.39, 0, bodyG);
+    mk(0.06, 0.035, 0.045, y, 0.25, 0.43, 0, bodyG);
+    mk(0.025, 0.03, 0.02, col('#1a1422'), 0.2, 0.47, 0.075, bodyG); mk(0.025, 0.03, 0.02, col('#1a1422'), 0.2, 0.47, -0.075, bodyG);
+    mk(0.035, 0.14, 0.035, y, 0, 0.07, 0.06, g); mk(0.035, 0.14, 0.035, y, 0, 0.07, -0.06, g);
+    mk(0.08, 0.015, 0.05, y, 0.03, 0.007, 0.06, g); mk(0.08, 0.015, 0.05, y, 0.03, 0.007, -0.06, g);
     const ph = (o.x || 0) * 3.1 + (o.z || 0);
     if (o.rot !== undefined) g.rotation.y = o.rot;
     return {

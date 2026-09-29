@@ -395,16 +395,16 @@ export function generateDawn(K) {
   poi('lighthouse', 748, 36, { clear: 3 });
   const HOUSES = [
     // the harbour front, the street up, the upper town (whitewash, tiled roofs, paper lanterns)
-    [LPx - 8, LPz - 16, 5, 3, { roof: '#c8574f', wall: 'plaster', wallColor: '#f4efe4', trim: '#5a3b2a', awning: ['#fbf1dc', '#c8574f'], sign: 'fish' }],
-    [LPx + 1, LPz - 16, 5, 3, { roof: '#3f6f9e', wall: 'plaster', wallColor: '#f0e4d0', trim: '#5a3b2a', flowerbox: true, chimney: 1 }],
-    [LPx - 1, LPz + 9, 5, 3, { roof: '#6a4a8a', wall: 'plaster', wallColor: '#f4e8f0', trim: '#4b3a3a', round: true, chimney: 3 }],
-    [LPx + 9, LPz + 7, 5, 3, { roof: '#d98a4e', wall: 'boards', wallColor: '#e8d4b0', trim: '#6b4330', awning: ['#fbf1dc', '#3f9b98'], sign: 'cup' }],
-    [LPx + 9, LPz - 16, 5, 3, { roof: '#4f955a', wall: 'stone', trim: '#4b3a3a', flowerbox: true }],
-    [LPx + 18, LPz - 16, 5, 3, { roof: '#8a5a9e', wall: 'plaster', wallColor: '#f0e8dc', trim: '#5a3b2a', awning: ['#fbf1dc', '#8a5a9e'], sign: 'leaf' }],
-    [LPx - 4, LPz - 27, 5, 3, { roof: '#5f9e6a', wall: 'plaster', wallColor: '#f4efe4', trim: '#6b4330', flowerbox: true, round: true }],
-    [LPx + 12, LPz - 31, 6, 4, { roof: '#b8483a', wall: 'stone', trim: '#4b3a3a', clock: true, flag: true, columns: true }],
-    [LPx + 27, LPz + 4, 5, 3, { roof: '#c89a52', wall: 'plaster', wallColor: '#f4efe4', trim: '#6b4330', chimney: 1, shutter: '#3f6f9e' }],
-    [LPx + 19, LPz + 6, 4, 3, { roof: '#3f9b98', wall: 'boards', wallColor: '#d8c8a8', trim: '#5a3b2a', flowerbox: true }],
+    [LPx - 8, LPz - 16, 5, 3, { roof: '#c8574f', wall: 'plaster', wallColor: '#f4efe4', trim: '#5a3b2a', awning: ['#fbf1dc', '#c8574f'], sign: 'fish', storeys: 2, upFlowers: true }],
+    [LPx + 1, LPz - 16, 5, 3, { roof: '#3f6f9e', wall: 'plaster', wallColor: '#f0e4d0', trim: '#5a3b2a', flowerbox: true, chimney: 1, gable: 'right', smoke: 'hearth' }],
+    [LPx - 1, LPz + 9, 5, 3, { roof: '#6a4a8a', wall: 'plaster', wallColor: '#f4e8f0', trim: '#4b3a3a', round: true, chimney: 3, hip: true, ivy: 'left', roses: true, smoke: 'hearth' }],
+    [LPx + 9, LPz + 7, 5, 3, { roof: '#d98a4e', wall: 'boards', wallColor: '#e8d4b0', trim: '#6b4330', awning: ['#fbf1dc', '#3f9b98'], sign: 'cup', gable: 'left' }],
+    [LPx + 9, LPz - 16, 5, 3, { roof: '#4f955a', wall: 'stone', trim: '#4b3a3a', flowerbox: true, storeys: 2, arched: true }],
+    [LPx + 18, LPz - 16, 5, 3, { roof: '#8a5a9e', wall: 'plaster', wallColor: '#f0e8dc', trim: '#5a3b2a', awning: ['#fbf1dc', '#8a5a9e'], sign: 'leaf', hip: true }],
+    [LPx - 4, LPz - 27, 5, 3, { roof: '#5f9e6a', wall: 'plaster', wallColor: '#f4efe4', trim: '#6b4330', flowerbox: true, round: true, porch: 'flowers', ivy: 'right' }],
+    [LPx + 12, LPz - 31, 6, 4, { roof: '#b8483a', wall: 'stone', trim: '#4b3a3a', clock: true, flag: true, columns: true, storeys: 2, arched: true, doorKind: 'double', upWindows: [8, 23, 79] }],
+    [LPx + 27, LPz + 4, 5, 3, { roof: '#c89a52', wall: 'plaster', wallColor: '#f4efe4', trim: '#6b4330', chimney: 1, shutter: '#3f6f9e', gable: 'door', smoke: 'hearth' }],
+    [LPx + 19, LPz + 6, 4, 3, { roof: '#3f9b98', wall: 'boards', wallColor: '#d8c8a8', trim: '#5a3b2a', flowerbox: true, annex: 'right', annexKind: 'room' }],
   ];
   HOUSES.forEach(([x, z, w, h, style], k) => {
     poi('house', x + w / 2, z + h / 2, { clear: 0, b: { id: 'lp-house-' + k, x, y: z, w, h, door: x + Math.floor(w / 2), style } });
@@ -428,8 +428,10 @@ export function generateDawn(K) {
   poi('camp', 1030, 48, { clear: 4 });
   poi('waystone', CAx + 4, CAz + 6, { zone: 'moor', name: 'Candlewick' });
   poi('stone_circle', 1164, 150, { clear: 5 });
-  for (const [x, z, w, h, roof] of [[CAx - 10, CAz - 8, 4, 3, '#4a3a5a'], [CAx - 3, CAz - 10, 5, 3, '#5a4a3a'], [CAx + 6, CAz - 8, 4, 3, '#3a4a5a']]) {
-    poi('house', x + w / 2, z + h / 2, { clear: 0, b: { id: 'cw-house-' + x, x, y: z, w, h, door: x + Math.floor(w / 2), style: { roof, wall: 'logs', trim: '#3a2a2a', chimney: 1, lean: true, round: true } } });
+  // (the moor's cottages: a stone chimney up a gable, a woodshed, a porch — fires lit all day up here)
+  const CW = [{ stack: 'left', annex: 'right' }, { porch: true, stack: 'right', gable: 'door' }, { stack: 'left', hip: false, annex: 'left', annexKind: 'room' }];
+  for (const [x, z, w, h, roof, k] of [[CAx - 10, CAz - 8, 4, 3, '#4a3a5a', 0], [CAx - 3, CAz - 10, 5, 3, '#5a4a3a', 1], [CAx + 6, CAz - 8, 4, 3, '#3a4a5a', 2]]) {
+    poi('house', x + w / 2, z + h / 2, { clear: 0, b: { id: 'cw-house-' + x, x, y: z, w, h, door: x + Math.floor(w / 2), style: { roof, wall: 'logs', trim: '#3a2a2a', lean: true, round: true, smoke: 'always', ...CW[k] } } });
     clearMark(x - 1, z - 1, x + w + 1, z + h + 2);
   }
   poi('waystone', LOx - 6, LOz + 4, { zone: 'prism', name: 'Old Punctual Lodge' });
@@ -446,7 +448,7 @@ export function generateDawn(K) {
   poi('whale_eye', WHx - 30, WHz + 6, { clear: 3 });
   poi('geyser', WHx - 12, WHz - 4, { clear: 2 });
   poi('whale_tail', WHx + 44, WHz, { clear: 2 });
-  poi('house', DAWN.blowholeInn[0] + 2, DAWN.blowholeInn[1] - 3, { clear: 0, b: { id: 'blowhole-inn', x: DAWN.blowholeInn[0] - 1, y: DAWN.blowholeInn[1] - 5, w: 6, h: 3, door: DAWN.blowholeInn[0] + 2, style: { roof: '#3f6f9e', wall: 'boards', wallColor: '#e8dcc0', trim: '#4a2e25', sign: 'cup', chimney: 4, flowerbox: true } } });
+  poi('house', DAWN.blowholeInn[0] + 2, DAWN.blowholeInn[1] - 3, { clear: 0, b: { id: 'blowhole-inn', x: DAWN.blowholeInn[0] - 1, y: DAWN.blowholeInn[1] - 5, w: 6, h: 3, door: DAWN.blowholeInn[0] + 2, style: { roof: '#3f6f9e', wall: 'boards', wallColor: '#e8dcc0', trim: '#4a2e25', sign: 'cup', chimney: 4, flowerbox: true, storeys: 2, gable: 'left', porch: true, doorKind: 'double', upFlowers: true, smoke: 'always' } } });
   clearMark(DAWN.blowholeInn[0] - 2, DAWN.blowholeInn[1] - 6, DAWN.blowholeInn[0] + 6, DAWN.blowholeInn[1] + 1);
   // the Pelican Post’s roosts (Perkins’s own on Pelican Rock)
   for (const [rid, name, zone, x, z] of [

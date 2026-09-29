@@ -83,6 +83,9 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   heroes only a tile inside its edges: keep goal lines (`goalZ`) at `z + 1` or more.
 - A `switch` with the same `case` twice runs only the first: a treasure hat called `furhat`
   hid behind the steppe folk's felt hat (it's `chapka` now). New hats, foes, props: grep the id.
+- Props, buildings and valley animals merge their still parts into one mesh per material
+  (`bakeMeshes` / `bakeTree` in `models/geom.js`): a part you animate, recolour or look up later
+  must carry `userData.keep` (or `flag` / `swing`), or it vanishes into the merged mesh.
 - README shots: `resize_window` 960×540, English (`game.settings.lang = 'en'` + `setLang('en')`),
   then `sagarun`/`worldboss` marks with `clean: 1` (the line typed out, old toasts cleared).
   Party shots come out 1280×720, solo 960×540. Reset the viewport (`preset: 'desktop'`) after.
@@ -130,7 +133,9 @@ src/render/   r3d (low-res toon renderer, oblique ortho camera, post pass, split
               world's matrices once a frame), cull.js (split views: each hides what it can't see
               nor shadow), lighting (time of day, lamp pool), portraits
 src/art/      procedural painters: terrain (ground texture + water info), surfaces, icons
-src/models/   buildings, nature (instanced trees), props, furniture, chars (voxel chibis)
+src/models/   buildings (a house's `style`: roofKind, storeys, hip, roofShape, gable, annex, porch,
+              tower, ivy, stack, smoke hours…), nature & treekit (trees), props, furniture, chars
+              (voxel chibis), geom (merging, soft boxes)
 src/world/    overworld (valley map 240x128, POINTS, AREAS), world3d (valley scene),
               collision (circle vs tiles/colliders, A*), interiors, tiles (TT types)
 src/scenes/   world.js — the solo game scene (also hosts shared systems used by the party)

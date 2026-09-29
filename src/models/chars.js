@@ -233,6 +233,30 @@ function shirtFront(look) {
   return p.c;
 }
 
+// the shirt's sides (w = 5) and back (w = 8): its pattern carried round, a darker hem, and on
+// the back what goes there — overall straps crossing, an apron's bow, a coat's vent, a crest
+function shirtBack(look, w) {
+  const { L, tc, t2 } = pal(look);
+  const p = new Painter(w, 5), back = w === 8;
+  p.rect(0, 0, w, 5, tc.m);
+  switch (L.top) {
+    case 'striped': p.hline(0, 1, w, t2.m); p.hline(0, 3, w, t2.m); break;
+    case 'flannel': for (let y = 0; y < 5; y++) for (let x = 0; x < w; x++) if ((x % 3 === 0) || (y % 3 === 1)) p.px(x, y, (x % 3 === 0 && y % 3 === 1) ? tc.o : tc.d); break;
+    case 'sweater': for (let x = 0; x < w; x += 2) { p.px(x, 1, tc.l); p.px(x + 1, 3, tc.d); } break;
+    case 'smock': if (back) { p.px(2, 1, '#ffd66b'); p.px(5, 3, '#ec5f73'); } else p.px(2, 2, '#4d7fc4'); break;
+    case 'overalls': if (back) { for (let k = 0; k < 4; k++) { p.px(1 + k, 0 + k, t2.m); p.px(6 - k, 0 + k, t2.m); } p.rect(1, 4, 6, 1, t2.m); } else p.rect(0, 4, w, 1, t2.m); break;
+    case 'apron': if (back) { p.hline(0, 3, w, '#fbf6ea'); p.rect(3, 2, 2, 2, '#ffffff'); p.px(2, 4, '#fbf6ea'); p.px(5, 4, '#fbf6ea'); } else p.hline(0, 3, w, '#fbf6ea'); break;
+    case 'coat': if (back) { p.vline(4, 2, 3, tc.d); p.hline(1, 1, 6, tc.l); } break;
+    case 'jacket': case 'vest': if (back) p.vline(4, 0, 5, tc.d); break;
+    case 'haori': if (back) { p.rect(3, 1, 2, 2, t2.m); p.px(3, 1, t2.l); } p.hline(0, 3, w, tc.d); break;
+    case 'hoodie': if (back) p.rect(2, 0, 4, 2, tc.d); break;
+    default: break;
+  }
+  p.hline(0, 4, w, L.top === 'overalls' ? t2.d : tc.d);
+  if (back) { p.vline(0, 0, 5, tc.d); p.vline(w - 1, 0, 5, tc.d); }
+  return p.c;
+}
+
 function flatTex(col, w, h, shade = null) {
   const p = new Painter(w, h);
   p.rect(0, 0, w, h, col);
@@ -324,9 +348,11 @@ export class CharModel {
     }
     // torso
     const front = this.mat({ map: T('shirt' + key, () => shirtFront(L)) });
-    const shirtSide = this.mat({ color: tc.m });
+    const shirtSide = this.mat({ map: T('shirtS' + L.top + L.topColor + (L.topColor2 || ''), () => shirtBack(L, 5)) });
+    const shirtBackM = this.mat({ map: T('shirtB' + L.top + L.topColor + (L.topColor2 || ''), () => shirtBack(L, 8)) });
     const shirtTop = this.mat({ color: tc.l });
-    this.torso = box(8, 5, 5, [shirtSide, shirtSide, shirtTop, shirtSide, front, shirtSide], 0, 9.5, 0);
+    const shirtUnder = this.mat({ color: tc.d });
+    this.torso = box(8, 5, 5, [shirtSide, shirtSide, shirtTop, shirtUnder, front, shirtBackM], 0, 9.5, 0);
     if (L.top === 'coat' || L.top === 'apron') {
       // long coat / apron hem
       box(8.4, 2.2, 5.4, this.mat({ color: L.top === 'apron' ? '#fbf6ea' : tc.m }), 0, 6.4, L.top === 'apron' ? 0.3 : 0);

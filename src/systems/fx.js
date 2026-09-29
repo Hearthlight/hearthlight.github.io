@@ -46,6 +46,10 @@ export class Fx {
         case 'smoke':
           p.vx = 0.18 + R() * 0.12; p.vy = 0.55 + R() * 0.2; p.life = 2.4 + R(); p.size = 1; p.color = '#d8d4dc';
           break;
+        case 'chimney': // a puff of chimney smoke: rises, slows, drifts with the wind, swells & fades
+          p.vx = 0.18 + R() * 0.1; p.vz = -0.05; p.vy = 0.5 + R() * 0.16; p.life = 3.2 + R() * 1.4; p.size = 0.85 + R() * 0.4; p.phase = R() * 6;
+          p.color = opts.color || '#ebe7ef'; p.hi = opts.hi || '#ffffff'; p.alpha = opts.alpha ?? 1;
+          break;
         case 'water':
           p.vx = (R() - 0.5) * 0.5; p.vz = (R() - 0.5) * 0.5; p.vy = 1.1 + R() * 0.4; p.life = 0.7; p.color = i % 2 ? '#bfe3f2' : '#7cc4e8';
           break;
@@ -92,6 +96,7 @@ export class Fx {
       p.age += dt;
       if (p.kind === 'leaf') { p.x += Math.sin(p.age * 3 + p.phase) * dt * 0.6; }
       if (p.kind === 'note') { p.x += Math.sin(p.age * 4 + p.phase) * dt * 0.4; }
+      if (p.kind === 'chimney') { p.vy *= 1 - 0.22 * dt; p.vx += 0.05 * dt; p.x += Math.sin(p.age * 1.7 + p.phase) * dt * 0.08; }
       p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       if (['sparkle', 'splash', 'water', 'soil', 'dust'].includes(p.kind)) p.vy -= 6 * dt;
       if (p.grav) { p.vy -= 1.2 * dt; p.vx *= 0.985; }
@@ -122,6 +127,23 @@ export class Fx {
           ctx.fillStyle = p.color;
           ctx.fillRect(x - 2, y - 1, 2, 2); ctx.fillRect(x + 1, y - 1, 2, 2); ctx.fillRect(x - 2, y, 5, 2); ctx.fillRect(x - 1, y + 2, 3, 1); ctx.fillRect(x, y + 3, 1, 1);
           ctx.fillStyle = '#ffb3bf'; ctx.fillRect(x - 1, y - 1, 1, 1);
+          ctx.globalAlpha = 1;
+          break;
+        }
+        case 'chimney': {
+          const rad = Math.max(1, Math.round((1.5 + k * 4.4) * p.size * (r3d.ppu / 16)));
+          if (x < -rad || y < -rad || x > ctx.canvas.width + rad || y > ctx.canvas.height + rad) break;
+          const a = 0.68 * Math.pow(1 - k, 1.2) * Math.min(1, p.age / 0.35) * p.alpha;
+          ctx.globalAlpha = a;
+          ctx.fillStyle = p.color;
+          for (let dy = -rad; dy <= rad; dy++) { const w = Math.floor(Math.sqrt(rad * rad - dy * dy + 0.5)); ctx.fillRect(x - w, y + dy, w * 2 + 1, 1); }
+          // (a lighter crown on each puff)
+          if (rad >= 3) {
+            const r2 = rad - 2;
+            ctx.globalAlpha = a * 0.5;
+            ctx.fillStyle = p.hi;
+            for (let dy = -r2; dy <= 0; dy++) { const w = Math.floor(Math.sqrt(r2 * r2 - dy * dy)); ctx.fillRect(x - w - 1, y + dy - 1, w * 2 + 1, 1); }
+          }
           ctx.globalAlpha = 1;
           break;
         }

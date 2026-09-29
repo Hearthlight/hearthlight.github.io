@@ -5,6 +5,7 @@
 
 import { THREE, toon } from '../render/r3d.js';
 import { buildFurniture } from '../models/furniture.js';
+import { softBoxGeo, bakeTree } from '../models/geom.js';
 import { FARM_POND, WILLOW_LAKE, KOI_POND, OX, OZ } from '../world/overworld.js';
 import { TT } from '../world/tiles.js';
 
@@ -121,6 +122,8 @@ export class Critters {
 
   add(kind, obj, pos, o = {}) {
     const sp = SPECIES[kind] || {};
+    // (each moving part merged into one mesh: the koi's tail is found by its place, so it stays)
+    if (kind !== 'koi') bakeTree(obj, toon(this.r3d, { color: 0xffffff, vertexColors: true, key: 'p-vc' }));
     obj.position.set(pos.x, 0, pos.z);
     const big = ['deer', 'sheep', 'heron', 'hen'].includes(kind);
     obj.traverse((m) => { if (m.isMesh) { m.castShadow = big; m.receiveShadow = true; } });
@@ -189,20 +192,38 @@ export class Critters {
     }
   }
 
+  // a soft (bevelled) box for the bigger parts, a plain one for the tiny bits
   box(g, w, h, d, c, x, y, z, key) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), this.mat(c, key || c));
+    const soft = Math.min(w, h, d) >= 0.05;
+    const m = new THREE.Mesh(soft ? softBoxGeo(w, h, d, 0.28) : new THREE.BoxGeometry(w, h, d), this.mat(c, key || c));
+    m.position.set(x, y, z);
+    g.add(m);
+    return m;
+  }
+  // a round puff (wool, feathers, a tail's brush), squashed by sy
+  puff(g, r, sy, c, x, y, z, key) {
+    const m = new THREE.Mesh(this.ico || (this.ico = new THREE.IcosahedronGeometry(1, 1)), this.mat(c, key || c));
+    m.scale.set(r, r * sy, r);
     m.position.set(x, y, z);
     g.add(m);
     return m;
   }
 
   duck(male) {
+    // a mallard: a rounded body riding low, a curl of tail, a blue flash on the wing; the drake
+    // with his green head & white collar, the hen speckled brown
     const g = new THREE.Group();
-    this.box(g, 0.34, 0.18, 0.22, male ? '#8a6a4a' : '#b08a62', 0, 0.09, 0);
-    this.box(g, 0.1, 0.12, 0.2, male ? '#8a6a4a' : '#b08a62', -0.18, 0.16, 0);
-    this.box(g, 0.14, 0.16, 0.14, male ? '#3f8a5a' : '#9a7a52', 0.15, 0.25, 0);
-    this.box(g, 0.1, 0.04, 0.08, '#f2b63d', 0.26, 0.23, 0);
-    if (male) this.box(g, 0.15, 0.03, 0.15, '#f4efe4', 0.15, 0.17, 0);
+    const body = male ? '#8a6a4a' : '#b08a62', back = male ? '#a8a4a0' : '#9a7a52';
+    this.box(g, 0.36, 0.17, 0.24, body, 0, 0.09, 0);
+    this.box(g, 0.24, 0.07, 0.2, back, -0.03, 0.18, 0);
+    this.box(g, 0.1, 0.05, 0.03, '#3f6fc8', -0.04, 0.15, 0.115);
+    this.box(g, 0.1, 0.05, 0.03, '#3f6fc8', -0.04, 0.15, -0.115);
+    this.box(g, 0.1, 0.1, 0.14, back, -0.19, 0.16, 0);
+    if (male) this.box(g, 0.05, 0.05, 0.04, '#2a2433', -0.25, 0.23, 0);
+    this.box(g, 0.13, 0.15, 0.13, male ? '#2f7a4a' : '#9a7a52', 0.16, 0.26, 0);
+    this.box(g, 0.1, 0.035, 0.07, '#f2b63d', 0.26, 0.24, 0);
+    for (const z of [-0.05, 0.05]) this.box(g, 0.02, 0.02, 0.02, '#1a1422', 0.2, 0.29, z * 1.32);
+    if (male) this.box(g, 0.14, 0.025, 0.14, '#f4efe4', 0.15, 0.18, 0);
     return g;
   }
 
@@ -210,14 +231,19 @@ export class Critters {
     const g = new THREE.Group();
     const bodyG = new THREE.Group();
     g.add(bodyG);
-    this.box(bodyG, 0.34, 0.18, 0.18, '#f4f1ec', 0, 0.26, 0);
+    this.box(bodyG, 0.36, 0.18, 0.18, '#f4f1ec', 0, 0.26, 0);
+    this.box(bodyG, 0.26, 0.06, 0.2, '#b8bcc8', -0.04, 0.34, 0);
     this.box(bodyG, 0.14, 0.14, 0.13, '#f4f1ec', 0.17, 0.38, 0);
-    this.box(bodyG, 0.1, 0.04, 0.05, '#f2b63d', 0.27, 0.36, 0);
-    this.box(bodyG, 0.12, 0.05, 0.14, '#3b3844', -0.2, 0.3, 0);
+    this.box(bodyG, 0.1, 0.035, 0.045, '#f2b63d', 0.28, 0.36, 0);
+    this.box(bodyG, 0.02, 0.02, 0.046, '#e0463f', 0.3, 0.345, 0);
+    for (const z of [-0.05, 0.05]) this.box(bodyG, 0.02, 0.02, 0.02, '#1a1422', 0.21, 0.41, z * 1.32);
+    this.box(bodyG, 0.12, 0.05, 0.14, '#3b3844', -0.21, 0.3, 0);
     const wl = new THREE.Group(); wl.position.set(0, 0.32, 0.09); bodyG.add(wl);
     const wr = new THREE.Group(); wr.position.set(0, 0.32, -0.09); bodyG.add(wr);
     this.box(wl, 0.24, 0.03, 0.34, '#9aa0ae', 0, 0, 0.17);
     this.box(wr, 0.24, 0.03, 0.34, '#9aa0ae', 0, 0, -0.17);
+    this.box(wl, 0.08, 0.031, 0.1, '#3b3844', -0.06, 0, 0.3);
+    this.box(wr, 0.08, 0.031, 0.1, '#3b3844', -0.06, 0, -0.3);
     this.box(g, 0.03, 0.17, 0.03, '#f2b63d', 0, 0.09, 0.05);
     this.box(g, 0.03, 0.17, 0.03, '#f2b63d', 0, 0.09, -0.05);
     g.userData.wings = [wl, wr];
@@ -226,65 +252,95 @@ export class Critters {
   }
 
   turtle() {
+    // a sea turtle: a domed shell of plates with a pale rim, flippers, a head that pulls in
     const g = new THREE.Group();
-    this.box(g, 0.44, 0.16, 0.36, '#5f8a4f', 0, 0.14, 0);
-    this.box(g, 0.32, 0.08, 0.26, '#7aa65a', 0, 0.25, 0);
-    const head = this.box(g, 0.14, 0.1, 0.12, '#9ab86a', 0.27, 0.12, 0);
-    for (const [x, z] of [[0.15, 0.17], [0.15, -0.17], [-0.15, 0.17], [-0.15, -0.17]]) this.box(g, 0.1, 0.06, 0.08, '#9ab86a', x, 0.05, z);
+    this.box(g, 0.46, 0.12, 0.38, '#c8b88a', 0, 0.09, 0);
+    this.box(g, 0.42, 0.12, 0.34, '#5f8a4f', 0, 0.16, 0);
+    this.box(g, 0.28, 0.08, 0.22, '#7aa65a', 0, 0.24, 0);
+    for (const [x, z] of [[-0.08, -0.06], [0.08, 0.06], [-0.08, 0.07], [0.08, -0.06]]) this.box(g, 0.1, 0.02, 0.08, '#4f7a42', x, 0.285, z);
+    const head = this.box(g, 0.15, 0.1, 0.12, '#9ab86a', 0.27, 0.13, 0);
+    for (const z of [-0.04, 0.04]) this.box(head, 0.02, 0.02, 0.02, '#1a1422', 0.05, 0.02, z * 1.2);
+    for (const [x, z, a] of [[0.15, 0.2, -0.5], [0.15, -0.2, 0.5], [-0.16, 0.18, 0.4], [-0.16, -0.18, -0.4]]) { const f = this.box(g, 0.14, 0.04, 0.07, '#9ab86a', x, 0.06, z); f.rotation.y = a; }
     g.userData.head = head;
     return g;
   }
 
   deer(stag) {
+    // a roe deer: a rounded body, a pale belly & white rump patch, slim dark-socked legs, a long
+    // neck; big ears; the stag with branching antlers
     const g = new THREE.Group();
     const body = new THREE.Group(); g.add(body);
-    const fur = '#a8744a', dark = '#6b4a34', light = '#f1e2c8';
-    this.box(body, 0.78, 0.36, 0.3, fur, 0, 0.62, 0);
-    this.box(body, 0.3, 0.2, 0.26, light, -0.3, 0.52, 0);
-    for (const [x, z] of [[0.28, 0.1], [0.28, -0.1], [-0.28, 0.1], [-0.28, -0.1]]) this.box(body, 0.07, 0.46, 0.07, dark, x, 0.23, z);
-    this.box(body, 0.08, 0.14, 0.14, light, -0.42, 0.72, 0);
-    const neck = new THREE.Group(); neck.position.set(0.32, 0.74, 0); body.add(neck);
-    this.box(neck, 0.14, 0.36, 0.14, fur, 0.04, 0.16, 0);
+    const fur = '#b07a4a', dark = '#6b4a34', light = '#f1e2c8';
+    this.box(body, 0.74, 0.34, 0.3, fur, 0, 0.63, 0);
+    this.box(body, 0.5, 0.1, 0.26, light, 0.02, 0.48, 0);
+    this.box(body, 0.1, 0.2, 0.26, '#fbf6ea', -0.37, 0.66, 0);
+    this.box(body, 0.06, 0.1, 0.1, '#fbf6ea', -0.42, 0.78, 0);
+    for (const [x, z] of [[0.26, 0.09], [0.26, -0.09], [-0.26, 0.09], [-0.26, -0.09]]) {
+      this.box(body, 0.07, 0.34, 0.07, fur, x, 0.36, z);
+      this.box(body, 0.06, 0.2, 0.06, dark, x, 0.11, z);
+    }
+    const neck = new THREE.Group(); neck.position.set(0.3, 0.74, 0); body.add(neck);
+    const nk = this.box(neck, 0.14, 0.38, 0.14, fur, 0.04, 0.16, 0);
+    nk.rotation.z = -0.18;
+    this.box(neck, 0.1, 0.16, 0.12, light, 0.09, 0.08, 0);
     const head = new THREE.Group(); head.position.set(0.08, 0.36, 0); neck.add(head);
-    this.box(head, 0.26, 0.16, 0.16, fur, 0.08, 0, 0);
-    this.box(head, 0.06, 0.06, 0.06, '#2a2433', 0.22, -0.02, 0);
-    for (const z of [-0.08, 0.08]) this.box(head, 0.05, 0.1, 0.04, fur, -0.02, 0.1, z * 1.2);
-    if (stag) for (const z of [-0.06, 0.06]) {
-      this.box(head, 0.04, 0.24, 0.04, '#e9dcc8', -0.02, 0.2, z);
-      this.box(head, 0.12, 0.04, 0.04, '#e9dcc8', 0.02, 0.26, z * 1.6);
+    this.box(head, 0.24, 0.16, 0.15, fur, 0.07, 0, 0);
+    this.box(head, 0.1, 0.1, 0.12, '#c8905a', 0.18, -0.02, 0);
+    this.box(head, 0.04, 0.04, 0.06, '#2a2433', 0.24, -0.01, 0);
+    for (const z of [-0.06, 0.06]) this.box(head, 0.03, 0.03, 0.02, '#1a1422', 0.1, 0.03, z * 1.28);
+    for (const z of [-1, 1]) { const e = this.box(head, 0.05, 0.13, 0.08, fur, -0.03, 0.1, z * 0.1); e.rotation.x = z * 0.5; }
+    if (stag) for (const z of [-1, 1]) {
+      const a = this.box(head, 0.035, 0.26, 0.035, '#e9dcc8', -0.02, 0.22, z * 0.05); a.rotation.x = z * 0.25;
+      const t1 = this.box(head, 0.1, 0.03, 0.03, '#e9dcc8', 0.03, 0.24, z * 0.08); t1.rotation.z = 0.5;
+      const t2 = this.box(head, 0.08, 0.03, 0.03, '#e9dcc8', -0.05, 0.3, z * 0.1); t2.rotation.z = -0.5;
     }
     g.userData.neck = neck;
     return g;
   }
 
   rabbit(color, snowy = false) {
+    // a rabbit: a round body & head, long ears (pink inside), a cotton tail, big dark eyes
     const g = new THREE.Group();
     const body = new THREE.Group(); g.add(body);
-    this.box(body, 0.26, 0.18, 0.18, color, 0, 0.11, 0);
-    this.box(body, 0.14, 0.14, 0.14, color, 0.14, 0.2, 0);
-    for (const z of [-0.04, 0.04]) this.box(body, 0.04, 0.16, 0.04, color, 0.12, 0.34, z);
-    for (const z of [-0.04, 0.04]) this.box(body, 0.02, 0.1, 0.02, '#f4a4b6', 0.13, 0.34, z);
-    this.box(body, 0.03, 0.03, 0.03, '#2a2433', 0.21, 0.22, 0.05);
-    this.box(body, 0.07, 0.07, 0.07, snowy ? '#ffffff' : '#f4efe4', -0.15, 0.14, 0);
+    this.box(body, 0.26, 0.18, 0.19, color, 0, 0.11, 0);
+    this.box(body, 0.1, 0.08, 0.2, color, -0.06, 0.05, 0);
+    this.box(body, 0.14, 0.14, 0.14, color, 0.14, 0.21, 0);
+    this.box(body, 0.05, 0.05, 0.08, snowy ? '#f4f4f8' : '#f1e2c8', 0.21, 0.18, 0);
+    for (const z of [-0.035, 0.035]) {
+      const e = this.box(body, 0.05, 0.17, 0.035, color, 0.11, 0.35, z); e.rotation.x = z > 0 ? 0.18 : -0.18;
+      const i = this.box(body, 0.02, 0.1, 0.02, '#f4a4b6', 0.13, 0.35, z * 1.4); i.rotation.x = e.rotation.x;
+    }
+    for (const z of [-0.05, 0.05]) this.box(body, 0.03, 0.03, 0.02, '#1a1422', 0.18, 0.24, z * 1.2);
+    this.puff(body, 0.05, 1, snowy ? '#ffffff' : '#f4efe4', -0.15, 0.15, 0);
     g.userData.body = body;
     return g;
   }
 
   fox(color, snowy = false) {
+    // a fox: a long body, white bib & muzzle, dark socks, pointed ears with dark tips, a big brush
+    // of a tail with a white tip
     const g = new THREE.Group();
     const body = new THREE.Group(); g.add(body);
     const white = '#fbfbff', dark = snowy ? '#b8c4d8' : '#3b2a2e';
-    this.box(body, 0.46, 0.2, 0.18, color, 0, 0.3, 0);
-    this.box(body, 0.16, 0.12, 0.16, white, 0.16, 0.26, 0);
-    for (const [x, z] of [[0.16, 0.06], [0.16, -0.06], [-0.16, 0.06], [-0.16, -0.06]]) this.box(body, 0.05, 0.22, 0.05, dark, x, 0.11, z);
+    this.box(body, 0.46, 0.19, 0.18, color, 0, 0.3, 0);
+    this.box(body, 0.16, 0.12, 0.16, white, 0.16, 0.25, 0);
+    for (const [x, z] of [[0.16, 0.06], [0.16, -0.06], [-0.16, 0.06], [-0.16, -0.06]]) {
+      this.box(body, 0.05, 0.14, 0.05, color, x, 0.17, z);
+      this.box(body, 0.05, 0.09, 0.05, dark, x, 0.05, z);
+    }
     const head = new THREE.Group(); head.position.set(0.28, 0.42, 0); body.add(head);
     this.box(head, 0.18, 0.15, 0.17, color, 0, 0, 0);
-    this.box(head, 0.12, 0.07, 0.1, white, 0.12, -0.04, 0);
-    this.box(head, 0.03, 0.03, 0.03, '#2a2433', 0.19, -0.01, 0);
-    for (const z of [-0.06, 0.06]) this.box(head, 0.05, 0.08, 0.05, color, -0.02, 0.11, z);
+    this.box(head, 0.13, 0.07, 0.09, white, 0.12, -0.04, 0);
+    this.box(head, 0.03, 0.03, 0.04, '#1a1422', 0.19, -0.02, 0);
+    for (const z of [-0.045, 0.045]) this.box(head, 0.02, 0.025, 0.02, '#1a1422', 0.09, 0.02, z * 1.9);
+    for (const z of [-0.055, 0.055]) {
+      this.box(head, 0.05, 0.08, 0.05, color, -0.02, 0.11, z);
+      this.box(head, 0.04, 0.03, 0.04, dark, -0.02, 0.16, z);
+    }
     const tail = new THREE.Group(); tail.position.set(-0.24, 0.34, 0); body.add(tail);
-    this.box(tail, 0.26, 0.1, 0.1, color, -0.12, 0.02, 0);
-    this.box(tail, 0.08, 0.1, 0.1, white, -0.28, 0.03, 0);
+    const brush = this.box(tail, 0.28, 0.12, 0.12, color, -0.13, -0.02, 0);
+    brush.rotation.z = 0.3;
+    this.box(tail, 0.08, 0.1, 0.1, white, -0.29, -0.08, 0);
     g.userData.tail = tail;
     g.userData.head = head;
     return g;
@@ -297,10 +353,11 @@ export class Critters {
     this.box(body, 0.16, 0.12, 0.1, c, 0, 0.08, 0);
     this.box(body, 0.1, 0.1, 0.1, c, 0.1, 0.15, 0);
     this.box(body, 0.03, 0.03, 0.03, '#2a2433', 0.15, 0.17, 0.04);
+    for (const z of [-0.03, 0.03]) this.box(body, 0.02, 0.05, 0.02, c, 0.08, 0.22, z);
     this.box(body, 0.06, 0.05, 0.06, '#f1e2c8', 0.08, 0.06, 0);
     const tail = new THREE.Group(); tail.position.set(-0.08, 0.1, 0); body.add(tail);
     this.box(tail, 0.08, 0.22, 0.08, c, -0.03, 0.1, 0);
-    this.box(tail, 0.1, 0.08, 0.1, '#d9853a', 0.01, 0.22, 0);
+    this.puff(tail, 0.07, 1.1, '#d9853a', 0.02, 0.23, 0);
     g.userData.tail = tail;
     g.userData.body = body;
     return g;
@@ -323,6 +380,8 @@ export class Critters {
     const body = new THREE.Group(); g.add(body);
     const spikes = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), this.mat('#6b4a34', 'hedgespikes'));
     spikes.scale.set(0.17, 0.12, 0.13); spikes.position.set(-0.02, 0.1, 0); body.add(spikes);
+    const tips = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), this.mat('#c8a47a', 'hedgetips'));
+    tips.scale.set(0.12, 0.07, 0.1); tips.position.set(-0.04, 0.17, 0); tips.rotation.y = 0.6; body.add(tips);
     this.box(body, 0.1, 0.08, 0.1, '#d9b48a', 0.12, 0.06, 0);
     this.box(body, 0.03, 0.03, 0.03, '#2a2433', 0.18, 0.06, 0);
     g.userData.body = body;
@@ -360,14 +419,19 @@ export class Critters {
   }
 
   heron() {
+    // a grey heron: a slim body, a long S of a neck, a dagger bill, a black crest
     const g = new THREE.Group();
     const bodyG = new THREE.Group(); g.add(bodyG);
     const grey = '#9aa4b8', light = '#dfe6ee';
-    this.box(bodyG, 0.34, 0.2, 0.2, grey, 0, 0.66, 0);
-    this.box(bodyG, 0.1, 0.34, 0.1, light, 0.16, 0.86, 0);
-    this.box(bodyG, 0.14, 0.1, 0.1, light, 0.2, 1.05, 0);
-    this.box(bodyG, 0.18, 0.03, 0.04, '#e8c43a', 0.34, 1.04, 0);
-    this.box(bodyG, 0.1, 0.02, 0.1, '#3b3844', 0.16, 1.1, 0);
+    this.box(bodyG, 0.36, 0.2, 0.2, grey, 0, 0.66, 0);
+    this.box(bodyG, 0.22, 0.06, 0.2, '#7a8498', -0.05, 0.74, 0);
+    this.box(bodyG, 0.12, 0.08, 0.06, '#3b3844', -0.2, 0.64, 0);
+    const n1 = this.box(bodyG, 0.09, 0.2, 0.09, light, 0.16, 0.8, 0); n1.rotation.z = -0.35;
+    const n2 = this.box(bodyG, 0.08, 0.18, 0.08, light, 0.19, 0.96, 0); n2.rotation.z = 0.3;
+    this.box(bodyG, 0.14, 0.1, 0.1, light, 0.2, 1.08, 0);
+    this.box(bodyG, 0.2, 0.03, 0.04, '#e8c43a', 0.36, 1.07, 0);
+    this.box(bodyG, 0.12, 0.02, 0.06, '#3b3844', 0.14, 1.13, 0);
+    for (const z of [-0.04, 0.04]) this.box(bodyG, 0.02, 0.02, 0.02, '#1a1422', 0.24, 1.1, z * 1.35);
     for (const z of [-0.05, 0.05]) this.box(g, 0.03, 0.56, 0.03, '#b89a6a', 0, 0.28, z);
     const wl = new THREE.Group(); wl.position.set(0, 0.72, 0.1); bodyG.add(wl);
     const wr = new THREE.Group(); wr.position.set(0, 0.72, -0.1); bodyG.add(wr);
@@ -389,17 +453,21 @@ export class Critters {
   }
 
   owl() {
+    // a tawny owl on its stump: a round body with a pale speckled breast, a flat face disc with
+    // big amber eyes, ear tufts, folded wings
     const g = new THREE.Group();
     const bodyG = new THREE.Group(); g.add(bodyG);
     this.box(g, 0.34, 0.26, 0.3, '#6b4a34', 0, 0.13, 0);
-    this.box(g, 0.36, 0.04, 0.32, '#8a6a4a', 0, 0.27, 0);
+    this.box(g, 0.36, 0.04, 0.32, '#c8a47a', 0, 0.27, 0);
     this.box(bodyG, 0.22, 0.24, 0.2, '#a8845c', 0, 0.42, 0);
-    this.box(bodyG, 0.16, 0.14, 0.02, '#f1e2c8', 0.0, 0.42, 0.1);
+    this.box(bodyG, 0.15, 0.15, 0.03, '#f1e2c8', 0.0, 0.41, 0.1);
+    for (const [x, y] of [[-0.03, 0.44], [0.04, 0.4], [-0.02, 0.37]]) this.box(bodyG, 0.02, 0.02, 0.02, '#8a6a4a', x, y, 0.12);
     const head = new THREE.Group(); head.position.set(0, 0.6, 0); bodyG.add(head);
-    this.box(head, 0.22, 0.16, 0.2, '#a8845c', 0, 0, 0);
-    for (const x of [-0.05, 0.05]) { this.box(head, 0.07, 0.07, 0.02, '#fff3c4', x, 0.01, 0.1); this.box(head, 0.03, 0.03, 0.02, '#2a2433', x, 0.01, 0.11); }
-    this.box(head, 0.03, 0.04, 0.03, '#e8c43a', 0, -0.03, 0.11);
-    for (const x of [-0.08, 0.08]) this.box(head, 0.04, 0.06, 0.04, '#8a6a4a', x, 0.1, 0);
+    this.box(head, 0.23, 0.17, 0.2, '#a8845c', 0, 0, 0);
+    this.box(head, 0.19, 0.12, 0.02, '#e9d4b0', 0, -0.005, 0.1);
+    for (const x of [-0.05, 0.05]) { this.box(head, 0.07, 0.07, 0.02, '#f2b63d', x, 0.01, 0.11); this.box(head, 0.035, 0.035, 0.02, '#1a1422', x, 0.01, 0.12); }
+    this.box(head, 0.03, 0.04, 0.03, '#e8c43a', 0, -0.035, 0.115);
+    for (const x of [-0.08, 0.08]) { const t = this.box(head, 0.04, 0.07, 0.04, '#8a6a4a', x, 0.11, 0); t.rotation.z = x > 0 ? -0.3 : 0.3; }
     const wl = new THREE.Group(); wl.position.set(0, 0.46, 0); bodyG.add(wl);
     const wr = new THREE.Group(); wr.position.set(0, 0.46, 0); bodyG.add(wr);
     this.box(wl, 0.04, 0.2, 0.18, '#8a6a4a', -0.13, 0, 0);
@@ -411,16 +479,21 @@ export class Critters {
   }
 
   sheep(lamb) {
+    // a sheep: a cloud of wool (a core, puffs all round it, lighter ones on top), a black face
+    // with a woolly topknot, ears out sideways, thin black legs, a stub of a tail
     const g = new THREE.Group();
     const body = new THREE.Group(); g.add(body);
     const s = lamb ? 0.75 : 1;
-    const wool = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), this.mat('#f4f1ea', 'wool'));
-    wool.scale.set(0.34 * s, 0.24 * s, 0.24 * s); wool.position.set(0, 0.46 * s, 0); body.add(wool);
-    for (const [x, z] of [[0.18, 0.1], [0.18, -0.1], [-0.18, 0.1], [-0.18, -0.1]]) this.box(body, 0.07 * s, 0.3 * s, 0.07 * s, '#3b3844', x * s, 0.15 * s, z * s);
+    this.puff(body, 0.27 * s, 0.8, '#ece6dc', 0, 0.46 * s, 0, 'wool-d');
+    for (const [x, y, z, r] of [[0.17, 0.44, 0.1, 0.15], [0.17, 0.44, -0.1, 0.15], [-0.17, 0.45, 0.11, 0.16], [-0.17, 0.45, -0.11, 0.16], [0.0, 0.43, 0.15, 0.15], [0, 0.43, -0.15, 0.15], [-0.27, 0.49, 0, 0.12]]) this.puff(body, r * s, 0.9, '#f4f1ea', x * s, y * s, z * s, 'wool');
+    for (const [x, z] of [[0.1, 0.05], [-0.1, -0.04], [0.02, -0.08], [-0.05, 0.08]]) this.puff(body, 0.13 * s, 0.75, '#fffdf6', x * s, 0.62 * s, z * s, 'wool-l');
+    for (const [x, z] of [[0.17, 0.09], [0.17, -0.09], [-0.17, 0.09], [-0.17, -0.09]]) this.box(body, 0.06 * s, 0.3 * s, 0.06 * s, '#3b3844', x * s, 0.15 * s, z * s);
     const head = new THREE.Group(); head.position.set(0.34 * s, 0.52 * s, 0); body.add(head);
-    this.box(head, 0.16 * s, 0.18 * s, 0.15 * s, '#3b3844', 0.04 * s, 0, 0);
-    this.box(head, 0.14 * s, 0.08 * s, 0.17 * s, '#f4f1ea', 0.0, 0.09 * s, 0);
-    for (const z of [-0.1, 0.1]) this.box(head, 0.05 * s, 0.04 * s, 0.08 * s, '#3b3844', 0, 0.02 * s, z * s);
+    this.box(head, 0.16 * s, 0.17 * s, 0.14 * s, '#3b3844', 0.05 * s, -0.01 * s, 0);
+    this.puff(head, 0.09 * s, 0.8, '#fffdf6', 0.0, 0.09 * s, 0, 'wool-l');
+    for (const z of [-1, 1]) { const e = this.box(head, 0.05 * s, 0.035 * s, 0.1 * s, '#3b3844', 0.0, 0.03 * s, z * 0.1 * s); e.rotation.x = z * -0.3; }
+    for (const z of [-0.045, 0.045]) this.box(head, 0.02, 0.02, 0.02, '#f4efe4', 0.1 * s, 0.02 * s, z * s * 1.3);
+    this.puff(body, 0.06 * s, 1, '#f4f1ea', -0.36 * s, 0.5 * s, 0, 'wool');
     g.userData.head = head;
     return g;
   }

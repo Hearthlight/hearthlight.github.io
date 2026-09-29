@@ -21,24 +21,24 @@ export const O = (x, z) => [x + OX, z + OZ];
 
 // Buildings: footprint in tiles (x,y,w,h); door on the bottom row.
 const VILLAGE_BUILDINGS = [
-  { id: 'home', name: 'Your Cottage', x: 9, y: 20, w: 5, h: 3, door: 11, style: { roof: '#c75b4e', wall: 'timber', trim: '#6b4330', chimney: 1, flowerbox: true, round: true } },
-  { id: 'carpenter', name: "Theo's Workshop", x: 21, y: 13, w: 6, h: 3, door: 23, style: { roof: '#6d7a8c', wall: 'logs', trim: '#5a3b2a', chimney: 4, sign: 'hammer', lean: true } },
-  { id: 'store', name: 'Petal & Seed', x: 28, y: 24, w: 6, h: 3, door: 30, style: { roof: '#5f9e6a', wall: 'plaster', trim: '#7a5238', awning: ['#f4efe4', '#6fae6a'], sign: 'leaf', flowerbox: true } },
-  { id: 'bakery', name: "Rosa's Bakery", x: 40, y: 17, w: 5, h: 3, door: 42, style: { roof: '#d98a4e', wall: 'brick', trim: '#6b4330', chimney: 3, awning: ['#fbf1dc', '#d9594c'], sign: 'bread' } },
-  { id: 'hall', name: 'Town Hall', x: 49, y: 15, w: 7, h: 4, door: 52, style: { roof: '#4f6aa3', wall: 'stone', trim: '#4b3a3a', clock: true, flag: true, columns: true } },
-  { id: 'cafe', name: 'The Driftwood Café', x: 58, y: 23, w: 6, h: 3, door: 60, style: { roof: '#8a5a9e', wall: 'boards', trim: '#5a3b2a', awning: ['#fbf1dc', '#8a5a9e'], sign: 'cup', chimney: 5 } },
-  { id: 'library', name: 'Seashell Library', x: 23, y: 35, w: 6, h: 4, door: 25, style: { roof: '#3f7f7c', wall: 'stone', trim: '#4b3a3a', sign: 'book', round: true, chimney: 1 } },
-  { id: 'wren', name: "Wren's Cottage", x: 32, y: 36, w: 4, h: 3, door: 33, style: { roof: '#e3a1b4', wall: 'plaster', trim: '#8e5d3e', flowerbox: true, round: true, chimney: 3 } },
-  { id: 'shack', name: "Finn's Boathouse", x: 30, y: 48, w: 5, h: 3, door: 32, style: { roof: '#4d7fc4', wall: 'boards', trim: '#4a2e25', sign: 'fish', stilts: false } },
+  { id: 'home', name: 'Your Cottage', x: 9, y: 20, w: 5, h: 3, door: 11, style: { roof: '#c75b4e', wall: 'timber', trim: '#6b4330', chimney: 1, flowerbox: true, round: true, ivy: 'left', roses: true, smoke: 'hearth' } },
+  { id: 'carpenter', name: "Theo's Workshop", x: 21, y: 13, w: 6, h: 3, door: 23, style: { roof: '#6d7a8c', roofKind: 'slate', wall: 'logs', trim: '#5a3b2a', sign: 'hammer', pitch: 0.95, annex: 'right', annexKind: 'shed', stack: 'left', smoke: 'work' } },
+  { id: 'store', name: 'Petal & Seed', x: 28, y: 24, w: 6, h: 3, door: 30, style: { roof: '#5f9e6a', roofKind: 'shingle', wall: 'plaster', trim: '#7a5238', awning: ['#f4efe4', '#6fae6a'], sign: 'leaf', flowerbox: true, storeys: 2, hip: true, upFlowers: true, shutter: '#6fae6a' } },
+  { id: 'bakery', name: "Rosa's Bakery", x: 40, y: 17, w: 5, h: 3, door: 42, style: { roof: '#d98a4e', wall: 'brick', trim: '#6b4330', chimney: 3, awning: ['#fbf1dc', '#d9594c'], sign: 'bread', gable: 'left', pitch: 1.0, smoke: 'oven' } },
+  { id: 'hall', name: 'Town Hall', x: 49, y: 15, w: 7, h: 4, door: 52, style: { roof: '#4f6aa3', wall: 'stone', trim: '#4b3a3a', clock: true, flag: true, columns: true, storeys: 2, hip: true, arched: true, doorKind: 'double', upWindows: [9, 26, 77, 94] } },
+  { id: 'cafe', name: 'The Driftwood Café', x: 58, y: 23, w: 6, h: 3, door: 60, style: { roof: '#8a5a9e', wall: 'boards', trim: '#5a3b2a', awning: ['#fbf1dc', '#8a5a9e'], sign: 'cup', chimney: 5, gable: 'door', doorKind: 'double', smoke: 'hearth' } },
+  { id: 'library', name: 'Seashell Library', x: 23, y: 35, w: 6, h: 4, door: 25, style: { roof: '#3f7f7c', roofKind: 'scallop', wall: 'stone', trim: '#4b3a3a', sign: 'book', round: true, chimney: 4, tower: 'left', arched: true, ivy: 'right', windows: [58, 78], smoke: false } },
+  { id: 'wren', name: "Wren's Cottage", x: 32, y: 36, w: 4, h: 3, door: 33, style: { roof: '#e3a1b4', roofKind: 'scallop', wall: 'plaster', trim: '#8e5d3e', flowerbox: true, round: true, chimney: 3, hip: true, ivy: 'left', roses: true, shutter: '#8fb7d6', smoke: 'hearth' } },
+  { id: 'shack', name: "Finn's Boathouse", x: 30, y: 48, w: 5, h: 3, door: 32, style: { roof: '#4d7fc4', wall: 'boards', trim: '#4a2e25', sign: 'fish', stilts: false, annex: 'left', annexKind: 'shed', pitch: 0.7 } },
   { id: 'lighthouse', name: 'Old Glimmer', x: 85, y: 50, w: 3, h: 3, door: 86, style: { kind: 'lighthouse' } },
 ];
 
 export const BUILDINGS = [
   ...VILLAGE_BUILDINGS.map((b) => ({ ...b, x: b.x + OX, y: b.y + OZ, door: b.door + OX })),
-  { id: 'farmhouse', name: 'Honeydew Farmhouse', x: 6, y: 63, w: 5, h: 3, door: 8, style: { roof: '#c89a52', wall: 'boards', wallColor: '#ead9b8', trim: '#6b4330', chimney: 1, flowerbox: true, shutter: '#4f955a' } },
-  { id: 'barn', name: 'The Big Red Barn', x: 22, y: 46, w: 7, h: 4, door: 25, style: { roof: '#7a3a36', wall: 'boards', wallColor: '#c64a4a', trim: '#f4efe4', pitch: 1.0, sign: 'star' } },
+  { id: 'farmhouse', name: 'Honeydew Farmhouse', x: 6, y: 63, w: 5, h: 3, door: 8, style: { roof: '#c89a52', roofKind: 'thatch', wall: 'boards', wallColor: '#ead9b8', trim: '#6b4330', chimney: 1, flowerbox: true, shutter: '#4f955a', porch: true, smoke: 'hearth' } },
+  { id: 'barn', name: 'The Big Red Barn', x: 22, y: 46, w: 7, h: 4, door: 25, style: { roof: '#7a3a36', roofKind: 'tin', wall: 'boards', wallColor: '#c64a4a', trim: '#f4efe4', pitch: 1.0, sign: 'star', barn: true, roofShape: 'gambrel' } },
   { id: 'windmill', name: 'The Old Windmill', x: 11, y: 54, w: 3, h: 3, door: 12, style: { kind: 'windmill' } },
-  { id: 'marlo', name: 'Marlo’s Hut', x: 155, y: 109, w: 4, h: 3, door: 156, style: { roof: '#3f9b98', wall: 'boards', wallColor: '#e9dcc8', trim: '#6b4330', round: true, flowerbox: true } },
+  { id: 'marlo', name: 'Marlo’s Hut', x: 155, y: 109, w: 4, h: 3, door: 156, style: { roof: '#3f9b98', wall: 'boards', wallColor: '#e9dcc8', trim: '#6b4330', round: true, flowerbox: true, hip: true, porch: 'flowers' } },
 ];
 
 export const AREAS = [
@@ -315,6 +315,8 @@ export function buildOverworld() {
   vadd('bench', 40, 34); vadd('bench', 53, 34);
   for (const [x, y] of [[39, 23], [55, 23], [39, 35], [55, 35], [44, 27.2], [50.5, 27.2], [14, 28], [26, 31], [35, 31], [62, 31], [48, 44], [48, 52], [21, 43], [67, 31], [50.3, 64.4], [43.7, 64.4]]) vadd('lamp', x, y);
   vadd('planter', 41, 25); vadd('planter', 53, 25); vadd('planter', 41, 33); vadd('planter', 53, 33);
+  // bunting strung from lamp to lamp over the square (overhead: nothing to bump into)
+  for (const [x, y, x2, y2] of [[39, 23, 44, 27.2], [44, 27.2, 50.5, 27.2], [50.5, 27.2, 55, 23], [39, 35, 44, 27.2], [50.5, 27.2, 55, 35]]) vadd('bunting', x, y, { x2: x2 + OX, y2: y2 + OZ });
   vadd('sign', 36, 28, { text: 'Market Plaza →' });
   vadd('sign', 48.6, 40, { text: '↓ Driftwood Beach' });
   vadd('sign', 48.6, 12, { text: '↑ Whisperwood · Waterfall Lake' });
@@ -334,9 +336,21 @@ export function buildOverworld() {
   for (let y = 21; y <= 25; y++) { vadd('fence', 14, y - 0.5, { v: true }); vadd('fence', 21, y - 0.5, { v: true }); }
   mark(OX + 14, OZ + 20, 8, 7);
   add('ferry', FERRY.village.x, FERRY.village.z, {});
+  // ---- life around the houses: each says who lives there (beside doors & walls, off the paths)
+  add('pots', 54.25, 63.32);                                          // your cottage, under the rose
+  add('sawhorse', 71.35, 57.25);                                      // Theo's workshop (he saws beside it)
+  add('pots', 72.75, 67.35); add('seedlings', 76.9, 67.5);            // Petal & Seed
+  add('sacks', 84.72, 60.4); add('breadrack', 88.35, 60.36);          // Rosa's bakery
+  add('terrace', 102.7, 67.5); add('terrace', 107.35, 67.5);          // the Driftwood Café
+  add('bookcart', 72.35, 79.5);                                       // the library
+  add('pots', 76.4, 79.32); add('birdhouse', 80.5, 78.3);             // Wren's cottage
+  add('nets', 72.25, 89.3); add('crabpots', 79.75, 89.8);             // Finn's boathouse
 
   // ---- Honeydew Fields
   add('scarecrow', 20, 61.8);
+  add('rocker', 6.8, 66.42); add('raincask', 11.35, 65.55);          // the farmhouse porch
+  add('laundry', 3.3, 68.45, { x2: 6.65 });
+  add('wheelbarrow', 23.3, 50.8, { rot: 0.4 });                      // by the barn
   add('farmstand', 42.5, 72.0);
   add('beehive', 38, 58.5); add('beehive', 39.5, 59.5); add('beehive', 38.2, 60.8);
   add('haybale', 30.5, 51); add('haybale', 31.6, 52.2); add('haybale', 20, 52);
@@ -380,6 +394,7 @@ export function buildOverworld() {
   add('sign', 36, 84.4, { text: 'Seagull Bluffs' });
   add('palm', 152, 111); add('palm', 166, 110); add('palm', 170, 116); add('palm', 154, 118); add('palm', 163, 119.5);
   add('grotto', 168.5, 113.4);
+  add('surfboard', 159.35, 111.25); add('crabpots', 154.35, 111.55);   // Marlo’s beach hut
   add('lamp', 158.4, 107.6);
 
   // ---- Frostpine Ridge

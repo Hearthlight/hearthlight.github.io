@@ -85,7 +85,7 @@ export function wallFill(p, x0, y0, w, h, kind, style = {}, seed = 1) {
     // plaster / timber base
     p.rect(x0, y0, w, h, R.m);
     for (let i = 0; i < w * h * 0.05; i++) p.px(x0 + r() * w, y0 + r() * h, r() < 0.5 ? R.l : mix(R.m, R.d, 0.5));
-    if (kind === 'timber') {
+    if (kind === 'timber' && !style.noBeam) {
       const beam = style.trim || WALLS.timber.beam;
       const B = ramp(beam);
       p.hline(x0, y0 + Math.floor(h * 0.42), w, B.m);
@@ -98,13 +98,29 @@ export function wallFill(p, x0, y0, w, h, kind, style = {}, seed = 1) {
 // Facade: front wall with door & windows. Returns color + glow canvases.
 // ---------------------------------------------------------------------------
 export function paintFacade({ wTiles, hPx, kind = 'plaster', style = {}, doorX = null, seed = 7, windows = null, sign = null }) {
-  const W = wTiles * TX, H = hPx;
+  const W = Math.round(wTiles * TX), H = hPx;
   const p = new Painter(W, H);
   const glow = new Painter(W, H);
   glow.rect(0, 0, W, H, '#000000');
   const trim = style.trim || '#6b4330';
   const T = ramp(trim);
-  wallFill(p, 0, 0, W, H, kind, style, seed);
+  const two = style.storeys === 2;
+  wallFill(p, 0, 0, W, H, kind, kind === 'timber' ? { ...style, noBeam: true } : style, seed);
+  // (where the door & windows go: a timber frame is built round them)
+  const dbl = style.doorKind === 'double';
+  const dw = dbl ? 14 : 12, dh = Math.min(21, H - 5);
+  const doorRect = doorX !== null ? { x: Math.round(doorX * TX) + (dbl ? 1 : 2), y: H - 3 - dh, w: dw, h: dh } : null;
+  const winW = 10, winH = 9;
+  // one row of windows under the eave; a house of two storeys has a row on each floor
+  const wy = two ? H - 24 : Math.max(3, Math.floor(H * 0.2));
+  const wyUp = two ? Math.max(4, Math.floor(H * 0.13)) : null;
+  const slots = windows || autoWindows(W, doorRect, winW);
+  const slotsUp = two ? (style.upWindows || evenWindows(W, winW)) : [];
+  if (kind === 'timber') timberFrame(p, W, H, T, doorRect, slots, winW, wy + winH + 1, two ? { y: wyUp, slots: slotsUp, floor: wy - 5 } : null);
+  // between the floors: a string course of the trim colour
+  if (two && kind !== 'timber' && kind !== 'logs') { p.rect(0, wy - 5, W, 2, T.m); p.hline(0, wy - 4, W, T.d); p.hline(0, wy - 3, W, 'rgba(40,20,40,0.18)'); }
+  // rain-splash grime along the foot of the wall
+  p.rect(0, H - 6, W, 3, 'rgba(70,45,55,0.12)');
 
   // foundation
   const F = ramp('#8f8a93');
@@ -117,6 +133,11 @@ export function paintFacade({ wTiles, hPx, kind = 'plaster', style = {}, doorX =
   if (kind === 'timber' || kind === 'plaster' || kind === 'boards') {
     p.rect(0, 0, 2, H - 3, T.m); p.vline(1, 0, H - 3, T.d);
     p.rect(W - 2, 0, 2, H - 3, T.m); p.vline(W - 1, 0, H - 3, T.d);
+  }
+  if (kind === 'stone' || kind === 'brick') {
+    // dressed quoins up the corners
+    const Q = ramp(kind === 'brick' ? '#d8cfc4' : '#cfc8c2');
+    for (let y = 0, k = 0; y < H - 4; y += 4, k++) for (const cx of [0, W - (k % 2 ? 3 : 5)]) { p.rect(cx, y, k % 2 ? 3 : 5, 3, Q.m); p.hline(cx, y, k % 2 ? 3 : 5, Q.l); }
   }
   if (kind === 'logs') {
     // log ends at the corners
@@ -132,38 +153,47 @@ export function paintFacade({ wTiles, hPx, kind = 'plaster', style = {}, doorX =
 
   // door
   let door = null;
-  if (doorX !== null) {
-    const dw = 12, dh = Math.min(21, H - 5);
-    const dx = doorX * TX + 2, dy = H - 3 - dh;
-    door = { x: dx, y: dy, w: dw, h: dh };
+  if (doorRect) {
+    const dx = doorRect.x, dy = doorRect.y;
+    door = doorRect;
     const D = ramp(style.doorColor || '#8e5d3e');
     // frame
     p.rect(dx - 1, dy - 1, dw + 2, dh + 1, T.o);
     p.rect(dx, dy, dw, dh, D.m);
     for (let x = dx + 2; x < dx + dw; x += 3) p.vline(x, dy + 1, dh - 1, D.d);
     p.hline(dx, dy, dw, D.l);
-    if (style.round) {
+    if (style.round || style.arched) {
       p.px(dx, dy, T.o); p.px(dx + dw - 1, dy, T.o); p.px(dx + 1, dy, T.o); p.px(dx + dw - 2, dy, T.o);
       p.px(dx, dy + 1, T.o); p.px(dx + dw - 1, dy + 1, T.o);
     }
-    // little window in door
-    p.rect(dx + 4, dy + 4, 4, 4, '#2d3a5a');
-    p.rect(dx + 4, dy + 4, 4, 4, '#9ccbe8');
-    p.px(dx + 4, dy + 4, '#e8f6ff');
-    p.hline(dx + 4, dy + 6, 4, D.d); p.vline(dx + 6, dy + 4, 4, D.d);
-    glow.rect(dx + 4, dy + 4, 4, 4, '#ffcf7a');
-    // knob & step shadow
-    p.px(dx + dw - 3, dy + Math.floor(dh / 2) + 1, '#f2c14e');
-    p.px(dx + dw - 3, dy + Math.floor(dh / 2) + 2, '#b8862a');
+    if (dbl) {
+      // two leaves, a fanlight over them, two knobs
+      p.vline(dx + dw / 2, dy + 1, dh - 1, T.o);
+      p.rect(dx + 2, dy + 2, dw - 4, 3, '#9ccbe8'); p.hline(dx + 2, dy + 2, dw - 4, '#e8f6ff');
+      for (let x = dx + 4; x < dx + dw - 2; x += 3) p.px(x, dy + 3, D.d);
+      glow.rect(dx + 2, dy + 2, dw - 4, 3, '#ffcf7a');
+      p.px(dx + dw / 2 - 2, dy + Math.floor(dh / 2) + 1, '#f2c14e'); p.px(dx + dw / 2 + 1, dy + Math.floor(dh / 2) + 1, '#f2c14e');
+    } else {
+      // little window in door
+      p.rect(dx + 4, dy + 4, 4, 4, '#9ccbe8');
+      p.px(dx + 4, dy + 4, '#e8f6ff');
+      p.hline(dx + 4, dy + 6, 4, D.d); p.vline(dx + 6, dy + 4, 4, D.d);
+      glow.rect(dx + 4, dy + 4, 4, 4, '#ffcf7a');
+      // knob
+      p.px(dx + dw - 3, dy + Math.floor(dh / 2) + 1, '#f2c14e');
+      p.px(dx + dw - 3, dy + Math.floor(dh / 2) + 2, '#b8862a');
+    }
   }
 
   // windows (evenly spread, avoiding the door)
   const wins = [];
-  const winW = 10, winH = 9, wy = Math.max(3, Math.floor(H * 0.2));
-  const slots = windows || autoWindows(W, door, winW);
   for (const wx of slots) {
     paintWindow(p, glow, wx, wy, winW, winH, T, style);
     wins.push({ x: wx, y: wy, w: winW, h: winH });
+  }
+  for (const wx of slotsUp) {
+    paintWindow(p, glow, wx, wyUp, winW, winH, T, { ...style, flowerbox: style.flowerbox || style.upFlowers });
+    wins.push({ x: wx, y: wyUp, w: winW, h: winH });
   }
 
   // sign board above the door
@@ -176,6 +206,44 @@ export function paintFacade({ wTiles, hPx, kind = 'plaster', style = {}, doorX =
     drawIcon(p, sign, sx + sw / 2 - 2, sy + 1);
   }
   return { color: p.c, glow: glow.c, door, windows: wins };
+}
+
+// an upper floor's windows: evenly along the whole wall (nothing below to avoid)
+function evenWindows(W, winW) {
+  const n = Math.max(2, Math.round(W / 30));
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(Math.round(((i + 0.5) / n) * W - winW / 2));
+  return out.filter((x) => x > 3 && x + winW < W - 3);
+}
+
+// Half-timbering: a rail under the eave and one at sill height, posts at the corners and on
+// both sides of every window & the door, braces slanting across the panels below the sills
+function timberFrame(p, W, H, B, door, slots, winW, sillY, up = null) {
+  const top = up ? up.floor : 2, bot = H - 3;
+  if (up) {
+    // the upper floor: a rail under the eave, one at its floor, posts round its windows
+    p.rect(0, 2, W, 2, B.m); p.hline(0, 3, W, B.d);
+    const us = [0, W - 2];
+    for (const wx of up.slots) us.push(wx - 3, wx + winW + 1);
+    for (const x of us) { p.rect(x, 2, 2, top - 2, B.m); p.vline(x + 1, 2, top - 2, B.d); }
+    p.rect(0, up.y + 10, W, 2, B.m);
+  }
+  p.rect(0, top, W, 2, B.m); p.hline(0, top + 1, W, B.d);
+  p.rect(0, sillY, W, 2, B.m); p.hline(0, sillY + 1, W, B.d);
+  const xs = [0, W - 2];
+  for (const wx of slots) xs.push(wx - 3, wx + winW + 1);
+  if (door) xs.push(door.x - 3, door.x + door.w + 1);
+  xs.sort((a, b) => a - b);
+  for (const x of xs) { p.rect(x, top, 2, bot - top, B.m); p.vline(x + 1, top, bot - top, B.d); }
+  for (let i = 0; i < xs.length - 1; i++) {
+    const a = xs[i] + 2, b = xs[i + 1], n = b - a;
+    if (n < 7 || (door && a >= door.x - 2 && b <= door.x + door.w + 2)) continue;
+    const y0 = sillY + 2, y1 = bot - 2;
+    for (let k = 0; k < n; k++) {
+      const y = Math.round(y0 + (k / Math.max(1, n - 1)) * (y1 - y0));
+      p.rect(i % 2 ? a + k : b - 1 - k, y, 1, 2, k % 2 ? B.d : B.m);
+    }
+  }
 }
 
 function autoWindows(W, door, winW) {
@@ -204,6 +272,8 @@ export function paintWindow(p, glow, x, y, w, h, T, style = {}) {
       p.vline(sx, y, h, S.o);
     }
   }
+  // (an arched window: its top corners filled back with the wall behind, a keystone over it)
+  const behind = style.arched ? [...p.ctx.getImageData(x - 2, y - 2, 1, 1).data] : null;
   p.rect(x - 1, y - 1, w + 2, h + 2, T.o);
   p.rect(x, y, w, h, '#5c7fa8');
   for (let j = 0; j < h; j++) {
@@ -215,6 +285,12 @@ export function paintWindow(p, glow, x, y, w, h, T, style = {}) {
   p.px(x + 1, y + 1, '#ffffff');
   p.px(x + 2, y + 1, '#e8f6ff');
   p.px(x + 1, y + 2, '#e8f6ff');
+  if (behind) {
+    const wc = `rgb(${behind[0]},${behind[1]},${behind[2]})`;
+    for (const [dx, dy] of [[-1, -1], [0, -1], [1, -1], [-1, 0], [w - 2, -1], [w - 1, -1], [w, -1], [w, 0]]) p.px(x + dx, y + dy, wc);
+    p.px(x, y, T.o); p.px(x + 1, y - 1, T.o); p.px(x + w - 1, y, T.o); p.px(x + w - 2, y - 1, T.o);
+    p.rect(x + Math.floor(w / 2) - 1, y - 2, 2, 2, T.l);
+  }
   // mullions
   p.vline(x + Math.floor(w / 2), y, h, T.m);
   p.hline(x, y + Math.floor(h / 2), w, T.m);
@@ -227,6 +303,7 @@ export function paintWindow(p, glow, x, y, w, h, T, style = {}) {
     p.vline(x + w - 1, y, h, C.m); p.vline(x + w - 2, y, h - 2, C.l);
   }
   glow.rect(x, y, w, h, '#ffc76a');
+  if (behind) { glow.px(x, y, '#000000'); glow.px(x + w - 1, y, '#000000'); }
   glow.px(x + 1, y + 1, '#fff0b8');
   glow.vline(x + Math.floor(w / 2), y, h, '#6b4a20');
   glow.hline(x, y + Math.floor(h / 2), w, '#6b4a20');
@@ -274,42 +351,153 @@ export function drawIcon(p, name, x, y) {
 }
 
 // ---------------------------------------------------------------------------
-// Roofs: shingle texture for a slope of wTexels x hTexels (projected size)
+// Roofs: a slope of wT x hT texels (its projected size), the ridge at the top.
+// kinds: shingle · scallop (fish scales) · tile (clay barrel tiles) · slate · shakes (split
+// wood) · thatch · tin (corrugated). Every piece gets its own shade, courses are laid from
+// the eave up (each one overlapping the one below), moss gathers low down.
 // ---------------------------------------------------------------------------
-export function paintRoof(wT, hT, color, { seed = 3, kind = 'shingle', ridge = true, eave = true } = {}) {
+export function paintRoof(wT, hT, color, { seed = 3, kind = 'shingle', ridge = true, eave = true, moss = 1 } = {}) {
   const p = new Painter(wT, hT);
   const R = ramp(color);
   const r = rng(seed);
+  const tints = [R.m, R.m, R.m, mix(R.m, R.l, 0.45), mix(R.m, R.d, 0.4), mix(R.m, R.h, 0.25), mix(R.m, R.d, 0.2)];
+  const pick = () => tints[Math.floor(r() * tints.length)];
   p.rect(0, 0, wT, hT, R.m);
-  const rowH = 4;
-  for (let y = 0; y < hT; y += rowH) {
-    const row = y / rowH;
-    const off = (row % 2) * 3;
-    // row body
-    for (let j = 0; j < rowH && y + j < hT; j++) {
-      const col = j === 0 ? R.l : j === rowH - 1 ? R.d : R.m;
-      p.hline(0, y + j, wT, col);
-    }
-    // shingle breaks
-    for (let x = -off; x < wT; x += 6) {
-      if (x >= 0) p.vline(x, y + 1, rowH - 1, R.d);
-      if (r() < 0.12) p.rect(Math.max(0, x + 1), y + 1, 5, rowH - 2, mix(R.m, R.d, 0.5));
-      if (r() < 0.08) p.rect(Math.max(0, x + 1), y + 1, 4, 1, R.h);
-      if (kind === 'scallop') { p.px(x + 1, y + rowH - 1, R.o); p.px(x + 5, y + rowH - 1, R.o); }
-    }
-    p.hline(0, y + rowH - 1, wT, R.o);
-  }
-  // gentle light falloff toward the eave
+  (ROOFS[kind] || ROOFS.shingle)(p, wT, hT, R, r, pick);
+  // sunlight just under the ridge, shade toward the eave
   for (let y = 0; y < hT; y++) {
     const t = y / hT;
-    if (t > 0.72) p.rect(0, y, wT, 1, `rgba(40,20,50,${(t - 0.72) * 0.35})`);
+    if (t < 0.2) p.rect(0, y, wT, 1, `rgba(255,244,214,${((0.2 - t) * 0.4).toFixed(3)})`);
+    else if (t > 0.64) p.rect(0, y, wT, 1, `rgba(40,20,50,${((t - 0.64) * 0.38).toFixed(3)})`);
   }
-  if (ridge) { p.rect(0, 0, wT, 2, R.o); p.hline(0, 2, wT, R.d); p.hline(0, 0, wT, R.d); }
-  if (eave) { p.rect(0, hT - 2, wT, 2, R.o); p.hline(0, hT - 2, wT, mix(R.o, R.d, 0.5)); }
-  // moss specks
-  for (let i = 0; i < wT * hT * 0.004; i++) { const x = r() * wT, y = r() * hT; p.px(x, y, '#7a9a55'); p.px(x + 1, y, '#5f7f45'); }
+  // moss in little clumps, mostly low down where the rain runs off
+  if (moss && kind !== 'tin') {
+    const n = Math.round((wT * hT) / 900 * moss) + 1;
+    for (let i = 0; i < n; i++) {
+      const cx = Math.floor(r() * wT), cy = Math.floor(hT * (0.4 + r() * 0.52)), s = 2 + Math.floor(r() * 3);
+      for (let k = 0; k < s * 3; k++) {
+        const v = r();
+        p.px(cx + Math.round((r() - 0.5) * s * 2), cy + Math.round((r() - 0.5) * s * 0.8), v < 0.25 ? '#a3c46a' : v < 0.65 ? '#7a9a55' : '#5f7f45');
+      }
+    }
+  }
+  if (ridge) { p.hline(0, 0, wT, R.o); p.hline(0, 1, wT, R.d); }
+  if (eave) { p.hline(0, hT - 2, wT, mix(R.o, R.d, 0.5)); p.hline(0, hT - 1, wT, R.o); }
   return p.c;
 }
+
+// (courses from the eave up: the one above is painted last, over the top of the one below)
+function courses(hT, rowH) { const out = []; for (let y = 0, row = 0; y < hT; y += rowH, row++) out.push([y, row]); return out.reverse(); }
+
+const ROOFS = {
+  shingle(p, w, h, R, r, pick) {
+    const rowH = 4;
+    for (const [y, row] of courses(h, rowH)) {
+      let x = -((row * 3) % 7);
+      while (x < w) {
+        const sw = 5 + Math.floor(r() * 3), c = pick();
+        p.rect(x, y, sw, rowH, c);
+        p.hline(x + 1, y, sw - 1, mix(c, R.l, 0.55));          // its top catches the light
+        p.vline(x, y, rowH, R.d);                               // the gap to its neighbour
+        if (r() < 0.12) p.px(x + 1 + Math.floor(r() * (sw - 2)), y + 1, R.h);
+        p.hline(x, y + rowH - 1, sw, mix(c, R.o, 0.65));        // its lower edge, in shadow
+        x += sw;
+      }
+    }
+  },
+  scallop(p, w, h, R, r, pick) {
+    // fish scales: rounded tabs, each one's tip hanging over the joint of the two below it
+    const rowH = 4, sw = 8;
+    const S = ['cccccccc', 'chlccccd', 'dlcccccd', 'odccccdo', '.oddddo.'];
+    for (const [y, row] of courses(h, rowH)) {
+      for (let x = -(row % 2) * 4; x < w; x += sw) {
+        const c = pick();
+        p.grid(S, { c, h: mix(c, R.h, 0.55), l: mix(c, R.l, 0.5), d: mix(c, R.d, 0.6), o: R.o }, x, y);
+      }
+    }
+  },
+  tile(p, w, h, R, r, pick) {
+    // clay barrel tiles: a column of rounded backs, troughs between them, rows overlapping
+    const rowH = 5, cw = 5;
+    for (const [y] of courses(h, rowH)) {
+      for (let x = 0; x < w; x += cw) {
+        const c = pick();
+        p.rect(x, y, cw, rowH, c);
+        p.vline(x, y, rowH, mix(c, R.o, 0.55));               // the trough
+        p.vline(x + 1, y, rowH - 1, mix(c, R.l, 0.5));
+        p.vline(x + 2, y, rowH - 2, mix(c, R.h, 0.5));        // the rounded back in the sun
+        p.vline(x + 4, y, rowH, mix(c, R.d, 0.4));
+        p.hline(x + 1, y + rowH - 1, 3, mix(c, R.d, 0.5));    // its lower lip
+        p.px(x, y + rowH - 1, R.o);
+      }
+    }
+  },
+  slate(p, w, h, R, r, pick) {
+    const rowH = 4;
+    for (const [y, row] of courses(h, rowH)) {
+      let x = -((row * 4) % 8);
+      while (x < w) {
+        const sw = 6 + Math.floor(r() * 3);
+        const c = r() < 0.3 ? mix(pick(), '#7c8494', 0.14) : pick();
+        p.rect(x, y, sw, rowH, c);
+        p.hline(x + 1, y, sw - 1, mix(c, R.l, 0.35));
+        p.vline(x, y, rowH, R.d);
+        if (r() < 0.22) p.px(x + 1, y + rowH - 2, mix(c, R.h, 0.55));    // a chipped corner
+        p.hline(x, y + rowH - 1, sw, mix(c, R.o, 0.6));
+        x += sw;
+      }
+    }
+  },
+  shakes(p, w, h, R, r, pick) {
+    // split wood: narrow, uneven, greying in the weather, a grain line down each
+    const rowH = 5, grey = '#8f8a86';
+    for (const [y] of courses(h, rowH)) {
+      let x = -Math.floor(r() * 4);
+      while (x < w) {
+        const sw = 3 + Math.floor(r() * 4), len = rowH + (r() < 0.35 ? 1 : 0);
+        const c = mix(pick(), grey, r() * 0.22);
+        p.rect(x, y, sw, len, c);
+        p.vline(x, y, len, R.o);
+        if (sw > 3) p.vline(x + 1 + Math.floor(r() * (sw - 2)), y + 1, len - 2, mix(c, R.d, 0.45));
+        p.px(x + 1, y, mix(c, R.l, 0.6));
+        p.hline(x, y + len - 1, sw, mix(c, R.o, 0.55));
+        x += sw;
+      }
+    }
+  },
+  thatch(p, w, h, R, r) {
+    // straw combed down the slope in short strands, greying with age lower down
+    const old = mix(R.m, '#8d7f68', 0.55), oldD = mix(R.d, '#6f6452', 0.5);
+    for (let x = 0; x < w; x++) {
+      let y = -Math.floor(r() * 4);
+      while (y < h) {
+        const len = 2 + Math.floor(r() * 4), v = r(), aged = r() < (y / h) * 0.55;
+        p.vline(x, y, len, aged ? (v < 0.45 ? oldD : old) : v < 0.3 ? R.d : v < 0.72 ? R.m : v < 0.95 ? R.l : R.h);
+        y += len;
+      }
+    }
+    // laid in thick courses: a soft shadowed line where each one overlaps the next
+    for (let y = 9; y < h - 5; y += 9) {
+      for (let x = 0; x < w; x++) {
+        if (hash2(x, y, 4) < 0.18) continue;
+        p.px(x, y + Math.floor(hash2(x >> 2, y, 5) * 2), mix(R.d, R.o, 0.35));
+      }
+    }
+    // a thick, clipped edge along the eave
+    p.rect(0, h - 4, w, 4, oldD);
+    for (let x = 0; x < w; x++) { p.px(x, h - 4, hash2(x, 1, 7) < 0.5 ? R.m : old); if (hash2(x, 2, 7) < 0.35) p.px(x, h - 3, old); }
+  },
+  tin(p, w, h, R, r) {
+    // corrugated sheets: ridges down the slope, overlaps with screws, a little rust
+    for (let x = 0; x < w; x++) p.vline(x, 0, h, [R.h, R.l, R.m, R.d][x % 4]);
+    for (let y = 15; y < h - 3; y += 16) {
+      p.hline(0, y, w, R.o); p.hline(0, y + 1, w, R.h);
+      for (let x = 1; x < w; x += 8) p.px(x, y - 1, R.o);
+    }
+    const rust = mix(R.m, '#a8583a', 0.5);
+    for (let i = 0; i < w / 6; i++) { const x = Math.floor(r() * w), y = Math.floor(r() * h); p.vline(x, y, 2 + Math.floor(r() * 6), rust); }
+  },
+};
 
 // Plain wall strip (sides / gables)
 export function paintWall(wT, hT, kind, style = {}, seed = 5, { foundation = true } = {}) {

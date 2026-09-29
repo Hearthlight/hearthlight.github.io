@@ -32,6 +32,7 @@ import { clamp, lerp, wait as sleepMs } from '../engine/util.js';
 import { t, tn, num } from '../i18n.js';
 import { Wild } from '../solo/wild.js';
 import { SEE } from '../render/seethrough.js';
+import { chimneySmoke } from '../models/buildings.js';
 
 const MINUTES_PER_SEC = 1.6; // game minutes per real second (≈12.5 real minutes per day)
 
@@ -65,7 +66,6 @@ export class World {
     this.lastArea = null;
     this.stepT = 0;
     this.ambientT = 0;
-    this.smokeT = 0;
     this.drawText = drawText;
   }
 
@@ -1795,12 +1795,9 @@ export class World {
       f.m.position.y += f.vy * dt;
       f.m.position.x += Math.sin(this.t + f.sway) * dt * 0.2;
     }
-    // chimney smoke & the fountain
-    this.smokeT -= dt;
-    if (this.smokeT <= 0) {
-      this.smokeT = 0.35;
-      for (const c of this.over.chimneys) if (Math.random() < 0.5) this.fx.emit('smoke', c.x, c.y, c.z, 1);
-    }
+    // chimney smoke (each chimney at its own hours: the bakery's oven all day, hearths morning &
+    // evening, the workshop's stove while Theo works) & the fountain
+    for (const c of this.over.chimneys) if (c.smoke) chimneySmoke(this.fx, c, dt, s.hour, this.lighting.lampLevel || 0);
     if (this.over.fountain && Math.random() < dt * 8) this.fx.emit('water', this.over.fountain.x + (Math.random() - 0.5) * 0.2, this.over.fountain.y, this.over.fountain.z, 1);
     for (const lp of this.over.leafpiles || []) {
       if (lp.squash > 0) { lp.squash = Math.max(0, lp.squash - dt * 1.2); lp.obj.scale.set(1 + lp.squash * 0.3, 1 - lp.squash * 0.6, 1 + lp.squash * 0.3); }

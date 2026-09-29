@@ -4,7 +4,7 @@
 // the raised platforms you can stand on.
 
 import { THREE } from '../../render/r3d.js';
-import { buildBuilding } from '../../models/buildings.js';
+import { buildBuilding, chimneySmoke } from '../../models/buildings.js';
 import { BIG } from './layout.js';
 
 export class Pois {
@@ -38,7 +38,7 @@ export class Pois {
     if (p.kind === 'house') {
       // (World v7) a town house of the Dawnlands, built like the valley's
       const b = buildBuilding(this.r3d, p.b);
-      res = { obj: b.group, colliders: [{ rect: [p.b.x, p.b.y, p.b.w, p.b.h] }], lights: b.lights || [], world: true, glow: b.glowMats };
+      res = { obj: b.group, colliders: [{ rect: [p.b.x, p.b.y, p.b.w, p.b.h] }, ...(b.colliders || [])], lights: b.lights || [], world: true, glow: b.glowMats, chimneys: b.chimneys };
     } else if (p.kind === 'lighthouse') {
       const b = buildBuilding(this.r3d, { id: 'isle-lighthouse', x: Math.round(p.x) - 1, y: Math.round(p.z) - 1, w: 3, h: 3, door: Math.round(p.x), style: { kind: 'lighthouse' } });
       if (b.lamp) b.lamp.emissiveIntensity = 1.4;
@@ -62,14 +62,15 @@ export class Pois {
       this.lights.push(s);         // (the solo game adds them back after a trip indoors)
     }
     for (const d of res.decks || []) this.big.addDeck([d.rect[0] + off.x, d.rect[1] + off.z, d.rect[2], d.rect[3]], d.y);
-    p.built = { obj, anim: res.anim || null, glow: res.glow || null };
+    p.built = { obj, anim: res.anim || null, glow: res.glow || null, chimneys: (res.chimneys || []).filter((c) => c.smoke) };
   }
 
   update(dt, time, hour) {
-    const lamps = this.big.party.lighting.lampLevel || 0;
+    const lamps = this.big.party.lighting.lampLevel || 0, fx = this.big.party.world && this.big.party.world.fx;
     for (const p of this.live) {
       if (p.built.anim && !p.stopped) p.built.anim(time, dt, hour);
       if (p.built.glow) for (const m of p.built.glow) m.emissiveIntensity = lamps;       // (windows lit at night)
+      if (fx && p.built.chimneys.length) for (const c of p.built.chimneys) chimneySmoke(fx, c, dt, hour, lamps);
     }
   }
 
