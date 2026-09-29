@@ -25,14 +25,15 @@ const ENVELOPE = [402.5, 213];
 const WENDY6 = [400.4, 206.8];
 const AMMONITE = [385.6, 196];
 const LIGHTHOUSE = [469, 215.6];                             // Barnaby, on Lighthouse Isle
-const REGATTA = [[466.5, 221.5], [446, 236], [456, 263], [486, 246], [470, 222.5]];   // start, three buoys, finish
+// (the course stays in the straits: south of z ≈ 245 the sea is the Wide Sea, shut until chapter 7)
+const REGATTA = [[466.5, 221.5], [446, 236], [462, 238], [481, 236], [470, 222.5]];   // start, three buoys, finish
 const SPRINGS = [406, 66.5];                                 // Granny Mochi’s onsen
 const POOL = [405.05, 70.1];                                 // the bathhouse’s steaming pool
 const GLOOMSTAGE = [452, 50];                                // moored over the crater
-const TYRANT = [430, 200], TOOTH = [430.4, 202.4], TIPTOE = [425.5, 190.6];
+const TYRANT = [430, 200], TOOTH = [430.4, 202.4], TIPTOE = [422.5, 195.5];   // (back to the beach west of his clearing: dry)
 const BOTTLES = [
   [[450, 228], [440, 240], [452, 245], [462, 233]],
-  [[480, 230], [494, 238], [490, 251], [476, 244]],
+  [[480, 228], [492, 232], [484, 238], [474, 236]],
   [[456, 200], [446, 206], [452, 219], [462, 210]],
 ];
 const KING = [302, 45.6], THRONE = [302, 43.4];

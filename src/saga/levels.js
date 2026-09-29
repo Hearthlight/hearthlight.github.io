@@ -53,10 +53,12 @@ export function gapTaken(gap) {
   return g > 0 ? 1 + 0.08 * g : 1 + 0.05 * g;
 }
 
-// the level a hero fights at, here
+// the level a hero fights at, here — a party is brought up to the land's floor; alone, to two
+// below it (quest XP alone can leave a hero 5–7 levels short in chapters 4 to 7: a wall, not a
+// challenge — they still feel the gap, just not all of it)
 export function effLevel(own, lv, solo) {
   const hi = lv[1] + 2;
-  return solo ? Math.min(own, hi) : Math.max(lv[0], Math.min(own, hi));
+  return solo ? Math.max(lv[0] - 2, Math.min(own, hi)) : Math.max(lv[0], Math.min(own, hi));
 }
 
 // XP for a defeat, by the monster's level and the hero's own (grey ones give none)

@@ -69,4 +69,7 @@ export const MULTI10_IT = {
   "Far away? They can play from home with it": "Lontani? Con questo link si gioca da casa",
   "The round buttons: attack (hold it: a big one) · {special} · dodge · jump": "I pulsanti tondi: attacca (tenuto: un colpo forte) · {special} · schiva · salta",
   "Tap: the valley": "Tocca: la valle",
+  "Find the lost pages ({n}/5) — the last one lies past the broken bridge": "Ritrova le pagine perdute ({n}/5) — l’ultima è oltre il ponte rotto",
+  "{#8fe0ff}Glimmer Shard{/} received! It glows softly — a keepsake of Old Glimmer.": "{#8fe0ff}Scheggia di Barlume{/} ricevuta! Brilla piano — un ricordo del Vecchio Barlume.",
+  "The great lantern of Old Glimmer, cold and dark. It will take more than a few shards to light it again.": "La grande lanterna del Vecchio Barlume, fredda e spenta. Servirà più di qualche scheggia per riaccenderla.",
 };

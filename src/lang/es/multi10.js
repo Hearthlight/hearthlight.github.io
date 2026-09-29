@@ -69,4 +69,7 @@ export const MULTI10_ES = {
   "Far away? They can play from home with it": "¿Lejos? Con este enlace se juega desde casa",
   "The round buttons: attack (hold it: a big one) · {special} · dodge · jump": "Los botones redondos: atacar (mantenido: un golpe fuerte) · {special} · esquivar · saltar",
   "Tap: the valley": "Toca: el valle",
+  "Find the lost pages ({n}/5) — the last one lies past the broken bridge": "Encuentra las páginas perdidas ({n}/5) — la última está más allá del puente roto",
+  "{#8fe0ff}Glimmer Shard{/} received! It glows softly — a keepsake of Old Glimmer.": "¡{#8fe0ff}Fragmento de Destello{/} recibido! Brilla con suavidad — un recuerdo del Viejo Destello.",
+  "The great lantern of Old Glimmer, cold and dark. It will take more than a few shards to light it again.": "El gran farol del Viejo Destello, frío y apagado. Hará falta algo más que unos fragmentos para encenderlo de nuevo.",
 };

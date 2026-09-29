@@ -522,7 +522,8 @@ export const CH5 = {
   npcs: [
     { id: 'saffron', at: SAFFRON, face: { x: -1, z: 0.3 }, when: (S) => S.done('c4_relight'),
       lines: ['Everything has a price, little lamp. Even advice. This advice was free, which makes it suspicious.', 'Humphrey sends his regards. He sent them loudly, at three in the morning.'] },
-    { id: 'tariq', at: (S) => (!S.done('c5_oasis') ? TARIQ_OASIS : S.done('c5_clapper') || (S.st.q.c5_clapper && S.st.q.c5_clapper.s >= 1) ? (S.done('c5_temple') || (S.st.q.c5_temple && S.st.q.c5_temple.s >= 1) ? [ISLET[0] + 2.4, ISLET[1] + 1.2] : TARIQ_FORUM) : TARIQ_NEST),
+    // (he waits by his boat at the oasis until you've boarded it for the Turtle Nest)
+    { id: 'tariq', at: (S) => (!S.done('c5_oasis') || !(S.done('c5_lagoon') || (S.st.q.c5_lagoon && S.st.q.c5_lagoon.s >= 1)) ? TARIQ_OASIS : S.done('c5_clapper') || (S.st.q.c5_clapper && S.st.q.c5_clapper.s >= 1) ? (S.done('c5_temple') || (S.st.q.c5_temple && S.st.q.c5_temple.s >= 1) ? [ISLET[0] + 2.4, ISLET[1] + 1.2] : TARIQ_FORUM) : TARIQ_NEST),
       face: { x: -0.6, z: 1 }, when: (S) => S.done('c5_storm'),
       lines: ['On your left: the sea. On your right: more sea. It’s a very consistent tour.', 'Auntie says the boat is « nearly free ». I have learned not to ask what « nearly » means.'] },
     { id: 'shellington', at: SHELLINGTON, face: { x: -0.3, z: 1 }, when: (S) => S.done('c5_oasis'),

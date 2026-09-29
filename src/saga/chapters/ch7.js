@@ -287,6 +287,10 @@ async function mimesMeet(S) {
     for (const id of ['mminnow', 'mfidget', 'mbrick']) st.hide(id);
   });
   if (!C) { S.flag('mimesDone'); return; }
+  spawnMimes(S);
+}
+function spawnMimes(S) {
+  const C = S.P.combat, [x, z] = MIMES;
   const band = [['mimeminnow', x - 1.8, z - 0.6], ['mimefidget', x, z - 1], ['mimebrick', x + 2, z - 0.6]].map(([ty, ex, ez]) => {
     const e = C.spawn(ty, ex, ez, { level: 30, quiet: true });
     e.saga = true; e.sagaTag = 'mimes'; e.miniGroup = t('The Mime Troupe');
@@ -295,6 +299,17 @@ async function mimesMeet(S) {
   });
   C.bounds = { x, z: z + 1.5, rx: 9.5, rz: 7 };
   S.mimeBand = band;
+}
+// (a game loaded — or a knock-out — while the Mime Troupe is to be beaten: they're back on the
+// road when someone comes near, the count starting over)
+function ensureMimes(S) {
+  const q = S.st.q.c7_mimes, st = S.stepDef('c7_mimes');
+  if (!q || q.done || !st || st.do !== 'kill' || S.running) return;
+  const C = S.P.combat, [x, z] = MIMES;
+  if (!C || C.enemies.some((e) => e.alive && e.sagaTag === 'mimes')) return;
+  if (!S.P.players.some((p) => (p.connected || S.P.solo) && Math.hypot(p.pos.x - x, p.pos.z - z) < 24)) return;
+  q.n = 0;
+  spawnMimes(S);
 }
 
 async function mimesBeaten(S) {
@@ -583,6 +598,8 @@ export const CH7 = {
   id: 7, title: 'The Dawnlands', lv: 31, zones: ['wide', 'whale', 'harbor', 'jade', 'salt'], opens: ['autumn', 'glow', 'elder'],
   // (Grandmother Bellows keeps an eye open while her back itches)
   update(S, dt) {
+    S.mimeT = (S.mimeT || 0) - dt;
+    if (S.mimeT <= 0) { S.mimeT = 0.5; ensureMimes(S); }
     const eye = eyeOf(S.P);
     if (!eye || (S.stage && S.stage.active)) return;
     const want = S.done('c7_cross') && !S.done('c7_whale') ? 1 : 0, o = eye.userData.open || 0;

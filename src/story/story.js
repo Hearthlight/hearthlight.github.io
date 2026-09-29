@@ -101,7 +101,7 @@ export const QUESTS = {
   mabel_pages: {
     title: 'The Lost Pages', giver: 'mabel',
     steps: [
-      { obj: (s) => t('Find the lost pages ({n}/5)', { n: PAGE_SPOTS.filter((p) => s.forage.taken[p.key]).length }), check: (s) => PAGE_SPOTS.every((p) => s.forage.taken[p.key]), target: (s) => { const p = PAGE_SPOTS.find((q) => !s.forage.taken[q.key] && (q.key !== 'page5' || s.flags.bridgeFixed)); return p ? { map: 'overworld', x: p.x, z: p.z, soft: true } : null; } },
+      { obj: (s) => { const n = PAGE_SPOTS.filter((p) => s.forage.taken[p.key]).length, left = PAGE_SPOTS.filter((p) => !s.forage.taken[p.key]); return left.length === 1 && left[0].key === 'page5' && !s.flags.bridgeFixed ? t('Find the lost pages ({n}/5) — the last one lies past the broken bridge', { n }) : t('Find the lost pages ({n}/5)', { n }); }, check: (s) => PAGE_SPOTS.every((p) => s.forage.taken[p.key]), target: (s) => { const p = PAGE_SPOTS.find((q) => !s.forage.taken[q.key] && (q.key !== 'page5' || s.flags.bridgeFixed)); return p ? { map: 'overworld', x: p.x, z: p.z, soft: true } : null; } },
       { obj: 'Return the pages to Mabel', npc: 'mabel' },
     ],
   },
@@ -813,7 +813,9 @@ export class Story {
     audio.jingle('shard');
     w.fx.emit('sparkle', w.player.pos.x, 1.2, w.player.pos.z, 16, { color: '#8fe0ff' });
     const n = countItem(this.s, 'shard');
-    await w.say(null, '{#8fe0ff}Glimmer Shard{/} received! ({n}/5) It feels warm in your hands.', undefined, { n });
+    // (the saga tells Old Glimmer's story now: a shard is a keepsake, not one of five to gather)
+    if (w.wild && w.wild.saga) await w.say(null, '{#8fe0ff}Glimmer Shard{/} received! It glows softly — a keepsake of Old Glimmer.');
+    else await w.say(null, '{#8fe0ff}Glimmer Shard{/} received! ({n}/5) It feels warm in your hands.', undefined, { n });
     this.check();
   }
 
@@ -1013,6 +1015,8 @@ export class Story {
   async lens() {
     const w = this.game, s = this.s;
     if (s.flags.shardsPlaced) { await w.say(null, 'The great lantern hums with warm, golden light.'); return; }
+    // (the saga: the lamp comes back with its own story, not with shards)
+    if (w.wild && w.wild.saga) { await w.say(null, 'The great lantern of Old Glimmer, cold and dark. It will take more than a few shards to light it again.'); return; }
     if (countItem(s, 'shard') < 5) {
       await w.say(null, 'The great lantern of Old Glimmer. Five empty hollows circle its base. ({n}/5 shards)', undefined, { n: countItem(s, 'shard') });
       return;

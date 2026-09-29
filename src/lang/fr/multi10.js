@@ -69,4 +69,7 @@ export const MULTI10_FR = {
   "Far away? They can play from home with it": "Loin d’ici ? Avec ce lien, on joue de chez soi",
   "The round buttons: attack (hold it: a big one) · {special} · dodge · jump": "Les boutons ronds : attaquer (maintenu : un gros coup) · {special} · esquiver · sauter",
   "Tap: the valley": "Touche : la vallée",
+  "Find the lost pages ({n}/5) — the last one lies past the broken bridge": "Retrouve les pages perdues ({n}/5) — la dernière est au-delà du pont cassé",
+  "{#8fe0ff}Glimmer Shard{/} received! It glows softly — a keepsake of Old Glimmer.": "{#8fe0ff}Éclat de Lueur{/} reçu ! Il brille doucement — un souvenir de la Vieille Lueur.",
+  "The great lantern of Old Glimmer, cold and dark. It will take more than a few shards to light it again.": "La grande lanterne de la Vieille Lueur, froide et éteinte. Il faudra plus que quelques éclats pour la rallumer.",
 };

@@ -129,7 +129,9 @@ export class Travel {
     if (!s.attuned) { this.attune(s, p); return; }
     const why = this.blocked(p);
     if (why) { if (why !== 'busy') P.toast(why, p.color); return; }
-    const dests = this.attuned().filter((q) => q !== s);
+    // (never into a land the story hasn't opened: the Murk would only send you back)
+    const shut = (q) => P.murk && P.murk.at(Math.floor(q.x), Math.floor(q.z));
+    const dests = this.attuned().filter((q) => q !== s && !shut(q));
     if (!dests.length) { P.toast(t('Attune more waystones to travel between them'), p.color); return; }
     // the farthest ones first (that's where you'd want to go), home always offered
     dests.sort((a, b) => Math.hypot(b.x - s.x, b.z - s.z) - Math.hypot(a.x - s.x, a.z - s.z));
@@ -171,7 +173,7 @@ export class Travel {
 
   goByName(name) {
     const s = this.stones.find((q) => q.name === name && q.attuned);
-    if (!s || !this.active()) return;
+    if (!s || !this.active() || (this.party.murk && this.party.murk.at(Math.floor(s.x), Math.floor(s.z)))) return;
     const why = this.blocked(null);
     if (why) { if (why !== 'busy') this.party.toast(why, '#9fdcff'); return; }
     this.go(s);

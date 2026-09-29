@@ -69,4 +69,7 @@ export const MULTI10_DE = {
   "Far away? They can play from home with it": "Weit weg? Mit dem Link spielt man von zu Hause",
   "The round buttons: attack (hold it: a big one) · {special} · dodge · jump": "Die runden Knöpfe: angreifen (gehalten: ein starker Schlag) · {special} · ausweichen · springen",
   "Tap: the valley": "Tippen: das Tal",
+  "Find the lost pages ({n}/5) — the last one lies past the broken bridge": "Finde die verlorenen Seiten ({n}/5) – die letzte liegt hinter der kaputten Brücke",
+  "{#8fe0ff}Glimmer Shard{/} received! It glows softly — a keepsake of Old Glimmer.": "{#8fe0ff}Schimmerscherbe{/} erhalten! Er leuchtet sanft – ein Andenken an den Alten Schimmer.",
+  "The great lantern of Old Glimmer, cold and dark. It will take more than a few shards to light it again.": "Die große Laterne des Alten Schimmers, kalt und dunkel. Um sie wieder anzuzünden, braucht es mehr als ein paar Scherben.",
 };

@@ -424,7 +424,7 @@ async function dungeonStep(S, tp, clear, log, po = {}) {
     if (po.marks && po.marks['room:' + room.id]) { await sleep(100); await D().shot(po.marks['room:' + room.id], 2); }
     for (let i = 0; i < 60 && !room.done; i++) {
       await D().step(20, 1 / 60);
-      if (C) for (const e of C.enemies) if (e.alive && (e.miniGroup || e.def.boss || e.summoner)) {
+      if (C) for (const e of C.enemies) if (e.alive && (e.miniGroup || e.def.boss || e.summoner || e.sagaTag === room.id)) {   // (the Mole Brothers: the room's own foes)
         // (a boss who stops rather than falls — the Grand Finale: act by act, the cannon fired once)
         if (e.onEnd) {
           if (e.ended) continue;
