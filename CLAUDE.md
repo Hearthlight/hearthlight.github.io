@@ -217,7 +217,9 @@ tools/        devserver.py, partybots.js, sagatest.js (the saga played by itself
               i18n-scan.mjs, i18n-glossary.md,
               mapdump.mjs, bigmap.mjs (`--crop
               x0,z0,x1,z1` for a close-up), reel.js + trailer.js + reelcut.py (the trailer)
-docs/         README screenshots, plans (docs/plans/)
+docs/         README screenshots, plans (docs/plans/), social/ (the link previews' 1200×630 pictures —
+              og.png for the site, og-invite.png for pad.html / play.html — shot in the game at
+              1200×630 with the logo drawn in its font; the Pages workflow puts them at the root)
 ```
 
 Coordinates: 1 unit = 1 tile = 16 texels; x east, z south; the camera looks north at 45°.

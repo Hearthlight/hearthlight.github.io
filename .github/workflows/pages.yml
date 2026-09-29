@@ -32,6 +32,8 @@ jobs:
         run: |
           mkdir _site
           cp -r index.html pad.html play.html src vendor _site/
+          # (the link previews' pictures, at the root the pages' og:image names)
+          cp docs/social/og.png docs/social/og-invite.png _site/
           owner="${{ github.repository_owner }}"; owner="${owner,,}"; repo="${{ github.event.repository.name }}"
           # (a <owner>.github.io repository is the site's root; any other is a folder of it)
           if [ "${repo,,}" = "$owner.github.io" ]; then site="https://$owner.github.io"; else site="https://$owner.github.io/$repo"; fi
