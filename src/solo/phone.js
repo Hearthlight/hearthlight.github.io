@@ -185,6 +185,12 @@ export class SoloPhone {
     }
     if (w.dialogue.active) return { ...c, mode: 'talk', a: w.dialogue.cur && w.dialogue.cur.choices ? t('Choose') : t('Next'), b: null };
     if (w.busy > 0 || w.cinematic) return { ...c, mode: 'wait', a: null, b: null };
+    // fishing: what A does right now (the phone buzzes when a fish bites)
+    const F = w.fishing;
+    if (F && F.active && F.state !== 'show') {
+      const st = F.state;
+      return { ...c, a: st === 'bite' ? t('NOW!!') : t('Reel in'), b: null, hint: st === 'bite' ? t('A BITE! Press A!') : st === 'reel' ? t('Hold {a} to raise the net', { a: 'A' }) : t('Wait for the bite… (your phone buzzes)') };
+    }
     // playing: the valley's own prompt (Talk, Open…) or the wild lands' (Attack, Board, Ride…)
     const W = w.wild && w.wild.big ? w.wild : null;
     const wc = W ? W.ctx() : null;

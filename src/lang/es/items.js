@@ -271,10 +271,12 @@ export const ITEMS = {
   'Critter': 'Animalito',
 
   // ---- fishing (src/systems/fishing.js)
-  'It got away… try again!': 'Se escapó… ¡Inténtalo otra vez!',
+  'It got away! Press {key} as soon as the “!” pops up.': '¡Se escapó! Pulsa {key} en cuanto aparezca el «!».',
   'The fish slipped away… so close!': 'El pez se escapó… ¡por un pelo!',
   'Hold E to keep the fish in the green net!': '¡Mantén presionado E para que el pez no salga de la red verde!',
   'Hold E / click to raise the net': 'Mantén presionado E / haz clic para subir la red',
+  'Too soon! Wait until a fish bites.': '¡Demasiado pronto! Espera a que pique un pez.',
+  'Hold the {use} button to raise the net': 'Mantén presionado el botón {use} para subir la red',
   'You caught a {fish}!': '¡Buena pesca: {fish}!',
   '★ New to your collection!': '★ ¡Novedad en tu colección!',
   'Worth {n}¢': 'Vale {n} ¢',

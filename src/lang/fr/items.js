@@ -273,10 +273,12 @@ export const ITEMS = {
   'Critter': 'Bestiole',
 
   // ---- fishing (src/systems/fishing.js)
-  'It got away… try again!': 'Il s’est échappé… Réessaie !',
+  'It got away! Press {key} as soon as the “!” pops up.': 'Il s’est échappé ! Appuie sur {key} dès que le « ! » apparaît.',
   'The fish slipped away… so close!': 'Le poisson a filé… à un cheveu près !',
   'Hold E to keep the fish in the green net!': 'Maintiens E pour garder le poisson dans le filet vert !',
   'Hold E / click to raise the net': 'Maintiens E ou clique pour faire monter le filet',
+  'Too soon! Wait until a fish bites.': 'Trop tôt ! Attends qu’un poisson morde.',
+  'Hold the {use} button to raise the net': 'Maintiens le bouton {use} pour faire monter le filet',
   'You caught a {fish}!': 'Belle prise : {fish} !',
   '★ New to your collection!': '★ Nouveau dans ta collection !',
   'Worth {n}¢': 'Vaut {n} ¢',

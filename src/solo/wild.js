@@ -487,7 +487,8 @@ export class Wild {
     const w = this.world;
     this.t += dt;
     if (this.stage) this.stage.update(dt);
-    this.me.input.off = w.busy > 0 || w.cinematic || w.menu.open || w.shop.open_ || w.dialogue.active || !!this.game.overlay;
+    // (fishing: E hooks the fish, nothing else in reach answers it)
+    this.me.input.off = w.busy > 0 || w.cinematic || w.menu.open || w.shop.open_ || w.dialogue.active || !!this.game.overlay || w.fishing.active;
     this.me.input.update();
     if (this.me.speechT > 0 && (this.me.speechT -= dt) <= 0) this.me.speech = null;
     const out = w.mapId === 'overworld';

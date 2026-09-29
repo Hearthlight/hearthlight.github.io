@@ -93,13 +93,16 @@ export class Fishing {
     }
     if (this.state === 'waiting') {
       this.bobber.position.y = 0.02 + Math.sin(this.t * 3) * 0.015;
-      if (pressed) { input.consume('interact'); this.cancel(); g.player.lock = 0.2; return; }
+      // (a press before anything bites reels the empty line back in — and says why)
+      if (pressed) { input.consume('interact'); this.cancel(t('Too soon! Wait until a fish bites.')); g.player.lock = 0.2; return; }
       if (input.pressed('cancel')) { this.cancel(); return; }
       if (this.t > this.wait) {
         this.state = 'bite';
         this.t = 0;
         this.fish = this.roll();
         audio.sfx('bite');
+        // (a gamepad rumbles, the phone that drives the game buzzes)
+        if (g.wild && g.wild.buzz) g.wild.buzz(g.wild.me, [90, 40, 90]);
         g.player.emote = 'exclaim';
         g.playerEmote('exclaim', 1.1);
         g.fx.emit('splash', this.target.x, 0.05, this.target.z, 5);
@@ -108,13 +111,15 @@ export class Fishing {
     }
     if (this.state === 'bite') {
       this.bobber.position.y = -0.04 + Math.sin(this.t * 30) * 0.02;
-      if (pressed) {
+      // (the button still held down since the cast hooks it too: the reel teaches you to hold
+      // it, and a fish that always got away because of that was no fun)
+      if (pressed || input.down('interact') || input.mouse.down) {
         input.consume('interact');
         this.startReel();
         return;
       }
       if (this.t > 1.15) {
-        this.cancel(t('It got away… try again!'));
+        this.cancel(t('It got away! Press {key} as soon as the “!” pops up.', { key: device() === 'touch' ? t('Use') : ctl('interact') }));
         audio.sfx('error', { volume: 0.5 });
       }
       return;
@@ -202,8 +207,11 @@ export class Fishing {
       ctx.fillStyle = '#5a3b2a'; ctx.fillRect(bx, by + 15, bl, 5);
       ctx.fillStyle = this.progress > 0.66 ? '#8fd66b' : this.progress > 0.33 ? '#f2c14e' : '#ec7f6d';
       ctx.fillRect(bx + 1, by + 16, Math.round((bl - 2) * Math.max(0, this.progress)), 3);
-      const hint = device() === 'pad' ? t(this.tip ? 'Hold {a} to keep the fish in the green net!' : 'Hold {a} to raise the net', { a: ctl('interact') })
-        : this.tip ? t('Hold E to keep the fish in the green net!') : t('Hold E / click to raise the net');
+      // (the device in hand: a gamepad's or the phone's button, the round one on a touch screen)
+      const dev = device();
+      const hint = dev === 'touch' ? t('Hold the {use} button to raise the net', { use: t('Use') })
+        : dev !== 'keys' ? t(this.tip ? 'Hold {a} to keep the fish in the green net!' : 'Hold {a} to raise the net', { a: ctl('interact') })
+          : this.tip ? t('Hold E to keep the fish in the green net!') : t('Hold E / click to raise the net');
       drawText(ctx, hint, W / 2, y - 10, { color: '#fff7e6', align: 'center', shadow: '#2a1f33' });
     }
     if (this.state === 'show' && this.caughtId) {

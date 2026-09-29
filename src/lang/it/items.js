@@ -271,10 +271,12 @@ export const ITEMS = {
   'Critter': 'Bestiolina',
 
   // ---- fishing (src/systems/fishing.js)
-  'It got away… try again!': 'È scappato… riprova!',
+  'It got away! Press {key} as soon as the “!” pops up.': 'È scappato! Premi {key} appena compare il «!».',
   'The fish slipped away… so close!': 'Il pesce è sgusciato via… per un pelo!',
   'Hold E to keep the fish in the green net!': 'Tieni premuto E per tenere il pesce nel retino verde!',
   'Hold E / click to raise the net': 'Tieni premuto E / clicca per alzare il retino',
+  'Too soon! Wait until a fish bites.': 'Troppo presto! Aspetta che un pesce abbocchi.',
+  'Hold the {use} button to raise the net': 'Tieni premuto il pulsante {use} per alzare il retino',
   'You caught a {fish}!': 'Bella pescata: {fish}!',
   '★ New to your collection!': '★ Novità per la tua collezione!',
   'Worth {n}¢': 'Vale {n} ¢',
