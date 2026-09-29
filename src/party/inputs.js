@@ -77,25 +77,25 @@ export class RemoteInput extends BaseInput {
 
 // The big screen's own keyboard: two layouts so two people can share it.
 export const KEY_LAYOUTS = {
-  wasd: { name: 'WASD', up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', a: ['KeyE', 'KeyJ'], b: ['Space', 'KeyK'], x: ['KeyQ', 'KeyL'], y: ['KeyR', 'KeyU'], u: ['KeyG'], m: ['Tab', 'KeyT'], run: ['ShiftLeft'], join: ['KeyE', 'Space'] },
-  arrows: { name: 'Arrows', up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', a: ['Enter', 'NumpadEnter', 'Numpad1'], b: ['ShiftRight', 'Slash', 'Numpad2'], x: ['Period', 'Numpad3'], y: ['Comma', 'Numpad4'], u: ['Quote', 'Numpad5'], m: ['Backspace', 'Numpad0'], run: ['ControlRight'], join: ['Enter', 'NumpadEnter'] },
+  // (one keyboard player: ZQSD / WASD or the arrows, E or Enter — the solo game's keys work too)
+  wasd: { name: 'Keyboard', up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'], left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'], a: ['KeyE', 'Enter', 'NumpadEnter', 'KeyJ'], b: ['Space', 'KeyK'], x: ['KeyF', 'KeyQ', 'KeyL'], y: ['KeyR', 'KeyC', 'KeyU'], u: ['KeyG'], m: ['Tab', 'KeyT'], run: ['ShiftLeft', 'ShiftRight'], join: ['KeyE', 'Enter', 'NumpadEnter', 'Space'] },
 };
 
 export class KeyInput extends BaseInput {
   constructor(keys, layout) {
     super('keys');
     this.keys = keys;           // the game's live Set of pressed key codes
-    this.layout = KEY_LAYOUTS[layout];
-    this.layoutId = layout;
+    this.layout = KEY_LAYOUTS[layout] || KEY_LAYOUTS.wasd;
+    this.layoutId = KEY_LAYOUTS[layout] ? layout : 'wasd';
     this.last = { a: false, b: false };
   }
   update() {
-    const k = this.keys, L = this.layout;
+    const k = this.keys, L = this.layout, on = (cs) => cs.some((c) => k.has(c));
     let x = 0, y = 0;
-    if (k.has(L.left)) x -= 1;
-    if (k.has(L.right)) x += 1;
-    if (k.has(L.up)) y -= 1;
-    if (k.has(L.down)) y += 1;
+    if (on(L.left)) x -= 1;
+    if (on(L.right)) x += 1;
+    if (on(L.up)) y -= 1;
+    if (on(L.down)) y += 1;
     const l = Math.hypot(x, y) || 1;
     const btn = { a: L.a.some((c) => k.has(c)), b: L.b.some((c) => k.has(c)), x: L.x.some((c) => k.has(c)), y: L.y.some((c) => k.has(c)), u: L.u.some((c) => k.has(c)), m: L.m.some((c) => k.has(c)) };
     this.commit(btn, NO_TAPS, { x: x / l, y: y / l }, L.run.some((c) => k.has(c)));

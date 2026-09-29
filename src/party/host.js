@@ -314,33 +314,38 @@ export class Host {
     if (g.pressed('interact') || g.pressed('jump')) { g.consume('interact', 'jump'); this.activateMenuItem(it); }
   }
 
-  // the Invite tab: two cards — friends in the room (a phone scans the code) and friends at
-  // home (a link to send) — each with its QR code and a button to copy the link
+  // the Invite tab: one link for everyone — its QR code (big), what it does, the link itself,
+  // the room code and a button to copy it
   drawInvite(ctx, px, top, pw, bottom, items, hit) {
-    const M = this.menu, P = this.party, cw = Math.floor((pw - 22) / 2), ch = bottom - top;
-    items.forEach((it, i) => {
-      const x = px + 8 + i * (cw + 6), y = top - 2, on = M.sel === i;
-      ctx.fillStyle = on ? UI.selEdge : '#dfc9a4'; ctx.fillRect(x - 1, y - 1, cw + 2, ch + 2);
-      ctx.fillStyle = on ? '#fff7e2' : UI.paperShade; ctx.fillRect(x, y, cw, ch);
-      drawText(ctx, fitText(t(it.label), cw - 8), x + cw / 2, y + 5, { color: '#8a5234', align: 'center' });
-      const q = it.url ? (i === 0 ? P.qrPlay : P.qr) : null, btnY = y + ch - 17;
-      let ty = y + 17;
-      if (q) {
-        const m = Math.max(1, Math.floor(Math.min(cw - 16, btnY - ty - 24) / q.width)), qs = q.width * m, qx = x + Math.round((cw - qs) / 2);
-        ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, ty - 2, qs + 4, qs + 4);
-        ctx.imageSmoothingEnabled = false; ctx.drawImage(q, qx, ty, qs, qs);
-        ty += qs + 5;
-        drawText(ctx, fitText(it.url.replace(/^https?:\/\//, '').replace(/#.*$/, ''), cw - 6), x + cw / 2, ty, { color: '#4f73b6', align: 'center' });
-        if (it.code) drawText(ctx, t('code {code}', { code: it.code }), x + cw / 2, ty + 10, { color: UI.ink, align: 'center' });
-      } else wrap(t(it.sub), cw - 12).slice(0, 7).forEach((l, k) => drawText(ctx, l, x + 6, ty + 4 + k * 10, { color: UI.inkSoft }));
-      if (it.action) {
-        const bl = t(it.action), bw = Math.min(cw - 12, measure(bl) + 14), bx = x + Math.round((cw - bw) / 2);
-        ctx.fillStyle = '#3b2a22'; ctx.fillRect(bx, btnY + 1, bw, 13);
-        ctx.fillStyle = on ? '#4f955a' : '#8e5d3e'; ctx.fillRect(bx, btnY, bw, 12);
-        drawText(ctx, fitText(bl, bw - 6), bx + bw / 2, btnY + 3, { color: '#fff7e6', align: 'center' });
-      }
-      hit(x, y, cw, ch, { sel: i });
-    });
+    const P = this.party, it = items[0], x = px + 8, y = top - 2, cw = pw - 16, ch = bottom - top;
+    if (!it) return;
+    ctx.fillStyle = UI.selEdge; ctx.fillRect(x - 1, y - 1, cw + 2, ch + 2);
+    ctx.fillStyle = '#fff7e2'; ctx.fillRect(x, y, cw, ch);
+    const q = it.url ? P.qr : null;
+    let qs = 0;
+    if (q) {
+      const m = Math.max(1, Math.floor((ch - 10) / q.width)); qs = q.width * m;
+      const qx = x + 6, qy = y + Math.round((ch - qs) / 2);
+      ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
+      ctx.imageSmoothingEnabled = false; ctx.drawImage(q, qx, qy, qs, qs);
+    }
+    const tx = x + (qs ? qs + 16 : 8), tw = x + cw - tx - 6;
+    let ty = y + 6;
+    drawText(ctx, fitText(t(it.label), tw), tx, ty, { color: '#8a5234' }); ty += 14;
+    for (const l of wrap(t(it.sub), tw).slice(0, 6)) { drawText(ctx, l, tx, ty, { color: UI.ink }); ty += 10; }
+    if (it.url) {
+      ty += 4;
+      drawText(ctx, fitText(it.url.replace(/^https?:\/\//, '').replace(/#.*$/, ''), tw), tx, ty, { color: '#4f73b6' }); ty += 11;
+      if (it.code) drawText(ctx, t('code {code}', { code: it.code }), tx, ty, { color: UI.ink });
+    }
+    if (it.action) {
+      const bl = t(it.action), bw = Math.min(tw, measure(bl) + 16), btnY = y + ch - 18;
+      ctx.fillStyle = '#3b2a22'; ctx.fillRect(tx, btnY + 1, bw, 13);
+      ctx.fillStyle = '#4f955a'; ctx.fillRect(tx, btnY, bw, 12);
+      drawText(ctx, fitText(bl, bw - 6), tx + bw / 2, btnY + 3, { color: '#fff7e6', align: 'center' });
+      hit(tx, btnY, bw, 13, { sel: 0 });
+    }
+    hit(x, y, cw, ch, { sel: 0 });
   }
 
   drawMenu(ctx) {
@@ -349,7 +354,7 @@ export class Host {
     const tabs = this.tabs(); M.tab = Math.min(M.tab, tabs.length - 1);
     const items = tabs[M.tab].items; M.sel = Math.max(0, Math.min(M.sel, items.length - 1));
     const pw = Math.min(W - 16, 350), rowH = 16, footerH = 43;
-    const ph = Math.min(H - 16, tabs[M.tab].id === 'invite' ? 250 : 42 + items.length * rowH + footerH);
+    const ph = Math.min(H - 16, tabs[M.tab].id === 'invite' ? 210 : 42 + items.length * rowH + footerH);
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
     panel(ctx, px, py, pw, ph);
     this.menuHits = [];
@@ -405,7 +410,7 @@ export class Host {
     const footY = py + ph - footerH;
     ctx.fillStyle = '#dfc9a4'; ctx.fillRect(px + 8, footY, pw - 16, 1);
     const selected = items[M.sel];
-    const description = selected?.sub ? t(selected.sub) : '';
+    const description = selected?.sub && !invite ? t(selected.sub) : '';
     wrap(description, pw - 20).slice(0, 2).forEach((line, i) => drawText(ctx, line, px + 10, footY + 5 + i * 9, { color: UI.inkSoft }));
     const hint = t('↑↓ choose · ←→ change or switch tab · E/A confirm · Esc/B close');
     drawText(ctx, fitText(hint, pw - 16), px + pw / 2, py + ph - 11, { color: '#a38a65', align: 'center' });

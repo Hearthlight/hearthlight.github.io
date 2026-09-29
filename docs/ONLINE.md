@@ -13,26 +13,30 @@ The invitations live in the menu, never on top of the game:
 - any phone: the envelope in the lobby, or **Invite** in its menu — with the phone's own share
   sheet (messages, mail…) and a QR code on the phone's screen for a friend sitting next to you.
 
-Two invitations, one party:
+**One link for everyone** (`pad.html#CODE.key`, the lobby's QR code): whoever opens it picks
+where they play —
 
-- **Friends in the room** — the controller page (`pad.html#CODE`): the phone becomes their
-  controller and everyone watches the big screen, which splits when players wander apart.
-- **Friends at home** — the remote page (`play.html#CODE.key`): the game streams to their own
-  screen with **their own camera**. They are left out of the big screen's split; every view
-  shows an arrow at its edge, in a player's colour, towards anyone it doesn't frame (with the
-  distance). Scenes are shared: during a cutscene everyone sees the same shot.
+- **At the big screen**: the phone becomes their controller and everyone watches the big screen,
+  which splits when players wander apart.
+- **On my own screen**: the page moves on to the remote page (`play.html#CODE.key`) — the game
+  streams to their screen with **their own camera**. They are left out of the big screen's
+  split; every view shows an arrow at its edge, in a player's colour, towards anyone it doesn't
+  frame (with the distance). Scenes are shared: during a cutscene everyone sees the same shot.
+
+Typing the 4-letter code on the phone page gives a controller (the video needs the link's key).
 
 The remote invitation needs a relay that other networks can reach: the web version's. A relay on
 the local network (the desktop app, the dev server) offers the same link for another screen on
 the same Wi-Fi.
 
-The lobby shows where the invitations are (« Friends at home? Esc → Invite »). Ending the party
+The lobby's card says how to send it (« Far away? Send them the link: Esc → Invite »). Ending the party
 is in the menu (**End the party**, confirmed, progress saved first).
 
 ## Keyboard and gamepad players
 
-Each has their own menu on the big screen (hero, talents, gear, look, map, journal): **Tab**
-(WASD keys), **⌫** (arrow keys) or **Select** on a gamepad. The key is written on a tab above
+One keyboard player (ZQSD / WASD or the arrows; E or Enter acts, Space jumps, F the special, R
+dodges, G the ultimate). Keyboard and gamepad players each have their own menu on the big screen
+(hero, talents, gear, look, map, journal): **Tab** on the keyboard, **Select** on a gamepad. The key is written on a tab above
 their badge, said in a bubble when they join, and the host menu's first page lists « Alex's own
 menu » for each of them.
 

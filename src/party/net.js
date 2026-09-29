@@ -101,6 +101,10 @@ export class PartyNet {
     this.ws.send(new Blob([b, blob]));
   }
 
+  // the one invitation for everyone: the phone page with the video key; whoever opens it picks —
+  // at the big screen (a controller) or on their own screen (play.html, their own camera)
+  get inviteUrl() { return this.joinUrl && this.remoteKey && this.remoteSupported !== false ? this.joinUrl + '.' + this.remoteKey : this.joinUrl; }
+
   get playUrl() {
     if (!this.joinUrl || !this.remoteKey) return '';
     const url = new URL(this.joinUrl); url.pathname = url.pathname.replace(/pad\.html$/, 'play.html'); url.hash = this.code + '.' + this.remoteKey; return url.href;

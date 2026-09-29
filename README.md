@@ -48,7 +48,7 @@ The game runs on the big screen (a TV, a laptop); everyone plays with what's in 
   incoming connections if your computer asks).
 - **Gamepads** — Xbox, PlayStation, Nintendo, any browser-ready pad: press A to join, even halfway
   through the adventure. **Select** opens your own menu on the big screen.
-- **The keyboard** — two players on one keyboard: WASD + E, or the arrows + Enter (Tab or ⌫: your menu).
+- **The keyboard** — one player: ZQSD / WASD or the arrows, E or Enter to act (Tab: your menu).
 
 Pick the Starfall Festival's mini-games, the Festival Ring's waves and brawls, or the whole
 adventure together — the camera splits the screen when you wander apart.
@@ -60,19 +60,19 @@ adventure together — the camera splits the screen when you wander apart.
 
 ## Invite friends and resume an adventure
 
-**Party Mode** opens the lobby straight away: phones in the room scan its code. To invite
-anyone else, open the menu (Esc or Start — or the crown on the host's phone) and pick
-**Invite**; any phone has the same page behind its envelope. Two invitations, one party:
+**Party Mode** opens the lobby straight away, with **one link for everyone** (its QR code is on
+the big screen; to send it, open the menu — Esc or Start, or the crown on the host's phone — and
+pick **Invite**, or tap the envelope on any phone). Whoever opens it picks where they play:
 
-- **Friends in the room** scan the code: their phone becomes their controller, and everyone
-  watches the big screen (it splits when you wander apart).
-- **Friends at home** get a link: the game streams to their own screen with **a camera of their
+- **At the big screen** — their phone becomes their controller, and everyone watches the big
+  screen (it splits when you wander apart).
+- **On my own screen** — from home: the game streams to their screen with **a camera of their
   own** (no split for them), played with a keyboard, a gamepad or their phone. Arrows at the edge
   of each view say where the others are. The host keeps the game open; a slower, silent
   fallback takes over when a network blocks live video.
 
 Keyboard and gamepad players have their own menu (hero, talents, gear, look): its key is shown
-on their badge (Tab, ⌫, Select…), and the host menu lists it too.
+on their badge (Tab, Select…), and the host menu lists it too.
 
 **Continue** goes straight back to your saved game (or asks which one, solo or party).
 Settings → **Saves & backups** exports, imports or backs up a save online — keep the recovery
@@ -481,9 +481,9 @@ stick walks any way you point it, and hits rumble (Settings → Gamepad rumble).
 drag on the left to walk (further to run) and use the buttons on the right (Special and Dodge
 appear out in the wild). A phone can be the controller too: Settings → Play with your phone.
 
-In **Party Mode**, a gamepad (or the keyboard: WASD + E, or the arrows + Enter) is a player of its
-own: press A to join — in the lobby or halfway through the adventure — and **Select** (Tab or ⌫ on
-the keys) opens *your* menu on the big screen: your hero, talents, gear, mounts, companions and
+In **Party Mode**, a gamepad (or the keyboard: ZQSD / WASD or the arrows, E or Enter) is a player
+of its own: press A to join — in the lobby or halfway through the adventure — and **Select** (Tab
+on the keyboard) opens *your* menu on the big screen: your hero, talents, gear, mounts, companions and
 your name, spelled on the screen's letters. It slides in on the right while the others play on
 (the camera moves the heroes over); a friend who asks meanwhile is next. Each pad rumbles on its
 own hits.

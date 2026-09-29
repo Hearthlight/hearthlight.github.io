@@ -64,14 +64,15 @@ const VOICES = [70, 58, 76, 64, 72, 60, 80, 66];
 export const LOBBY = { x: POINTS.fountain[0], z: POINTS.fountain[1] + 3.6 };
 const NO_INPUT = { pressed: () => false, repeat: () => false, down: () => false, consume() {}, mouse: { pressed: false, moved: false }, mouseIn: () => false };
 
-// The shared dialogue box, with a short reading pause so one eager thumb
-// can’t skip a line before everyone has read it.
+// The shared dialogue box: A shows the whole line at once, A again moves on — as fast as
+// you like, with just a blink between the two so a double press can't skip a line unseen.
 class PartyDialogue extends Dialogue {
   update(dt, input) {
     const c = this.cur;
     if (c) {
+      c.age = (c.age || 0) + dt;
       if (c.shown >= c.total) c.readT = (c.readT || 0) + dt;
-      const locked = c.shown < c.total ? c.shown < 6 : (c.readT || 0) < Math.min(2.2, 0.45 + c.total * 0.018);
+      const locked = c.shown < c.total ? c.age < 0.12 : (c.readT || 0) < 0.22;
       if (locked) { super.update(dt, NO_INPUT); return; }
     }
     super.update(dt, input);
@@ -261,11 +262,12 @@ export class Party {
     this.act = null;
     this.loadProfiles();
     for (const local of this.options.reload?.locals || []) {
+      if (local.kind === 'keys') local.layout = 'wasd';      // (one keyboard player now)
       const id = local.kind === 'keys' ? 'keys-' + local.layout : 'pad-' + local.index;
       if (this.byId.has(id)) continue;
       const profile = this.profiles[id] || {};
       const input = local.kind === 'keys' ? new KeyInput(this.game.input.keys, local.layout) : new PadInput(local.index);
-      const name = (profile.named && profile.name) || (local.kind === 'keys' ? t(local.layout === 'wasd' ? 'Keys' : 'Arrows') : t('Pad {n}', { n: local.index + 1 }));
+      const name = (profile.named && profile.name) || (local.kind === 'keys' ? t('Keys') : t('Pad {n}', { n: local.index + 1 }));
       const p = this.addPlayer({ id, kind: local.kind, input, name, look: profile.look || randomLook() });
       if (p) p.ready = true;
     }
@@ -328,39 +330,28 @@ export class Party {
 
   async refreshQr() {
     if (!this.net.code || this.game.party !== this) return;
-    const url = this.net.joinUrl, play = this.net.playUrl;
-    if (!(this.qr && this.qr.text === url)) {
-      try { const qr = await qrCanvas(url); if (this.net.joinUrl === url && this.game.party === this) { this.qr = qr; this.qrError = false; } } catch (e) { this.qr = null; this.qrError = true; }
-    }
-    if (play && !(this.qrPlay && this.qrPlay.text === play)) {
-      try { const qr = await qrCanvas(play); if (this.net.playUrl === play && this.game.party === this) this.qrPlay = qr; } catch (e) { this.qrPlay = null; }
-    }
+    const url = this.net.inviteUrl;
+    if (this.qr && this.qr.text === url) return;
+    try { const qr = await qrCanvas(url); if (this.net.inviteUrl === url && this.game.party === this) { this.qr = qr; this.qrError = false; } } catch (e) { this.qr = null; this.qrError = true; }
   }
 
-  // the invitations for a phone's Invite page (one phone, or all of them)
+  // the invitation for a phone's Invite page (one phone, or all of them)
   sendInvite(p = null) {
     const n = this.net;
     if (n.status !== 'open') return;
-    const m = { t: 'invite', home: n.playUrl, room: n.joinUrl, code: n.code, lan: !n.remote };
+    const m = { t: 'invite', link: n.inviteUrl, room: n.joinUrl, code: n.code, lan: !n.remote, home: !!n.playUrl };
     if (p) { if (p.kind === 'phone') n.send(p.id, m); } else n.broadcast(m);
   }
 
-  // the two invitations (the host menu's Invite tab, the phones' Invite page): friends at
-  // home get the game streamed to their own screen (play.html); friends in the room scan
-  // the code with a phone. A relay on this Wi-Fi only (the desktop app, the dev server)
-  // can't reach friends at home: its link is for this network.
+  // the invitation (the host menu's Invite tab): one link for everyone — whoever opens it picks
+  // the big screen (their phone as a controller) or their own screen (the game streamed, their
+  // own camera). A relay on this Wi-Fi only (the desktop app, the dev server) reaches the house.
   inviteItems() {
-    const n = this.net, open = n.status === 'open', home = open ? n.playUrl : '', room = open ? n.joinUrl : '';
-    const lan = !n.remote;
-    return [
-      { id: 'inv:home', kind: 'invite', label: lan && home ? 'Another screen on this Wi-Fi' : 'Friends at home', url: home,
-        sub: home ? (lan ? 'For another computer or tablet on this Wi-Fi: it shows the game with its own camera, played with a keyboard, a gamepad or the screen.' : 'Send them this link: they see the game on their own screen, with their own camera, and play with their keyboard, a gamepad or their phone.')
-          : open ? 'Playing from home needs the online version of the game (hearthlight.github.io).' : 'Opening the room…',
-        action: home ? 'Copy the link' : null },
-      { id: 'inv:room', kind: 'invite', label: 'Friends in the room', url: room, code: n.code,
-        sub: room ? 'Scan the code with a phone: it becomes their controller. No phone? E, Enter or A on a gamepad plays on this screen.' : 'Opening the room…',
-        action: room ? 'Copy the link' : null },
-    ];
+    const n = this.net, open = n.status === 'open', url = open ? n.inviteUrl : '';
+    const sub = !url ? 'Opening the room…' : !n.playUrl ? 'Scan the code with a phone: it becomes a controller. No phone? E or Enter, or A on a gamepad, plays on this screen.'
+      : n.remote ? 'Scan it here or send the link: each friend picks — in front of the big screen (their phone as a controller) or at home (the game on their own screen).'
+        : 'Scan it here or open it on another screen of the house: each friend picks — the big screen (their phone as a controller) or their own screen.';
+    return [{ id: 'inv:link', kind: 'invite', label: 'One link for everyone', url, code: n.code, sub, action: url ? 'Copy the link' : null }];
   }
 
   // ------------------------------------------------------------------ players
@@ -613,7 +604,7 @@ export class Party {
       if (!edge(L.join)) continue;
       if (this.players.some((p) => p.kind === 'keys' && p.input.layoutId === lay)) continue;
       const pr = this.profiles['keys-' + lay] || {};
-      const p = this.addPlayer({ id: 'keys-' + lay, kind: 'keys', input: new KeyInput(keys, lay), name: (pr.named && pr.name) || (lay === 'wasd' ? t('Keys') : t('Arrows')), look: pr.look || randomLook() });
+      const p = this.addPlayer({ id: 'keys-' + lay, kind: 'keys', input: new KeyInput(keys, lay), name: (pr.named && pr.name) || t('Keys'), look: pr.look || randomLook() });
       if (p) p.input.update();
     }
     this.prevKeys = new Set(keys);
@@ -1676,8 +1667,8 @@ export class Party {
     const padFree = pads.some((gp) => gp && gp.connected !== false && !this.players.some((q) => q.kind === 'gamepad' && q.input.index === gp.index));
     const local = this.players.some((q) => q.kind !== 'phone');
     const tipText = padFree ? t('🎮 A gamepad is here: press A to join!')
-      : local ? t('No phone? Your own menu (talents, gear…) is on this screen: Select on a gamepad, Tab or ⌫ on the keys.')
-        : t('No phone? Press E (WASD keys), Enter (arrow keys) or A on a gamepad to play on this screen.');
+      : local ? t('No phone? Your own menu (talents, gear…) is on this screen: Select on a gamepad, Tab on the keyboard.')
+        : t('No phone? Press E or Enter on the keyboard, or A on a gamepad, to play on this screen.');
     const tips = wrap(tipText, pw - 16);
     const tipsY = py + ph - 7 - tips.length * 10;
     tips.forEach((l, i) => drawText(ctx, l, px + pw / 2, tipsY + i * 10, { color: padFree ? '#4f955a' : UI.inkSoft, align: 'center' }));
@@ -1692,7 +1683,7 @@ export class Party {
       drawText(ctx, net.status === 'down' ? t('Reconnecting…') : t('Opening the room…'), px + pw / 2, py + 60, { color: UI.inkSoft, align: 'center' });
     } else {
       const q = this.qr;
-      const room = tipsY - py - 68;
+      const room = tipsY - py - 78;
       const m = Math.max(1, Math.floor(Math.min(pw - 20, room) / q.width));
       const qs = q.width * m, qx = px + Math.round((pw - qs) / 2), qy = py + 20;
       ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
@@ -1707,8 +1698,8 @@ export class Party {
       const url = net.joinUrl.replace(/^https?:\/\//, '').replace(/#.*$/, '');
       drawText(ctx, fitText(url, pw - 8), px + pw / 2, y, { color: '#4f73b6', align: 'center' });
       if (net.status === 'down') drawText(ctx, t('Reconnecting…'), px + pw / 2, y + 11, { color: '#a8483a', align: 'center' });
-      // (friends far away: the menu's Invite tab has their link)
-      else if (net.playUrl) drawText(ctx, fitText(t('Friends at home? {key} → Invite', { key: ctl('pause') }), pw - 8), px + pw / 2, y + 12, { color: '#3f8a4a', align: 'center' });
+      // (friends far away: the same link, from the menu's Invite tab)
+      else if (net.playUrl) wrap(t('Far away? Send them the link: {key} → Invite', { key: ctl('pause') }), pw - 12).slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, y + 12 + i * 10, { color: '#3f8a4a', align: 'center' }));
     }
     }
 
@@ -1737,7 +1728,7 @@ export class Party {
       const st = !p.connected ? [tr('away…'), '#a8483a'] : p.ready ? [tr('READY'), '#3f8a4a'] : [tr('styling…'), '#8a6a4a'];
       drawText(ctx, fitText(st[0], cw - 6), cx + cw / 2, cy + 44, { color: st[1], align: 'center' });
       // device badge
-      const dev = p.kind === 'phone' ? '' : p.kind === 'keys' ? (p.input.layoutId === 'wasd' ? 'WASD' : '←→') : tr('pad');
+      const dev = p.kind === 'phone' ? '' : p.kind === 'keys' ? tr('keyboard') : tr('pad');
       if (dev) { const dw = measure(dev) + 4; ctx.fillStyle = '#5a3b2a'; ctx.fillRect(cx + cw - dw - 3, cy + 8, dw, 9); drawText(ctx, dev, cx + cw - dw - 1, cy + 9, { color: '#fff7e6' }); }
       else if (CLASSES[p.cls]) { ctx.fillStyle = '#3b2a22'; ctx.fillRect(cx + cw - 17, cy + 7, 14, 14); ctx.fillStyle = '#f3e3c3'; ctx.fillRect(cx + cw - 16, cy + 8, 12, 12); drawClassIcon(ctx, p.cls, cx + cw - 16, cy + 8); }
       if (p.ready && p.connected) { ctx.fillStyle = '#4f955a'; ctx.fillRect(cx + 4, cy + 8, 9, 9); drawText(ctx, '✓', cx + 8, cy + 9, { color: '#fff7e6', align: 'center' }); }

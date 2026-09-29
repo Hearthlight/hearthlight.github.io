@@ -3,13 +3,13 @@
 // Talents, Gear, Mounts and Companions pages (the solo game's Hero page,
 // src/solo/herotab.js), the whole wardrobe (treasure hats too), the world map,
 // the quest journal — and a page of their own (their name on the screen's
-// letters, a campfire, unstuck, leave). Back / Select on a gamepad, Tab (WASD keys) or Backspace (arrow keys)
+// letters, a campfire, unstuck, leave). Back / Select on a gamepad, or Tab on the keyboard,
 // opens it; B or the same button closes it. One at a time, on the right of the
 // screen (the camera slides the heroes over to the left); a friend who asks
 // meanwhile is next. While it's open, that hero stands still — the others play on.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, fitText, keyLabel, padName, isFace, faceGlyph } from '../ui/ui.js';
+import { panel, UI, fitText, keyLabel, padName, isFace, faceGlyph, moveKeys } from '../ui/ui.js';
 import { drawWorldPanel, MapView } from './worldmap.js';
 import { LOOK_GROUPS, TREASURE_HATS } from '../data/looks.js';
 import { HeroTab } from '../solo/herotab.js';
@@ -242,7 +242,7 @@ class TvHero extends HeroTab {
     const img = P.portraits && P.portraits.get('party' + p.slot, p.look, 'happy');
     if (img) { ctx.imageSmoothingEnabled = false; ctx.drawImage(img, A.x + 3, A.y + 3, 24, 24); }
     drawText(ctx, fitText(p.name, A.w - 40), A.x + 36, A.y + 2, { color: '#8a5234' });
-    const dev = p.kind === 'gamepad' ? '🎮 ' + (p.input.name ? p.input.name.replace(/\(.*$/, '').trim() : t('Gamepad')) : t('Keyboard · {keys}', { keys: p.input.layoutId === 'wasd' ? 'WASD' : '← ↑ → ↓' });
+    const dev = p.kind === 'gamepad' ? '🎮 ' + (p.input.name ? p.input.name.replace(/\(.*$/, '').trim() : t('Gamepad')) : t('Keyboard · {keys}', { keys: moveKeys() + ' / ← ↑ → ↓' });
     drawText(ctx, fitText(dev, A.w - 40), A.x + 36, A.y + 13, { color: UI.inkSoft });
     // the buttons
     const bw = Math.min(150, A.w - 4), bx = A.x;

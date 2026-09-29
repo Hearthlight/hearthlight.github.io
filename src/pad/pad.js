@@ -37,11 +37,14 @@ if (!padId) {
 }
 
 const urlCode = (location.hash.slice(1).split('.')[0] || new URLSearchParams(location.search).get('c') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+// (the party's invitation carries the video key: whoever opens it on this page picks where they play)
+const keyOf = (hash) => (hash.slice(1).split('.')[1] || '').replace(/[^a-f0-9]/gi, '').slice(0, 32);
 
 const S = {
   joined: false,         // we have (or had) a live seat at the party
   status: 'idle',        // idle | connecting | open | closed
   code: urlCode || store.get('code', ''),
+  key: keyOf(location.hash),     // the invitation's video key (the choice: here, or at home)
   name: store.get('name', ''),
   look: cleanLook(store.get('look', null) || randomLook()),
   me: null,              // { slot, color, name }
@@ -160,11 +163,11 @@ function onMessage(m) {
       if (!S.host && S.menu === 'host') S.menu = false;
       break;
     case 'hmenu': S.hmenu = m; break;
-    // the party's two invitations (the Invite page): a link for friends at home, one for phones in the room
+    // the party's invitation (the Invite page): one link, whoever opens it picks where they play
     case 'invite': {
       const str = (v) => (typeof v === 'string' && /^https?:\/\//.test(v) ? v : '');
-      S.invite = { home: str(m.home), room: str(m.room), code: typeof m.code === 'string' ? m.code : '', lan: !!m.lan };
-      if (S.invite.room && (!S.inviteQr || S.inviteQr.text !== S.invite.room)) qrCanvas(S.invite.room).then((q) => { S.inviteQr = q; }).catch(() => {});
+      S.invite = { link: str(m.link) || str(m.room), code: typeof m.code === 'string' ? m.code : '', lan: !!m.lan, home: !!m.home };
+      if (S.invite.link && (!S.inviteQr || S.inviteQr.text !== S.invite.link)) qrCanvas(S.invite.link).then((q) => { S.inviteQr = q; }).catch(() => {});
       break;
     }
     case 'mounts': S.mounts = { owned: Array.isArray(m.owned) ? m.owned : [], all: Array.isArray(m.all) ? m.all : null, active: m.active || null }; break;
@@ -225,6 +228,26 @@ onLang(() => { nameIn.placeholder = t('Your name'); });
 codeIn.addEventListener('input', () => { S.code = codeIn.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); if (codeIn.value !== S.code) codeIn.value = S.code; S.error = ''; });
 nameIn.addEventListener('input', () => { S.name = nameIn.value.slice(0, 12); S.error = ''; });
 for (const el of [codeIn, nameIn]) el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { el.blur(); join(); } });
+
+// a two-line button: what, and underneath what it means
+function choiceBtn(x, y, w, h, label, sub, id, fn, color) {
+  const down = S.pressing === id, dy = down ? 1 : 0;
+  ctx.fillStyle = '#3b2a22'; ctx.fillRect(x + 1, y + dy, w - 2, h); ctx.fillRect(x, y + 1 + dy, w, h - 2);
+  ctx.fillStyle = down ? shade(color, -0.2) : color; ctx.fillRect(x + 1, y + 1 + dy, w - 2, h - 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + 1, y + 1 + dy, w - 2, 1);
+  drawText(ctx, fitText(label, w - 10), x + w / 2, y + 5 + dy, { color: '#fff7e6', align: 'center' });
+  drawText(ctx, fitText(sub, w - 10), x + w / 2, y + 17 + dy, { color: 'rgba(255,247,230,0.78)', align: 'center' });
+  tapArea(id, x - 2, y - 2, w + 4, h + 4, fn);
+}
+
+// "On my own screen": the remote page, with this name (play.html joins by itself)
+function goHome() {
+  S.name = (S.name || '').trim().slice(0, 12);
+  if (!S.name) { S.error = t('Pick a name first!'); return; }
+  store.set('name', S.name);
+  codeIn.blur(); nameIn.blur();
+  location.href = new URL('play.html#' + S.code + '.' + S.key, location.href).href;
+}
 
 function join() {
   S.name = (S.name || '').trim().slice(0, 12);
@@ -456,8 +479,9 @@ function drawJoin() {
   const ty = land ? 14 : Math.round(H * 0.14);
   drawText(ctx, 'Hearthlight', W / 2, ty, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
   drawText(ctx, t('~ party controller ~'), W / 2, ty + 22, { color: '#f6d38f', align: 'center' });
-  const pw = Math.min(W - 20, 210), ph = 124;
-  const px = Math.round((W - pw) / 2), py = land ? ty + 38 : Math.round(H * 0.3);
+  const choosing = !remote && S.key && /^[A-Z]{4}$/.test(S.code);
+  const pw = Math.min(W - 20, 210), ph = choosing ? 160 : 124;
+  const px = Math.round((W - pw) / 2), py = land ? ty + 38 : Math.round(H * (choosing ? 0.24 : 0.3));
   panel(ctx, px, py, pw, ph);
   drawText(ctx, t('Room code'), px + 12, py + 10, { color: UI.inkSoft });
   const codeR = { x: px + 12, y: py + 20, w: 76, h: 20 };
@@ -465,14 +489,24 @@ function drawJoin() {
   const nameR = { x: px + 98, y: py + 20, w: pw - 110, h: 20 };
   placeField(codeIn, codeR); placeField(nameIn, nameR);
   const busy = S.status === 'connecting';
-  pill(px + 12, py + 52, pw - 24, 24, busy ? t('Joining…') : t('Join the party ♥'), 'join', join, { color: '#4f955a' });
-  if (S.error) {
-    const lines = wrap(S.error, pw - 24);
-    lines.slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 86 + i * 11, { color: '#c8454f', align: 'center' }));
-  } else drawText(ctx, window.HEARTHLIGHT && window.HEARTHLIGHT.relay ? t('Works from anywhere, over the internet') : t('Same Wi-Fi as the big screen'), px + pw / 2, py + 90, { color: UI.inkSoft, align: 'center' });
-  const hy = py + ph + 12;
+  // (an invitation link: where are you? at the big screen, or on your own screen at home)
+  const choose = !remote && S.key && /^[A-Z]{4}$/.test(S.code);
+  let hy = py + ph + 12;
+  if (choose) {
+    drawText(ctx, t('Where are you playing?'), px + pw / 2, py + 50, { color: '#8a5234', align: 'center' });
+    choiceBtn(px + 12, py + 62, pw - 24, 30, t('At the big screen'), t('this phone is my controller'), 'jroom', join, '#4f955a');
+    choiceBtn(px + 12, py + 98, pw - 24, 30, t('On my own screen'), t('from home: the game shows here'), 'jhome', goHome, '#4f73b6');
+    if (S.error) wrap(S.error, pw - 24).slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 134 + i * 11, { color: '#c8454f', align: 'center' }));
+    hy += 40;
+  } else {
+    pill(px + 12, py + 52, pw - 24, 24, busy ? t('Joining…') : t('Join the party ♥'), 'join', join, { color: '#4f955a' });
+    if (S.error) {
+      const lines = wrap(S.error, pw - 24);
+      lines.slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 86 + i * 11, { color: '#c8454f', align: 'center' }));
+    } else drawText(ctx, window.HEARTHLIGHT && window.HEARTHLIGHT.relay ? t('Works from anywhere, over the internet') : t('Same Wi-Fi as the big screen'), px + pw / 2, py + 90, { color: UI.inkSoft, align: 'center' });
+  }
   const tip = t('Scan the QR code on the big screen, or type the code it shows.');
-  wrap(tip, Math.min(W - 24, 220)).forEach((l, i) => drawText(ctx, l, W / 2, hy + i * 11, { color: '#b9a2e3', align: 'center' }));
+  if (!choose) wrap(tip, Math.min(W - 24, 220)).forEach((l, i) => drawText(ctx, l, W / 2, hy + i * 11, { color: '#b9a2e3', align: 'center' }));
 }
 
 function drawWaiting(text) {
@@ -936,46 +970,34 @@ function drawInvite() {
 }
 function drawInviteBody(x, y, w, h) {
   const I = S.invite;
-  if (!I) { drawText(ctx, t('Opening the room…'), x + w / 2, y + 30, { color: UI.inkSoft, align: 'center' }); return; }
-  const land = w > h * 1.3, cw = land ? Math.floor((w - 6) / 2) : w;
-  const note = (id, bx, by2, bw2) => { if (S.shareNote && S.shareNote.id === id && S.t < S.shareNote.until) drawText(ctx, fitText(S.shareNote.text, bw2), bx + bw2 / 2, by2, { color: '#3f8a4a', align: 'center' }); };
-  // friends at home: a link to send
-  let cy = y;
-  const homeH = land ? h : 88;
-  ctx.fillStyle = UI.paperShade; ctx.fillRect(x, cy, cw, homeH);
-  ctx.fillStyle = '#4f955a'; ctx.fillRect(x, cy, 3, homeH);
-  drawText(ctx, fitText(t(I.lan && I.home ? 'Another screen on this Wi-Fi' : 'Friends at home'), cw - 12), x + 8, cy + 5, { color: INK });
-  const homeText = I.home ? t(I.lan ? 'Send the link to a computer or tablet on this Wi-Fi: it shows the game with its own camera.' : 'Send them the link: they watch the game on their own screen, with their own camera, and play with you.')
-    : t('Playing from home needs the online version of the game (hearthlight.github.io).');
-  wrap(homeText, cw - 14).slice(0, land ? 6 : 3).forEach((l, i) => drawText(ctx, l, x + 8, cy + 17 + i * 10, { color: '#5a4a5a' }));
-  if (I.home) {
-    const by2 = land ? cy + h - 42 : cy + homeH - 26;
-    pill(x + 8, by2, cw - 16, 20, t('Send the invitation'), 'ihome', () => shareLink(I.home, 'home'), { color: '#4f955a' });
-    note('home', x + 8, by2 - 11, cw - 16);
-  }
-  // friends in the room: this phone's screen is a QR code too
-  const rx = land ? x + cw + 6 : x; cy = land ? y : y + homeH + 6;
-  const rh = land ? h : y + h - cy;
-  ctx.fillStyle = UI.paperShade; ctx.fillRect(rx, cy, cw, rh);
-  ctx.fillStyle = '#4f73b6'; ctx.fillRect(rx, cy, 3, rh);
-  drawText(ctx, fitText(t('Friends in the room'), cw - 12), rx + 8, cy + 5, { color: INK });
-  const sl = wrap(t('They scan this code with their phone:'), cw - 14).slice(0, 2);
-  sl.forEach((l, i) => drawText(ctx, l, rx + 8, cy + 16 + i * 10, { color: '#5a4a5a' }));
-  const q = S.inviteQr, codeY = cy + rh - (I.room ? 46 : 22), qTop = cy + 20 + sl.length * 10;
-  if (q && I.room) {
-    const room = Math.min(cw - 16, codeY - qTop - 6), m = Math.max(1, Math.floor(room / q.width)), qs = q.width * m, qx = rx + Math.round((cw - qs) / 2), qy = qTop + Math.max(0, Math.round((codeY - qTop - 6 - qs) / 2));
+  if (!I || !I.link) { drawText(ctx, t('Opening the room…'), x + w / 2, y + 30, { color: UI.inkSoft, align: 'center' }); return; }
+  const land = w > h * 1.3;
+  ctx.fillStyle = UI.paperShade; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#4f955a'; ctx.fillRect(x, y, 3, h);
+  // what it does: one link, everyone picks
+  const say = I.home ? t('Send it, or let a friend scan this screen: each one picks — at the big screen (their phone as a controller) or at home (the game on their own screen).')
+    : t('Let a friend scan this screen: their phone becomes a controller.');
+  const tw = land ? Math.floor(w * 0.5) - 14 : w - 14, lines = wrap(say, tw).slice(0, land ? 9 : 5);
+  drawText(ctx, fitText(t('One link for everyone'), tw), x + 8, y + 5, { color: INK });
+  lines.forEach((l, i) => drawText(ctx, l, x + 8, y + 17 + i * 10, { color: '#5a4a5a' }));
+  const btnY = y + h - 24, codeY = btnY - 22;
+  // the QR code (portrait: under the words; landscape: on the right)
+  const q = S.inviteQr;
+  if (q) {
+    const qx0 = land ? x + Math.floor(w * 0.5) : x, qw = land ? Math.floor(w * 0.5) : w, qTop = land ? y + 6 : y + 21 + lines.length * 10;
+    const room = Math.min(qw - 16, (land ? btnY - 4 : codeY - 6) - qTop), m = Math.max(1, Math.floor(room / q.width)), qs = q.width * m;
+    const qx = qx0 + Math.round((qw - qs) / 2), qy = qTop + Math.max(0, Math.round(((land ? btnY - 4 : codeY - 6) - qTop - qs) / 2));
     ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(q, qx, qy, qs, qs);
   }
-  if (I.code) {
-    const lw = measure(t('code')) + 4, cw2 = measure(I.code, 2), c0 = rx + Math.round((cw - lw - cw2) / 2);
+  if (I.code && !land) {
+    const lw = measure(t('code')) + 4, cw2 = measure(I.code, 2), c0 = x + Math.round((w - lw - cw2) / 2);
     drawText(ctx, t('code'), c0, codeY + 5, { color: UI.inkSoft });
     drawText(ctx, I.code, c0 + lw, codeY, { color: INK, scale: 2 });
   }
-  if (I.room) {
-    pill(rx + 8, cy + rh - 24, cw - 16, 20, t('Share the controller link'), 'iroom', () => shareLink(I.room, 'room'), { color: '#4f73b6' });
-    note('room', rx + 8, cy + rh - 35, cw - 16);
-  }
+  const bw = land ? Math.floor(w * 0.5) - 16 : w - 16;
+  pill(x + 8, btnY, bw, 20, t('Send the invitation'), 'ilink', () => shareLink(I.link, 'link'), { color: '#4f955a' });
+  if (S.shareNote && S.shareNote.id === 'link' && S.t < S.shareNote.until) drawText(ctx, fitText(S.shareNote.text, bw), x + 8 + bw / 2, btnY - 11, { color: '#3f8a4a', align: 'center' });
 }
 
 function drawPausedCard() {
@@ -1612,8 +1634,9 @@ function drawScreen() {
 }
 requestAnimationFrame(frame);
 
-// straight in when the QR code brought us here and we already have a name
-if (urlCode && S.name) join();
+// straight in when the QR code brought us here and we already have a name (an invitation with
+// the video key asks where first; play.html always goes straight in)
+if (urlCode && S.name && (remote || !S.key)) join();
 
 // scanning a new code while this page is still open only changes the hash
 window.addEventListener('hashchange', () => {
@@ -1621,9 +1644,10 @@ window.addEventListener('hashchange', () => {
   if (!c || c === S.code) return;
   if (S.joined || ws) leave();
   if (remote) remote.key = location.hash.slice(1).split('.')[1] || '';
+  S.key = keyOf(location.hash);
   S.code = c;
   codeIn.value = c;
-  if (S.name) join();
+  if (S.name && (remote || !S.key)) join();
 });
 
 // debug hook for automated checks
