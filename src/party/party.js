@@ -1370,6 +1370,7 @@ export class Party {
     // ---- UI layer
     const ctx = d.ctx;
     ctx.clearRect(0, 0, d.w, d.h);
+    this.miniRect = null;
     if (this.fade < 1) {
       for (const v of cam.views) {
         ctx.save(); this.clipPath(ctx, v, true);
@@ -1538,34 +1539,43 @@ export class Party {
   }
 
   // Friends this view doesn't show (at home with their own camera, or far off): an arrow on
-  // its edge in their colour, pointing their way, with their name and how far.
+  // its edge in their colour, pointing their way, with their name and how far. Friends the
+  // same way share one arrow; the minimap's corner stays clear.
   drawOthers(ctx, v) {
     if (this.phase === 'lobby' || (this.stage && (this.stage.active || this.stage.barK > 0)) || this.fade > 0.3) return;
     const d = this.display, R = v.rect, a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h);
     const own = !this.remoteFor ? this.cam.views : [v];
     const mid = v.members.length ? this.toUi(v, v.members[0].pos.x, 1, v.members[0].pos.z) : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     const cx = Math.max(a.x + 40, Math.min(b.x - 40, mid.x)), cy = Math.max(a.y + 40, Math.min(b.y - 40, mid.y));
-    const x0 = a.x + 12, x1 = b.x - 12, y0 = a.y + 34, y1 = b.y - 30;
+    const x0 = a.x + 12, x1 = b.x - 12, y0 = a.y + 34, y1 = b.y - 30, M = this.miniRect, m0 = v.members[0];
+    const groups = [];
     for (const p of this.players) {
       if (!p.connected || p.hidden || own.some((w) => w.members.includes(p))) continue;
       const pos = this.rooms ? this.rooms.mapPos(p) : p.pos, u = this.toUi(v, pos.x, 1, pos.z);
       if (u.x > x0 && u.x < x1 && u.y > y0 && u.y < y1) continue;           // (in sight: its own pip says where)
       const dx = u.x - cx, dy = u.y - cy, k = Math.min(dx ? ((dx > 0 ? x1 : x0) - cx) / dx : 1e9, dy ? ((dy > 0 ? y1 : y0) - cy) / dy : 1e9);
-      const X = Math.round(cx + dx * k), Y = Math.round(cy + dy * k);
+      let X = Math.round(cx + dx * k), Y = Math.round(cy + dy * k);
+      if (M && X > M.x - 10 && Y > M.y - 16) { if (X >= x1 - 1) Y = M.y - 16; else X = M.x - 12; }
       if (v.half) { const q = d.uiToWorld(X, Y); if (!v.owns(q.x, q.y)) continue; }
-      const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-      // the arrow: a dark rim, their colour, a light edge
+      const L = Math.hypot(dx, dy) || 1, dist = Math.round(Math.hypot(pos.x - (m0 ? m0.pos.x : v.cx), pos.z - (m0 ? m0.pos.z : v.cz)));
+      const g = groups.find((q) => Math.abs(q.X - X) < 16 && Math.abs(q.Y - Y) < 16);
+      if (g) { g.ps.push(p); g.dist = Math.min(g.dist, dist); } else groups.push({ X, Y, ux: dx / L, uy: dy / L, ps: [p], dist });
+    }
+    for (const { X, Y, ux, uy, ps, dist } of groups) {
+      // the arrow: a dark rim, the first friend's colour; the others' colours as chips behind it
       const tri = (r, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(X + ux * r * 1.3, Y + uy * r * 1.3); ctx.lineTo(X - ux * r * 0.7 - uy * r, Y - uy * r * 0.7 + ux * r); ctx.lineTo(X - ux * r * 0.7 + uy * r, Y - uy * r * 0.7 - ux * r); ctx.closePath(); ctx.fill(); };
-      tri(8, '#241a2e'); tri(6, p.color);
-      const m = v.members[0], dist = Math.round(Math.hypot(pos.x - (m ? m.pos.x : v.cx), pos.z - (m ? m.pos.z : v.cz)));
-      const label = p.name + (dist >= 12 ? ' · ' + dist + ' m' : ''), tw = measure(label) + 6;
+      tri(8, '#241a2e'); tri(6, ps[0].color);
+      const names = ps.length > 2 ? ps[0].name + ' +' + (ps.length - 1) : ps.map((p) => p.name).join(', ');
+      const label = names + (dist >= 12 ? ' · ' + dist + ' m' : ''), tw = measure(label) + 6 + (ps.length > 1 ? ps.length * 4 : 0);
       // (the name beside the arrow, on the side away from the edge)
       const across = Math.abs(ux) > Math.abs(uy);
       const lx0 = across ? (ux > 0 ? X - 12 - tw : X + 12) : X - tw / 2, ly0 = across ? Y - 5 : uy > 0 ? Y - 21 : Y + 11;
       const lx = Math.round(Math.max(a.x + 2, Math.min(b.x - tw - 2, lx0))), ly = Math.round(Math.max(a.y + 2, Math.min(b.y - 12, ly0)));
       ctx.fillStyle = 'rgba(20,14,28,0.72)'; ctx.fillRect(lx, ly, tw, 10);
-      ctx.fillStyle = p.color; ctx.fillRect(lx, ly + 9, tw, 1);
-      drawText(ctx, label, lx + 3, ly + 1, { color: '#fff7e6' });
+      let tx = lx + 3;
+      if (ps.length > 1) for (const p of ps) { ctx.fillStyle = p.color; ctx.fillRect(tx, ly + 3, 3, 4); tx += 4; }
+      else { ctx.fillStyle = ps[0].color; ctx.fillRect(lx, ly + 9, tw, 1); }
+      drawText(ctx, label, tx + (ps.length > 1 ? 1 : 0), ly + 1, { color: '#fff7e6' });
     }
   }
 
@@ -1588,6 +1598,7 @@ export class Party {
   // the corner minimap: the world around the first view
   drawMiniMap(ctx, x, y, w, h) {
     const v = this.cam.views[0];
+    this.miniRect = { x: x - 2, y: y - 2, w: w + 4, h: h + 4 };        // (the friends' arrows keep off it)
     ctx.fillStyle = '#2a1d34'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
     if (v && this.dungeons && this.dungeons.inside(v.cx, v.cz) && this.dungeons.drawMini(ctx, x, y, w, h, this.players.filter((p) => p.connected))) return;
     const c = v ? (this.rooms && this.rooms.doorOf(v)) || { x: v.cx, z: v.cz } : LOBBY;
