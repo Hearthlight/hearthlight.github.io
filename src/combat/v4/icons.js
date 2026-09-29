@@ -196,8 +196,9 @@ function glyphCanvas(id) {
   const key = 'g:' + id;
   if (cache.has(key)) return cache.get(key);
   const c = canvas(16, 16), g = c.getContext('2d');
-  const draw = GLYPHS[id] || GLYPHS.star;
-  const [m, l, d] = COL[id] || COL.star;
+  // (an id from the network: only the glyphs we have)
+  const draw = Object.hasOwn(GLYPHS, id) ? GLYPHS[id] : GLYPHS.star;
+  const [m, l, d] = Object.hasOwn(COL, id) ? COL[id] : COL.star;
   draw(g, { m, l, d });
   const img = g.getImageData(0, 0, 16, 16), D = img.data;
   const solid = new Uint8Array(256);

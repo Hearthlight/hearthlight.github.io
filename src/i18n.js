@@ -40,13 +40,13 @@ export function detectLang() {
 
 const loading = {};
 export function loadLang(l) {
-  if (!LOAD[l] || DICTS[l]) return Promise.resolve();
+  if (!Object.hasOwn(LOAD, l) || DICTS[l]) return Promise.resolve();   // (a language name from the network: only ours)
   if (!loading[l]) loading[l] = LOAD[l]().then(([d, g]) => { DICTS[l] = d; GROUP[l] = g || null; }, (e) => { console.error('language', l, e); delete loading[l]; });
   return loading[l];
 }
 
 export function setLang(l) {
-  const next = LANGS[l] ? l : 'en';
+  const next = Object.hasOwn(LANGS, l) ? l : 'en';
   wanted = next;
   if (next !== 'en' && !DICTS[next]) { loadLang(next).then(() => { if (wanted === next && DICTS[next]) setLang(next); }); return; }
   if (next === lang) return;
