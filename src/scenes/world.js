@@ -24,7 +24,7 @@ import { Hud, dayLabel } from '../ui/hud.js';
 import { Menu } from '../ui/menu.js';
 import { Shop, SHOPS } from '../ui/shop.js';
 import { emote as drawEmote, keyHint, tag, bubble, UI, keyCap, ctl, button, device } from '../ui/ui.js';
-import { StuckWatch } from '../entities/stuck.js';
+import { StuckWatch, nearWater } from '../entities/stuck.js';
 import { drawText, measure } from '../engine/font.js';
 import { addItem, removeItem, countItem, hasItem, saveGame, DAY_START, DAY_END, HOTBAR, fogReveal } from '../state.js';
 import { audio } from '../engine/audio.js';
@@ -1674,7 +1674,7 @@ export class World {
     this.stuckOffer = sw.update(dt, {
       pushing: !frozen && Math.hypot(mv.x, mv.y) > 0.5, pos: this.player.pos,
       busy: this.busy > 0 || !!this.cinematic || !!this.sail || this.fishing.active || !!(W && (W.me.vehicle || W.me.mount || W.afloat())),
-      boxedAt: () => stuckAt(col, this.player.pos.x, this.player.pos.z, { room: this.mapId === 'overworld' ? 40 : 8 }),
+      boxedAt: () => !(this.mapId === 'overworld' && nearWater(this, this.player.pos.x, this.player.pos.z)) && stuckAt(col, this.player.pos.x, this.player.pos.z, { r: 0.1, room: this.mapId === 'overworld' ? 12 : 6 }),
     });
     const SR = this.stuckRect;
     if (this.stuckOffer && SR && input.mouse.pressed && input.mouseIn(SR.x, SR.y, SR.w, SR.h)) { input.mouse.pressed = false; this.unstick(); sw.reset(); this.stuckOffer = false; }

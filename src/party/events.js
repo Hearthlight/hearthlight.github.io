@@ -97,9 +97,12 @@ export class Events {
   startInvasion() {
     const P = this.party, T = P.travel, c = this.centroid();
     if (!T || !c || this.invasion) return false;
-    const cands = T.stones.filter((s) => s.zone !== 'valley' && ZONE_FOES[s.zone]).map((s) => ({ s, d: Math.hypot(s.x - c.x, s.z - c.z) })).filter((o) => o.d > 25 && o.d < 120);
+    // (only lands the story has opened — never behind the Murk — and the stones they've been
+    // near first: a road they know leads there)
+    const shut = (s) => P.murk && P.murk.at(Math.floor(s.x), Math.floor(s.z)), known = (s) => (s.attuned || s.seen ? 1 : 0);
+    const cands = T.stones.filter((s) => s.zone !== 'valley' && ZONE_FOES[s.zone] && !shut(s)).map((s) => ({ s, d: Math.hypot(s.x - c.x, s.z - c.z) })).filter((o) => o.d > 25 && o.d < 120);
     if (!cands.length) return false;
-    cands.sort((a, b) => a.d - b.d);
+    cands.sort((a, b) => known(b.s) - known(a.s) || a.d - b.d);
     const s = pick(cands.slice(0, 2)).s;
     const I = { s, zone: s.zone, phase: 'wait', t: 0, wave: 0, foes: [], away: 0, pause: 0, g: this.gloomMarker(s) };
     this.invasion = I;
@@ -309,7 +312,7 @@ export class Events {
       const a = Math.random() * Math.PI * 2, r = rnd(6, 11);
       const x = p.pos.x + Math.cos(a) * r, z = p.pos.z + Math.sin(a) * r * 0.75;
       const tt = B ? B.tileAt(x, z) : P.world.tileAt(x, z);
-      if (tt === TT.WATER || tt === TT.CORAL || tt === TT.LAVA || tt === TT.SKY || tt === -1 || P.world.overCol.blocked(x, z, 0.4)) continue;
+      if (tt === TT.WATER || tt === TT.CORAL || tt === TT.LAVA || tt === TT.SKY || tt === -1 || P.world.overCol.blocked(x, z, 0.4) || (P.murk && P.murk.at(Math.floor(x), Math.floor(z)))) continue;
       const g = new THREE.Group();
       const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color: 0xfff8d8 }));
       star.scale.set(1, 1.35, 1);

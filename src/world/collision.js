@@ -218,21 +218,25 @@ class MinHeap {
 // `ok(x, z)` can veto ground (water, outside an arena…).
 function roomy(col, x, z, room, ok) {
   const open = (px, pz) => !col.blocked(px, pz, 0.45) && (!ok || ok(px, pz));
-  const seen = new Set(), q = [[Math.floor(x), Math.floor(z)]];
+  const t0 = Math.floor(x) + ',' + Math.floor(z), seen = new Set(), q = [[Math.floor(x), Math.floor(z)]];
   let n = 0;
   while (q.length && n < room) {
     const [tx, tz] = q.shift(), k = tx + ',' + tz;
     if (seen.has(k) || seen.size > room * 4) continue;
     seen.add(k);
-    if (!open(tx + 0.5, tz + 0.5)) continue;
+    // (the hero's own tile leads on even when its middle is taken — they stand at its edge,
+    // against a fountain's rim)
+    if (!open(tx + 0.5, tz + 0.5)) { if (k === t0) q.push([tx + 1, tz], [tx - 1, tz], [tx, tz + 1], [tx, tz - 1]); continue; }
     n++;
     q.push([tx + 1, tz], [tx - 1, tz], [tx, tz + 1], [tx, tz - 1]);
   }
   return n >= room;
 }
 
-export function stuckAt(col, x, z, { room = 40, ok = null } = {}) {
-  return col.blocked(x, z, 0.3) || !roomy(col, x, z, room, ok);
+// (r: how much of the hero must overlap something — the stuck watch asks for the centre itself
+// being inside, not a hero merely leaning on a tree)
+export function stuckAt(col, x, z, { room = 40, ok = null, r = 0.3 } = {}) {
+  return col.blocked(x, z, r) || !roomy(col, x, z, room, ok);
 }
 
 export function findUnstuck(col, x, z, { maxR = 12, room = 40, ok = null } = {}) {

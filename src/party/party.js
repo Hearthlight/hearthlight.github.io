@@ -10,7 +10,7 @@ import { RemoteHost } from './remote-host.js';
 import { RemoteInput, KeyInput, PadInput, KEY_LAYOUTS } from './inputs.js';
 import { TvMenus, keyOf } from './tvmenu.js';
 import { SplitCam, Zoom } from './camera.js';
-import { Host, crown } from './host.js';
+import { Host, crown, copyText } from './host.js';
 import { BigWorld } from '../world/big/bigworld.js';
 import { ZONES } from '../world/big/layout.js';
 import { ZoneRuntime } from './zones.js';
@@ -45,7 +45,7 @@ import { cleanLook, randomLook } from '../data/looks.js';
 import { NPCS } from '../data/npcs.js';
 import { newState } from '../state.js';
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton } from '../ui/ui.js';
+import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton, button } from '../ui/ui.js';
 import { Dialogue } from '../ui/dialogue.js';
 import { audio } from '../engine/audio.js';
 import { TT } from '../world/tiles.js';
@@ -55,7 +55,7 @@ import { findUnstuck, stuckAt } from '../world/collision.js';
 import { Stage } from '../saga/stage.js';
 import { CHAPTERS as SAGA_CHAPTERS } from '../saga/chapters/index.js';
 import { ViewCull } from '../render/cull.js';
-import { StuckWatch } from '../entities/stuck.js';
+import { StuckWatch, nearWater } from '../entities/stuck.js';
 
 export const PARTY_COLORS = [
   { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
@@ -760,6 +760,15 @@ export class Party {
       }
     }
     this.prevM = mKey;
+    // (the lobby's join card: its link copied in one click)
+    const CR = this.copyR;
+    if (CR && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(CR.x, CR.y, CR.w, CR.h)) {
+      g.input.mouse.pressed = false;
+      const url = this.net.inviteUrl;
+      copyText(url).then((ok) => { this.copiedT = ok ? 2.5 : 0; this.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a'); });
+      audio.sfx('select', { volume: 0.6 });
+    }
+    if (this.copiedT > 0) this.copiedT -= dt;
     // (the map open: the mouse zooms & moves it; ± zoom it rather than the camera)
     if (this.bigMapOpen && !this.host.menu) this.mapView.mouse(g.input, this.centroid()); else if (!this.bigMapOpen) this.mapView.reset();
     // + / − / 0 on the big screen’s keyboard: zoom in, out, back to auto
@@ -845,7 +854,7 @@ export class Party {
       p.stuckOffer = sw.update(dt, {
         pushing: Math.hypot(v.x, v.y) > 0.5, pos: p.pos,
         busy: !roam || frozenAll || p.frozen || !!p.vehicle || !!p.mount || !!p.swimming || !!p.dive || !!p.sleeping || !!(p.fighter && p.fighter.down) || this.tvmenus.isOpen(p),
-        boxedAt: () => stuckAt(col, p.pos.x, p.pos.z),
+        boxedAt: () => !nearWater(this.world, p.pos.x, p.pos.z) && stuckAt(col, p.pos.x, p.pos.z, { r: 0.1, room: 12 }),
       });
     }
     if (this.rooms && !frozenAll) this.rooms.update(sdt);
@@ -1700,7 +1709,8 @@ export class Party {
     const cardH = 56;
     // join card on the left
     const py = 8, px = 8, card = !this.remoteFor;          // (a friend at home doesn't need the QR code)
-    const pw = card ? Math.min(170, Math.round(W * 0.34)) : -16, ph = H - cardH - 14 - py;
+    const pw = card ? Math.min(196, Math.round(W * 0.38)) : -16, ph = H - cardH - 14 - py;
+    this.copyR = null;
     if (card) {
     panel(ctx, px, py, pw, ph);
     const net = this.net;
@@ -1725,7 +1735,7 @@ export class Party {
       drawText(ctx, net.status === 'down' ? t('Reconnecting…') : t('Opening the room…'), px + pw / 2, py + 60, { color: UI.inkSoft, align: 'center' });
     } else {
       const q = this.qr;
-      const room = tipsY - py - 78;
+      const room = tipsY - py - 88;              // (under it: the code, the address, the copy button, a line)
       const m = Math.max(1, Math.floor(Math.min(pw - 20, room) / q.width));
       const qs = q.width * m, qx = px + Math.round((pw - qs) / 2), qy = py + 20;
       ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
@@ -1740,8 +1750,15 @@ export class Party {
       const url = net.joinUrl.replace(/^https?:\/\//, '').replace(/#.*$/, '');
       drawText(ctx, fitText(url, pw - 8), px + pw / 2, y, { color: '#4f73b6', align: 'center' });
       if (net.status === 'down') drawText(ctx, t('Reconnecting…'), px + pw / 2, y + 11, { color: '#a8483a', align: 'center' });
-      // (friends far away: the same link, from the menu's Invite tab)
-      else if (net.playUrl) wrap(t('Far away? Send them the link: {key} → Invite', { key: ctl('pause') }), pw - 12).slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, y + 12 + i * 10, { color: '#3f8a4a', align: 'center' }));
+      else {
+        // (friends far away: the whole invitation link — code included — copied in one click)
+        const lab = this.copiedT > 0 ? t('Copied! Paste it to your friends') : t('Copy the invitation link');
+        const bw = Math.min(pw - 16, measure(lab) + 16), bx = px + Math.round((pw - bw) / 2), by = y + 13;
+        const gi = this.game.input, hot = gi.mouseIn(bx, by, bw, 14);
+        button(ctx, bx, by, bw, 14, fitText(lab, bw - 8), { hot, color: this.copiedT > 0 ? '#4f955a' : null });
+        this.copyR = { x: bx - 2, y: by - 2, w: bw + 4, h: 18 };
+        if (net.playUrl) drawText(ctx, fitText(t('Far away? They can play from home with it'), pw - 10), px + pw / 2, by + 18, { color: '#3f8a4a', align: 'center' });
+      }
     }
     }
 

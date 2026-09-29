@@ -35,7 +35,6 @@ export const MULTI10_FR = {
   "keyboard": "clavier",
   "No phone? Your own menu (talents, gear…) is on this screen: Select on a gamepad, Tab on the keyboard.": "Pas de téléphone ? Ton menu (talents, équipement…) s’ouvre sur cet écran : Select sur une manette, Tab au clavier.",
   "No phone? Press E or Enter on the keyboard, or A on a gamepad, to play on this screen.": "Pas de téléphone ? Appuie sur E ou Entrée au clavier, ou A sur une manette, pour jouer sur cet écran.",
-  "Far away? Send them the link: {key} → Invite": "Loin d’ici ? Envoie-leur le lien : {key} → Inviter",
   "One link for everyone": "Un seul lien pour tout le monde",
   "Scan the code with a phone: it becomes a controller. No phone? E or Enter, or A on a gamepad, plays on this screen.": "Scanne le code avec un téléphone : il devient une manette. Pas de téléphone ? E ou Entrée, ou A sur une manette, pour jouer sur cet écran.",
   "Scan it here or send the link: each friend picks — in front of the big screen (their phone as a controller) or at home (the game on their own screen).": "Scanne-le ici ou envoie le lien : chacun choisit — devant le grand écran (son téléphone devient sa manette) ou chez lui (le jeu s’affiche sur son écran).",
@@ -65,4 +64,7 @@ export const MULTI10_FR = {
   "{a} ship one · {run}+{a} or a click: all · {b} close": "{a} en expédier un · {run}+{a} ou un clic : tout · {b} fermer",
   "Your bag is full — the parcel waits in the mailbox.": "Ton sac est plein — le colis t’attend dans la boîte aux lettres.",
   "Not while {name} is fighting!": "Pas pendant que {name} se bat !",
+  "Copy the invitation link": "Copier le lien d’invitation",
+  "Copied! Paste it to your friends": "Copié ! Colle-le à tes amis",
+  "Far away? They can play from home with it": "Loin d’ici ? Avec ce lien, on joue de chez soi",
 };
