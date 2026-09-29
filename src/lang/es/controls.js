@@ -77,4 +77,10 @@ export const CONTROLS_ES = {
   'the host can resume from their phone · Esc or Start on the big screen': 'el anfitrión puede reanudar desde su teléfono · Esc o Start en la pantalla grande',
   '{name} has a talent point to spend! ({key}: the menu)': '¡{name} tiene un punto de talento por gastar! ({key}: el menú)',
   '{name} learned the ultimate {ult}! Fight to fill its gauge, then press {u}.': '¡{name} aprendió la definitiva {ult}! Pelea para llenar su barra y luego presiona {u}.',
+  // the keyboard & mouse on the big screen: a name typed, the map, a vote with no phone
+  'Type your name on the keyboard · Enter: OK': 'Escribe tu nombre con el teclado · Intro: OK',
+  '{a}, a click or the wheel: zoom in': '{a}, un clic o la rueda: acercar',
+  '{a}: closer / the whole map · arrows or a drag: move': '{a}: acercar / todo el mapa · flechas o arrastrar: mover',
+  'Vote on this screen · {n}s': 'Voten en esta pantalla · {n} s',
+  'Vote on this screen!': '¡Voten en esta pantalla!',
 };

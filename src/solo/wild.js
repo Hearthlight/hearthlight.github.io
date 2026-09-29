@@ -972,7 +972,7 @@ export class Wild {
       if (!this.ring) (this.races && this.races.drawArrows(ctx, v)) || (this.events && this.events.drawArrows(ctx, v));
       if (this.chests) this.chests.drawPrompts(ctx, v, this.keyA);
       if (this.mounts) this.mounts.drawLabels(ctx, v);
-      if (this.vehicles) this.vehicles.drawLabels(ctx, v, this, drawText);
+      if (this.vehicles) this.vehicles.drawLabels(ctx, v, this);
       if (this.me.speech) { const u = w.toUi(this.me.pos.x, 1.72 + (w.player.baseY || 0), this.me.pos.z); bubble(ctx, u.x, u.y - 6, this.me.speech); }
     }
     if (this.combat && !w.menu.open) this.combat.drawUi(ctx);

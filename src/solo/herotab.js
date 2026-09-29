@@ -62,7 +62,7 @@ export class HeroTab {
     if (input.pressed('interact')) { input.consume('interact'); this.activate(I.find((i) => i.id === this.focus)); }
     for (const it of I) if (input.mouseIn(it.x, it.y, it.w, it.h)) {
       if (input.mouse.moved && this.focus !== it.id) this.setFocus(it.id, true);
-      if (input.mouse.pressed) { input.mouse.pressed = false; this.setFocus(it.id, true); this.activate(it); break; }
+      if (input.mouse.pressed) { input.mouse.pressed = false; this.setFocus(it.id, true); this.activate(it, input.mouse); break; }
     }
   }
 
@@ -92,7 +92,8 @@ export class HeroTab {
     if (best) this.setFocus(best.id);
   }
 
-  activate(it) { if (it && it.fn) it.fn(); }
+  // (m: the mouse, when it's a click — where it landed)
+  activate(it, m) { if (it && it.fn) it.fn(m); }
 
   go(page) {
     if (this.page === page) return;

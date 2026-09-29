@@ -12,6 +12,7 @@ import { THREE, toon } from '../render/r3d.js';
 import { TT } from '../world/tiles.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
+import { keyBadge } from '../ui/ui.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
@@ -454,16 +455,15 @@ export class Vehicles {
     }
   }
 
-  // an "A" over vehicles you can hop into
-  drawLabels(ctx, view, P, drawText) {
+  // an "A" over vehicles you can hop into — the button of whoever's closest (E on the keyboard…)
+  drawLabels(ctx, view, P) {
     for (const v of this.list) {
       if (v.flying || !v.riders.some((r) => !r)) continue;
-      const near = P.players.some((p) => !p.vehicle && Math.hypot(p.pos.x - v.x, p.pos.z - v.z) < v.def.reach + 0.5);
+      let near = null, nd = v.def.reach + 0.5;
+      for (const p of P.players) { const d = Math.hypot(p.pos.x - v.x, p.pos.z - v.z); if (!p.vehicle && d < nd) { nd = d; near = p; } }
       if (!near) continue;
       const u = P.toUi(view, v.x, (v.y || 0) + 1.5, v.z), bob = Math.round(Math.sin(P.t * 5) * 1.5);
-      ctx.fillStyle = '#3b2a2e'; ctx.fillRect(Math.round(u.x) - 5, Math.round(u.y) - 12 + bob, 11, 11);
-      ctx.fillStyle = '#4f73b6'; ctx.fillRect(Math.round(u.x) - 4, Math.round(u.y) - 11 + bob, 9, 9);
-      drawText(ctx, P.keyA || 'A', u.x + 1, u.y - 10 + bob, { color: '#fff7e6', align: 'center' });
+      keyBadge(ctx, u.x, u.y - 12 + bob, P.keyOf(near, 'a'), '#4f73b6');
     }
   }
 

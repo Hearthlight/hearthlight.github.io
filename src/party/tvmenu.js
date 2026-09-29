@@ -9,7 +9,7 @@
 // meanwhile is next. While it's open, that hero stands still — the others play on.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, fitText, keyLabel, padName, isFace, faceGlyph, moveKeys } from '../ui/ui.js';
+import { panel, UI, fitText, keyLabel, padName, isFace, faceGlyph, moveKeys, closeButton } from '../ui/ui.js';
 import { drawWorldPanel, MapView } from './worldmap.js';
 import { LOOK_GROUPS, TREASURE_HATS } from '../data/looks.js';
 import { HeroTab } from '../solo/herotab.js';
@@ -27,7 +27,7 @@ const LOBBY_PAGES = ['look', 'you'];
 // (the menu's input with the stick — and maybe a button — taken: a page that uses them itself)
 const DIRS = ['left', 'right', 'up', 'down'];
 const NO_STICK = (input, block = []) => ({
-  mouse: input.mouse, down: (a) => input.down(a), mouseIn: () => false, consume: (...a) => input.consume(...a),
+  mouse: input.mouse, down: (a) => input.down(a), mouseIn: (...r) => input.mouseIn(...r), consume: (...a) => input.consume(...a),
   pressed: (a) => !block.includes(a) && input.pressed(a), repeat: (d) => (DIRS.includes(d) ? false : input.repeat(d)),
 });
 
@@ -38,9 +38,11 @@ export function keyOf(p, k) {
   return k.toUpperCase();
 }
 
-// a player's input, the way the Hero page likes it (repeat on a held direction)
+// a player's input, the way the Hero page likes it (repeat on a held direction) — and the big
+// screen's mouse, whoever's menu it is (only over the menu, and not under what's drawn on it)
 class MenuInput {
-  constructor(p, real) { this.p = p; this.real = real; this.hold = {}; this.fired = {}; this.mouse = { x: -99, y: -99, moved: false, pressed: false }; }
+  constructor(p, real, menus) { this.p = p; this.real = real; this.menus = menus; this.hold = {}; this.fired = {}; }
+  get mouse() { return this.menus.P.game.input.mouse; }
   tick(dt) {
     for (const d of ['left', 'right', 'up', 'down']) {
       if (this.real.down(d)) this.hold[d] = (this.hold[d] || 0) + dt;
@@ -58,8 +60,8 @@ class MenuInput {
     if (n > (this.fired[d] || 0)) { this.fired[d] = n; return true; }
     return false;
   }
-  consume() { this.real.edges.clear(); }
-  mouseIn() { return false; }
+  consume() { this.real.edges.clear(); this.mouse.pressed = false; }
+  mouseIn(x, y, w, h) { return this.menus.pointing() && this.menus.P.game.input.mouseIn(x, y, w, h); }
 }
 
 // the Hero page, for one player of the party (and their own page)
@@ -104,9 +106,10 @@ class TvHero extends HeroTab {
 
   update(dt, input) {
     if (this.osk) {
+      this.typing(true);
       this.osk.update(dt, input);
       if (this.osk.done) { this.p.name = this.osk.v.trim().slice(0, 12); this.P.profileOf(this.p).named = true; this.P.saveProfile(this.p); this.P.flashTag(this.p, 3); audio.sfx('confirm'); }
-      if (this.osk.done || this.osk.back) { this.osk = null; input.consume(); }
+      if (this.osk.done || this.osk.back) { this.osk = null; this.typing(false); input.consume(); }
       return;
     }
     // the wardrobe: ↑ ↓ a part, ← → its options (A: the next one); the map: the stick moves it,
@@ -122,20 +125,48 @@ class TvHero extends HeroTab {
       return;
     }
     if (this.page === 'map') {
-      const V = this.mapView, s = (90 * dt) / Math.max(1, V.k);
+      const V = this.mapView, s = (90 * dt) / Math.max(1, V.k), F = V.frame, m = input.mouse;
       if (V.k) { if (input.down('left')) V.cx -= s; if (input.down('right')) V.cx += s; if (input.down('up')) V.cz -= s; if (input.down('down')) V.cz += s; }
       if (input.pressed('interact')) { input.consume('interact'); if (!V.step(1, null, null, this.p.pos)) V.reset(); audio.sfx('select', { volume: 0.5 }); }
+      // the mouse: the wheel zooms where it points, a drag moves the map, a click comes closer there
+      // (from the closest: the whole map again)
+      if (F && (V.drag || input.mouseIn(F.x, F.y, F.w, F.h))) {
+        const held = !!V.drag, click = m.pressed;
+        if (!V.mouse(input, this.p.pos) && !V.drag && (held || click) && input.mouseIn(F.x, F.y, F.w, F.h)) {
+          if (!V.step(1, m.x, m.y, this.p.pos)) V.reset();
+          audio.sfx('select', { volume: 0.5 });
+        }
+      }
       super.update(dt, NO_STICK(input, ['interact']));
       return;
     }
     if (this.page === 'quests') {
-      const n = this.questList().length;
-      if (input.repeat('up')) { this.qSel = Math.max(0, this.qSel - 1); audio.sfx('select', { volume: 0.4 }); }
-      if (input.repeat('down')) { this.qSel = Math.min(Math.max(0, n - 1), this.qSel + 1); audio.sfx('select', { volume: 0.4 }); }
+      const n = this.questList().length, Q = this.items.find((i) => i.id === 'q');
+      const wheel = Q && input.mouseIn(Q.x, Q.y, Q.w, Q.h) ? Math.sign(input.mouse.wheel) : 0;
+      if (input.repeat('up') || wheel < 0) { this.qSel = Math.max(0, this.qSel - 1); audio.sfx('select', { volume: 0.4 }); }
+      if (input.repeat('down') || wheel > 0) { this.qSel = Math.min(Math.max(0, n - 1), this.qSel + 1); audio.sfx('select', { volume: 0.4 }); }
       super.update(dt, NO_STICK(input));
       return;
     }
     super.update(dt, input);
+  }
+
+  // a keyboard player types their name on the keyboard itself (the letters on the screen still
+  // take a click): a letter writes, ⌫ rubs out, Enter is OK, Esc keeps the old name
+  typing(on) {
+    const g = this.P.game.input;
+    if (on && this.p.kind === 'keys') { if (!this.typer) this.typer = (e) => this.typeKey(e); if (!g.textHandler) g.textHandler = this.typer; }
+    else if (this.typer && g.textHandler === this.typer) g.textHandler = null;
+  }
+  typeKey(e) {
+    const O = this.osk, P = this.P;
+    if (!O || !P.tvmenus.isOpen(this.p) || P.host.menu || P.game.party !== P) { this.typing(false); return false; }
+    if (e.key === 'Enter') O.press('OK');
+    else if (e.key === 'Backspace') O.press('⌫');
+    else if (e.key === 'Escape') { O.back = true; audio.sfx('cancel', { volume: 0.5 }); }
+    else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && /[\p{L}\p{N} '’-]/u.test(e.key)) O.type(e.key);
+    else return false;
+    return true;
   }
 
   // ---- the wardrobe: the phone's look editor, treasure hats included
@@ -185,7 +216,8 @@ class TvHero extends HeroTab {
       let tx = vx + 9 + (vw - 20) / 2;
       if (o.color) { ctx.fillStyle = '#3b2a22'; ctx.fillRect(vx + 12, y + 2, 9, 9); ctx.fillStyle = o.color; ctx.fillRect(vx + 13, y + 3, 7, 7); tx += 6; }
       drawText(ctx, fitText((o.treasure ? '★' : '') + t(o.name), vw - 36), tx, y + 3, { color: o.treasure ? '#8a5a10' : UI.ink, align: 'center' });
-      this.item('lk:' + i, vx, y - 1, vw, rh - 2, () => this.stepLook(part, 1), () => { this.lookRow = i; });
+      // (a click on the ◂ half goes back)
+      this.item('lk:' + i, vx, y - 1, vw, rh - 2, (m) => this.stepLook(part, m && m.x < vx + vw / 2 ? -1 : 1), () => { this.lookRow = i; });
     });
     if (!this.home) this.home = 'lk:0';
   }
@@ -204,8 +236,11 @@ class TvHero extends HeroTab {
         ctx.fillStyle = bl ? this.p.color : '#fff7e6'; ctx.fillRect(Math.round(q.x) - 3, Math.round(q.y) - 3, 7, 7);
       }
     }
-    const k = (x) => keyOf(this.p, x);
-    drawText(ctx, fitText(V.k ? t('{a}: closer / the whole map · the stick moves it', { a: k('a') }) : t('{a}: zoom in', { a: k('a') }), A.w), A.x, A.y, { color: '#f6d38f' });
+    // (the keyboard's player has the arrows — and the mouse)
+    const a = keyOf(this.p, 'a'), keys = this.p.kind === 'keys';
+    const how = V.k ? (keys ? t('{a}: closer / the whole map · arrows or a drag: move', { a }) : t('{a}: closer / the whole map · the stick moves it', { a }))
+      : keys ? t('{a}, a click or the wheel: zoom in', { a }) : t('{a}: zoom in', { a });
+    drawText(ctx, fitText(how, A.w), A.x, A.y, { color: '#f6d38f' });
     this.item('map', A.x, A.y + 12, A.w, A.h - 12, () => {});
     this.home = 'map';
   }
@@ -217,7 +252,7 @@ class TvHero extends HeroTab {
     if (S) drawText(ctx, fitText(t('Chapter {n} · {title}', { n: S.chapter.id, title: t(S.chapter.title) }), A.w), A.x, A.y, { color: '#8a5234' });
     if (!list.length) { drawText(ctx, t('No quests yet. Explore and talk to people!'), A.x, A.y + 16, { color: UI.inkSoft }); this.item('q', A.x, A.y, A.w, 12, () => {}); this.home = 'q'; return; }
     this.qSel = Math.min(this.qSel, list.length - 1);
-    const first = Math.max(0, Math.min(this.qSel - 2, list.length - 5));
+    const first = Math.max(0, Math.min(this.qSel - 2, list.length - 5)), rows = [];
     let y = A.y + 14;
     list.forEach((q, i) => {
       if (i < first || y > A.y + A.h - 16) return;
@@ -227,9 +262,14 @@ class TvHero extends HeroTab {
       drawText(ctx, q.def.main ? '★' : '♥', A.x, y, { color: q.done ? '#b8a080' : q.def.main ? '#e0a526' : '#ec5f73' });
       drawText(ctx, fitText(t(q.def.title), A.w - 12), A.x + 10, y, { color: q.done ? '#b8a080' : UI.ink });
       lines.forEach((l, k) => drawText(ctx, on || k === 0 ? l : '', A.x + 10, y + 10 + k * 9, { color: q.done ? '#c8b8a0' : UI.inkSoft }));
+      rows.push({ i, y0: y - 2, y1: y + h + 1 });
       y += h + 3;
     });
-    this.item('q', A.x, A.y + 12, A.w, A.h - 12, () => {});
+    // (a click on a quest opens it)
+    this.item('q', A.x, A.y + 12, A.w, A.h - 12, (m) => {
+      const r = m && rows.find((o) => m.y >= o.y0 && m.y < o.y1);
+      if (r && r.i !== this.qSel) { this.qSel = r.i; audio.sfx('select', { volume: 0.4 }); }
+    });
     this.home = 'q';
   }
 
@@ -244,11 +284,14 @@ class TvHero extends HeroTab {
     drawText(ctx, fitText(p.name, A.w - 40), A.x + 36, A.y + 2, { color: '#8a5234' });
     const dev = p.kind === 'gamepad' ? '🎮 ' + (p.input.name ? p.input.name.replace(/\(.*$/, '').trim() : t('Gamepad')) : t('Keyboard · {keys}', { keys: moveKeys() + ' / ← ↑ → ↓' });
     drawText(ctx, fitText(dev, A.w - 40), A.x + 36, A.y + 13, { color: UI.inkSoft });
-    // the buttons
-    const bw = Math.min(150, A.w - 4), bx = A.x;
+    // the buttons (as wide as their words: the rest for your buttons' list)
+    const words = [t('Change your name'), t('Light a campfire'), t('Get unstuck'), t('Leave the party'), t('Press again')];
+    const bw = Math.min(150, A.w - 4, Math.max(96, ...words.map((s) => measure(s))) + 16), bx = A.x;
     let y = A.y + 38;
     const btn = (id, label, fn, color) => { this.btn(ctx, id, bx, y, bw, 15, label, fn, color); y += 19; };
-    btn('name', t('Change your name'), () => { this.osk = new Osk(p.name, { title: 'Your name', keys: { a: keyOf(p, 'a'), b: keyOf(p, 'b'), x: keyOf(p, 'x'), ok: keyOf(p, 'm') } }); audio.sfx('open'); });
+    // (on the keyboard: typed with its keys)
+    const typed = p.kind === 'keys' ? t('Type your name on the keyboard · Enter: OK') : null;
+    btn('name', t('Change your name'), () => { this.osk = new Osk(p.name, { title: 'Your name', keys: { a: keyOf(p, 'a'), b: keyOf(p, 'b'), x: keyOf(p, 'x'), ok: keyOf(p, 'm') }, hint: typed }); audio.sfx('open'); });
     if (P.phase !== 'lobby' && P.camp) btn('camp', t('Light a campfire'), () => { P.tvmenus.close(p); P.camp.build(p); }, '#b8502a');
     if (P.phase !== 'lobby') btn('unstuck', t('Get unstuck'), () => { P.tvmenus.close(p); P.unstick(p); });
     btn('leave', this.asking('leave') ? t('Press again') : t('Leave the party'), () => this.twice('leave', () => { P.tvmenus.close(p); P.removePlayer(p); }), this.asking('leave') ? '#c8454f' : '#8a7a98');
@@ -262,7 +305,8 @@ class TvHero extends HeroTab {
       const ky = A.y + 50 + i * 12, key = keyOf(p, k);
       if (p.kind === 'gamepad' && isFace(key)) faceGlyph(ctx, kx + 5, ky + 4, key);
       else { const w = measure(key) + 6; ctx.fillStyle = '#3b2a2e'; ctx.fillRect(kx, ky - 1, w, 10); drawText(ctx, key, kx + w / 2, ky, { color: '#fff3c4', align: 'center' }); }
-      drawText(ctx, fitText(label, kw - 26), kx + 16 + (isFace(key) || measure(key) < 10 ? 0 : measure(key) - 4), ky, { color: UI.ink });
+      const lx = kx + 16 + (isFace(key) || measure(key) < 10 ? 0 : measure(key) - 4);
+      drawText(ctx, fitText(label, kx + kw - lx), lx, ky, { color: UI.ink });
     });
     const host = wrap(t('{start}: the host’s menu, for everyone (pause, zoom, skip…)', { start: p.kind === 'gamepad' ? padName('pause', p.input.style) : 'Esc' }), kw);
     host.slice(0, 3).forEach((l, i) => drawText(ctx, l, kx, A.y + 50 + rows.length * 12 + 4 + i * 9, { color: '#b8a080' }));
@@ -271,7 +315,7 @@ class TvHero extends HeroTab {
   draw(ctx, px, py, pw, ph) {
     this.syncPages();
     super.draw(ctx, px, py, pw, ph);
-    if (this.osk) { ctx.save(); ctx.translate(px, py); this.osk.draw(ctx, pw, ph); ctx.restore(); }
+    if (this.osk) this.osk.draw(ctx, pw, ph, px, py);
   }
 }
 
@@ -310,7 +354,23 @@ export class TvMenus {
     this.slide = Math.min(1, this.slide + dt * 6);
     c.input.tick(dt);
     if (c.real.pressed('b') && !c.tab.osk) { c.real.edges.delete('b'); this.close(c.p); return; }
+    // the mouse: the close button (over the letters: back to the page) — and a click on the
+    // menu stays in the menu
+    const g = P.game.input, X = this.closeR;
+    if (g.mouse.pressed && X && this.pointing() && g.mouseIn(X.x, X.y, X.w, X.h)) {
+      g.mouse.pressed = false;
+      if (c.tab.osk) { c.tab.osk = null; c.tab.typing(false); audio.sfx('close'); } else this.close(c.p);
+      return;
+    }
     c.tab.update(dt, c.input);
+    if (g.mouse.pressed && this.pointing()) g.mouse.pressed = false;
+  }
+
+  // the big screen's mouse is on the open menu (not when the dialogue box or the big map is up:
+  // a click is theirs then)
+  pointing() {
+    const P = this.P, R = this.rect, m = P.game.input.mouse;
+    return !!(R && this.cur && !P.host.menu && !P.bigMapOpen && !P.dialogue.active && m.x >= R.x && m.y >= R.y && m.x < R.x + R.w && m.y < R.y + R.h);
   }
 
   openFor(p) {
@@ -324,7 +384,7 @@ export class TvMenus {
     tab.focus = null; tab.confirm = null;
     const real = p.input;
     p.input = new QuietInput(real);
-    this.cur = { p, tab, real, input: new MenuInput(p, real) };
+    this.cur = { p, tab, real, input: new MenuInput(p, real, this) };
     this.queue = this.queue.filter((q) => q !== p);
     audio.sfx('open');
   }
@@ -334,6 +394,7 @@ export class TvMenus {
     this.queue = this.queue.filter((q) => q !== p);
     if (!c || c.p !== p) return;
     c.real.edges.clear();
+    c.tab.typing(false);
     p.input = c.real;
     this.cur = null;
     if (!quiet) audio.sfx('close');
@@ -356,17 +417,23 @@ export class TvMenus {
 
   draw(ctx) {
     const c = this.cur;
+    this.rect = null;
     if (!c || this.P.host.menu) return;
     const d = this.P.display, W = d.w, H = d.h, p = c.p;
-    const pw = this.width(), ph = Math.min(H - 16, 262);
-    const px = Math.round(W - pw - 6 + (1 - this.slide) * (pw + 12)), py = Math.round((H - ph) / 2);
+    // (room above for the tab with your name and the close button)
+    const pw = this.width(), ph = Math.min(H - 22, 262);
+    const px = Math.round(W - pw - 6 + (1 - this.slide) * (pw + 12)), py = Math.max(14, Math.round((H - ph) / 2));
     panel(ctx, px, py, pw, ph);
+    this.rect = { x: px, y: py - 13, w: pw, h: ph + 13 };
     // whose menu it is: a tab in their colour on top
     const who = p.name, tw = measure(who) + 16;
     ctx.fillStyle = '#2a1f33'; ctx.fillRect(px + 10, py - 11, tw + 2, 13);
     ctx.fillStyle = p.color; ctx.fillRect(px + 11, py - 10, tw, 11);
     drawText(ctx, who, px + 11 + tw / 2, py - 8, { color: '#fff7e6', align: 'center', outline: '#2a1f33' });
-    if (this.queue.length) drawText(ctx, fitText(t('Next: {names}', { names: this.queue.map((q) => q.name).join(', ') }), pw - tw - 40), px + tw + 22, py - 8, { color: '#fff3c4', outline: '#2a1f33' });
+    // the Close button, for the mouse (as on the big map), across from it
+    const X = this.closeR, hot = !!X && this.pointing() && this.P.game.input.mouseIn(X.x, X.y, X.w, X.h);
+    this.closeR = closeButton(ctx, px + pw - 8, py - 12, { hot });
+    if (this.queue.length) drawText(ctx, fitText(t('Next: {names}', { names: this.queue.map((q) => q.name).join(', ') }), this.closeR.x - px - tw - 30), px + tw + 22, py - 8, { color: '#fff3c4', outline: '#2a1f33' });
     c.tab.draw(ctx, px, py, pw, ph);
     const hint = t('{x}/{y} pages · {a} choose · {b} close', { x: keyOf(p, 'x'), y: keyOf(p, 'y'), a: keyOf(p, 'a'), b: keyOf(p, 'b') });
     drawText(ctx, fitText(hint, pw - 16), px + pw / 2, py + ph - 13, { color: '#b8a080', align: 'center' });

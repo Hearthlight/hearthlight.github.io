@@ -24,7 +24,7 @@ export const CHAPTERS = [
     spot: [29, 52.4], hostAt: [33.2, 51], arena: [29.5, 52], bounds: { rx: 12.5, rz: 3.9 }, start: [30, 52.6], coop: [21.5, 51.6],
     find: 'Find Bram at Honeydew Fields',
     time: 75, title: 'Hen Round-Up', hint: 'Catch the hens, carry them to the coop',
-    rules: ['The hens got out of the coop!', 'A: grab a hen · carry it to the coop', 'A golden hen shows up halfway: worth 3!'],
+    rules: ['The hens got out of the coop!', '{a}: grab a hen · carry it to the coop', 'A golden hen shows up halfway: worth 3!'],
     hello: 'Howdy, friends! The storm scared my hens clean out of the coop, and your Sun Charm is tangled up in all the fuss.',
     thanks: 'Every last hen home! Here — the Sun Charm. It was in Buttercup’s water trough, of all places.',
   },
@@ -33,7 +33,7 @@ export const CHAPTERS = [
     spot: [211, 28.5], hostAt: [206.5, 31], arena: [213, 25.6], bounds: { rx: 11.5, rz: 6.2 }, start: [213, 27.5],
     find: 'Find Juniper at Frostpine Ridge',
     time: 60, title: 'Snowball Scramble', hint: 'Throw snowballs · jump to dodge',
-    rules: ['Snowball fight on the frozen pond!', 'A: throw (it aims for you a little) · B: jump to dodge', 'Hit friends or snowmen: +1 each. The ice is slippy!'],
+    rules: ['Snowball fight on the frozen pond!', '{a}: throw (it aims for you a little) · {b}: jump to dodge', 'Hit friends or snowmen: +1 each. The ice is slippy!'],
     hello: 'Oh hey, trail buddies! The Frost Charm froze into the pond — I chipped it out, but a ranger’s gotta have a little fun first…',
     thanks: 'Ha! Best snowball fight the ridge has ever seen. The Frost Charm’s all yours!',
   },
@@ -42,7 +42,7 @@ export const CHAPTERS = [
     spot: [21, 19.5], hostAt: [25.2, 21.2], arena: [21, 15.2], bounds: { rx: 12, rz: 6.8 }, start: [21, 18.5],
     find: 'Find Ivy at Maple Hollow',
     time: 60, title: 'Acorn Hunt', hint: 'Jump into leaf piles to find acorns',
-    rules: ['The squirrels hid their acorns in the leaf piles!', 'B: jump INTO a pile to search it', 'Acorns +1 · golden acorns +3 · piles grow back'],
+    rules: ['The squirrels hid their acorns in the leaf piles!', '{b}: jump INTO a pile to search it', 'Acorns +1 · golden acorns +3 · piles grow back'],
     hello: 'Hello hello! The wind blew the Leaf Charm into one of these piles… along with every acorn in the valley. Let’s dig!',
     thanks: 'Found it! Well, you found it — about forty acorns, and the Leaf Charm. The squirrels send their thanks.',
   },
@@ -51,7 +51,7 @@ export const CHAPTERS = [
     spot: [213, 67.4], hostAt: [207.6, 66.4], arena: [213, 62], bounds: { rx: 10.5, rz: 6.6 }, start: [213, 67],
     find: 'Find Finn at Blossom Glade',
     time: 70, title: 'Koi Catch', hint: 'Cast, wait for the buzz, then press A!',
-    rules: ['A koi swallowed the Koi Charm (don’t worry, it spat it out).', 'A: cast into the pond · wait for your phone to BUZZ', 'Then A, quick! Golden koi +3 · the ancient koi +5'],
+    rules: ['A koi swallowed the Koi Charm (don’t worry, it spat it out).', '{a}: cast into the pond · wait for your phone to BUZZ', 'Then {a}, quick! Golden koi +3 · the ancient koi +5'],
     hello: 'Oh — hi. So, uh, a koi swallowed the charm. It’s fine now. But Grandpa always said: first you fish, then you get the prize.',
     thanks: 'Not bad at all. Grandpa would’ve liked you lot. Here’s the Koi Charm.',
   },
@@ -521,7 +521,7 @@ export class PartyStory {
   // what each phone shows (English: party.js runs t() on a, b, x & hint + vars)
   ctxFor(p) {
     const P = this.party;
-    if (this.overlay && this.overlay.kind === 'rules') return { a: this.overlay.ready.has(p.slot) ? null : 'Ready!', b: 'Hop', hint: this.overlay.game.def.rules[1] };
+    if (this.overlay && this.overlay.kind === 'rules') return { a: this.overlay.ready.has(p.slot) ? null : 'Ready!', b: 'Hop', hint: this.overlay.game.def.rules[1], vars: { a: this.party.keyOf(p, 'a'), b: this.party.keyOf(p, 'b') } };
     if (this.overlay && this.overlay.kind === 'count') return { a: null, b: null, hint: 'Get ready…' };
     if (this.overlay && (this.overlay.kind === 'results' || this.overlay.kind === 'awards')) return { a: this.overlay.t > 3 ? 'Continue' : null, b: 'Hop', hint: 'You have ★ {n}', vars: { n: p.stars } };
     if (P.dialogue.active) return { a: 'Next', b: null, hint: 'Story time — look at the big screen!' };
@@ -597,8 +597,9 @@ export class PartyStory {
       const g = o.game, d = g.def;
       const pw = Math.min(W - 40, 320);
       // every rule gets up to two lines (the card grows to fit)
-      const lines = [];
-      d.rules.forEach((r, i) => wrap(t(r), pw - 84).slice(0, 2).forEach((l, k) => lines.push({ text: (i ? (k ? '  ' : '• ') : '') + l, color: i ? UI.ink : '#4f73b6' })));
+      // (the buttons as everyone here calls them: A on a phone, E on the keyboard…)
+      const lines = [], keys = { a: P.keyName('a'), b: P.keyName('b') };
+      d.rules.forEach((r, i) => wrap(t(r, keys), pw - 84).slice(0, 2).forEach((l, k) => lines.push({ text: (i ? (k ? '  ' : '• ') : '') + l, color: i ? UI.ink : '#4f73b6' })));
       const ph = Math.max(112, 50 + lines.length * 11 + 28);
       const px = Math.round((W - pw) / 2), py = Math.round(H / 2 - ph / 2);
       panel(ctx, px, py, pw, ph);
@@ -615,7 +616,7 @@ export class PartyStory {
         if (on) drawText(ctx, '✓', x + 5, py + ph - 21, { color: '#241a2e', align: 'center' });
         x += 13;
       }
-      drawText(ctx, t('Press A when you’re ready ({n}/{total})', { n: o.ready.size, total: live.length }), px + pw - 12, py + ph - 21, { color: '#4f955a', align: 'right' });
+      drawText(ctx, t('Press {a} when you’re ready ({n}/{total})', { a: keys.a, n: o.ready.size, total: live.length }), px + pw - 12, py + ph - 21, { color: '#4f955a', align: 'right' });
     } else if (o.kind === 'count') {
       const n = Math.ceil(3 - o.t);
       const txt = o.t >= 3 ? t('GO!') : String(n);

@@ -56,7 +56,7 @@ const TIPS = [
   'The gloom is bolder at night.',
   'Ring the gong at the Festival Ring!',
   'A friend nearby wakes you from a nap.',
-  'Hold A for a big charged attack!',
+  'Hold {a} for a big charged attack!',
   'Freed animals may follow you home.',
 ];
 const NIGHT = (h) => h >= 20 || h < 6;
@@ -589,7 +589,7 @@ export class ExploreAct {
 
   chat(n, p) {
     const left = Math.max(0, GOAL - this.cleansed);
-    const tip = !this.bossBeaten && left && Math.random() < 0.35 ? t('{n} nests to go. You can do it!', { n: left }) : t(pick(TIPS));
+    const tip = !this.bossBeaten && left && Math.random() < 0.35 ? t('{n} nests to go. You can do it!', { n: left }) : t(pick(TIPS), { a: this.party.keyName('a') });
     n.bubble = tip; n.bubbleT = 3; n.lookAt = p.pos; n.talking = true; n.speaking = false;
     audio.blip({ pitch: 52, wave: 'triangle' });
   }

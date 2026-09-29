@@ -22,7 +22,7 @@ const TRAVELERS = [
   { npc: 'finn', zone: 'canyon', wants: 'acorn', tips: ['The minecart rails run right through the canyon. Hop in!', 'Beetles shrug off quick hits — try a big charged one!', 'Slingers run away when you close in. Corner them!'] },
   { npc: 'mabel', zone: 'glacier', wants: 'honey', tips: ['The Frost Colossus sleeps by the ice arch. Break its armour first!', 'Bears adore honeycomb. So do I, dear.', 'Sleds go faster downhill. Mind the rocks!'] },
   { npc: 'juniper', zone: 'bouncecap', wants: 'bug', tips: ['Jump next to a giant mushroom — boing!', 'Spore shamans call little friends. Stop them first!', 'Frogs love juicy bugs, the glowing kind.'] },
-  { npc: 'marlo', zone: 'lagoon', wants: 'kelp', tips: ['Where the water glints, dive with B. Pearls!', 'Turtles love kelp — and they carry you across the sea!', 'Whirlpools spin you round and spit you out. Great fun.'] },
+  { npc: 'marlo', zone: 'lagoon', wants: 'kelp', tips: ['Where the water glints, dive with {b}. Pearls!', 'Turtles love kelp — and they carry you across the sea!', 'Whirlpools spin you round and spit you out. Great fun.'] },
   { npc: 'merchant', zone: 'steppe', shop: true, tips: [] },
 ];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -209,7 +209,7 @@ export class Travel {
       P.world.fx.emit('heart', n.pos.x, 1.8, n.pos.z, 3);
       P.showBanner(t('{name} brought {npc} {food}!', { name: p.name, npc: n.def.short, food: t(FOODS[n.wants].a) }), t('a rare present and 40 stardust in return'));
     } else if (n.wants && !n.granted && Math.random() < 0.5) say = t('If you find {food}, bring it to me — I’d trade you something nice!', { food: t(FOODS[n.wants].a) });
-    else say = t(n.tips[Math.floor(Math.random() * n.tips.length)]);
+    else say = t(n.tips[Math.floor(Math.random() * n.tips.length)], { a: P.keyName('a'), b: P.keyName('b') });
     n.bubble = say; n.bubbleT = n.shop ? 4.5 : 3.5; n.lookAt = p.pos; n.talking = true; n.speaking = false;
     const v = n.def && n.def.voice;
     audio.blip({ pitch: v ? v.pitch : 52, wave: v ? v.wave : 'triangle' });

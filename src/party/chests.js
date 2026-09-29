@@ -4,7 +4,7 @@
 // (what's inside: relics, gear, stardust, coins…).
 
 import { THREE, toon } from '../render/r3d.js';
-import { drawText } from '../engine/font.js';
+import { keyBadge } from '../ui/ui.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 
@@ -107,17 +107,17 @@ export class Chests {
     P.cam.shake = Math.max(P.cam.shake || 0, 0.35);
   }
 
-  // an "A" bobbing over the chests someone could open
-  drawPrompts(ctx, v, key = 'A') {
+  // an "A" bobbing over the chests someone could open — the button of whoever's closest
+  drawPrompts(ctx, v, key = null) {
     const P = this.party;
     for (const c of this.list) {
       if (c.opened || !c.landed) continue;
-      if (!P.players.some((p) => p.connected && Math.hypot(p.pos.x - c.x, p.pos.z - c.z) < 4)) continue;
+      let near = null, nd = 4;
+      for (const p of P.players) { const d = Math.hypot(p.pos.x - c.x, p.pos.z - c.z); if (p.connected && d < nd) { nd = d; near = p; } }
+      if (!near) continue;
       const u = P.toUi(v, c.x, 1.1, c.z);
       const bob = Math.round(Math.sin(P.t * 5) * 1.5);
-      ctx.fillStyle = '#3b2a2e'; ctx.fillRect(Math.round(u.x) - 5, Math.round(u.y) - 12 + bob, 11, 11);
-      ctx.fillStyle = '#4f955a'; ctx.fillRect(Math.round(u.x) - 4, Math.round(u.y) - 11 + bob, 9, 9);
-      drawText(ctx, key, u.x + 1, u.y - 10 + bob, { color: '#fff7e6', align: 'center' });
+      keyBadge(ctx, u.x, u.y - 12 + bob, key || P.keyOf(near, 'a'), '#4f955a');
     }
   }
 

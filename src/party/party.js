@@ -186,8 +186,12 @@ export class Party {
   // game’s Wild answers the same question for its hero)
   exploring() { return this.actKind === 'explore' && !!this.act && !this.act.suspended && this.act instanceof ExploreAct; }
 
-  // the name of a button in texts ("{a} to ride it"): the phones’ letters here
-  keyName(k) { return k.toUpperCase(); }
+  // the name of a button in texts ("{a} to ride it"): what the players press — a phone’s letter,
+  // the keyboard’s key, a gamepad’s button — both when their hands differ (« A/E »)
+  keyName(k) {
+    const names = [...new Set(this.players.filter((p) => p.connected).map((p) => keyOf(p, k)))];
+    return names.length ? names.join('/') : k.toUpperCase();
+  }
 
   // the world’s saved progress (waystones, camps, lairs, secrets, races, zones,
   // the map’s fog): Party Mode keeps it in this browser, the solo game in its save
@@ -1214,6 +1218,7 @@ export class Party {
     return new Promise((resolve) => {
       const id = (this.voteSeq = (this.voteSeq || 0) + 1);
       this.vote = { id, title, options, picks: new Map(), t: time, time, resolve, cursor: new Map(), owner, cancel };
+      this.voteRects = null;
       for (const p of this.players) this.sendVote(p);
       audio.jingle('questStart');
     });
@@ -1245,7 +1250,12 @@ export class Party {
   updateVote(dt) {
     const v = this.vote;
     v.t -= dt;
-    // keyboard & gamepad players vote on the big screen
+    // keyboard & gamepad players vote on the big screen — the keyboard's player with the mouse too
+    const g = this.game.input, kb = this.players.find((p) => p.kind === 'keys' && p.connected && !v.picks.has(p.slot));
+    if (kb && this.voteRects && !this.host.menu && !this.bigMapOpen) for (const r of this.voteRects) if (g.mouseIn(r.x, r.y, r.w, r.h)) {
+      if (g.mouse.moved) v.cursor.set(kb.slot, r.i);
+      if (g.mouse.pressed) { g.mouse.pressed = false; this.onVotePick(kb, { id: v.id, i: r.i }); }
+    }
     for (const p of this.players) {
       if (p.kind === 'phone' || v.picks.has(p.slot)) continue;
       let c = v.cursor.get(p.slot) || 0;
@@ -1280,12 +1290,17 @@ export class Party {
     const px = Math.round((W - pw) / 2), py = Math.round(H / 2 - ph / 2 - 10);
     panel(ctx, px, py, pw, ph);
     drawText(ctx, v.title, px + pw / 2, py + 9, { color: '#8a5234', align: 'center' });
-    drawText(ctx, t('Vote on your phone · {n}s', { n: Math.max(0, Math.ceil(v.t)) }), px + pw / 2, py + 21, { color: UI.inkSoft, align: 'center' });
-    const counts = this.tally();
+    // (no phone here: everyone votes on this screen)
+    const phones = this.players.some((p) => p.kind === 'phone' && p.connected), secs = Math.max(0, Math.ceil(v.t));
+    drawText(ctx, phones ? t('Vote on your phone · {n}s', { n: secs }) : t('Vote on this screen · {n}s', { n: secs }), px + pw / 2, py + 21, { color: UI.inkSoft, align: 'center' });
+    // (the keyboard's player can click an answer: it lights up under the mouse)
+    const counts = this.tally(), rects = [], gi = this.game.input;
+    const mouse = !this.remoteFor && this.players.some((p) => p.kind === 'keys' && p.connected && !v.picks.has(p.slot));
     v.options.forEach((o, i) => {
-      const y = py + 34 + i * 22;
+      const y = py + 34 + i * 22, r = { x: px + 10, y: y - 2, w: pw - 20, h: 22, i };
+      rects.push(r);
       ctx.fillStyle = o.color || '#c9a77c'; ctx.fillRect(px + 10, y, 4, 18);
-      ctx.fillStyle = '#f3e3c3'; ctx.fillRect(px + 14, y, pw - 24, 18);
+      ctx.fillStyle = mouse && gi.mouseIn(r.x, r.y, r.w, r.h) ? '#fff3c4' : '#f3e3c3'; ctx.fillRect(px + 14, y, pw - 24, 18);
       drawText(ctx, o.label, px + 20, y + 2, { color: UI.ink });
       if (o.sub) drawText(ctx, o.sub, px + 20, y + 10, { color: UI.inkSoft });
       let dx = px + pw - 16;
@@ -1300,6 +1315,7 @@ export class Party {
       }
       if (counts[i]) drawText(ctx, `${counts[i]}`, dx - 4, y + 5, { color: '#8a5234', align: 'right' });
     });
+    if (!this.remoteFor) this.voteRects = rects;
   }
 
   updateAmbience(dt) {
@@ -1576,7 +1592,7 @@ export class Party {
     const scene = this.stage && (this.stage.active || this.stage.barK > 0);
     if (this.rooms && !scene) this.rooms.drawLabels(ctx, v);
     if (this.act) this.act.drawLabels(ctx, v);
-    if (this.vehicles && !scene) this.vehicles.drawLabels(ctx, v, this, drawText);
+    if (this.vehicles && !scene) this.vehicles.drawLabels(ctx, v, this);
   }
 
   // Friends this view doesn't show (at home with their own camera, or far off): an arrow on
@@ -1802,7 +1818,7 @@ export class Party {
     let msg;
     if (!here.length) msg = tr('Waiting for friends to join…');
     else if (this.countdown > 0) msg = tr('Everyone’s ready! Starting in {n}…', { n: Math.ceil(this.countdown) });
-    else if (this.choosing) msg = tr('Vote on your phone!');
+    else if (this.choosing) msg = here.some((p) => p.kind === 'phone') ? tr('Vote on your phone!') : tr('Vote on this screen!');
     else {
       const k = here.filter((p) => !p.ready).length, H = this.hostLed();
       if (H && !k) msg = tr('Everyone’s ready! ♛ {name} starts the party', { name: H.name });

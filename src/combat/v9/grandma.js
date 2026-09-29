@@ -175,7 +175,7 @@ export const GRANDMA_BRAINS = {
       e.immune = null; e.hintText = (e.hints && e.hints.eye) || 'Her eye is open — throw your lanterns!';
       for (const q of arms) { q.state = 'sink'; q.timer = 0.8; q.immune = 'Splash!'; }
       C.bubble(e, pick([t('Now where are my spectacles… oh! THERE you are!'), t('Speak up, dearie, I can’t see a thing!')]), 2.2);
-      const P = C.party, key = P.solo && P.keyName ? P.keyName('x') : 'X';
+      const P = C.party, key = P.keyName ? P.keyName('x') : 'X';
       P.toast(P.solo ? t('Her eye is open! Throw your lantern ({x}) from a boat close by!', { x: key }) : t('Her eye is open! Throw your lanterns ({x}) from the boats close by!', { x: key }), '#ffd66b');
       C.shakeAt(e, 0.35); audio.sfx('splash', { volume: 0.9, pitch: -6 });
     },

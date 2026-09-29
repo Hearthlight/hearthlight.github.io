@@ -202,6 +202,15 @@ export function heart(ctx, x, y, full = 1, scale = 1) {
   }
 }
 
+// A button's name on a little coloured cap over something in the world (an "A" over a boat —
+// "E" for the keyboard's player); (x, y): its top middle
+export function keyBadge(ctx, x, y, key, color) {
+  const w = Math.max(9, measure(key) + 4), X = Math.round(x) - Math.floor(w / 2), Y = Math.round(y);
+  ctx.fillStyle = '#3b2a2e'; ctx.fillRect(X - 1, Y, w + 2, 11);
+  ctx.fillStyle = color; ctx.fillRect(X, Y + 1, w, 9);
+  drawText(ctx, key, X + Math.ceil(w / 2), Y + 2, { color: '#fff7e6', align: 'center' });
+}
+
 // Keyboard hint pill: [E] Talk
 export function keyHint(ctx, x, y, key, label, { center = true, dark = true } = {}) {
   // (a gamepad's A / B / X / Y: the round button itself)

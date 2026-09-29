@@ -40,7 +40,7 @@ export const PARTY = {
   'Catch the hens, carry them to the coop': 'Acchiappa le galline, portale al pollaio',
   // rules lines must fit on one line of the rules card (~40 characters)
   'The hens got out of the coop!': 'Le galline sono scappate dal pollaio!',
-  'A: grab a hen · carry it to the coop': 'A: prendi una gallina · portala al pollaio',
+  '{a}: grab a hen · carry it to the coop': '{a}: prendi una gallina · portala al pollaio',
   'A golden hen shows up halfway: worth 3!': 'A metà arriva una gallina d’oro: vale 3!',
   'Howdy, friends! The storm scared my hens clean out of the coop, and your Sun Charm is tangled up in all the fuss.': 'Salve, amici! La tempesta ha fatto scappare tutte le mie galline dal pollaio, e il vostro Amuleto del Sole è finito in mezzo al pandemonio.',
   'Every last hen home! Here — the Sun Charm. It was in Buttercup’s water trough, of all places.': 'Tutte le galline a casa, fino all’ultima! Ecco — l’Amuleto del Sole. Stava nell’abbeveratoio di Buttercup, figuratevi.',
@@ -49,7 +49,7 @@ export const PARTY = {
   'Snowball Scramble': 'Battaglia di neve',
   'Throw snowballs · jump to dodge': 'Lancia palle di neve · salta per schivare',
   'Snowball fight on the frozen pond!': 'Palle di neve sullo stagno ghiacciato!',
-  'A: throw (it aims for you a little) · B: jump to dodge': 'A: lancia (la mira ti aiuta) · B: salta e schiva',
+  '{a}: throw (it aims for you a little) · {b}: jump to dodge': '{a}: lancia (la mira ti aiuta) · {b}: salta e schiva',
   'Hit friends or snowmen: +1 each. The ice is slippy!': 'Amici o pupazzi colpiti: +1. Si scivola!',
   'Oh hey, trail buddies! The Frost Charm froze into the pond — I chipped it out, but a ranger’s gotta have a little fun first…': 'Ehi, compagni di sentiero! L’Amuleto del Gelo era rimasto congelato nello stagno — l’ho tirato fuori a colpi di piccozza, ma una guardaboschi avrà pure diritto a un po’ di svago, prima…',
   'Ha! Best snowball fight the ridge has ever seen. The Frost Charm’s all yours!': 'Ah! La più bella battaglia a palle di neve che la cresta abbia mai visto. L’Amuleto del Gelo è tutto vostro!',
@@ -58,7 +58,7 @@ export const PARTY = {
   'Acorn Hunt': 'Caccia alle ghiande',
   'Jump into leaf piles to find acorns': 'Tuffati nei mucchi di foglie per trovare ghiande',
   'The squirrels hid their acorns in the leaf piles!': 'Gli scoiattoli hanno nascosto le ghiande!',
-  'B: jump INTO a pile to search it': 'B: salta DENTRO un mucchio per frugarlo',
+  '{b}: jump INTO a pile to search it': '{b}: salta DENTRO un mucchio per frugarlo',
   'Acorns +1 · golden acorns +3 · piles grow back': 'Ghianda +1 · dorata +3 · i mucchi ricrescono',
   'Hello hello! The wind blew the Leaf Charm into one of these piles… along with every acorn in the valley. Let’s dig!': 'Ciao ciao! Il vento ha soffiato l’Amuleto della Foglia in uno di questi mucchi… insieme a tutte le ghiande della valle. Frughiamo!',
   'Found it! Well, you found it — about forty acorns, and the Leaf Charm. The squirrels send their thanks.': 'Trovato! Cioè, l’avete trovato voi — una quarantina di ghiande, e l’Amuleto della Foglia. Gli scoiattoli ringraziano.',
@@ -67,8 +67,8 @@ export const PARTY = {
   'Koi Catch': 'Pesca alle koi',
   'Cast, wait for the buzz, then press A!': 'Lancia, aspetta la vibrazione, poi premi A!',
   'A koi swallowed the Koi Charm (don’t worry, it spat it out).': 'Una koi ha ingoiato l’amuleto (poi ci ha ripensato).',
-  'A: cast into the pond · wait for your phone to BUZZ': 'A: lancia · aspetta che il telefono VIBRI',
-  'Then A, quick! Golden koi +3 · the ancient koi +5': 'Poi A, veloce! Koi dorata +3 · millenaria +5',
+  '{a}: cast into the pond · wait for your phone to BUZZ': '{a}: lancia · aspetta che il telefono VIBRI',
+  'Then {a}, quick! Golden koi +3 · the ancient koi +5': 'Poi {a}, veloce! Koi dorata +3 · millenaria +5',
   'Oh — hi. So, uh, a koi swallowed the charm. It’s fine now. But Grandpa always said: first you fish, then you get the prize.': 'Oh — ciao. Allora, ehm, una koi ha ingoiato l’amuleto. Ora sta bene. Ma il nonno diceva sempre: prima si pesca, poi arriva il premio.',
   'Not bad at all. Grandpa would’ve liked you lot. Here’s the Koi Charm.': 'Niente male davvero. Il nonno vi avrebbe presi in simpatia. Ecco l’Amuleto della Carpa.',
 
@@ -128,7 +128,7 @@ export const PARTY = {
 
   // rules card, countdown & results
   'hosted by {who} · {n}s': 'presenta {who} · {n} s',
-  'Press A when you’re ready ({n}/{total})': 'Tutto pronto? Premete A! ({n}/{total})',
+  'Press {a} when you’re ready ({n}/{total})': 'Tutto pronto? Premete {a}! ({n}/{total})',
   'GO!': 'VIA!',
   '{game} — results': '{game} — risultati',
   '1st': '1°',

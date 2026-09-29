@@ -42,7 +42,7 @@ export const TRAVEL = {
   'Jump next to a giant mushroom — boing!': 'Salta accanto a un fungo gigante — boing!',
   'Spore shamans call little friends. Stop them first!': 'Gli sciamani delle spore chiamano gli amichetti. Fermali per primi!',
   'Frogs love juicy bugs, the glowing kind.': 'Le rane vanno pazze per gli insetti succosi, quelli che brillano.',
-  'Where the water glints, dive with B. Pearls!': 'Dove l’acqua luccica, tuffati con B. Perle!',
+  'Where the water glints, dive with {b}. Pearls!': 'Dove l’acqua luccica, tuffati con {b}. Perle!',
   'Turtles love kelp — and they carry you across the sea!': 'Le tartarughe adorano le alghe — e ti portano dall’altra parte del mare!',
   'Whirlpools spin you round and spit you out. Great fun.': 'I gorghi ti fanno girare e poi ti sputano fuori. Uno spasso.',
 };

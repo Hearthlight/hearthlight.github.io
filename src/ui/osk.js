@@ -29,9 +29,10 @@ const NAMES = ['Alex', 'Sam', 'Robin', 'Charlie', 'Noa', 'Lou', 'Mika', 'Jules',
   'Maya', 'Eli', 'Nina', 'Oscar', 'Iris', 'Tom', 'Emma', 'Lucas', 'Jade', 'Rémi', 'Noor', 'Aiko', 'Omar', 'Elsa', 'Yann', 'Suki'];
 
 export class Osk {
-  constructor(value = '', { max = 12, title = 'Your name', keys = null } = {}) {
+  constructor(value = '', { max = 12, title = 'Your name', keys = null, hint = null } = {}) {
     this.v = value;
     this.keys = keys;             // { a, b, x, ok }: the buttons' names, when they aren't the big screen's
+    this.hint = hint;             // (a line of its own under the keys: a name typed on a keyboard)
     this.max = max;
     this.title = title;
     this.r = 0; this.c = 0;
@@ -92,11 +93,21 @@ export class Osk {
     audio.sfx('typewriter', { volume: 0.4 });
   }
 
-  draw(ctx, W, H) {
+  // a letter typed on a real keyboard, as it was typed
+  type(ch) {
+    if (this.v.length >= this.max) { audio.sfx('error'); return; }
+    if (ch === ' ' && (!this.v || this.v.endsWith(' '))) return;
+    this.v += ch;
+    this.caps = ch === ' ' || ch === '-';
+    audio.sfx('typewriter', { volume: 0.4 });
+  }
+
+  // (x0, y0: the corner of the W × H area it sits in the middle of)
+  draw(ctx, W, H, x0 = 0, y0 = 0) {
     const cell = 17, gap = 2, gw = 10 * cell + 9 * gap;
     const pw = gw + 20, ph = 4 * (cell + gap) + 62;
-    const px = Math.round(W / 2 - pw / 2), py = Math.round(H / 2 - ph / 2);
-    ctx.fillStyle = 'rgba(20,14,28,0.5)'; ctx.fillRect(0, 0, W, H);
+    const px = x0 + Math.round(W / 2 - pw / 2), py = y0 + Math.round(H / 2 - ph / 2);
+    ctx.fillStyle = 'rgba(20,14,28,0.5)'; ctx.fillRect(x0, y0, W, H);
     panel(ctx, px, py, pw, ph);
     drawText(ctx, t(this.title), px + pw / 2, py + 7, { color: '#8a5234', align: 'center' });
     // the name so far, with a blinking caret
@@ -122,7 +133,7 @@ export class Osk {
       });
     });
     const K = this.keys || { a: ctl('interact'), b: ctl('cancel'), x: ctl('special'), ok: ctl('start') };
-    const hint = t('{a} type · {b} rub out · {x} random name · {start} OK', { a: K.a, b: K.b, x: K.x, start: K.ok });
+    const hint = this.hint || t('{a} type · {b} rub out · {x} random name · {start} OK', { a: K.a, b: K.b, x: K.x, start: K.ok });
     drawText(ctx, fitText(hint, pw - 12), px + pw / 2, py + ph - 12, { color: '#b8a080', align: 'center' });
   }
 }

@@ -103,7 +103,10 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   names it on the device in hand — a key cap, a gamepad's button by family (Xbox A B X Y,
   PlayStation ✕ ○ □ △, Nintendo B A Y X), the phone's; `device()` says which ('keys' · 'pad' ·
   'phone' · 'touch'); `keyHint` draws a gamepad's face buttons round. In Party Mode a player's
-  own buttons: `P.keyOf(p, 'a'|'b'|'x'|'y'|'u'|'m')`. `input.buzz(pattern, index)` rumbles.
+  own buttons: `P.keyOf(p, 'a'|'b'|'x'|'y'|'u'|'m')`; a text for everyone says `{a}` with
+  `P.keyName('a')` (the connected players' own: « A/E » when they differ), never a bare "A" —
+  a keyboard player is there too, with the big screen's mouse (their menu, the votes: `tvmenu.js`
+  `pointing()`, `voteRects`). `input.buzz(pattern, index)` rumbles.
 - **Text**: every visible string goes through `t('English text', vars)` (or `tn` for plurals);
   the English text is the key. Five languages: French in `src/lang/fr/*.js` (new content → a new
   file, registered in `src/lang/fr/index.js`), following `tools/i18n-glossary.md`: tutoiement,

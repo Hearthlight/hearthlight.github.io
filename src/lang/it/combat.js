@@ -187,7 +187,7 @@ export const COMBAT = {
   'The gloom is bolder at night.': 'Di notte il grigiume è più sfacciato.',
   'Ring the gong at the Festival Ring!': 'Suona il gong all’Arena del Festival!',
   'A friend nearby wakes you from a nap.': 'Un amico vicino ti sveglia dal pisolino.',
-  'Hold A for a big charged attack!': 'Tieni premuto A per un grosso attacco caricato!',
+  'Hold {a} for a big charged attack!': 'Tieni premuto {a} per un grosso attacco caricato!',
   'Freed animals may follow you home.': 'Gli animali liberati potrebbero seguirti a casa.',
   'The Grumblecloud is furious!': 'Il Brontonembo è furioso!',
   'everyone to Starfall Hill': 'tutti alla Collina delle Stelle Cadenti',
