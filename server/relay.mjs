@@ -76,7 +76,9 @@ export function createRelay(opts = {}) {
     savesDir: opts.savesDir ?? env.SAVES_DIR ?? '',
     turnSecret: opts.turnSecret ?? env.TURN_SECRET ?? '',
     turnUrls: (opts.turnUrls ?? env.TURN_URLS ?? '').split(',').filter(Boolean),
+    roomsFile: opts.roomsFile ?? env.ROOMS_FILE ?? '',   // (none given: beside the daily counters)
   };
+  if (!O.roomsFile && O.statsDir) O.roomsFile = path.join(O.statsDir, 'rooms.json');
   const iceServers = () => {
     if (!O.turnSecret || !O.turnUrls.length) return [];
     const username = Math.floor(Date.now() / 1000 + 12 * 3600) + ':' + crypto.randomBytes(6).toString('hex');
@@ -406,6 +408,36 @@ export function createRelay(opts = {}) {
     };
   }
 
+  // ---- a restart (an update) keeps the parties going: on the way out the rooms are written down
+  // (their codes and owner secrets — a file only the relay reads), and read back on the way in,
+  // each waiting the usual grace for its big screen to resume with its secret; the phones keep
+  // knocking with the same code meanwhile. Players see a few seconds of « reconnecting ».
+  function keepRooms() {
+    if (!O.roomsFile) return;
+    const list = [...rooms.values()].map((r) => ({ code: r.code, token: r.token, remoteKey: r.remoteKey, t0: r.t0, maxPads: r.maxPads }));
+    try {
+      if (!list.length) { fs.rmSync(O.roomsFile, { force: true }); return; }
+      fs.writeFileSync(O.roomsFile, JSON.stringify({ at: Date.now(), rooms: list }), { mode: 0o600 });
+      log(`${list.length} part(ies) kept for the restart`);
+    } catch (e) { log('rooms not kept: ' + e.message); }
+  }
+  (function restoreRooms() {
+    if (!O.roomsFile) return;
+    let kept = null;
+    try { kept = JSON.parse(fs.readFileSync(O.roomsFile, 'utf8')); } catch { return; }
+    try { fs.rmSync(O.roomsFile, { force: true }); } catch { /* ignore */ }
+    if (!object(kept) || !Array.isArray(kept.rooms) || !(Date.now() - kept.at < 10 * 60000)) return;
+    let n = 0;
+    for (const r of kept.rooms.slice(0, O.maxRooms)) {
+      if (!object(r) || !/^[A-Z]{4}$/.test(r.code || '') || typeof r.token !== 'string' || r.token.length < 16 || rooms.has(r.code)) continue;
+      const room = { code: r.code, token: r.token, remoteKey: typeof r.remoteKey === 'string' ? r.remoteKey : crypto.randomBytes(16).toString('hex'), videoRate: new Bucket(12, 2), owner: { rooms: 1 }, host: null, pads: new Map(), t0: +r.t0 || Date.now(), maxPads: +r.maxPads || 0 };
+      rooms.set(room.code, room);
+      suspend(room);
+      n++;
+    }
+    if (n) log(`${n} part(ies) back after a restart, waiting for their big screens`);
+  })();
+
   return {
     O, rooms, stats, server, snapshot,
     listen() {
@@ -418,7 +450,7 @@ export function createRelay(opts = {}) {
         });
       });
     },
-    async close() { shuttingDown = true; for (const room of rooms.values()) clearTimeout(room.expiry); clearInterval(tick); if (usage) usage.close(); for (const ws of wss.clients) ws.terminate(); await new Promise((r) => { if (!server.listening) { r(); return; } server.close(() => r()); }); await saves.close(); },
+    async close() { keepRooms(); shuttingDown = true; for (const room of rooms.values()) clearTimeout(room.expiry); clearInterval(tick); if (usage) usage.close(); for (const ws of wss.clients) ws.terminate(); await new Promise((r) => { if (!server.listening) { r(); return; } server.close(() => r()); }); await saves.close(); },
   };
 }
 

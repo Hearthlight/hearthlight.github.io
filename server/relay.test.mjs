@@ -209,3 +209,37 @@ test('TURN credentials are short-lived and issued only to room owners', async (t
   const pad = await f.connect(`role=pad&code=${room.code}&id=phone`);
   assert.equal((await pad.next('hello')).iceServers, undefined);
 });
+
+test('a restart keeps the party: the same code, the host back with its secret, the phones rejoin', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hl-rooms-')), roomsFile = path.join(dir, 'rooms.json');
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const relay = createRelay({ host: '127.0.0.1', port: 0, quiet: true, roomsFile });
+  await relay.listen();
+  const port = relay.server.address().port, sockets = [];
+  // (messages queued from the start: the relay speaks first)
+  const open = async (query) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws?${query}`), queue = [], waiting = [];
+    ws.on('error', () => {});
+    ws.on('message', (d) => { const m = JSON.parse(d), i = waiting.findIndex((w) => w.type === m.t); if (i < 0) queue.push(m); else waiting.splice(i, 1)[0].resolve(m); });
+    sockets.push(ws);
+    await once(ws, 'open');
+    return { ws, next: (type) => { const i = queue.findIndex((m) => m.t === type); return i >= 0 ? Promise.resolve(queue.splice(i, 1)[0]) : new Promise((resolve) => waiting.push({ type, resolve })); } };
+  };
+  t.after(() => { for (const ws of sockets) ws.terminate(); });
+  const host = await open('role=host'), room = await host.next('room');
+  const pad = await open(`role=pad&code=${room.code}&id=phone`); await pad.next('hello');
+  await relay.close();
+  assert.equal(fs.statSync(roomsFile).mode & 0o777, 0o600);
+  // (the new process, on the same port)
+  const again = createRelay({ host: '127.0.0.1', port, quiet: true, roomsFile });
+  await again.listen();
+  t.after(() => again.close());
+  assert.ok(again.rooms.has(room.code));
+  assert.equal(fs.existsSync(roomsFile), false);
+  const pad2 = await open(`role=pad&code=${room.code}&id=phone`);
+  assert.equal((await pad2.next('hello')).host, false);
+  const host2 = await open(`role=host&code=${room.code}`);
+  host2.ws.send(JSON.stringify({ t: 'resume', token: room.token }));
+  assert.equal((await host2.next('room')).code, room.code);
+  assert.equal((await host2.next('join')).id, 'phone');
+});
