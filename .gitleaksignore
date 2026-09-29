@@ -1,0 +1,3 @@
+# Historical false positive: the deterministic invitation key in this test was
+# synthetic data, never issued by a relay. Ignore only this exact finding.
+43212609498db1fbad38683d0ecd1584c225ec63:server/invitations.test.mjs:generic-api-key:5

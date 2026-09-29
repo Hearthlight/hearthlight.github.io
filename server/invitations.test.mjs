@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { invitationUrl } from '../src/party/invitations.mjs';
 
-const base = 'https://party.example/pad.html', key = '1234567890abcdef1234567890abcdef';
+// Deterministic format fixture, never issued by a relay.
+const base = 'https://party.example/pad.html', key = 'a1'.repeat(16);
 
 test('joining preserves a controller invitation and its LAN host', () => {
   assert.equal(invitationUrl(' http://192.168.1.12:8787/pad.html#abcd ', base), 'http://192.168.1.12:8787/pad.html#ABCD');

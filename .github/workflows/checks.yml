@@ -35,4 +35,4 @@ jobs:
           curl --fail --location --silent --show-error --remote-name "https://github.com/gitleaks/gitleaks/releases/download/v$VERSION/gitleaks_${VERSION}_checksums.txt"
           grep " gitleaks_${VERSION}_linux_x64.tar.gz$" "gitleaks_${VERSION}_checksums.txt" | sha256sum --check
           tar -xzf "gitleaks_${VERSION}_linux_x64.tar.gz" gitleaks
-          ./gitleaks git --redact --log-opts=--all "$GITHUB_WORKSPACE"
+          ./gitleaks git --redact --verbose --gitleaks-ignore-path "$GITHUB_WORKSPACE/.gitleaksignore" --log-opts=--all "$GITHUB_WORKSPACE"
