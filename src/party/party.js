@@ -280,7 +280,7 @@ export class Party {
     setAudience('one');
     this.net.broadcast({ t: 'screen', s: 'message', title: t('Party over'), text: t('The big screen closed the party. Thanks for playing!') });
     this.net.broadcast({ t: 'phase', p: 'adventure' });
-    setTimeout(() => this.net.stop(), 200);
+    this.net.stop();
     for (const p of this.players) { this.r3d.scene.remove(p.actor.model.root); this.world.over.root.remove(p.ring); }
     for (const n of this.npcs) this.r3d.scene.remove(n.model.root);
     if (this.act) this.act.dispose();
@@ -1556,8 +1556,8 @@ export class Party {
     const W = this.display.w, H = this.display.h, now = this.t, tr = t;
     const cardH = 56;
     // join card on the left
-    const pw = Math.min(170, Math.round(W * 0.34)), ph = H - cardH - 22;
-    const px = 8, py = 8;
+    const py = Math.max(8, this.game.partyHub.lobbyTop || 8), px = 8;
+    const pw = Math.min(170, Math.round(W * 0.34)), ph = H - cardH - 14 - py;
     panel(ctx, px, py, pw, ph);
     const net = this.net;
     // (a gamepad plugged in but nobody's: it can join; somebody on this screen: their menu)
@@ -1631,9 +1631,9 @@ export class Party {
     }
     // title & status over the plaza
     const fx = pw + 16 + (W - pw - 16) / 2;
-    drawText(ctx, tr('Hearthlight Party'), fx, 8, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
-    drawText(ctx, tr('stories, adventures & the arena · 1 to 8 players'), fx, 28, { color: '#f6d38f', align: 'center', outline: '#3b2a2e' });
-    wrap(tr('♛ the first phone is the host · Esc or Start: host menu'), W - pw - 28).slice(0, 2).forEach((l, i) => drawText(ctx, l, fx, 40 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
+    drawText(ctx, tr('Hearthlight Party'), fx, py, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
+    drawText(ctx, tr('stories, adventures & the arena · 1 to 8 players'), fx, py + 20, { color: '#f6d38f', align: 'center', outline: '#3b2a2e' });
+    wrap(tr('♛ the first phone is the host · Esc or Start: host menu'), W - pw - 28).slice(0, 2).forEach((l, i) => drawText(ctx, l, fx, py + 32 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
     const here = this.players.filter((p) => p.connected);
     let msg;
     if (!here.length) msg = tr('Waiting for friends to join…');

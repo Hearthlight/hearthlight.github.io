@@ -1,4 +1,4 @@
-.party-tools { position: fixed; z-index: 4; top: max(12px,env(safe-area-inset-top)); right: max(12px,env(safe-area-inset-right)); display: flex; flex-direction: column; align-items: end; gap: 6px; font: 13px/1.4 ui-monospace,monospace; }
+.party-tools { position: fixed; z-index: 4; top: max(12px,env(safe-area-inset-top)); right: max(12px,env(safe-area-inset-right)); max-width: calc(100vw - 24px); display: flex; flex-wrap: wrap; justify-content: end; gap: 6px; font: 13px/1.4 ui-monospace,monospace; }
 .party-tools[hidden] { display: none; }
 .party-tools button, .party-dialog button { color: #fff3c4; background: #34263e; border: 2px solid #967651; box-shadow: 2px 2px #14121c; padding: 10px 14px; font: bold 14px/1.4 ui-monospace,monospace; cursor: pointer; }
 .party-tools button:hover, .party-dialog button:hover { background: #514052; border-color: #f6d38f; }
@@ -13,6 +13,9 @@
 .party-dialog section { border-top: 1px solid #765765; padding: 16px 0; }
 .party-dialog p { color: #dacabc; }
 .party-dialog button { margin: 5px 8px 5px 0; }
+.party-dialog button:disabled { opacity: 0.5; cursor: default; }
+.party-dialog details { border-top: 1px solid #765765; margin-top: 16px; }
+.party-dialog summary { padding: 14px 0; cursor: pointer; color: #f6d38f; }
 .party-dialog label { display: block; margin: 12px 0; }
 .party-dialog input { display: block; box-sizing: border-box; width: 100%; color: #302238; background: #fff5df; border: 2px solid #b28d5e; border-radius: 0; padding: 10px; margin: 6px 0; font: 14px/1.4 ui-monospace,monospace; user-select: text; }
 .party-dialog a { display: block; color: #aad7ff; margin: 12px 0; }

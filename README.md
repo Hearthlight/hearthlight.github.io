@@ -59,7 +59,8 @@ adventure together — the camera splits the screen when you wander apart.
 
 ## Invite friends and resume an adventure
 
-Use **Play together** on the title screen, then **Invite & save** during a party.
+Choose **Party Mode** on the title screen to create, resume or join a party.
+Use **Invite friends** in the lobby or during a game.
 Share the **Play from home** invitation for guests who need the game image on their own
 computer or phone. The host keeps the game running; each guest controls a character through
 keyboard, gamepad or touch. Remote Play shares the host's game view and audio, with a

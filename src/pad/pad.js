@@ -29,7 +29,11 @@ const store = {
 };
 setLang(store.get('lang', detectLang()));
 let padId = store.get('id', null);
-if (!padId) { padId = 'p' + crypto.randomUUID().replace(/-/g, '').slice(0, 24); store.set('id', padId); }
+if (!padId) {
+  // LAN controllers also run on HTTP, where randomUUID is unavailable.
+  padId = 'p' + Array.from(crypto.getRandomValues(new Uint8Array(12)), (n) => n.toString(16).padStart(2, '0')).join('');
+  store.set('id', padId);
+}
 
 const urlCode = (location.hash.slice(1).split('.')[0] || new URLSearchParams(location.search).get('c') || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
 

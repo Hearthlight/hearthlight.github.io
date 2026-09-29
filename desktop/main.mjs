@@ -40,7 +40,8 @@ function createWindow(port) {
     if (target.origin !== `http://localhost:${port}`) {
       event.preventDefault();
       // A pasted remote invitation opens in the browser, keeping this window local.
-      if (['http:', 'https:'].includes(target.protocol) && /\/play\.html$/.test(target.pathname) && /^#[A-Z]{4}\.[a-f0-9]{32}$/.test(target.hash)) shell.openExternal(url);
+      const invitation = /\/play\.html$/.test(target.pathname) ? /^#[A-Z]{4}\.[a-f0-9]{32}$/.test(target.hash) : /\/pad\.html$/.test(target.pathname) && /^#[A-Z]{4}$/.test(target.hash);
+      if (['http:', 'https:'].includes(target.protocol) && !target.username && !target.password && invitation) shell.openExternal(url);
     }
   });
   win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));

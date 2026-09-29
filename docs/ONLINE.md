@@ -1,12 +1,16 @@
 # Playing together and returning later
 
-Open **Play together** on the title screen.
+Choose **Party Mode** on the title screen to create, resume or join a party.
+Paste a complete controller or remote-play invitation to join an existing lobby or game.
+This does not create a new room.
 
-- **Host on this screen** uses the current relay. The desktop app uses the local Wi-Fi relay and works offline.
-- **Host over the Internet** uses the public Hearthlight relay, including from the desktop app.
-- **Join remotely** accepts the complete invitation from a host. The desktop app opens Internet invitations in your browser.
+- **Play on the same screen** uses the current relay. The desktop app uses the local Wi-Fi relay and works offline.
+- **Play from home** uses the public Hearthlight relay, including from the desktop app.
+- **Join the party!** accepts a complete invitation from a host. The desktop app opens Internet invitations in your browser.
 
-During a party, **Invite & save** remains available. It pauses the game while the host uses the panel and restores its previous pause state when closed.
+During a party, **Invite friends** remains available in the lobby and in game. Links update automatically when the room connects or reconnects; opening the panel keeps the same room. It pauses the game while the host uses the panel and restores its previous pause state when closed.
+
+The lobby has a visible **Back to title** button. Leaving a room with players asks for confirmation, saves progress and closes the room for everyone. The invitation panel also offers this action during play. **Saves & backups** groups export, import and online backup tools.
 
 ## Two invitations
 
@@ -34,7 +38,7 @@ Adventure progress, player profiles and the most recent safe outdoor positions a
 
 **Resume our adventure** shows the saved chapter and date, opens the lobby, and resumes the adventure when the host starts. It restores quest progress and player profiles, and returns players near saved outdoor positions. An unfinished cinematic, arena round or exact mid-combat state is not a resumable checkpoint.
 
-**Export save** creates a JSON backup containing solo and party progress. **Import save** is available on the title screen and asks for confirmation before replacing the included modes. Credentials and unrelated browser settings are excluded. The backup is validated before writing, and a failed import attempts to restore the previous values.
+**Export save** creates a JSON backup containing solo and party progress. **Import save** is available under **Party Mode → Saves & backups** before hosting and asks for confirmation before replacing the included modes. Credentials and unrelated browser settings are excluded. The backup is validated before writing, and a failed import attempts to restore the previous values.
 
 Browser saves belong to that browser and site address. Export/import transfers progress between the VPS site, GitHub Pages and the desktop app. Returning phones keep their profile through their locally stored player ID; a different phone/browser receives a new identity.
 

@@ -222,7 +222,6 @@ export class Game {
     if (this.hasSave) items.push(['Continue', 'continue']);
     items.push(['New Game', 'new']);
     items.push(['Party Mode ♥ 1–8', 'party']);
-    if (this.partySaveAvailable) items.push(['Resume our adventure', 'partyResume']);
     items.push(['Controls', 'controls']);
     items.push(['Settings', 'settings']);
     return items;
@@ -269,12 +268,12 @@ export class Game {
     else if (what === 'new') { if (this.hasSave) { this.confirmNew = true; this.confirmSel = 1; } else this.toCreator(); }
     else if (what === 'settings') this.world.menu.show('settings');
     else if (what === 'controls') this.openControls();
-    else if (what === 'party') this.toParty();
-    else if (what === 'partyResume') this.toParty({ resume: true });
+    else if (what === 'party') this.partyHub.open();
   }
 
   // ------------------------------------------------------------------ party mode
   toParty(options = {}) {
+    if (this.mode === 'party') return;
     audio.unlock();
     this.overlay = null;
     this.phone.stop();           // (Party Mode hosts its own room)

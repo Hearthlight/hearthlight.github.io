@@ -10,7 +10,8 @@ export class RemoteHost {
   }
   start(id) {
     this.stop(id);
-    const entry = { pc: null, pending: [], generation: crypto.randomUUID(), fallback: true };
+    const generation = Array.from(crypto.getRandomValues(new Uint8Array(16)), (n) => n.toString(16).padStart(2, '0')).join('');
+    const entry = { pc: null, pending: [], generation, fallback: true };
     this.peers.set(id, entry);
     this.party.net.video(id, true);
     this.offer(id, entry).catch((e) => console.warn('Remote video setup:', e.name, e.message)); // fallback already runs while ICE connects
