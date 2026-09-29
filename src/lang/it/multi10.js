@@ -58,4 +58,11 @@ export const MULTI10_IT = {
   "Stuck? {key} → Get unstuck": "Bloccato? {key} → Sbloccati",
   "Stuck? Look at your phone": "Bloccato? Guarda il telefono",
   "Stuck? Get unstuck": "Bloccato? Sbloccati",
+  "Back into {name}": "Torna dentro: {name}",
+  "Back on your feet — have another go!": "Di nuovo in piedi: riprova!",
+  "Tap here to skip ▸▸": "Tocca qui per saltare ▸▸",
+  "Tap a stack twice to ship it · tap outside to leave": "Tocca 2 volte una pila per spedirla · fuori per uscire",
+  "{a} ship one · {run}+{a} or a click: all · {b} close": "{a} spedisci uno · {run}+{a} o un clic: tutto · {b} chiudi",
+  "Your bag is full — the parcel waits in the mailbox.": "La borsa è piena: il pacco ti aspetta nella cassetta.",
+  "Not while {name} is fighting!": "Non mentre {name} combatte!",
 };

@@ -118,6 +118,10 @@ export class Shop {
     const items = this.list();
     if (input.repeat('up')) { this.sel = Math.max(0, this.sel - 1); this.qty = 1; audio.sfx('select', { volume: 0.5 }); }
     if (input.repeat('down')) { this.sel = Math.min(items.length - 1, this.sel + 1); this.qty = 1; audio.sfx('select', { volume: 0.5 }); }
+    // (a long list: the wheel, or the ↑ ↓ beside it for a finger)
+    const page = (d) => { this.scroll = Math.max(0, Math.min(Math.max(0, items.length - (this.maxRows || 1)), this.scroll + d)); this.sel = Math.max(this.scroll, Math.min(this.scroll + (this.maxRows || 1) - 1, this.sel)); audio.sfx('select', { volume: 0.4 }); };
+    if (input.mouse.wheel && this.rows) { page(Math.sign(input.mouse.wheel) * 2); input.mouse.wheel = 0; }
+    for (const a of this.arrows || []) if (input.mouse.pressed && input.mouseIn(a.x, a.y, a.w, a.h)) { input.mouse.pressed = false; page(a.d * Math.max(1, (this.maxRows || 2) - 1)); return; }
     if (this.rows) {
       for (const r of this.rows) {
         if (input.mouseIn(r.x, r.y, r.w, r.h)) {
@@ -201,14 +205,27 @@ export class Shop {
       drawText(ctx, label, tx + tabW / 2, ty + 2, { color: on ? '#3b2a2e' : '#6b4330', align: 'center' });
       this.tabRects.push({ x: tx, y: ty, w: tabW, h: 11, i });
     });
-    const switchHint = t('←→ switch');
-    if (canSell && px + 52 + 2 * (tabW + 4) + measure(switchHint) <= px + pw - 12) drawText(ctx, switchHint, px + pw - 12, py + 36, { color: UI.inkSoft, align: 'right' });
     // list
     const items = this.list();
     const lx = px + 8, ly = py + 50, lw = pw - 16, rowH = 18;
     const maxRows = Math.floor((ph - 50 - 38) / rowH);
+    this.maxRows = maxRows;
     if (this.sel < this.scroll) this.scroll = this.sel;
     if (this.sel >= this.scroll + maxRows) this.scroll = this.sel - maxRows + 1;
+    // ↑ ↓ on the tabs' line page through a long list (for a finger or a mouse)
+    this.arrows = [];
+    let hintR = px + pw - 12;
+    if (items.length > maxRows) {
+      const aw = 18;
+      [[-1, '↑', this.scroll > 0], [1, '↓', this.scroll < items.length - maxRows]].forEach(([d, glyph, can], k) => {
+        const ax = px + pw - 12 - (2 - k) * (aw + 3) + 3;
+        button(ctx, ax, py + 34, aw, 11, glyph, { disabled: !can });
+        if (can) this.arrows.push({ x: ax - 2, y: py + 30, w: aw + 3, h: 18, d });
+      });
+      hintR -= 2 * (aw + 3) + 4;
+    }
+    const switchHint = t('←→ switch');
+    if (canSell && device() !== 'touch' && px + 52 + 2 * (tabW + 4) + measure(switchHint) <= hintR) drawText(ctx, switchHint, hintR, py + 36, { color: UI.inkSoft, align: 'right' });
     this.rows = [];
     ctx.fillStyle = '#f3e4c6';
     ctx.fillRect(lx, ly, lw, maxRows * rowH);

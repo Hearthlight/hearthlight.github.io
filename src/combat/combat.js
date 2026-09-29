@@ -266,6 +266,8 @@ export class Combat {
       f.downT += dt;
       if (this.pvp && f.downT > 2.6) this.respawn(p);
       else if (f.secondWind > 0 && f.downT > 2) { f.secondWind--; this.revive(p, 0.5, null); this.popText(p.pos.x, 2.2, p.pos.z, t('Second wind!'), '#8fd6b4'); }
+      // (nobody came, and the gloom has gone: up by yourself after a while)
+      else if (!this.pvp && f.downT > 15 && !this.enemies.some((e) => e.alive && e.hurtable && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 10)) this.revive(p, 0.4, null);
       return;
     }
     if (!p.connected) return;
@@ -1231,7 +1233,15 @@ export class Combat {
       this.party.toast(t('{a} bonked {b}!', { a: from.name, b: q.name }), from.color);
     } else if (!this.pvp && this.players.length > 1) this.party.toast(t('{name} is down! Stand close to help them up', { name: q.name }), q.color);
     if (this.onDown) this.onDown(q, from);
-    if (!this.pvp && this.alivePlayers().length === 0 && this.onAllDown) this.onAllDown();
+    this.checkAllDown();
+  }
+
+  // everyone napping (or the last one standing left): the activity's way out — once
+  checkAllDown() {
+    if (this.pvp || !this.onAllDown) return;
+    const anyDown = this.players.some((p) => p.connected && p.fighter && p.fighter.down);
+    if (anyDown && !this.alivePlayers().length) { if (!this.allDown) { this.allDown = true; this.onAllDown(); } }
+    else this.allDown = false;
   }
 
   revive(q, frac, by) {
@@ -1257,6 +1267,7 @@ export class Combat {
   // friends standing next to a napping hero wake them up
   updateRevives(dt) {
     if (this.pvp) return;
+    this.checkAllDown();                 // (a phone that dropped out may have been the last one up)
     for (const q of this.players) {
       const f = q.fighter;
       if (!f || !f.down) continue;

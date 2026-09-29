@@ -335,7 +335,7 @@ export class ExploreAct {
     P.gatherAt(PLAZA.x, PLAZA.z + 2.2, 2.2);
     P.restorePositions?.();
     if (P.state.hour < 9 || P.state.hour > 16) P.state.hour = 11;
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     if (!S.st.q.c1_intro) { S.start('c1_intro', { silent: true }); }
     else {
       await P.fadeTo(0, 0.6);
@@ -366,7 +366,7 @@ export class ExploreAct {
     await P.say('hollis', 'Animals caught in the gloom turn back into themselves when you beat it out of them. Be kind — some might even follow you home.');
     await P.say('hollis', 'Clear {n} nests and the Grumblecloud itself will come down to Starfall Hill. And if you fancy a friendly scrap, ring the gong at the Festival Ring!', { vars: { n: GOAL } });
     if (P.big) await P.say('hollis', 'And beyond the valley, the wild lands! Waystones to travel by, sealed golden chests, races on the roads, gloom camps… The host can bring up the world map.');
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     this.stage = 'roam';
     P.showBanner(t('Off you go!'), t('split up or stick together — the camera follows'));
   }

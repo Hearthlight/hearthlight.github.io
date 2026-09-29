@@ -104,7 +104,7 @@ export class Dungeons {
     this.setMusic(def.music || 'grotto');
     d.started = P.t || 0;
     await P.fadeTo(0, 0.6);
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     this.entering = false;
     P.showBanner(t(def.name), t('Level {a}–{b}', { a: def.lv[0], b: def.lv[1] }));
     audio.sfx('door', { volume: 0.7 });
@@ -119,9 +119,18 @@ export class Dungeons {
     await P.fadeTo(1, 0.5);
     const out = d.def.door;
     const heroes = P.players.filter((p) => p.connected || P.solo);
+    // (out on dry ground: a door by the sea mustn't drop you in it)
+    const col = P.big && P.big.col, dry = (x, z) => {
+      if (!col || !col.blocked(x, z, 0.35)) return { x, z };
+      for (let r = 1; r <= 5; r++) for (let k = 0; k < 6 * r; k++) {
+        const a = (k / (6 * r)) * Math.PI * 2, qx = out[0] + Math.cos(a) * r * 0.7, qz = out[1] + 0.6 + Math.sin(a) * r * 0.7;
+        if (!col.blocked(qx, qz, 0.35)) return { x: qx, z: qz };
+      }
+      return { x: out[0], z: out[1] };
+    };
     heroes.forEach((p, i) => {
       const a = (i / Math.max(1, heroes.length)) * Math.PI * 2;
-      const x = out[0] + Math.cos(a) * (heroes.length > 1 ? 1.2 : 0), z = out[1] + 1.6 + Math.sin(a) * 0.6;
+      const { x, z } = dry(out[0] + Math.cos(a) * (heroes.length > 1 ? 1.2 : 0), out[1] + 1.6 + Math.sin(a) * 0.6);
       p.dungeonExit = null; p.flight = null;
       if (p.fighter && p.fighter.down && P.combat) P.combat.revive(p, 0.6, null);
       if (P.solo) P.gatherAt(x, z); else p.actor.pos = { x, z };
@@ -136,7 +145,7 @@ export class Dungeons {
     if (!P.solo) P.cam.snap(P.camPlayers());
     if (P.buddies && P.buddies.regroup) P.buddies.regroup();
     await P.fadeTo(0, 0.6);
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     this.leaving = false;
     if (done) this.saga.onDungeon(d.def.id);
   }

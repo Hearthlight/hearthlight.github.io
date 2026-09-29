@@ -603,8 +603,9 @@ export class Wild {
     if (!C || !C.enemies.length) return;
     if (this.encounters) for (const c of this.encounters.camps) if (c.foes.length) this.encounters.despawn(c);
     if (this.lairs) for (const L of this.lairs.list) if (L.state === 'fight') this.lairs.retreat(L, true);
-    for (const e of C.enemies) if (e.alive || e.fading > 0) { e.alive = false; e.fading = 0; e.remove(); }
-    C.enemies = [];
+    // (the story's own foes stay where they are: a step may need them — only the rest goes)
+    for (const e of C.enemies) if ((e.alive || e.fading > 0) && !(e.saga && e.alive)) { e.alive = false; e.fading = 0; e.remove(); }
+    C.enemies = C.enemies.filter((e) => e.saga && e.alive);
   }
 
   // a fight's on: E swings the weapon (the pet can wait for a cuddle)
@@ -807,8 +808,16 @@ export class Wild {
     await this.fadeTo(1, 0.6);
     const L = this.lairs && this.lairs.fight;
     if (L) this.lairs.retreat(L, true);
-    const home = this.safeSpot();
-    for (const e of C.enemies) if (e.alive && Math.hypot(e.x - this.me.pos.x, e.z - this.me.pos.z) < 30) { e.alive = false; e.fading = 0; e.remove(); }
+    // (a fight in a ring, or in a dungeon: back on your feet right there, for another try —
+    // the story's foes stay, rested; the rest of the gloom wanders off)
+    const B = C.bounds, D = this.dungeons, inDun = D && D.cur && D.heroIn(this.me);
+    const home = B ? { ...(C.freeSpot(B.x, B.z, Math.min(B.rx, B.rz) * 0.9) || { x: B.x, z: B.z }), retry: true }
+      : inDun ? { ...D.cur.startSpot(0, 1), name: D.cur.def.name } : this.safeSpot();
+    for (const e of C.enemies) {
+      if (!e.alive || Math.hypot(e.x - this.me.pos.x, e.z - this.me.pos.z) >= 30) continue;
+      if (e.saga) { e.hp = e.maxHp; continue; }
+      e.alive = false; e.fading = 0; e.remove();
+    }
     if (this.me.mount) this.mounts.dismount(this.me, true);
     w.player.pos = { x: home.x, z: home.z };
     const f = this.me.fighter;
@@ -818,9 +827,9 @@ export class Wild {
     w.snapCamera();
     await this.wait(0.3);
     await this.fadeTo(0, 0.6);
-    w.busy--;
+    w.busy = Math.max(0, w.busy - 1);
     this.napping = false;
-    this.toast(t('You wake up at {place}, good as new', { place: t(home.name) }));
+    this.toast(home.retry ? t('Back on your feet — have another go!') : t('You wake up at {place}, good as new', { place: t(home.name) }));
   }
 
   // the nearest attuned waystone (or the Market Plaza's)

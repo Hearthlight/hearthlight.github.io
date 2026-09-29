@@ -137,7 +137,7 @@ async function boarding(S) {
     hide(P, false);
     const parked = propOf(S, 'teacupScar');
     if (parked) parked.visible = true;
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
   }
 }
 

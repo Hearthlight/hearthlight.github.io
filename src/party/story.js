@@ -147,7 +147,7 @@ export class PartyStory {
     await P.say('hollis', 'Our neighbours found every one — and they won’t hand them back without a little friendly challenge. It’s tradition.');
     await P.say('hollis', 'Bring all five charms home before the stars fall. And do stick together… ish!');
     this.chatNpcs = ['hollis'];
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
   }
 
   state() { return this.party.state; }
@@ -280,7 +280,7 @@ export class PartyStory {
     game.setup();
     if (host) { host.pos = { x: ch.hostAt[0], z: ch.hostAt[1] }; host.restDir = { x: game.center.x - host.pos.x, z: game.center.z - host.pos.z }; }
     await P.fadeTo(0, 0.35);
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     await this.rulesCard(game);
     await this.countdown();
     game.begin();
@@ -309,7 +309,7 @@ export class PartyStory {
     P.showBanner(t('{charm} recovered!', { charm: t(ch.charm) }), t('{n} of 5 Star Charms', { n: this.charms.length }));
     this.state().hour = Math.min(19.2, 9.5 + this.charms.length * 1.9);
     await P.wait(2.2);
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     if (host) host.setEmote('heart', 2);
   }
 
@@ -399,7 +399,7 @@ export class PartyStory {
       { id: 'again', label: t('Play again from the start'), sub: t('new votes, new winners'), color: '#4f955a' },
       { id: 'lobby', label: t('Back to the lobby'), sub: t('change outfits, invite friends'), color: '#4f73b6' },
     ], 30);
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     if (again === 1) this.party.restartAdventure('explore');
     else if (again === 2) this.party.restartAdventure();
     else if (again === 3) this.party.backToLobby();

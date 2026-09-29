@@ -28,7 +28,7 @@ const ACTS = [
   { id: 'king', label: 'Arena: king of the ring', color: '#f4c542', min: 2 },
 ];
 const OPTS_KEY = 'hearthlight.party.opts.v1';
-const GRACE = 8;                 // seconds a host may be away before the crown moves on
+const GRACE = 20;                // seconds a host may be away (a phone gone to sleep) before the crown moves on
 
 export class Host {
   constructor(party) {
@@ -55,13 +55,16 @@ export class Host {
   onJoin(p) {
     if (p.kind !== 'phone') return;
     const h = this.player;
-    if (!h || (!h.connected && h !== p && this.awayT > GRACE)) this.give(p, !h);
+    if (!h || (!h.connected && h !== p && this.awayT > GRACE)) this.give(p, !h, !!h);
+    // (the crown went on without them while their phone slept: it comes back with them)
+    else if (this.lent && this.lent === p.id && !this.isHost(p)) this.give(p);
     else this.tell(p);
     if (this.isHost(p)) this.sentKey = '';     // a fresh page needs the menu again
   }
 
-  give(p, quiet = false) {
+  give(p, quiet = false, lend = false) {
     const P = this.party, old = this.player;
+    this.lent = lend && old ? old.id : null;
     this.id = p ? p.id : null;
     this.awayT = 0;
     this.sentKey = '';
@@ -90,7 +93,7 @@ export class Host {
     else if (!h.connected) {
       this.awayT += dt;
       const n = this.awayT > GRACE ? this.heir(h) : null;
-      if (n) this.give(n);
+      if (n) this.give(n, false, true);
     } else this.awayT = 0;
     // the big screen's own menu: Esc, or Start on any gamepad
     const g = P.game.input;

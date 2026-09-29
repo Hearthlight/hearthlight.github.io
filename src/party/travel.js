@@ -113,8 +113,11 @@ export class Travel {
     const P = this.party, A = P.act;
     if (this.going || this.busy || P.vote || P.busy) return 'busy';
     if (A && (A.stage === 'boss' || A.stage === 'intro')) return t('Not now!');
-    const C = P.combat;
-    if (p && C && C.enemies.some((e) => e.alive && !e.fading && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 11)) return t('Not while the gloom is on you!');
+    const C = P.combat, near = (q) => C.enemies.some((e) => e.alive && !e.fading && Math.hypot(e.x - q.pos.x, e.z - q.pos.z) < 11);
+    if (p && C && near(p)) return t('Not while the gloom is on you!');
+    // (a vote holds everyone still: not while a friend is in a fight somewhere else)
+    const busyMate = p && C && P.players.find((q) => q !== p && q.connected && near(q));
+    if (busyMate) return t('Not while {name} is fighting!', { name: busyMate.name });
     if (P.lairs && P.lairs.fight) return t('Not during a boss fight!');
     if (P.races && P.races.race) return t('Not during a race!');
     return null;
@@ -138,7 +141,7 @@ export class Travel {
     this.busy = true;
     P.world.fx.emit('sparkle', s.x, 1.6, s.z, 14, { color: '#9fdcff' });
     audio.sfx('sparkle', { volume: 0.7 });
-    const i = await P.ask(P.solo ? t('Travel where?') : t('{name} touched the waystone. Travel where?', { name: p.name }), opts, 18);
+    const i = await P.ask(P.solo ? t('Travel where?') : t('{name} touched the waystone. Travel where?', { name: p.name }), opts, 18, { owner: p.slot, cancel: opts.length - 1 });
     this.busy = false;
     if (i >= 0 && i < pickd.length && this.active()) this.go(pickd[i]);
   }
@@ -158,7 +161,7 @@ export class Travel {
     // wait (a little) for the land to stream in under everyone's feet
     for (let i = 0; i < 60 && P.big && !P.big.ready(s.land.x, s.land.z, 8); i++) await P.wait(0.05);
     await P.fadeTo(0, 0.5);
-    P.busy--;
+    P.busy = Math.max(0, P.busy - 1);
     this.going = false;
     P.showBanner(this.title(s), t(ZNAME[s.zone] || ''));
     audio.sfx('shard', { volume: 0.6 });

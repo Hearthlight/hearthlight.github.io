@@ -319,7 +319,7 @@ export class ArenaAct {
     if (this.mode === 'brawl') {
       P.showBanner(t('Brawl!'), t('friendly free-for-all · 2 minutes'));
       await this.announce('Ladies, gentlemen and chickens! A friendly brawl! Last one standing gets… well, bragging rights!');
-      P.busy--;
+      P.busy = Math.max(0, P.busy - 1);
       await this.countdown();
       this.time = 120;
       this.powerT = 6;
@@ -327,7 +327,7 @@ export class ArenaAct {
     } else if (this.mode === 'king') {
       P.showBanner(t('King of the Ring'), t('hold the golden circle — alone! · 2 minutes'));
       await this.announce('King of the Ring! Stand in the golden circle — alone! — to score. Push your friends out! It moves, so keep up!');
-      P.busy--;
+      P.busy = Math.max(0, P.busy - 1);
       this.kingSetup();
       await this.countdown();
       this.time = 120;
@@ -336,7 +336,7 @@ export class ArenaAct {
     } else {
       P.showBanner(t('Gloom Waves'), P.solo ? t('hold the ring as long as you can') : t('hold the ring together'));
       await this.announce('The gloom is coming for the Festival Ring! Hold them off, friends — every fifth wave, something big and grumpy shows up.');
-      P.busy--;
+      P.busy = Math.max(0, P.busy - 1);
       this.nextWave();
     }
   }

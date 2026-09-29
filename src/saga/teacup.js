@@ -79,7 +79,7 @@ export class TeacupLine {
     } finally {
       for (const p of heroes) { p.away = false; p.hidden = false; if (p.actor) p.actor.hidden = false; }
       S.flag('teacupAt', to.id);
-      P.busy--;
+      P.busy = Math.max(0, P.busy - 1);
       this.flying = false;
     }
     P.showBanner(t(to.name), t('The Dauntless Teacup'));

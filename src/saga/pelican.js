@@ -154,7 +154,7 @@ export class PelicanPost {
       }, { bars: false });
     } finally {
       for (const p of heroes) this.hide(p, false);
-      P.busy--;
+      P.busy = Math.max(0, P.busy - 1);
       this.flying = false;
     }
     this.find(to, true);

@@ -104,6 +104,14 @@ export class Stage {
     this.card = null;
   }
 
+  // (solo: a click or a tap on « skip » in the top bar — a touch screen has no Esc; world.js asks
+  // before the dialogue box takes the tap for its own line)
+  tapSkip(inp) {
+    const R = this.skipRect;
+    if (!this.solo || !this.active || this.skipping || !R || !inp.mouse.pressed || !inp.mouseIn(R.x, R.y, R.w, R.h)) return false;
+    inp.mouse.pressed = false; this.skip(); return true;
+  }
+
   update(dt) {
     this.t += dt;
     const on = this.barsOn && this.active;
@@ -155,6 +163,7 @@ export class Stage {
     if (this.solo) {
       const inp = this.P.game.input;
       if (inp.keys && (inp.keys.has('Escape') || inp.keys.has('Backspace') || inp.down('cancel'))) { this.skipHold += dt; if (this.skipHold > 0.35) this.skip(); } else this.skipHold = 0;
+      this.tapSkip(inp);
     } else if (this.P.hostLed && !this.P.hostLed()) {
       if (this.P.players.some((p) => p.connected && p.kind !== 'phone' && p.input.down('b'))) { this.skipHold += dt; if (this.skipHold > 0.35) this.skip(); } else this.skipHold = 0;
     } else for (const p of this.P.players) if (p.connected && this.P.host && this.P.host.isHost(p) && p.input.pressed('y')) { p.input.edges.delete('y'); this.skip(); }
@@ -338,12 +347,17 @@ export class Stage {
       const h = Math.round(H * BAR * ease(this.barK));
       ctx.fillStyle = '#120c18';
       ctx.fillRect(0, 0, W, h); ctx.fillRect(0, H - h, W, h);
+      this.skipRect = null;
       if (this.active && !this.skipping && h > 12 && !(this.opts && this.opts.noSkip)) {
-        const hint = this.solo ? (device() === 'pad' || device() === 'phone' ? t('Hold {b} to skip', { b: ctl('cancel') }) : t('Hold Esc to skip'))
+        const dev = device();
+        const hint = this.solo ? (dev === 'touch' ? t('Tap here to skip ▸▸') : dev === 'pad' || dev === 'phone' ? t('Hold {b} to skip', { b: ctl('cancel') }) : t('Hold Esc to skip'))
           : this.P.hostLed && !this.P.hostLed() ? t('Hold {b} to skip', { b: 'B' }) : t('The host can skip (Y)');
         ctx.globalAlpha = 0.55 + 0.2 * Math.sin(this.t * 3);
-        drawText(ctx, hint, W - 6, H - h + Math.max(2, Math.round((h - 9) / 2)), { color: '#b9a2e3', align: 'right' });
+        // (in the top bar: the dialogue box covers the bottom one)
+        drawText(ctx, hint, W - 6, Math.max(2, Math.round((h - 9) / 2)), { color: '#b9a2e3', align: 'right' });
         ctx.globalAlpha = 1;
+        // (clickable in solo: the whole corner of the bar, big enough for a thumb)
+        if (this.solo) { const w = measure(hint) + 16; this.skipRect = { x: W - w - 4, y: 0, w: w + 4, h }; }
       }
     }
     const c = this.card;

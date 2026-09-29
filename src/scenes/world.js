@@ -471,6 +471,9 @@ export class World {
     const speed = MINUTES_PER_SEC * (this.settings.daySpeed || 1);
     const before = s.hour;
     s.hour += (dt * speed) / 60;
+    // (no night falls on you in a dungeon: its clock waits at the edge of the night)
+    const W = this.wild, deep = W && W.dungeons && W.dungeons.heroIn(W.me);
+    if (deep && s.hour >= DAY_END - 0.05) { s.hour = DAY_END - 0.05; return; }
     if (before < 24 && s.hour >= 24) this.hud.toast(t('It’s getting very late…'), null, '#c8454f');
     if (s.hour >= DAY_END) this.run(() => this.passOut());
   }
@@ -523,7 +526,10 @@ export class World {
     if (this.sleeping) return;
     this.sleeping = true;
     await this.say(null, 'You’re so sleepy… your eyes are closing…');
-    await this.sleep(true);
+    // (out in the wild lands: you wake by the nearest waystone, not back home across the sea)
+    const W = this.wild, pp = this.player.pos;
+    const far = W && W.big && this.mapId === 'overworld' && !W.big.inValley(pp.x, pp.z) ? W.safeSpot() : null;
+    await this.sleep(true, far ? { x: far.x, z: far.z } : 'home');
     this.sleeping = false;
   }
 
@@ -894,7 +900,7 @@ export class World {
         if (s.mail.length) {
           const m = s.mail.shift();
           if (this.over.props) this.mailFlag(false);
-          await this.letter(m.title, m.text, m.sign, m.vars);
+          if (!m.parcel) await this.letter(m.title, m.text, m.sign, m.vars);
           if (m.item) {
             const d = ITEMS[m.item];
             if (d && d.cat === 'clothes') {
@@ -902,9 +908,19 @@ export class World {
               if (!s.unlocked[slot].includes(v)) s.unlocked[slot].push(v);
               audio.jingle('purchase');
               this.hud.toast(t('New outfit: {item}! Try it on at your wardrobe.', { item: t(d.name) }), null, '#8a5234');
-            } else this.giveItem(m.item, m.qty || 1);
+            } else {
+              // (a full bag: what doesn't fit waits in the mailbox as a parcel)
+              const n = m.qty || 1, left = addItem(s, m.item, n);
+              if (left < n) { this.hud.toast(t('+{n} {item}', { n: n - left, item: ITEMS[m.item] ? t(ITEMS[m.item].name) : m.item }), m.item); audio.sfx('pickup'); }
+              if (left) {
+                s.mail.unshift({ item: m.item, qty: left, parcel: true });
+                if (this.over.props) this.mailFlag(true);
+                this.hud.toast(t('Your bag is full — the parcel waits in the mailbox.'), null, '#c8454f');
+              }
+            }
           }
-          if (s.mail.length) this.hud.toast(tn('{n} more letter waiting', '{n} more letters waiting', s.mail.length));
+          const more = s.mail.filter((x) => !x.parcel).length;
+          if (more) this.hud.toast(tn('{n} more letter waiting', '{n} more letters waiting', more));
         } else await this.say(null, 'Your mailbox is empty. Nana writes every now and then.');
         break;
       }
@@ -1597,6 +1613,7 @@ export class World {
     if (!uiOpen && this.busy === 0 && !this.cinematic) this.advanceTime(dt);
 
     // menus & overlays
+    if (this.wild && this.wild.stage && this.wild.stage.skipRect) this.wild.stage.tapSkip(input);
     if (this.menu.open) this.menu.update(dt, input);
     else if (this.shop.open_) this.shop.update(dt, input);
     else if (this.dialogue.active) this.dialogue.update(dt, input);

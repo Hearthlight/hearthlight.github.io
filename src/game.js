@@ -634,7 +634,7 @@ export class Game {
   openShipping() {
     return new Promise((resolve) => {
       const w = this.world, s = this.state;
-      let sel = 0, rows = [], closeR = null, panelR = null;
+      let sel = 0, top = 0, vis = 8, rows = [], arrows = [], closeR = null, panelR = null;
       const list = () => {
         const out = [];
         for (const slot of s.bag) if (slot && ITEMS[slot.id] && ITEMS[slot.id].sell && !['key', 'tool'].includes(ITEMS[slot.id].cat) && !out.includes(slot.id)) out.push(slot.id);
@@ -650,6 +650,10 @@ export class Game {
           if (input.pressed('cancel') || input.pressed('menu') || input.pressed('pause') || (tap && (inR(closeR) || (panelR && !inR(panelR))))) { input.mouse.pressed = false; this.overlay = null; audio.sfx('close'); input.consume(); resolve(); return; }
           if (input.repeat('up')) sel = Math.max(0, sel - 1);
           if (input.repeat('down')) sel = Math.min(items.length - 1, sel + 1);
+          // (a long bag: the wheel, or the ↑ ↓ beside the list)
+          const page = (d) => { top = Math.max(0, Math.min(items.length - vis, top + d)); sel = Math.max(top, Math.min(top + vis - 1, sel)); };
+          if (input.mouse.wheel) { page(Math.sign(input.mouse.wheel) * 2); input.mouse.wheel = 0; }
+          for (const r of arrows) if (tap && inR(r)) { input.mouse.pressed = false; page(r.d * (vis - 1)); audio.sfx('select', { volume: 0.4 }); return; }
           const ship = (all) => {
             const id = items[sel];
             if (!id) return;
@@ -661,7 +665,11 @@ export class Game {
             w.story.onSell();
             if (sel >= list().length) sel = Math.max(0, list().length - 1);
           };
-          for (const r of rows) if (input.mouseIn(r.x, r.y, r.w, r.h)) { if (input.mouse.moved) sel = r.i; if (input.mouse.pressed) { sel = r.i; ship(true); input.mouse.pressed = false; } }
+          // (a finger taps once to pick a stack, again to ship it: no stack goes by a stray tap)
+          for (const r of rows) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
+            if (input.mouse.moved && device() !== 'touch') sel = r.i;
+            if (input.mouse.pressed) { input.mouse.pressed = false; if (device() === 'touch' && sel !== r.i) { sel = r.i; audio.sfx('select', { volume: 0.5 }); } else { sel = r.i; ship(true); } }
+          }
           if (input.pressed('interact')) { input.consume('interact'); ship(input.down('run')); }
           // (a gamepad: X ships the whole stack)
           if (input.pressed('special') && device() === 'pad') ship(true);
@@ -678,22 +686,37 @@ export class Game {
           drawText(ctx, fitText(t('Shipping Crate'), pr - measure(paid) - 12 - (px + 12)), px + 12, py + 10, { color: '#8a5234' });
           drawText(ctx, paid, pr, py + 10, { color: '#b8862a', align: 'right' });
           const items = list();
-          rows = [];
-          items.slice(0, Math.floor((ph - 50) / 16)).forEach((id, i) => {
-            const y = py + 26 + i * 16;
-            if (i === sel) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 2, pw - 16, 16); }
+          rows = []; arrows = [];
+          vis = Math.floor((ph - 50) / 16);
+          if (sel < top) top = sel;
+          if (sel >= top + vis) top = sel - vis + 1;
+          top = Math.max(0, Math.min(top, items.length - vis));
+          const more = items.length > vis, rw = pw - 16 - (more ? 22 : 0);
+          items.slice(top, top + vis).forEach((id, k) => {
+            const i = top + k, y = py + 26 + k * 16;
+            if (i === sel) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 2, rw, 16); }
             drawIcon(ctx, id, px + 10, y - 2);
             const each = t('{n}¢ each', { n: ITEMS[id].sell });
-            drawText(ctx, fitText(`${t(ITEMS[id].name)} ×${this.countOf(id)}`, pw - 50 - measure(each)), px + 30, y + 2, { color: UI.ink });
-            drawText(ctx, each, px + pw - 12, y + 2, { color: UI.inkSoft, align: 'right' });
-            rows.push({ x: px + 8, y: y - 2, w: pw - 16, h: 16, i });
+            drawText(ctx, fitText(`${t(ITEMS[id].name)} ×${this.countOf(id)}`, rw - 34 - measure(each)), px + 30, y + 2, { color: UI.ink });
+            drawText(ctx, each, px + 8 + rw - 4, y + 2, { color: UI.inkSoft, align: 'right' });
+            rows.push({ x: px + 8, y: y - 2, w: rw, h: 16, i });
           });
+          if (more) {
+            const ax = px + pw - 8 - 18, y0 = py + 24, y1 = py + 24 + vis * 16 - 12;
+            [[-1, '↑', y0, top > 0], [1, '↓', y1, top < items.length - vis]].forEach(([d, glyph, ay, can]) => {
+              button(ctx, ax, ay, 18, 12, glyph, { disabled: !can });
+              if (can) arrows.push({ x: ax - 2, y: ay - 3, w: 22, h: 18, d });
+            });
+            ctx.fillStyle = '#c9a77c'; ctx.fillRect(ax + 8, y0 + 15, 2, y1 - y0 - 18);
+            const bh = Math.max(6, (y1 - y0 - 18) * vis / items.length);
+            ctx.fillStyle = '#8e5d3e'; ctx.fillRect(ax + 8, y0 + 15 + (y1 - y0 - 18 - bh) * top / (items.length - vis), 2, bh);
+          }
           if (!items.length) wrap(t('Nothing to ship. Crops, fish & forage sell here.'), pw - 24).forEach((l, i) => drawText(ctx, l, W / 2, py + 40 + i * 10, { color: UI.inkSoft, align: 'center' }));
           const dev = device();
           const how = dev === 'pad' ? t('{a} ship one · {x} ship all · {b} close', { a: ctl('interact'), x: ctl('special'), b: ctl('cancel') })
-            : dev === 'touch' ? t('Tap an item to ship the whole stack · tap outside to leave')
+            : dev === 'touch' ? t('Tap a stack twice to ship it · tap outside to leave')
               : dev === 'phone' ? t('{a} ship one · {b} close', { a: ctl('interact'), b: ctl('cancel') })
-                : t('E ship one · Shift+E ship all · Esc close');
+                : t('{a} ship one · {run}+{a} or a click: all · {b} close', { a: ctl('interact'), run: ctl('run'), b: ctl('cancel') });
           drawText(ctx, fitText(how, pw - 12), px + pw / 2, py + ph - 12, { color: UI.inkSoft, align: 'center' });
         },
       };

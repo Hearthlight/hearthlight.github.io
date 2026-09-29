@@ -16,6 +16,7 @@ import { CHAPTERS, QUESTS } from './chapters/index.js';
 import { ZONES } from '../world/big/layout.js';
 import { Murk } from './murk.js';
 import { Dungeons } from './dungeon.js';
+import { DUNGEONS } from './dungeons/index.js';
 import { PelicanPost } from './pelican.js';
 import { Escorts } from './escort.js';
 import { StepGames } from './games7.js';
@@ -329,9 +330,25 @@ export class Saga {
     return out;
   }
 
+  // a dungeon the story waits in, while this hero is outside it (a reload, a knock-out, a night
+  // that fell, « Get unstuck »…): its door lets them back in
+  dungeonDue(p) {
+    const D = this.P.dungeons;
+    if (!D || (p && D.heroIn(p))) return null;
+    for (const qid of this.activeIds()) {
+      const st = this.stepDef(qid);
+      if (st && st.do === 'dungeon' && !this.st.dun[st.id] && DUNGEONS[st.id] && DUNGEONS[st.id].door) return DUNGEONS[st.id];
+    }
+    return null;
+  }
+
   // (A near someone of the saga — Party’s act and the solo Wild ask this first)
   nearThing(p) {
     if (this.busyTalk || (this.stage && this.stage.active)) return null;
+    const due = this.dungeonDue(p);
+    if (due && Math.hypot(due.door[0] - p.pos.x, due.door[1] - p.pos.z) < 2.6 && !this.P.dungeons.entering) {
+      return { kind: 'secret', label: 'Enter', hint: 'Back into {name}', vars: { name: t(due.name) }, use: () => this.P.dungeons.enter(due.id) };
+    }
     for (const [id, n] of this.npcs) {
       if (n.hidden || Math.hypot(n.pos.x - p.pos.x, n.pos.z - p.pos.z) > TALK_R) continue;
       return { kind: 'secret', label: 'Talk', hint: 'Talk to {npc}', vars: { npc: (n.def && n.def.short) || id }, use: (q) => this.talk(id, q || p) };
@@ -361,7 +378,7 @@ export class Saga {
       else if (N && N.lines) await this.say(id, N.lines[(this.lineN = (this.lineN || 0) + 1) % N.lines.length]);
     } catch (e) { console.error('saga talk', e); if (window.__errs) window.__errs.push('saga talk: ' + e.message); }
     if (n) { n.talking = false; n.forceExpr = null; }
-    this.P.busy--;
+    this.P.busy = Math.max(0, this.P.busy - 1);
     this.busyTalk = false;
   }
 
@@ -645,6 +662,10 @@ export class Saga {
     if (st.target) { const tg = st.target(this); return tg ? { x: tg[0], z: tg[1] } : null; }
     if (st.do === 'race') { const i = this.race && this.race.qid === qid ? this.race.i : 0, pt = st.points[Math.min(i, st.points.length - 1)]; return { x: pt[0], z: pt[1] }; }
     if (st.do === 'escort') return this.escorts.targetOf(qid);
+    // (the story waits in a dungeon and nobody is in it: its door)
+    if (st.do === 'dungeon' && !this.st.dun[st.id] && DUNGEONS[st.id] && DUNGEONS[st.id].door && !(this.P.dungeons && this.P.dungeons.cur && this.P.players.some((q) => this.P.dungeons.heroIn(q)))) {
+      const door = DUNGEONS[st.id].door; return { x: door[0], z: door[1] };
+    }
     if (GAME_STEPS.has(st.do)) { const g = this.games.targetOf(qid); if (g) return g; }
     if (st.at) return { x: st.at[0], z: st.at[1] };
     if (st.camp) return { x: st.camp.at[0], z: st.camp.at[1] };

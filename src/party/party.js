@@ -1199,10 +1199,12 @@ export class Party {
   }
 
   // ------------------------------------------------------------------ votes (on the phones)
-  ask(title, options, time = 22) {
+  // (owner & cancel: the one who opened it can call it off at once with that option — a waystone
+  // touched by mistake doesn't hold everyone still for the whole vote)
+  ask(title, options, time = 22, { owner = null, cancel = -1 } = {}) {
     return new Promise((resolve) => {
       const id = (this.voteSeq = (this.voteSeq || 0) + 1);
-      this.vote = { id, title, options, picks: new Map(), t: time, time, resolve, cursor: new Map() };
+      this.vote = { id, title, options, picks: new Map(), t: time, time, resolve, cursor: new Map(), owner, cancel };
       for (const p of this.players) this.sendVote(p);
       audio.jingle('questStart');
     });
@@ -1226,6 +1228,7 @@ export class Party {
     if (!v || d.id !== v.id || typeof d.i !== 'number' || d.i < 0 || d.i >= v.options.length) return;
     v.picks.set(p.slot, d.i);
     audio.sfx('select', { volume: 0.6 });
+    if (v.owner === p.slot && d.i === v.cancel) { v.called = d.i; return; }
     const counts = this.tally();
     for (const q of this.players) if (q.kind === 'phone' && v.picks.has(q.slot)) this.net.send(q.id, { t: 'tally', id: v.id, counts });
   }
@@ -1244,11 +1247,14 @@ export class Party {
     }
     const voters = this.players.filter((p) => p.connected);
     const allIn = voters.length > 0 && voters.every((p) => v.picks.has(p.slot));
-    if (allIn || v.t <= 0) {
-      const counts = this.tally();
+    // (settled early: the leader can't be caught by the votes still to come)
+    const counts = this.tally(), left = voters.filter((p) => !v.picks.has(p.slot)).length;
+    const [top, next = 0] = [...counts].sort((a, b) => b - a);
+    const settled = top - next > left;
+    if (allIn || settled || v.called !== undefined || v.t <= 0) {
       const max = Math.max(...counts);
       const best = counts.map((n, i) => (n === max ? i : -1)).filter((i) => i >= 0);
-      const win = best[Math.floor(Math.random() * best.length)];
+      const win = v.called !== undefined ? v.called : best[Math.floor(Math.random() * best.length)];
       this.vote = null;
       for (const p of this.players) if (p.kind === 'phone') this.net.send(p.id, { t: 'screen', s: 'play' });
       audio.sfx('confirm');
