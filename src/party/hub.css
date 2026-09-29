@@ -6,7 +6,7 @@
 .save-status:empty { display: none; }
 .party-dialog { color: #fff3c4; background: #241b2e; border: 3px solid #b28d5e; padding: 20px; width: min(640px,calc(100vw - 48px)); max-height: calc(100dvh - 72px); font: 14px/1.6 ui-monospace,monospace; touch-action: auto; }
 .party-dialog::backdrop { background: #100c1bcc; }
-.party-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.party-dialog header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .party-dialog h2 { margin: 0; font-size: 22px; }
 .party-dialog h3 { margin: 0 0 8px; color: #f6d38f; }
 .party-dialog h4 { margin: 0 0 8px; }
@@ -17,7 +17,7 @@
 .party-dialog input { display: block; box-sizing: border-box; width: 100%; color: #302238; background: #fff5df; border: 2px solid #b28d5e; border-radius: 0; padding: 10px; margin: 6px 0; font: 14px/1.4 ui-monospace,monospace; user-select: text; }
 .party-dialog a { display: block; color: #aad7ff; margin: 12px 0; }
 .invite-card { background: #322339; padding: 12px; margin-bottom: 12px; }
-.invite-card canvas { display: block; width: 140px; height: 140px; image-rendering: pixelated; margin: 12px auto; }
+.invite-card canvas { display: block; width: 140px; max-width: 100%; height: auto; image-rendering: pixelated; margin: 12px auto; }
 .hub-notice { color: #aee9bc !important; }
 .hub-notice.error, .save-status.error { color: #ffb8b8 !important; }
 .party-dialog :focus-visible, .party-tools :focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
