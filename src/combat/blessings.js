@@ -1,5 +1,5 @@
-// Blessings: little perks picked on your phone between arena waves (three
-// random cards, choose one). They stack.
+// Blessings: little perks picked between arena waves — on your phone, or on the big screen with a
+// keyboard or a gamepad (three random cards, choose one). They stack.
 
 export const BLESSINGS = {
   stew: { name: 'Hearty Stew', desc: '+30 max health', apply: (m) => { m.hp += 30; } },

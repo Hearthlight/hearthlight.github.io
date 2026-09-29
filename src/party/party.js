@@ -826,7 +826,8 @@ export class Party {
     if (this.vehicles && !frozenAll) this.vehicles.update(sdt);
     for (const p of this.players) {
       const a = p.actor;
-      const frozen = frozenAll || p.frozen || !p.connected;
+      // (the act can hold one still: a blessing picked on the big screen — its stick moves the cursor)
+      const frozen = frozenAll || p.frozen || !p.connected || !!this.act?.holds?.(p);
       if (p.vehicle) {
         // riding: the vehicle placed us; just pose
         a.update(sdt, p.input, col, true);

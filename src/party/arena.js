@@ -10,8 +10,8 @@ import { THREE, toon } from '../render/r3d.js';
 import { ENEMIES } from '../combat/enemies.js';
 import { BLESSINGS, drawCards } from '../combat/blessings.js';
 import { CLASSES } from '../combat/classes.js';
-import { drawText, measure } from '../engine/font.js';
-import { panel, UI } from '../ui/ui.js';
+import { drawText, measure, wrap } from '../engine/font.js';
+import { panel, UI, fitText, isFace, faceGlyph } from '../ui/ui.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { ARENA_SITE } from '../world/big/layout.js';
@@ -221,6 +221,16 @@ function barrelMesh(r3d) {
   for (const z of [-0.395, 0.395]) { const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.02, 12), m('#8a5c3a')); lid.rotation.x = Math.PI / 2; lid.position.z = z; g.add(lid); }
   const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.86, 0.8), m('#ef6479')); g.add(stripe);
   return g;
+}
+
+// a player's own button as on their device — a gamepad's round A, a key cap — drawn to end at
+// `right` (text line `y`); returns where it starts
+function capTo(ctx, right, y, p, key) {
+  if (p.kind === 'gamepad' && isFace(key)) { faceGlyph(ctx, right - 6, y + 3, key); return right - 12; }
+  const w = measure(key) + 6, x = right - w;
+  ctx.fillStyle = '#3b2a2e'; ctx.fillRect(x, y - 1, w, 10);
+  drawText(ctx, key, x + w / 2, y, { color: '#fff3c4', align: 'center' });
+  return x;
 }
 
 // what each wave brings
@@ -441,7 +451,9 @@ export class ArenaAct {
     this.stage = 'break';
     this.cheer(1);
     this.site.ola();
-    P.showBanner(t('Wave {n} cleared!', { n: this.wave }), this.wave === 10 ? t('the Festival Ring is safe!') : t('pick a blessing on your phone'));
+    // (on the phones — or right here for the keyboard & gamepads, with Hollis for the solo hero)
+    const phones = !P.solo && P.players.every((p) => !p.fighter || !p.connected || p.kind === 'phone');
+    P.showBanner(t('Wave {n} cleared!', { n: this.wave }), this.wave === 10 ? t('the Festival Ring is safe!') : phones ? t('pick a blessing on your phone') : t('time for a blessing'));
     audio.jingle('questDone');
     // naps end, everyone catches their breath
     for (const p of P.players) {
@@ -460,11 +472,13 @@ export class ArenaAct {
   blessingPick() {
     const P = this.party;
     this.cards = new Map();
+    this.cardRects = null;
+    this.blessTop = Infinity;
     const id = ++this.pickSeq;
     for (const p of P.players) {
       if (!p.fighter) continue;
       const cards = drawCards(p.fighter.blessings);
-      this.cards.set(p.slot, { id, cards, picked: null });
+      this.cards.set(p.slot, { id, cards, picked: null, cur: 0 });
       if (p.kind === 'phone' && p.connected) {
         P.net.send(p.id, { t: 'screen', s: 'choice', id, title: t('Pick a blessing!'), note: t('Blessings stack — choose one'), options: cards.map((c) => ({ label: t(BLESSINGS[c].name), sub: t(BLESSINGS[c].desc), color: '#b88cf0' })) });
       }
@@ -488,6 +502,38 @@ export class ArenaAct {
     this.party.world.fx.emit('sparkle', p.pos.x, 1.3, p.pos.z, 14, { color: '#b88cf0' });
     audio.sfx('sparkle', { volume: 0.6 });
     if (p.kind === 'phone') this.party.net.send(p.id, { t: 'screen', s: 'play' });
+  }
+
+  // a keyboard or gamepad player picks on the big screen (the solo hero with Hollis: wild.js)
+  picksHere(p) { return !this.party.solo && p.kind !== 'phone'; }
+  // …and while they choose, their hero stands still (party.js): the stick moves their cursor
+  holds(p) { const c = this.overlay && this.overlay.kind === 'bless' && this.cards.get(p.slot); return !!c && !c.picked && this.picksHere(p); }
+  // (the big screen's own menus make way meanwhile: tvmenu.js)
+  get picking() { return this.party.players.some((p) => p.connected && this.holds(p)); }
+
+  // ← → (or ↑ ↓) and their own A — the keyboard's player with the mouse too (over the cards
+  // drawn last frame: `cardRects`)
+  pickHere() {
+    const P = this.party;
+    if (P.solo) return;
+    const g = P.game.input, kb = P.players.find((p) => p.kind === 'keys' && p.connected && this.holds(p));
+    if (kb && this.cardRects && !P.host.menu && !P.bigMapOpen) for (const r of this.cardRects) if (g.mouseIn(r.x, r.y, r.w, r.h)) {
+      const c = this.cards.get(kb.slot);
+      if (g.mouse.moved && c.cur !== r.i) { c.cur = r.i; audio.sfx('select', { volume: 0.4 }); }
+      if (g.mouse.pressed) { g.mouse.pressed = false; this.pickCard(kb, r.i); }
+    }
+    for (const p of P.players) {
+      if (!p.connected || !this.holds(p)) continue;
+      const c = this.cards.get(p.slot), n = c.cards.length, inp = p.input;
+      const d = (inp.pressed('right') || inp.pressed('down') ? 1 : 0) - (inp.pressed('left') || inp.pressed('up') ? 1 : 0);
+      if (d) { c.cur = (c.cur + d + n) % n; audio.sfx('select', { volume: 0.4 }); }
+      if (inp.pressed('a')) { inp.edges.delete('a'); inp.edges.delete('interact'); this.pickCard(p, c.cur); }
+    }
+  }
+
+  pickCard(p, i) {
+    this.grant(p, this.cards.get(p.slot).cards[i]);
+    this.party.buzz(p, 30);
   }
 
   // ------------------------------------------------------------------ the crowd's gifts
@@ -692,11 +738,15 @@ export class ArenaAct {
       if (o.t >= 3 && !o.go) { o.go = true; audio.sfx('go'); for (const p of P.players) P.buzz(p, 60); }
       if (o.t >= 3.5) { this.overlay = null; o.resolve(); }
     } else if (o.kind === 'bless') {
-      // keyboard players (and slowpokes) get a surprise blessing
+      // phones pick on the phone, keyboard & gamepads right here — slowpokes get a surprise blessing
+      this.pickHere();
+      // (a crowd choosing here needs the whole screen: the « Wave cleared! » banner bows out early)
+      if (P.banner && this.blessTop < P.display.h * 0.2 + 32) P.banner.t = Math.max(P.banner.t, 3.1);
       const all = P.players.filter((p) => p.fighter && p.connected).every((p) => { const c = this.cards.get(p.slot); return !c || c.picked; });
       if (all || o.t > o.time) {
         for (const p of P.players) { const c = this.cards.get(p.slot); if (c && !c.picked && p.fighter) this.grant(p, pick(c.cards)); }
         this.overlay = null;
+        this.cardRects = null;
         o.resolve();
       }
     } else if (o.kind === 'results') {
@@ -765,23 +815,8 @@ export class ArenaAct {
     if (o.kind === 'count') {
       const txt = o.t >= 3 ? t('FIGHT!') : String(Math.ceil(3 - o.t));
       drawText(ctx, txt, W / 2, H / 2 - 24, { color: o.t >= 3 ? '#ffd66b' : '#fff3c4', align: 'center', scale: 4, outline: '#3b2a2e' });
-    } else if (o.kind === 'bless') {
-      // one column up to four heroes, two beyond
-      const rows = P.players.filter((p) => p.fighter);
-      const cols = rows.length > 4 ? 2 : 1, per = Math.ceil(rows.length / cols);
-      const pw = Math.min(W - 40, cols === 2 ? 420 : 300), ph = 34 + per * 12;
-      const px = Math.round((W - pw) / 2), py = Math.round(Math.max(H * 0.36, H * 0.5 - ph / 2));
-      panel(ctx, px, py, pw, ph);
-      drawText(ctx, t('Blessings — {n}s', { n: Math.max(0, Math.ceil(o.time - o.t)) }), px + pw / 2, py + 9, { color: '#7d4f93', align: 'center' });
-      const cw = Math.floor((pw - 16) / cols);
-      rows.forEach((p, i) => {
-        const c = this.cards.get(p.slot);
-        const x0 = px + 8 + Math.floor(i / per) * cw, y = py + 24 + (i % per) * 12;
-        ctx.fillStyle = p.color; ctx.fillRect(x0 + 2, y, 4, 9);
-        drawText(ctx, p.name, x0 + 10, y + 1, { color: UI.ink });
-        drawText(ctx, c && c.picked ? t(BLESSINGS[c.picked].name) : t('choosing…'), x0 + cw - 6, y + 1, { color: c && c.picked ? '#7d4f93' : UI.inkSoft, align: 'right' });
-      });
-    } else if (o.kind === 'results') {
+    } else if (o.kind === 'bless') this.drawBless(ctx, o);
+    else if (o.kind === 'results') {
       const rows = o.rows;
       const pw = Math.min(W - 40, 300), ph = 48 + rows.length * 14;
       const px = Math.round((W - pw) / 2), py = Math.round(H / 2 - ph / 2);
@@ -803,6 +838,95 @@ export class ArenaAct {
       });
       if (o.t > 3 && Math.floor(o.t * 2) % 2) drawText(ctx, t('{a} to continue', { a: P.keyName('a') }), W / 2, py + ph + 6, { color: '#fff7e6', align: 'center', outline: '#3b2a2e' });
     }
+  }
+
+  // the blessings: who has picked what — and the keyboard & gamepad players' own three cards,
+  // right here, their cursor in their colour (a crowded screen: the cards' names only, what the
+  // one under the cursor does beside its chooser's name)
+  drawBless(ctx, o) {
+    const P = this.party, W = P.display.w, H = P.display.h;
+    const heroes = P.players.filter((p) => p.fighter && this.cards.has(p.slot));
+    const here = heroes.filter((p) => this.picksHere(p)), rest = heroes.filter((p) => !this.picksHere(p));
+    const title = t('Blessings — {n}s', { n: Math.max(0, Math.ceil(o.time - o.t)) });
+    const status = (p, x0, y, w) => {
+      const c = this.cards.get(p.slot), got = c.picked ? t(BLESSINGS[c.picked].name) : t('choosing…'), gw = Math.min(measure(got), w - 64);
+      ctx.fillStyle = p.color; ctx.fillRect(x0 + 2, y, 4, 9);
+      drawText(ctx, fitText(p.name, w - gw - 24), x0 + 10, y + 1, { color: UI.ink });
+      drawText(ctx, fitText(got, gw), x0 + w - 6, y + 1, { color: c.picked ? '#7d4f93' : UI.inkSoft, align: 'right' });
+    };
+    if (!here.length) {
+      // (everyone on a phone: one column up to four heroes, two beyond)
+      const cols = heroes.length > 4 ? 2 : 1, per = Math.ceil(heroes.length / cols);
+      const pw = Math.min(W - 40, cols === 2 ? 420 : 300), ph = 34 + per * 12;
+      const px = Math.round((W - pw) / 2), py = Math.round(Math.max(H * 0.36, H * 0.5 - ph / 2));
+      panel(ctx, px, py, pw, ph);
+      drawText(ctx, title, px + pw / 2, py + 9, { color: '#7d4f93', align: 'center' });
+      const cw = Math.floor((pw - 16) / cols);
+      heroes.forEach((p, i) => status(p, px + 8 + Math.floor(i / per) * cw, py + 24 + (i % per) * 12, cw));
+      return;
+    }
+    const pw = Math.min(W - 24, 460), px = Math.round((W - pw) / 2), ix = px + 8, iw = pw - 16, gap = 6;
+    const cw = Math.floor((iw - 2 * gap) / 3);
+    // (every card as tall as the wordiest one shown)
+    const nd = Math.min(3, Math.max(1, ...here.flatMap((p) => this.cards.get(p.slot).cards.map((id) => wrap(t(BLESSINGS[id].desc), cw - 12).length))));
+    const restH = rest.length ? Math.ceil(rest.length / 2) * 12 + 5 : 0;
+    const rich = 34 + here.length * (36 + nd * 9) + restH + 4 <= H - 8;
+    const ch = rich ? 16 + nd * 9 : 13, rowH = 20 + ch, top = rich ? 34 : 23, ph = top + here.length * rowH + restH + 4;
+    let py = Math.round(Math.max(H * 0.36, H / 2 - ph / 2));
+    if (py + ph > H - 4) py = Math.max(4, H - 4 - ph);
+    if (!P.remoteFor) this.blessTop = py;
+    panel(ctx, px, py, pw, ph);
+    drawText(ctx, title, px + pw / 2, py + 9, { color: '#7d4f93', align: 'center' });
+    if (rich) drawText(ctx, t('They stack up — take your pick'), px + pw / 2, py + 20, { color: UI.inkSoft, align: 'center' });
+    // (the big screen's mouse is the keyboard player's: their cards light up under it)
+    const gi = P.game.input, kb = !P.remoteFor && here.find((p) => p.kind === 'keys' && p.connected && this.holds(p)), rects = [];
+    here.forEach((p, k) => {
+      const c = this.cards.get(p.slot), y = py + top + k * rowH, cy = y + 14;
+      // whose cards: their colour and name, and how to choose on their own buttons
+      ctx.fillStyle = p.color; ctx.fillRect(ix + 2, y, 4, 9);
+      let hx = ix + iw;
+      if (!c.picked) {
+        const label = t('Choose');
+        hx -= measure(label);
+        drawText(ctx, label, hx, y + 1, { color: UI.ink });
+        hx = capTo(ctx, hx - 4, y + 1, p, P.keyOf(p, 'a')) - 6 - measure('◂ ▸');
+        drawText(ctx, '◂ ▸', hx, y + 1, { color: '#c8454f' });
+      }
+      const name = fitText(p.name, Math.max(24, Math.min(90, hx - ix - 24)));
+      drawText(ctx, name, ix + 10, y + 1, { color: UI.ink });
+      if (!rich && !c.picked) { const nx = ix + 18 + measure(name); drawText(ctx, fitText(t(BLESSINGS[c.cards[c.cur]].desc), hx - nx - 10), nx, y + 1, { color: UI.inkSoft }); }
+      c.cards.forEach((id, i) => {
+        const x = ix + i * (cw + gap), r = { x: x - 2, y: cy - 3, w: cw + 4, h: ch + 5, i };
+        const took = c.picked === id, cur = !c.picked && c.cur === i;
+        if (p === kb) rects.push(r);
+        this.drawCard(ctx, x, cur || took ? cy - 1 : cy, cw, ch, id, rich ? nd : 0, { color: p.color, cur: cur || took, took, hot: p === kb && gi.mouseIn(r.x, r.y, r.w, r.h), faded: !!c.picked && !took });
+      });
+    });
+    if (!P.remoteFor) this.cardRects = rects;
+    // the phones' players: who has picked what
+    if (!rest.length) return;
+    const y0 = py + top + here.length * rowH, w2 = Math.floor((iw - 16) / 2);
+    ctx.fillStyle = '#e8d3ad'; ctx.fillRect(ix + 2, y0 - 2, iw - 4, 1);
+    rest.forEach((p, i) => status(p, ix + (i % 2) * (w2 + 16), y0 + 3 + Math.floor(i / 2) * 12, w2));
+  }
+
+  // a blessing card: its name, what it does (`nd` lines, none when crowded) — framed in its
+  // chooser's colour under their cursor, ✓ once taken, faded when another one was
+  drawCard(ctx, x, y, w, h, id, nd, { color, cur, took, hot, faded }) {
+    if (cur) {
+      ctx.fillStyle = '#3b2a2e'; ctx.fillRect(x - 1, y - 2, w + 2, h + 4); ctx.fillRect(x - 2, y - 1, w + 4, h + 2);
+      ctx.fillStyle = color; ctx.fillRect(x, y - 1, w, h + 2); ctx.fillRect(x - 1, y, w + 2, h);
+    } else { ctx.fillStyle = faded ? '#dccaa8' : UI.edge; ctx.fillRect(x + 1, y, w - 2, h); ctx.fillRect(x, y + 1, w, h - 2); }
+    ctx.fillStyle = faded ? '#f2e8d4' : cur || hot ? '#fff3c4' : '#f3e3c3';
+    ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.fillStyle = faded ? '#dccbe8' : '#b88cf0'; ctx.fillRect(x + 1, y + 1, 3, h - 2);
+    const B = BLESSINGS[id], tw = w - 12;
+    drawText(ctx, fitText(t(B.name), took ? tw - 8 : tw), x + 7, y + 3, { color: faded ? '#b8a080' : '#7d4f93' });
+    if (took) drawText(ctx, '✓', x + w - 7, y + 3, { color: '#4f955a', align: 'center' });
+    if (!nd) return;
+    const L = wrap(t(B.desc), tw);
+    if (L.length > nd) L.splice(nd - 1, L.length, fitText(L.slice(nd - 1).join(' '), tw));
+    L.forEach((l, k) => drawText(ctx, l, x + 7, y + 13 + k * 9, { color: faded ? '#c8b8a0' : UI.inkSoft }));
   }
 
   // who's winning (bottom strip): points in King, K.O.s in a brawl, level in the waves

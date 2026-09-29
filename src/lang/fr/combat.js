@@ -133,6 +133,8 @@ export const COMBAT = {
   'Wave {n} cleared!': 'Vague {n} repoussée !',
   'the Festival Ring is safe!': 'l’Arène du Festival est sauvée !',
   'pick a blessing on your phone': 'choisissez une bénédiction sur vos téléphones',
+  'time for a blessing': 'place aux bénédictions',
+  'They stack up — take your pick': 'Elles se cumulent — une au choix',
   'Pick a blessing!': 'Choisis une bénédiction !',
   'Blessings stack — choose one': 'Elles se cumulent — choisis-en une',
   'The gloom wins this round…': 'La grisaille gagne cette manche…',

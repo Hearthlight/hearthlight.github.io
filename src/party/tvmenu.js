@@ -331,9 +331,9 @@ export class TvMenus {
   get open() { return !!this.cur; }
   isOpen(p) { return !!(this.cur && this.cur.p === p); }
 
-  // a scene or a vote (everyone's buttons count): the menu makes way — a few words
-  // with a villager don't (the box shows over the menu)
-  blocked() { const P = this.P; return !!(P.vote || P.choosing || (P.stage && P.stage.active)); }
+  // a scene, a vote or the Festival Ring's blessings picked on this screen (everyone's buttons
+  // count): the menu makes way — a few words with a villager don't (the box shows over the menu)
+  blocked() { const P = this.P; return !!(P.vote || P.choosing || (P.stage && P.stage.active) || (P.act && P.act.picking)); }
 
   update(dt) {
     const P = this.P;
