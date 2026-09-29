@@ -199,7 +199,11 @@ export class World3D {
       if (a.kind === 'bob') a.obj.position.y = a.base + Math.sin(t * 2 + a.phase) * 0.04;
       else if (a.kind === 'sway' && a.part) a.part.rotation.z = Math.sin(t * 1.4 + a.phase) * 0.05;
       else if (a.kind === 'swing' && a.part) a.part.forEach((sw, i) => { sw.rotation.x = Math.sin(t * 1.9 + i * 2.1) * (0.12 + 0.1 * Math.sin(t * 0.3 + i)); });
-      else if (a.kind === 'fall' && a.part) { a.part.material.map.offset.y = -((t * 1.6) % 1); }
+      else if (a.kind === 'fall' && a.part) {
+        const P = a.part.sheet ? a.part : { sheet: a.part };
+        P.sheet.material.map.offset.y = (t * 1.6) % 1;            // (streaks running down)
+        if (P.foam) P.foam.forEach((f, i) => { const k = 1 + 0.18 * Math.sin(t * 6 + i * 1.9); f.scale.x = f.userData.s * 1.4 * k; f.scale.z = f.userData.s * k; f.position.y = 0.03 + 0.04 * Math.abs(Math.sin(t * 4.5 + i * 1.3)); });
+      }
       else if (a.userData && a.userData.flag) a.rotation.y = Math.sin(t * 3) * 0.25;
       else if (a.userData && a.userData.swing) a.rotation.x = Math.sin(t * 1.3) * 0.06;
     }

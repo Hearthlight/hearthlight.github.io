@@ -357,7 +357,7 @@ export function buildOverworld() {
   add('shrine', 46, 17.6);
   add('stonelantern', 44.2, 19.4); add('stonelantern', 47.8, 19.4);
   add('bigtree', 50.5, 21.5);
-  add('waterfall', LAKE.x + 0.5, LAKE.z - LAKE.rz - 1);   // (the stream is tiles x-1…x+1: its middle is x + 0.5)
+  add('waterfall', LAKE.x + 0.5, LAKE.z - LAKE.rz);        // (on the rock's edge, over the lake; the stream is tiles x-1…x+1)
   add('rowboat', 106, 18.6); add('bench', 118.5, 22.5);
   add('sign', 91.5, 36.5, { text: '↑ Waterfall Lake · ← Camp' });
   add('lamp', 91, 42); add('lamp', 94.5, 30.5); add('lamp', 108.5, 22.2);

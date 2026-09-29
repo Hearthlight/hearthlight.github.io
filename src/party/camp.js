@@ -85,7 +85,7 @@ export class Campfires {
     const b = buildProp(P.r3d, { type: 'campfire', x: s.x, y: s.z });
     const f = {
       x: s.x, z: s.z, obj: b.obj, flames: b.fire[0], life: BURN, t: 0,
-      light: { x: s.x, y: 0.7, z: s.z + 0.2, color: 0xff8a3a, power: 2.2, dist: 9, lamp: true },
+      light: { x: s.x, y: 0.7, z: s.z + 0.2, color: 0xff5f2a, power: 2.0, dist: 9, lamp: true, fire: true },     // (red-orange: see props.js campfire)
       col: { x: s.x, z: s.z, r: 0.55 },
     };
     f.obj.scale.setScalar(0.01);

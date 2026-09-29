@@ -6,6 +6,7 @@ import { Painter, paintPlanks, paintWall, paintWood, paintAwning, drawIcon } fro
 import { polyGeometry, quad, tri } from './geom.js';
 import { ramp } from '../engine/color.js';
 import { rng, hash2 } from '../engine/util.js';
+import { flameCluster, embers } from './flame.js';
 
 const U = 1 / 16;
 export const KOI = { len: 9, arch: 0.42 };
@@ -418,19 +419,15 @@ const PROPS = {
     }
     const logM = toon(R3, { color: 0x6b4330, key: 'camplog' });
     for (const r of [0.5, -0.5]) { const l = mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.6, 6), logM, 0, 0.08, 0); l.rotation.z = Math.PI / 2; l.rotation.y = r; g.add(l); }
-    const flames = new THREE.Group();
-    const fM = [toon(R3, { color: 0xffd66b, emissive: 0xffc040, emissiveIntensity: 1.3, key: 'flame1' }), toon(R3, { color: 0xf0934a, emissive: 0xff7a30, emissiveIntensity: 1.2, key: 'flame2' })];
-    for (let i = 0; i < 6; i++) {
-      const f = mesh(new THREE.ConeGeometry(0.11 + (i % 2) * 0.06, 0.5 + (i % 3) * 0.14, 5), fM[i % 2], Math.cos(i * 1.3) * 0.12, 0.3, Math.sin(i * 1.3) * 0.1);
-      f.userData.noCast = true;
-      flames.add(f);
-    }
-    const core = mesh(new THREE.ConeGeometry(0.1, 0.34, 5), toon(R3, { color: 0xfff3c4, emissive: 0xfff0b0, emissiveIntensity: 1.5, key: 'flamecore' }), 0, 0.26, 0);
-    core.userData.noCast = true;
-    flames.add(core);
+    const coals = embers(R3);
+    coals.position.y = 0.04;
+    g.add(coals);
+    const flames = flameCluster(R3, 1.05);
+    flames.position.y = 0.08;
     g.add(flames);
     out.fire = [flames];
-    out.lights.push({ x: o.x, y: 0.7, z: o.y + 0.2, color: 0xff8a3a, power: 2.2, flicker: true, lamp: true, dist: 9 });
+    // (a red-orange light: a paler orange turned the grass round the fire yellow)
+    out.lights.push({ x: o.x, y: 0.7, z: o.y + 0.2, color: 0xff5f2a, power: 2.0, flicker: true, lamp: true, fire: true, dist: 9 });
     out.colliders.push({ x: o.x, z: o.y, r: 0.45 });
     out.interact = { kind: 'campfire' };
   },
@@ -465,21 +462,45 @@ const PROPS = {
     out.interact = { kind: 'shrine' };
     out.lights.push({ x: o.x, y: 0.8, z: o.y + 0.5, color: 0xffd08a, power: 0.6 });
   },
+  // A fall off the rock's edge: a curtain of water streaming down (its streaks scroll — world3d's
+  // 'fall' anim), a white lip where it tips over, foam churning at its foot (o: the edge's middle)
   waterfall(g, o, out, m) {
-    const p = new Painter(48, 32);
-    for (let x = 0; x < 48; x++) for (let y = 0; y < 32; y++) {
-      const k = (x * 7 + Math.floor(y / 2) * 3) % 11;
-      p.px(x, y, k < 2 ? '#e7f6f4' : k < 5 ? '#9fd0f5' : k < 8 ? '#79bddc' : '#4f99c7');
+    const W = 48, H = 20, p = new Painter(W, H), r = rng(Math.floor(o.x * 13 + o.y * 7));
+    for (let x = 0; x < W; x++) {
+      const edge = Math.min(x, W - 1 - x);
+      const base = edge < 2 ? '#3a78a8' : edge < 5 ? '#4f94c4' : '#5fa8d8';
+      for (let y = 0; y < H; y++) p.px(x, y, base);
+      // (streaks: a few light runs down each column, wrapping round so the scroll never jumps)
+      if (edge < 1) continue;
+      const n = edge < 4 ? 1 : 2 + Math.floor(r() * 2);
+      for (let k = 0; k < n; k++) {
+        const y0 = Math.floor(r() * H), len = 3 + Math.floor(r() * 6), white = r() < (edge < 4 ? 0.15 : 0.45);
+        for (let q = 0; q < len; q++) p.px(x, (y0 + q) % H, q === 0 || (white && q < len - 1) ? '#e7f6f4' : '#9fd0f5');
+      }
     }
     const t = pixelTexture(p.c, { repeat: true });
-    t.repeat.set(1, 1);
-    const mat = toon(R3, { map: t, emissive: 0x4f99c7, emissiveIntensity: 0.25, side: THREE.DoubleSide });
-    const fall = mesh(new THREE.PlaneGeometry(3, 1.6), mat, 0, 0.5, 0);
-    fall.userData.noCast = true;
-    g.add(fall);
+    const sheetMat = toon(R3, { map: t, emissive: 0x4f99c7, emissiveIntensity: 0.22 });
+    const sheet = mesh(new THREE.PlaneGeometry(3, 1.25), sheetMat, 0, 0.62, 0);
+    sheet.userData.noCast = true;
+    g.add(sheet);
+    // the lip: where the stream tips over the edge
+    const white = toon(R3, { color: 0xeef9f6, emissive: 0xbfe4f0, emissiveIntensity: 0.25, key: 'fall-foam' });
+    g.add(mesh(B(3.05, 0.08, 0.16), white, 0, 1.26, -0.06));
+    g.add(mesh(B(2.6, 0.05, 0.1), toon(R3, { color: 0x9fd0f5, key: 'fall-lip' }), 0, 1.31, -0.14));
+    // foam at its foot, churning (anim: world3d)
+    const foam = [];
+    for (let i = 0; i < 6; i++) {
+      const f = mesh(new THREE.IcosahedronGeometry(1, 0), white, -1.25 + i * 0.5 + (r() - 0.5) * 0.15, 0.03, 0.12 + r() * 0.2);
+      const s0 = 0.2 + r() * 0.12;
+      f.scale.set(s0 * 1.4, s0 * 0.45, s0);
+      f.userData.s = s0;
+      f.userData.noCast = true;
+      g.add(f);
+      foam.push(f);
+    }
     out.anim = 'fall';
-    out.animPart = fall;
-    out.splash = { x: o.x, z: o.y + 0.6 };
+    out.animPart = { sheet, foam };
+    out.splash = { x: o.x, z: o.y + 0.35 };
   },
   farmstand(g, o, out, m) {
     g.add(mesh(B(1.9, 0.72, 0.6), m.wood, 0, 0.36, 0));

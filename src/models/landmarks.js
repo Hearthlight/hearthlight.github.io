@@ -11,6 +11,7 @@ import { polyGeometry, quad, tri } from './geom.js';
 import { ramp } from '../engine/color.js';
 import { rng } from '../engine/util.js';
 import { installDawn, installPeaks, installFrontier } from './v7/landmarks7.js';
+import { flameCluster } from './flame.js';
 
 export const LANDMARKS = {
   windmill: { w: 3, d: 3, desc: 'Windy Heights stone windmill with four turning lattice sails' },
@@ -192,13 +193,9 @@ function lantern(g, out, x, y, z, { s = 1, mat = M.lamp, color = 0xffb862, power
 }
 // campfire-style flame cluster (cones), returned as a group to animate
 function flames(g, x, y, z, s = 1) {
-  const f = grp(g, x, y, z);
-  for (let i = 0; i < 5; i++) {
-    const c = put(f, geo('fl' + i, () => new THREE.ConeGeometry(0.1 + (i % 2) * 0.05, 0.42 + (i % 3) * 0.12, 5)), i % 2 ? M.flame2 : M.flame1, Math.cos(i * 1.3) * 0.1 * s, 0.22 * s, Math.sin(i * 1.3) * 0.08 * s);
-    c.scale.setScalar(s);
-    glow(c);
-  }
-  glow(put(f, geo('flcore', () => new THREE.ConeGeometry(0.09, 0.3, 5)), M.core, 0, 0.18 * s, 0)).scale.setScalar(s);
+  const f = flameCluster(R3, s * 0.95);        // (models/flame.js: layered, like the valley's campfire)
+  f.position.set(x, y, z);
+  g.add(f);
   return f;
 }
 const flick = (f, t, k = 0) => { f.scale.y = 0.84 + Math.sin(t * 13 + k) * 0.1 + Math.sin(t * 7.7 + k * 2) * 0.07; f.scale.x = f.scale.z = 0.95 + Math.sin(t * 9 + k) * 0.05; f.rotation.y = t * 0.8 + k; };
@@ -1798,7 +1795,7 @@ BUILD.camp = (g, out, m, r, seed) => {
   put(g, geo('bedroll', () => new THREE.CylinderGeometry(0.12, 0.12, 0.62, 8)), C('bedroll' + v, [0xc8454f, 0x3f6f9e, 0x6d4a8a, 0x3f9b98][v]), -0.5, 0.12, 0.8, 0.2, 0, Math.PI / 2);
   out.anim = (t) => flick(fire, t);
   out.anim(0);
-  out.lights.push({ x: fx, y: 0.7, z: fz + 0.2, color: 0xff8a3a, power: 2.0, lamp: true, flicker: true, dist: 9 });
+  out.lights.push({ x: fx, y: 0.7, z: fz + 0.2, color: 0xff5f2a, power: 1.9, lamp: true, fire: true, flicker: true, dist: 9 });
   out.colliders.push({ rect: [tx - w / 2, tz - d / 2, w, d] }, { x: fx, z: fz, r: 0.45 }, { x: fx - 0.3, z: 1.2, r: 0.22 }, { x: fx + 0.3, z: 1.2, r: 0.22 }, { x: 1.75, z: -0.05, r: 0.22 }, { x: 1.75, z: 0.45, r: 0.22 }, { x: -1.55, z: 0.95, r: 0.35 });
 };
 

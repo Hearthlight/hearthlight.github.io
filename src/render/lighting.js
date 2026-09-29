@@ -49,14 +49,17 @@ export class Lighting {
     this.sepia = 0;         // 0..1 an old photograph's tint (a scene's flashback)
     this.glowTex = makeGlowTexture();
     this.glowMat = new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffc070, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
+    // (a fire's own halo: red-orange and low — the lamps' pale gold turned the grass round a
+    // campfire yellow-green and washed its flames out)
+    this.fireGlowMat = new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff6a2c, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
   }
 
   addSource(s) {
     this.sources.push(s);
     if (s.lamp) {
-      const sp = new THREE.Sprite(this.glowMat);
-      sp.position.set(s.x, s.y, s.z);
-      sp.scale.set(1.8, 1.8, 1);
+      const sp = new THREE.Sprite(s.fire ? this.fireGlowMat : this.glowMat);
+      sp.position.set(s.x, s.fire ? 0.2 : s.y, s.z);
+      sp.scale.set(s.fire ? 2.4 : 1.8, s.fire ? 2.0 : 1.8, 1);
       sp.renderOrder = 5;
       this.r3d.scene.add(sp);
       this.glows.push(sp);
@@ -119,6 +122,7 @@ export class Lighting {
       for (const m of this.lampMats) m.emissiveIntensity = lamps * 1.2;
     }
     this.glowMat.opacity = lamps * 0.55;
+    this.fireGlowMat.opacity = lamps * 0.42;
 
     // point light pool
     this.assignPool(focus, lamps);
@@ -156,7 +160,7 @@ export class Lighting {
     this.lampLevel = lamps;
     const sky = night ? '#2c3570' : dusk ? '#f6b08a' : hour < 7.5 ? '#f3c6b0' : '#9fd0f5';
     for (const m of room.glass) { m.color.set(sky); m.emissive.set(sky); m.emissiveIntensity = night ? 0.25 : 0.65; }
-    this.glowMat.opacity = 0;
+    this.glowMat.opacity = 0; this.fireGlowMat.opacity = 0;
     this.assignPool(focus, lamps);
   }
 
