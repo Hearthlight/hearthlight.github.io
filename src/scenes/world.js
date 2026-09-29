@@ -718,8 +718,6 @@ export class World {
       const d = Math.hypot(n.pos.x - fp.x, n.pos.z - fp.z) - (counter ? 1.2 : 0);
       consider(d, { kind: 'npc', npc: n, label: 'Talk', x: n.pos.x, z: n.pos.z, y: n.def.kid ? 1.5 : 1.7 });
     }
-    // pet
-    if (this.pet.map === map) consider(Math.hypot(this.pet.pos.x - fp.x, this.pet.pos.z - fp.z) + 0.15, { kind: 'pet', label: 'Pet', x: this.pet.pos.x, z: this.pet.pos.z, y: 0.9 });
     if (map === 'overworld') {
       // doors
       const tx = Math.floor(fp.x), tz = Math.floor(fp.z);
@@ -745,13 +743,15 @@ export class World {
         const f = this.forage.nearestFirefly(fp.x, fp.z, 1.4);
         if (f) consider(0.3, { kind: 'firefly', ff: f, label: 'Catch', x: f.x, z: f.z, y: f.y + 0.3 });
       }
-      // garden
+      // garden (the seeds or the can don't have to be in hand: facing the soil says what's to do —
+      // the seeds in hand first, else the first ones in the bag)
       const ptx = Math.floor(fp.x), ptz = Math.floor(fp.z);
       if (this.farm.isSoil(ptx, ptz)) {
-        const plot = this.farm.plot(ptx, ptz);
+        const plot = this.farm.plot(ptx, ptz), isSeed = (x) => x && ITEMS[x.id] && ITEMS[x.id].cat === 'seed';
+        const seed = isSeed(held) ? held.id : (s.bag.find(isSeed) || {}).id;
         if (plot && this.farm.ready(plot)) consider(0.25, { kind: 'harvest', tx: ptx, tz: ptz, label: 'Harvest', x: ptx + 0.5, z: ptz + 0.5, y: 0.8 });
-        else if (held && ITEMS[held.id] && ITEMS[held.id].cat === 'seed' && !plot) consider(0.3, { kind: 'plant', tx: ptx, tz: ptz, label: 'Plant', x: ptx + 0.5, z: ptz + 0.5, y: 0.5 });
-        else if (held && held.id === 'can' && plot && !plot.watered) consider(0.3, { kind: 'water', tx: ptx, tz: ptz, label: 'Water', x: ptx + 0.5, z: ptz + 0.5, y: 0.5 });
+        else if (seed && !plot) consider(0.3, { kind: 'plant', seed, tx: ptx, tz: ptz, label: 'Plant', x: ptx + 0.5, z: ptz + 0.5, y: 0.5 });
+        else if (plot && !plot.watered && hasItem(s, 'can')) consider(0.3, { kind: 'water', tx: ptx, tz: ptz, label: 'Water', x: ptx + 0.5, z: ptz + 0.5, y: 0.5 });
       }
       // fishing
       if (held && held.id === 'rod' && !best) {
@@ -760,7 +760,10 @@ export class World {
       }
       // festival lantern
       if (this.story.active('festival') && this.story.stepOf('festival') === 2 && Math.hypot(p.pos.x - (OX + 47), p.pos.z - (OZ + 65.2)) < 1.6) consider(0.1, { kind: 'lantern', label: 'Release lantern', x: OX + 47, z: OZ + 65.8, y: 1.2 });
-    } else {
+    }
+    // the pet (it follows at your heels: never in the way of what your hands are doing)
+    if (this.pet.map === map && !(best && HANDS.has(best.kind))) consider(Math.hypot(this.pet.pos.x - fp.x, this.pet.pos.z - fp.z) + 0.15, { kind: 'pet', label: 'Pet', x: this.pet.pos.x, z: this.pet.pos.z, y: 0.9 });
+    if (map !== 'overworld') {
       const room = this.maps[map].room;
       const def = INTERIORS[map];
       for (const it of room.interactables) {
@@ -844,9 +847,10 @@ export class World {
         break;
       }
       case 'plant': {
-        const held = this.heldItem();
-        const crop = ITEMS[held.id].crop;
-        this.takeItem(held.id, 1);
+        const id = it.seed;
+        if (!ITEMS[id] || !hasItem(s, id)) break;
+        const crop = ITEMS[id].crop;
+        this.takeItem(id, 1);
         this.farm.plant(it.tx, it.tz, crop);
         this.fx.emit('soil', it.x, 0.1, it.z, 6);
         audio.sfx('plant');
@@ -2093,8 +2097,10 @@ export class World {
       const f = this.focus;
       const u = this.toUi(f.x, (f.y || 1) + (this.mapId === 'overworld' && this.onPier({ x: f.x, z: f.z }) ? 0.2 : 0), f.z);
       const label = t(f.label);
-      if (this.input.touchMode) tag(ctx, u.x - (measure(label) + 8) / 2, u.y - 16, label, '#2a1f33');
-      else keyHint(ctx, u.x, u.y - 16, ctl('interact'), label);
+      // (a low thing just below the hero — soil, a seedling: the prompt under it, not over the hero)
+      const py = (f.y || 1) <= 0.8 && f.z > this.player.pos.z + 0.4 ? u.y + 6 : u.y - 16;
+      if (this.input.touchMode) tag(ctx, u.x - (measure(label) + 8) / 2, py, label, '#2a1f33');
+      else keyHint(ctx, u.x, py, ctl('interact'), label);
     }
     // (the hero seems stuck: a bubble over them — tap it, or the pause menu's first line)
     this.stuckRect = null;
@@ -2229,6 +2235,8 @@ const PROP_LABEL = {
   ferry: 'Board ferry', tent: 'Nap', campfire: 'Warm up', shrine: 'Ring bell', telescope: 'Stargaze', gazebo: 'Rest', scarecrow: 'Look',
   beehive: 'Listen', grotto: 'Explore', bandstand: 'Listen', snowman: 'Look', hollowlog: 'Peek',
 };
+// what your hands are doing: the pet at your heels never takes the place of these
+const HANDS = new Set(['plant', 'water', 'harvest', 'fish', 'firefly', 'place', 'decor', 'lantern']);
 const PROP_REACH = { hollowlog: 1.0, snowman: 0.3, fountain: 1.3, well: 0.7, board: 0.5, ferry: 1.6, tent: 0.9, campfire: 0.5, shrine: 0.6, gazebo: 1.2, grotto: 1.0, beehive: 0.2 };
 const PROP_Y = { board: 1.7, ferry: 1.6, gazebo: 2.0, tent: 1.5, shrine: 1.6, telescope: 1.5, grotto: 1.8, campfire: 0.9 };
 const FURN_LABEL = { musicbox: 'Wind up', bed: 'Sleep', note: 'Read', wardrobe: 'Wardrobe', books: 'Browse', sit: 'Sit', radio: 'Listen', piano: 'Play', lens: 'Examine', cow: 'Pet', chicken: 'Pet', nest: 'Collect eggs', millstone: 'Look', chest: 'Open', telescope: 'Stargaze' };

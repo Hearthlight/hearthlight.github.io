@@ -292,7 +292,7 @@ export const STORY = {
   'Nana’s note': 'La nota de la abuela',
   'Welcome home, sprout!\n\nThe watering can is by the door — the garden soil is still good. I left a few turnip seeds in the drawer. Plant them, water them each day, and in three days you’ll have supper.\n\nThe bed is freshly made. Sleep whenever you’re tired — the cove will still be here in the morning.': '¡Ya estás en casa, mi brotecito!\n\nLa regadera está junto a la puerta — la tierra del huerto todavía es buena. Dejé unas semillas de nabo en el cajón. Plántalas, riégalas cada día y en tres días tendrás cena.\n\nLa cama está recién hecha. Duerme cuando te entre el sueño — la caleta seguirá aquí por la mañana.',
   '— N.': '— Tu abuela',
-  'Select {goldLight}seeds{/} and press {goldLight}E{/} facing the garden soil to plant. Water each day with the {goldLight}Watering Can{/}.': 'Elige unas {goldLight}semillas{/} y presiona {goldLight}E{/} frente a la tierra del huerto para plantar. Riega cada día con la {goldLight}regadera{/}.',
+  'Face the garden soil and press {goldLight}{key}{/} to plant your seeds — and again to water them, every day.': 'Ponte frente a la tierra del huerto y pulsa {goldLight}{key}{/} para sembrar tus semillas — y otra vez para regarlas, cada día.',
   'Oh! Before I forget — a welcome gift. Your Nana always bought carrot seeds from me first thing each spring.': '¡Ah! Antes de que se me olvide — un regalo de bienvenida. Tu abuela siempre me compraba semillas de zanahoria al empezar cada primavera.',
   'Plant them in your garden and water them every day. Come back anytime — I sell all sorts of seeds!': 'Plántalas en tu huerto y riégalas todos los días. Vuelve cuando quieras — ¡vendo semillas de todo tipo!',
 

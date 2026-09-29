@@ -120,7 +120,12 @@ export class Farm {
     // seed mound
     B(6, 1, 5, this.mat('#5e3d2c'), 0, 0.5, 0);
     if (st === 0) {
-      B(1, 1, 1, this.mat('#d9c290'), -1, 1.2, 0); B(1, 1, 1, this.mat('#d9c290'), 1, 1.2, 1);
+      // (just sown: a fresh dark mound, its seeds, and a little stake with the crop's colour —
+      // a planted square must read as planted at a glance)
+      B(8, 2, 7, this.mat('#3f271d'), 0, 1, 0); B(6, 1, 5, this.mat('#6e4a34'), 0, 2.2, 0);
+      for (const [x, z] of [[-2, -1], [0, 1], [2, -1]]) B(1, 1, 1, this.mat('#f0dca0'), x, 3, z);
+      B(1, 7, 1, this.mat('#a8784a'), -3, 3.5, -3);
+      B(5, 4, 1, this.mat('#6b4330'), -3, 6.5, -2.7); B(3, 2, 1, this.mat(c.color), -3, 6.5, -2.2);
       return g;
     }
     if (st === 1) {

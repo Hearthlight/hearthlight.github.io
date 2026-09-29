@@ -846,7 +846,9 @@ export class Story {
       s.flags.gotCan = true;
       w.giveItem('can', 1);
       w.giveItem('seed_turnip', 3);
-      w.hud.tip(t('Select {goldLight}seeds{/} and press {goldLight}E{/} facing the garden soil to plant. Water each day with the {goldLight}Watering Can{/}.'), 9);
+      // (no need to pick the seeds or the can first: facing the soil is enough)
+      const key = w.input.touchMode ? t('Use') : ctl('interact');
+      w.hud.tip(t('Face the garden soil and press {goldLight}{key}{/} to plant your seeds — and again to water them, every day.', { key }), 10);
     }
     if (this.stepOf('arrive') === 1) this.advance('arrive');
   }

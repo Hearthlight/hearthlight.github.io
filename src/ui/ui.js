@@ -218,11 +218,12 @@ export function keyHint(ctx, x, y, key, label, { center = true, dark = true } = 
   }
   if (face) faceGlyph(ctx, px + 7, py + 6, key);
   else {
+    // (the cap: a pixel of paper above and below the letter, then its shaded lip)
     ctx.fillStyle = '#fff7e6';
-    ctx.fillRect(px + 2, py + 2, kw - 2, 8);
+    ctx.fillRect(px + 2, py + 1, kw - 2, 9);
     ctx.fillStyle = '#c9a77c';
-    ctx.fillRect(px + 2, py + 9, kw - 2, 1);
-    drawText(ctx, key, px + 1 + kw / 2, py + 1, { color: '#3b2a2e', align: 'center' });
+    ctx.fillRect(px + 2, py + 10, kw - 2, 1);
+    drawText(ctx, key, px + 1 + kw / 2, py + 2, { color: '#3b2a2e', align: 'center' });
   }
   if (label) drawText(ctx, label, px + kw + 3, py + 2, { color: '#fff7e6' });
   return w;

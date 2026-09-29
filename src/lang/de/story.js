@@ -292,7 +292,7 @@ export const STORY = {
   'Nana’s note': 'Omas Zettel',
   'Welcome home, sprout!\n\nThe watering can is by the door — the garden soil is still good. I left a few turnip seeds in the drawer. Plant them, water them each day, and in three days you’ll have supper.\n\nThe bed is freshly made. Sleep whenever you’re tired — the cove will still be here in the morning.': 'Willkommen daheim, mein Sprössling!\n\nDie Gießkanne steht neben der Tür – die Gartenerde ist noch gut. Ich hab dir ein paar Rübensamen in die Schublade gelegt. Pflanz sie ein, gieß sie jeden Tag, und in drei Tagen hast du ein Abendessen.\n\nDas Bett ist frisch bezogen. Schlaf, wann immer du müde bist – die Bucht ist morgen früh auch noch da.',
   '— N.': '– Oma',
-  'Select {goldLight}seeds{/} and press {goldLight}E{/} facing the garden soil to plant. Water each day with the {goldLight}Watering Can{/}.': 'Wähl {goldLight}Samen{/} und drück vor der Gartenerde {goldLight}E{/}, um zu pflanzen. Gieß jeden Tag mit der {goldLight}Gießkanne{/}.',
+  'Face the garden soil and press {goldLight}{key}{/} to plant your seeds — and again to water them, every day.': 'Stell dich vor die Gartenerde und drück {goldLight}{key}{/}, um deine Samen zu säen – und noch mal, um sie jeden Tag zu gießen.',
   'Oh! Before I forget — a welcome gift. Your Nana always bought carrot seeds from me first thing each spring.': 'Oh! Bevor ich’s vergesse – ein Willkommensgeschenk. Deine Oma hat jedes Frühjahr als Allererstes Karottensamen bei mir gekauft.',
   'Plant them in your garden and water them every day. Come back anytime — I sell all sorts of seeds!': 'Pflanz sie in deinen Garten und gieß sie jeden Tag. Komm vorbei, wann du willst – ich verkaufe Samen aller Art!',
 

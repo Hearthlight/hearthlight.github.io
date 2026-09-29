@@ -292,7 +292,7 @@ export const STORY = {
   'Nana’s note': 'Il biglietto della Nonna',
   'Welcome home, sprout!\n\nThe watering can is by the door — the garden soil is still good. I left a few turnip seeds in the drawer. Plant them, water them each day, and in three days you’ll have supper.\n\nThe bed is freshly made. Sleep whenever you’re tired — the cove will still be here in the morning.': 'Eccoti a casa, germoglio mio!\n\nL’annaffiatoio è vicino alla porta — la terra dell’orto è ancora buona. Nel cassetto ho lasciato qualche seme di rapa. Piantali, annaffiali ogni giorno, e fra tre giorni avrai la cena.\n\nIl letto è rifatto di fresco. Dormi quando ti viene sonno — la baia sarà ancora qui domattina.',
   '— N.': '— Nonna',
-  'Select {goldLight}seeds{/} and press {goldLight}E{/} facing the garden soil to plant. Water each day with the {goldLight}Watering Can{/}.': 'Seleziona dei {goldLight}semi{/} e premi {goldLight}E{/} davanti alla terra dell’orto per piantarli. Annaffia ogni giorno con l’{goldLight}Annaffiatoio{/}.',
+  'Face the garden soil and press {goldLight}{key}{/} to plant your seeds — and again to water them, every day.': 'Mettiti davanti alla terra dell’orto e premi {goldLight}{key}{/} per seminare — e di nuovo per annaffiare, ogni giorno.',
   'Oh! Before I forget — a welcome gift. Your Nana always bought carrot seeds from me first thing each spring.': 'Oh! Prima che me ne dimentichi — un regalo di benvenuto. Tua nonna comprava sempre da me i semi di carota, appena arrivava la primavera.',
   'Plant them in your garden and water them every day. Come back anytime — I sell all sorts of seeds!': 'Piantali nell’orto e annaffiali ogni giorno. Torna quando vuoi — vendo semi di ogni tipo!',
 
