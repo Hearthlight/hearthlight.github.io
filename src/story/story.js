@@ -323,9 +323,8 @@ export class Story {
   onStargaze() { this.check(); }
   async grotto() {
     const w = this.game, s = this.s;
-    const held = w.heldItem();
     if (!countItem(s, 'lamp_hand')) { await w.say(null, 'A cool breeze drifts out of the little sea grotto. It’s pitch dark inside and something drips… Best not to wander in without a light.'); return; }
-    if (!held || held.id !== 'lamp_hand') { await w.say(null, 'It’s pitch black in there. Hold up your Hand Lantern first.'); return; }
+    w.holdItem('lamp_hand');          // (the lantern comes out by itself: it's dark in there)
     await w.enterRoom('grotto');
     if (!s.flags.grottoSeen) { s.flags.grottoSeen = true; w.hud.showBanner(t('Sea Grotto'), t('Drip… drip… sparkle')); }
   }
@@ -409,9 +408,11 @@ export class Story {
 
     const opts = ['Chat'];
     const vars = {};
-    const held = w.heldItem();
-    const giftable = held && ITEMS[held.id] && !['tool', 'key', 'upgrade'].includes(ITEMS[held.id].cat);
-    if (giftable && fr.gifted !== s.day) { opts.push('Give {gift}'); vars.gift = t(ITEMS[held.id].name); }
+    // a gift: what's in hand, or « a gift… » to pick one from the bag (nothing to select first)
+    const held = w.heldItem(), canGive = (x) => x && ITEMS[x.id] && !['tool', 'key', 'upgrade'].includes(ITEMS[x.id].cat);
+    const gifts = [...new Set(s.bag.filter(canGive).map((x) => x.id))];
+    if (fr.gifted !== s.day && canGive(held)) { opts.push('Give {gift}'); vars.gift = t(ITEMS[held.id].name); }
+    else if (fr.gifted !== s.day && gifts.length) opts.push('Give a gift…');
     const shopOpen = w.shopOpenFor(npc);
     if (shopOpen) opts.push(shopOpen.label);
     if (id === 'theo' && this.active('bridge') && this.stepOf('bridge') === 0) opts.push('Bridge fund');
@@ -425,7 +426,11 @@ export class Story {
     }
     const choice = opts[pick];
     if (choice === 'Chat') await this.chat(id);
-    else if (choice && choice.startsWith('Give')) await this.gift(id, held.id);
+    else if (choice === 'Give a gift…') {
+      const list = gifts.slice(0, 7);
+      const g = await w.ask(id, 'Oh? What have you got there?', [...list.map((x) => ITEMS[x].name), 'Never mind'], list.length);
+      if (g >= 0 && g < list.length) await this.gift(id, list[g]);
+    } else if (choice && choice.startsWith('Give')) await this.gift(id, held.id);
     else if (shopOpen && choice === shopOpen.label) w.openShop(shopOpen.shop, npc);
     else if (choice === 'Bridge fund') await this.bridgeFund();
     else if (choice === 'Expand my home' || choice === 'About my house…') await this.homeUpgrade();
@@ -554,8 +559,9 @@ export class Story {
         w.giveItem('bike', 1, { quest: true });
         this.complete('bram_mill');
         this.friend('bram', 150);
-        w.hud.tip(device() === 'pad' ? t('Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}{l3}{/} — to ride. {goldLight}{rt}{/} pedals even faster!', { l3: ctl('bike'), rt: ctl('run') })
-          : t('Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}B{/} — to ride. Shift pedals even faster!'), 9);
+        // (one button hops on: nothing to pick in the hotbar first)
+        w.hud.tip(w.input.touchMode ? t('Tap {goldLight}Bike{/} to hop on your {goldLight}Bicycle{/}.')
+          : t('Press {goldLight}{b}{/} to hop on your {goldLight}Bicycle{/} — {goldLight}{run}{/} pedals even faster!', { b: ctl('bike'), run: ctl('run') }), 9);
         return true;
       }
     }

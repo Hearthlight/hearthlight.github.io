@@ -141,6 +141,11 @@ export const STORY = {
   // ---------------------------------------------------------------- talking
   'Chat': 'Chiacchiera',
   'Give {gift}': 'Regala: {gift}',
+  "Press {goldLight}{b}{/} to hop on your {goldLight}Bicycle{/} — {goldLight}{run}{/} pedals even faster!": "Premi {goldLight}{b}{/} per salire in {goldLight}bici{/} — {goldLight}{run}{/} per pedalare ancora più veloce!",
+  "Tap {goldLight}Bike{/} to hop on your {goldLight}Bicycle{/}.": "Tocca {goldLight}Bici{/} per salire in {goldLight}bicicletta{/}.",
+  "Give a gift…": "Fai un regalo…",
+  "Oh? What have you got there?": "Oh? Cos’hai lì?",
+  "Never mind": "Lascia stare",
   'Bridge fund': 'Colletta per il ponte',
   'About my house…': 'A proposito di casa…',
   'Expand my home': 'Ingrandisci casa mia',
@@ -166,7 +171,6 @@ export const STORY = {
   'That’s everything! Oh, she’s going to fly. I’ll work through the night — come see her in the morning!': 'C’è tutto! Oh, girerà che è una meraviglia. Lavoro tutta la notte — vieni a vederlo domattina!',
   'Would you look at her go! Fresh flour for Rosa’s bakery, and the bees love the breeze. Thank you, friend.': 'Ma guarda come gira! Farina fresca per il forno di Rosa, e le api adorano la brezza. Grazie di cuore.',
   'I want you to have this — my old bicycle. Fixed her up while I was at it. The valley’s a big place; you shouldn’t walk all of it.': 'Voglio che la prenda tu — la mia vecchia bicicletta. L’ho sistemata già che c’ero. La valle è grande; non vorrai mica girarla tutta a piedi.',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}B{/} — to ride. Shift pedals even faster!': 'Seleziona la {goldLight}Bicicletta{/} nella barra rapida — o premi {goldLight}B{/} — per pedalare. Tieni premuto Maiusc per andare ancora più veloce!',
 
   // ------------------------------------------------------------- Juniper
   'Hey, want to help with real ranger work? I’m surveying the Whisperwood. I need samples!': 'Ehi, ti va di darmi una mano con un vero lavoro da guardia forestale? Sto facendo i rilievi di Bosco Bisbiglio. Mi servono campioni!',

@@ -737,9 +737,9 @@ export class World {
       // forage items
       const it = this.forage.nearest(fp.x, fp.z, 0.9);
       if (it) consider(Math.hypot(it.x - fp.x, it.z - fp.z), { kind: 'forage', item: it, label: 'Pick up', x: it.x, z: it.z, y: 0.5 });
-      // fireflies (with net)
+      // fireflies (a net anywhere in the bag: nothing to pick first)
       const held = this.heldItem();
-      if (held && held.id === 'net') {
+      if (hasItem(s, 'net')) {
         const f = this.forage.nearestFirefly(fp.x, fp.z, 1.4);
         if (f) consider(0.3, { kind: 'firefly', ff: f, label: 'Catch', x: f.x, z: f.z, y: f.y + 0.3 });
       }
@@ -753,16 +753,14 @@ export class World {
         else if (seed && !plot) consider(0.3, { kind: 'plant', seed, tx: ptx, tz: ptz, label: 'Plant', x: ptx + 0.5, z: ptz + 0.5, y: 0.5 });
         else if (plot && !plot.watered && hasItem(s, 'can')) consider(0.3, { kind: 'water', tx: ptx, tz: ptz, label: 'Water', x: ptx + 0.5, z: ptz + 0.5, y: 0.5 });
       }
-      // fishing
-      if (held && held.id === 'rod' && !best) {
+      // fishing (the rod anywhere in the bag, when nothing else is in reach)
+      if (hasItem(s, 'rod') && !best) {
         const w = this.waterAhead();
         if (w) consider(0.5, { kind: 'fish', target: w, label: 'Cast', x: w.x, z: w.z, y: 0.3 });
       }
       // festival lantern
       if (this.story.active('festival') && this.story.stepOf('festival') === 2 && Math.hypot(p.pos.x - (OX + 47), p.pos.z - (OZ + 65.2)) < 1.6) consider(0.1, { kind: 'lantern', label: 'Release lantern', x: OX + 47, z: OZ + 65.8, y: 1.2 });
     }
-    // the pet (it follows at your heels: never in the way of what your hands are doing)
-    if (this.pet.map === map && !(best && HANDS.has(best.kind))) consider(Math.hypot(this.pet.pos.x - fp.x, this.pet.pos.z - fp.z) + 0.15, { kind: 'pet', label: 'Pet', x: this.pet.pos.x, z: this.pet.pos.z, y: 0.9 });
     if (map !== 'overworld') {
       const room = this.maps[map].room;
       const def = INTERIORS[map];
@@ -780,6 +778,8 @@ export class World {
       // exit
       if (p.pos.z > def.d - 0.9 && Math.abs(p.pos.x - (def.door + 0.5)) < 0.8 && p.dir.z > 0.3) consider(0.2, { kind: 'exit', label: 'Leave', x: def.door + 0.5, z: def.d, y: 0.8 });
     }
+    // the pet (it follows at your heels: a cuddle only when there's nothing else within reach)
+    if (this.pet.map === map && !best) consider(Math.hypot(this.pet.pos.x - fp.x, this.pet.pos.z - fp.z) + 0.15, { kind: 'pet', label: 'Pet', x: this.pet.pos.x, z: this.pet.pos.z, y: 0.9 });
     return best;
   }
 
@@ -1979,6 +1979,17 @@ export class World {
     else { this.prevHot = s.hot; this.selectHot(idx); }
   }
 
+  // (an action that needs something in hand takes it out by itself: onto the hotbar if it's
+  // deeper in the bag, swapped with what's in hand)
+  holdItem(id) {
+    const s = this.state, idx = s.bag.findIndex((b) => b && b.id === id);
+    if (idx < 0) return false;
+    if (idx === s.hot) return true;
+    if (idx >= HOTBAR) { const cur = s.bag[s.hot]; s.bag[s.hot] = s.bag[idx]; s.bag[idx] = cur; this.selectHot(s.hot); }
+    else this.selectHot(idx);
+    return true;
+  }
+
   selectHot(i) {
     if (this.state.hot !== i) audio.sfx('select', { volume: 0.5 });
     this.state.hot = i;
@@ -2235,8 +2246,6 @@ const PROP_LABEL = {
   ferry: 'Board ferry', tent: 'Nap', campfire: 'Warm up', shrine: 'Ring bell', telescope: 'Stargaze', gazebo: 'Rest', scarecrow: 'Look',
   beehive: 'Listen', grotto: 'Explore', bandstand: 'Listen', snowman: 'Look', hollowlog: 'Peek',
 };
-// what your hands are doing: the pet at your heels never takes the place of these
-const HANDS = new Set(['plant', 'water', 'harvest', 'fish', 'firefly', 'place', 'decor', 'lantern']);
 const PROP_REACH = { hollowlog: 1.0, snowman: 0.3, fountain: 1.3, well: 0.7, board: 0.5, ferry: 1.6, tent: 0.9, campfire: 0.5, shrine: 0.6, gazebo: 1.2, grotto: 1.0, beehive: 0.2 };
 const PROP_Y = { board: 1.7, ferry: 1.6, gazebo: 2.0, tent: 1.5, shrine: 1.6, telescope: 1.5, grotto: 1.8, campfire: 0.9 };
 const FURN_LABEL = { musicbox: 'Wind up', bed: 'Sleep', note: 'Read', wardrobe: 'Wardrobe', books: 'Browse', sit: 'Sit', radio: 'Listen', piano: 'Play', lens: 'Examine', cow: 'Pet', chicken: 'Pet', nest: 'Collect eggs', millstone: 'Look', chest: 'Open', telescope: 'Stargaze' };

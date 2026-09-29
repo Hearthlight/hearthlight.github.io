@@ -141,6 +141,11 @@ export const STORY = {
   // ---------------------------------------------------------------- talking
   'Chat': 'Plaudern',
   'Give {gift}': '{gift} schenken',
+  "Press {goldLight}{b}{/} to hop on your {goldLight}Bicycle{/} — {goldLight}{run}{/} pedals even faster!": "Drück {goldLight}{b}{/}, um aufs {goldLight}Fahrrad{/} zu steigen – mit {goldLight}{run}{/} trittst du noch schneller!",
+  "Tap {goldLight}Bike{/} to hop on your {goldLight}Bicycle{/}.": "Tipp auf {goldLight}Rad{/}, um aufs {goldLight}Fahrrad{/} zu steigen.",
+  "Give a gift…": "Etwas schenken…",
+  "Oh? What have you got there?": "Oh? Was hast du denn da?",
+  "Never mind": "Schon gut",
   'Bridge fund': 'Brückenkasse',
   'About my house…': 'Zu meinem Haus…',
   'Expand my home': 'Haus ausbauen',
@@ -166,7 +171,6 @@ export const STORY = {
   'That’s everything! Oh, she’s going to fly. I’ll work through the night — come see her in the morning!': 'Damit hab ich alles! Oh, die wird sich drehen wie der Wind. Ich arbeite die Nacht durch – komm morgen früh gucken!',
   'Would you look at her go! Fresh flour for Rosa’s bakery, and the bees love the breeze. Thank you, friend.': 'Nun guck dir an, wie sie läuft! Frisches Mehl für Rosas Bäckerei, und die Bienen lieben die Brise. Danke dir, von Herzen.',
   'I want you to have this — my old bicycle. Fixed her up while I was at it. The valley’s a big place; you shouldn’t walk all of it.': 'Das hier sollst du haben – mein altes Fahrrad. Hab’s gleich mit repariert. Das Tal ist groß, das musst du nicht alles zu Fuß ablaufen.',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}B{/} — to ride. Shift pedals even faster!': 'Zum Radeln wähl das {goldLight}Fahrrad{/} in deiner Schnellleiste oder drück {goldLight}B{/}. Mit Shift strampelst du noch schneller!',
 
   // ------------------------------------------------------------- Juniper
   'Hey, want to help with real ranger work? I’m surveying the Whisperwood. I need samples!': 'Hey, hast du Lust auf echte Försterarbeit? Ich mache Inventur im Flüsterwald. Ich brauche Proben!',

@@ -55,7 +55,6 @@ export const CONTROLS_FR = {
   'Controls: the stick moves (push it far to run) · {a} use · {b} jump · {prev}/{next} hotbar': 'Commandes : le stick te déplace (à fond pour courir) · {a} utiliser · {b} sauter · {prev}/{next} barre d’objets',
   '{start} this menu · {select} the map · {x} special · {y} dodge': '{start} ce menu · {select} la carte · {x} coup spécial · {y} esquive',
   'The {goldLight}stick{/} walks (push it far to run) · {goldLight}{a}{/} talks & interacts · {goldLight}{start}{/} opens your bag, journal & map': 'Le {goldLight}stick{/} te fait marcher (à fond pour courir) · {goldLight}{a}{/} pour parler et interagir · {goldLight}{start}{/} ouvre ton sac, ton journal et la carte',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}{l3}{/} — to ride. {goldLight}{rt}{/} pedals even faster!': 'Choisis le {goldLight}vélo{/} dans ta barre d’objets — ou appuie sur {goldLight}{l3}{/} — pour rouler. {goldLight}{rt}{/} pour pédaler encore plus vite !',
   'Hold {a} to keep the fish in the green net!': 'Maintiens {a} pour garder le poisson dans le filet vert !',
   'Hold {a} to raise the net': 'Maintiens {a} pour lever le filet',
   '{a} buy/sell · {b} close': '{a} acheter/vendre · {b} fermer',

@@ -53,7 +53,6 @@ export const CONTROLS_DE = {
   'Controls: the stick moves (push it far to run) · {a} use · {b} jump · {prev}/{next} hotbar': 'Steuerung: Stick bewegt (ganz drücken zum Rennen) · {a} benutzen · {b} springen · {prev}/{next} Schnellleiste',
   '{start} this menu · {select} the map · {x} special · {y} dodge': '{start} dieses Menü · {select} Karte · {x} Spezial · {y} Ausweichen',
   'The {goldLight}stick{/} walks (push it far to run) · {goldLight}{a}{/} talks & interacts · {goldLight}{start}{/} opens your bag, journal & map': 'Mit dem {goldLight}Stick{/} läufst du (ganz drücken zum Rennen) · {goldLight}{a}{/} reden & benutzen · {goldLight}{start}{/} öffnet Tasche, Tagebuch & Karte',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}{l3}{/} — to ride. {goldLight}{rt}{/} pedals even faster!': 'Wähl das {goldLight}Fahrrad{/} in der Schnellleiste – oder drück {goldLight}{l3}{/} – und fahr los. Mit {goldLight}{rt}{/} trittst du noch schneller!',
   'Hold {a} to keep the fish in the green net!': 'Halt {a} gedrückt, damit der Fisch im grünen Netz bleibt!',
   'Hold {a} to raise the net': '{a} halten, um das Netz zu heben',
   '{a} buy/sell · {b} close': '{a} kaufen/verkaufen · {b} schließen',

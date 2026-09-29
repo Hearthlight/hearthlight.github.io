@@ -53,7 +53,6 @@ export const CONTROLS_IT = {
   'Controls: the stick moves (push it far to run) · {a} use · {b} jump · {prev}/{next} hotbar': 'Comandi: la levetta ti muove (a fondo per correre) · {a} usa · {b} salta · {prev}/{next} barra rapida',
   '{start} this menu · {select} the map · {x} special · {y} dodge': '{start} questo menu · {select} la mappa · {x} speciale · {y} schiva',
   'The {goldLight}stick{/} walks (push it far to run) · {goldLight}{a}{/} talks & interacts · {goldLight}{start}{/} opens your bag, journal & map': 'La {goldLight}levetta{/} ti fa camminare (a fondo per correre) · {goldLight}{a}{/} per parlare e interagire · {goldLight}{start}{/} apre zaino, diario e mappa',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}{l3}{/} — to ride. {goldLight}{rt}{/} pedals even faster!': 'Scegli la {goldLight}bicicletta{/} nella barra rapida — o premi {goldLight}{l3}{/} — per pedalare. Con {goldLight}{rt}{/} vai ancora più veloce!',
   'Hold {a} to keep the fish in the green net!': 'Tieni premuto {a}: il pesce deve restare nella rete verde!',
   'Hold {a} to raise the net': 'Tieni premuto {a} per alzare la rete',
   '{a} buy/sell · {b} close': '{a} compra/vendi · {b} chiudi',

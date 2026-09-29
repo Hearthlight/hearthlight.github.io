@@ -141,6 +141,11 @@ export const STORY = {
   // ---------------------------------------------------------------- talking
   'Chat': 'Charlar',
   'Give {gift}': 'Regalar {gift}',
+  "Press {goldLight}{b}{/} to hop on your {goldLight}Bicycle{/} — {goldLight}{run}{/} pedals even faster!": "Pulsa {goldLight}{b}{/} para subirte a tu {goldLight}bicicleta{/} — ¡{goldLight}{run}{/} para pedalear aún más rápido!",
+  "Tap {goldLight}Bike{/} to hop on your {goldLight}Bicycle{/}.": "Toca {goldLight}Bici{/} para subirte a tu {goldLight}bicicleta{/}.",
+  "Give a gift…": "Dar un regalo…",
+  "Oh? What have you got there?": "¿Oh? ¿Qué traes ahí?",
+  "Never mind": "Da igual",
   'Bridge fund': 'Fondo del puente',
   'About my house…': 'Sobre mi casa…',
   'Expand my home': 'Ampliar mi casa',
@@ -166,7 +171,6 @@ export const STORY = {
   'That’s everything! Oh, she’s going to fly. I’ll work through the night — come see her in the morning!': '¡Ya está todo! Ay, va a girar de maravilla. Trabajaré toda la noche — ¡ven a verlo por la mañana!',
   'Would you look at her go! Fresh flour for Rosa’s bakery, and the bees love the breeze. Thank you, friend.': '¡Pero mira cómo gira! Harina fresca para la panadería de Rosa, y a las abejas les encanta la brisa. Gracias, de corazón.',
   'I want you to have this — my old bicycle. Fixed her up while I was at it. The valley’s a big place; you shouldn’t walk all of it.': 'Quiero que te quedes con esto — mi vieja bicicleta. La arreglé de paso. El valle es muy grande; no vas a recorrerlo todo a pie.',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}B{/} — to ride. Shift pedals even faster!': 'Elige la {goldLight}bicicleta{/} en tu barra rápida — o presiona {goldLight}B{/} — para montar. ¡Con Shift pedaleas aún más rápido!',
 
   // ------------------------------------------------------------- Juniper
   'Hey, want to help with real ranger work? I’m surveying the Whisperwood. I need samples!': 'Oye, ¿quieres ayudar con trabajo de guardabosques de verdad? Estoy haciendo un censo de Bosquesusurro. ¡Necesito muestras!',

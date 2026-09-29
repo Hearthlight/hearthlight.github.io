@@ -144,6 +144,11 @@ export const STORY = {
   // ---------------------------------------------------------------- talking
   'Chat': 'Discuter',
   'Give {gift}': 'Offrir : {gift}',
+  "Press {goldLight}{b}{/} to hop on your {goldLight}Bicycle{/} — {goldLight}{run}{/} pedals even faster!": "Appuie sur {goldLight}{b}{/} pour enfourcher ton {goldLight}vélo{/} — {goldLight}{run}{/} pour pédaler encore plus vite !",
+  "Tap {goldLight}Bike{/} to hop on your {goldLight}Bicycle{/}.": "Touche {goldLight}Vélo{/} pour enfourcher ton {goldLight}vélo{/}.",
+  "Give a gift…": "Offrir un cadeau…",
+  "Oh? What have you got there?": "Oh ? Qu’est-ce que tu as là ?",
+  "Never mind": "Laisse tomber",
   'Bridge fund': 'Cagnotte du pont',
   'About my house…': 'Pour ma maison…',
   'Expand my home': 'Agrandir ma maison',
@@ -169,7 +174,6 @@ export const STORY = {
   'That’s everything! Oh, she’s going to fly. I’ll work through the night — come see her in the morning!': 'Y a tout ! Ah, il va tourner comme un charme. Je bosse toute la nuit — viens le voir demain matin !',
   'Would you look at her go! Fresh flour for Rosa’s bakery, and the bees love the breeze. Thank you, friend.': 'Mais regarde-moi ça, comme il tourne ! De la farine fraîche pour la boulangerie de Rosa, et les abeilles adorent la brise. Merci, du fond du cœur.',
   'I want you to have this — my old bicycle. Fixed her up while I was at it. The valley’s a big place; you shouldn’t walk all of it.': 'Je veux que tu prennes ça — mon vieux vélo. Je l’ai retapé pendant que j’y étais. La vallée est grande ; tu vas pas tout faire à pied, quand même.',
-  'Select the {goldLight}Bicycle{/} in your hotbar — or press {goldLight}B{/} — to ride. Shift pedals even faster!': 'Sélectionne le {goldLight}vélo{/} dans ta barre rapide — ou appuie sur {goldLight}B{/} — pour rouler. Maintiens Maj pour pédaler encore plus vite !',
 
   // ------------------------------------------------------------- Juniper
   'Hey, want to help with real ranger work? I’m surveying the Whisperwood. I need samples!': 'Hé, ça te dit de faire du vrai boulot de garde forestière ? Je fais l’inventaire de Bois-Murmure. Il me faut des échantillons !',
