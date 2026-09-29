@@ -4,7 +4,7 @@
 import { THREE, pixelTexture, toon } from '../render/r3d.js';
 import { Painter, paintWood, paintPlanks, paintWall } from '../art/surfaces.js';
 import { ramp, mix as mixHex } from '../engine/color.js';
-import { softBoxGeo } from './geom.js';
+import { softBoxGeo, bakeMeshes } from './geom.js';
 import { rng } from '../engine/util.js';
 
 let R = null;
@@ -81,6 +81,45 @@ function shelfFront(w, h, kind) {
   return p.c;
 }
 
+// rugs: a braided oval (a stadium, its rings a constant width), a rectangle with a fringe
+function braidRug(W, H, color) {
+  const p = new Painter(W, H), c = ramp(color), cream = '#f4e6c8';
+  const r = H / 2, half = Math.max(0, W / 2 - r);
+  const cols = [c.d, c.m, c.l, c.m, cream, c.m, c.d, c.l];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const dx = Math.max(0, Math.abs(x + 0.5 - W / 2) - half), dy = y + 0.5 - H / 2, d = Math.hypot(dx, dy);
+    if (d > r) continue;
+    const ring = Math.floor((r - d) / 2), base = ring === 0 ? c.o : cols[ring % cols.length];
+    // (the braid's twist: every other stitch along the ring a shade darker)
+    const along = Math.floor((Math.atan2(dy, dx || (x < W / 2 ? -0.01 : 0.01)) * r + (dx ? 0 : x)) / 1.5);
+    p.px(x, y, (along + ring) % 2 ? base : mixHex(base, c.o, 0.22));
+  }
+  return p.c;
+}
+function flatRug(W, H, F, color) {
+  const p = new Painter(W + F * 2, H), c = ramp(color), cream = '#f4e6c8', X = F;
+  p.rect(X, 0, W, H, c.o);
+  p.rect(X + 1, 1, W - 2, H - 2, c.d);
+  for (let x = X + 2; x < X + W - 2; x += 2) { p.px(x, 2, c.l); p.px(x + 1, H - 3, c.l); }
+  for (let y = 2; y < H - 2; y += 2) { p.px(X + 2, y + 1, c.l); p.px(X + W - 3, y, c.l); }
+  p.rect(X + 4, 4, W - 8, H - 8, cream);
+  p.rect(X + 5, 5, W - 10, H - 10, c.m);
+  // the medallion: a diamond, its heart light
+  const cx = X + W / 2, cy = H / 2, rr = Math.min(W, H) / 2 - 7;
+  for (let y = 5; y < H - 5; y++) for (let x = X + 5; x < X + W - 5; x++) {
+    const k = Math.abs(x + 0.5 - cx) / (rr * 1.4) + Math.abs(y + 0.5 - cy) / rr;
+    if (k < 1) p.px(x, y, k > 0.78 ? cream : k < 0.3 ? c.h : c.l);
+  }
+  for (const [x, y] of [[X + 7, 7], [X + W - 8, 7], [X + 7, H - 8], [X + W - 8, H - 8]]) { p.px(x, y, cream); p.px(x - 1, y, c.l); p.px(x + 1, y, c.l); p.px(x, y - 1, c.l); p.px(x, y + 1, c.l); }
+  for (let y = 1; y < H - 1; y += 2) { p.hline(0, y, F, cream); p.hline(X + W, y, F, cream); }
+  return p.c;
+}
+// a small piece merged into as few draws as it has materials (the new clutter)
+const baked = (g) => { bakeMeshes(g, M('vc', () => toon(R, { color: 0xffffff, vertexColors: true, key: 'p-vc' }))); return g; };
+const cyl = (rt, rb, h, mat, x, y, z, parent, seg = 8) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z); parent.add(m); return m; };
+const ball = (r, mat, x, y, z, parent, sx = 1, sy = 1, sz = 1) => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat); m.position.set(x, y, z); m.scale.set(sx, sy, sz); parent.add(m); return m; };
+const painted = (key, w, h, fn, opts = {}) => M('pt' + key, () => { const p = new Painter(w, h); fn(p); return toon(R, { map: pixelTexture(p.c), ...opts }); });
+
 // Builders -------------------------------------------------------------------
 export const FURN = {
   bed(o) {
@@ -132,19 +171,16 @@ export const FURN = {
     mk(0.06, 0.44, 0.06, col('#4b4854'), 0, 0.22, 0, g);
     return { obj: g, size: [1, 1], solid: false };
   },
+  // a rug painted at 16 texels a unit, its outline in the pixels: an oval braided rag rug (rings of
+  // a constant width, twisted, a cream ring now and then), or a rectangular one with its border, a
+  // medallion, corner motifs and a fringe at each end
   rug(o) {
-    const c = ramp(o.color || '#d9a05a');
     const g = new THREE.Group();
-    const p = new Painter(32, 24);
-    p.rect(0, 0, 32, 24, c.m);
-    p.rect(2, 2, 28, 20, c.d); p.rect(4, 4, 24, 16, c.m);
-    for (let i = 6; i < 26; i += 4) { p.px(i, 7, c.l); p.px(i + 2, 16, c.l); }
-    p.rect(12, 10, 8, 4, c.l);
     const round = o.round !== false;
-    const geo = round ? new THREE.CircleGeometry(1, 20) : new THREE.PlaneGeometry(2, 1.5);
-    const m = new THREE.Mesh(geo, toon(R, { map: pixelTexture(p.c) }));
+    const rx = o.rx || (round ? 1.1 : 1), rz = o.rz || (round ? 0.8 : 0.75);
+    const W = Math.round(rx * 32), H = Math.round(rz * 32), F = round ? 0 : 3;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry((W + F * 2) / 16, H / 16), M('rug' + o.color + W + 'x' + H + round, () => toon(R, { map: pixelTexture(round ? braidRug(W, H, o.color || '#d9a05a') : flatRug(W, H, F, o.color || '#c8454f')), alphaTest: 0.5 })));
     m.rotation.x = -Math.PI / 2;
-    if (round) m.scale.set(o.rx || 1.1, o.rz || 0.8, 1);
     m.position.y = 0.012;
     m.receiveShadow = true;
     g.add(m);
@@ -766,6 +802,222 @@ Object.assign(FURN, {
     const glass = toon(R, { color: '#f3e2b0', emissive: '#ffc15a', emissiveIntensity: 1 });
     mk(0.22, 0.26, 0.22, glass, 0, -0.08, 0, g);
     return { obj: g, size: [1, 1], wall: true, light: { y: -0.1, power: 1.0, color: 0xffc070 } };
+  },
+});
+
+// ---- the little things people keep about them (each one merged into a draw or two) ----------------
+Object.assign(FURN, {
+  // a row of pegs on the wall and what hangs there: a coat, a scarf & a straw hat — or a saw, a coil of
+  // rope and a hammer
+  pegs(o) {
+    const g = new THREE.Group(), w = o.w || 1.1, wd = woodMat('#8e5d3e');
+    mk(w, 0.1, 0.05, wd, 0, 0, 0.02, g);
+    for (let i = 0; i < 3; i++) mk(0.05, 0.05, 0.12, woodMat('#6b4330'), -w / 2 + (i + 0.5) * (w / 3), 0, 0.08, g);
+    const x0 = -w / 3, x2 = w / 3;
+    if (o.kind === 'tools') {
+      mk(0.56, 0.16, 0.02, col('#b8b4c0'), x0 + 0.1, -0.16, 0.1, g).rotation.z = 0.12;
+      mk(0.16, 0.12, 0.05, woodMat('#b07b50'), x0 - 0.2, -0.12, 0.11, g);
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.035, 4, 10), col('#d9c090')); coil.position.set(0, -0.19, 0.1); g.add(coil);
+      mk(0.05, 0.36, 0.04, woodMat('#b07b50'), x2, -0.2, 0.1, g);
+      mk(0.2, 0.08, 0.07, col('#6a6571'), x2, -0.02, 0.1, g);
+    } else {
+      const coat = o.coat || '#4e73b6', C = ramp(coat);
+      const face = painted('coat' + coat, 6, 10, (p) => { p.rect(0, 0, 6, 10, C.m); p.rect(2, 0, 2, 3, C.d); p.vline(3, 3, 7, C.d); p.px(2, 4, '#e0a526'); p.px(2, 7, '#e0a526'); p.hline(0, 9, 6, C.d); });
+      front(0.36, 0.62, 0.08, col(C.d), face, x0, -0.33, 0.1, g);
+      mk(0.4, 0.1, 0.1, col(C.l), x0, -0.03, 0.1, g);
+      const sc = painted('scarf' + (o.scarf || '#e97d8f'), 2, 8, (p) => { for (let y = 0; y < 8; y++) p.hline(0, y, 2, y % 3 === 2 ? '#fbf1dc' : o.scarf || '#e97d8f'); });
+      front(0.1, 0.5, 0.03, col(o.scarf || '#e97d8f'), sc, 0.04, -0.27, 0.1, g);
+      front(0.1, 0.42, 0.03, col(o.scarf || '#e97d8f'), sc, -0.06, -0.24, 0.11, g);
+      const hat = new THREE.Group(); hat.position.set(x2, -0.12, 0.13); hat.rotation.x = 1.25; hat.rotation.z = 0.15; g.add(hat);
+      cyl(0.24, 0.24, 0.03, col('#e8c46a'), 0, 0, 0, hat, 12);
+      cyl(0.12, 0.14, 0.12, col('#e0b858'), 0, 0.07, 0, hat, 10);
+      cyl(0.145, 0.145, 0.035, col('#c8454f'), 0, 0.03, 0, hat, 10);
+    }
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // a shelf on the wall: plates standing up, jars, little pots of green, or books
+  wallshelf(o) {
+    const g = new THREE.Group(), w = o.w || 1, wd = woodMat('#8e5d3e');
+    mk(w, 0.05, 0.22, wd, 0, 0, 0.11, g);
+    for (const x of [-w / 2 + 0.12, w / 2 - 0.12]) { const b = mk(0.04, 0.16, 0.14, wd, x, -0.1, 0.07, g); b.rotation.x = 0.5; }
+    const k = o.kind || 'plates', n = Math.max(2, Math.round(w / 0.3));
+    for (let i = 0; i < n; i++) {
+      const x = -w / 2 + (i + 0.5) * (w / n);
+      if (k === 'plates') {
+        const c = ['#f4efe4', '#dcecf7', '#f4efe4', '#f7d6e0'][i % 4];
+        const pl = cyl(0.12, 0.12, 0.025, col(c), x, 0.14, 0.07, g, 12); pl.rotation.x = Math.PI / 2 - 0.2;
+        const mid = cyl(0.07, 0.07, 0.03, col(['#4e73b6', '#6fa0d0', '#c8454f', '#4e73b6'][i % 4]), x, 0.14, 0.073, g, 10); mid.rotation.x = Math.PI / 2 - 0.2;
+      } else if (k === 'jars') {
+        const c = ['#e0463f', '#f2c14e', '#7fbf5a', '#b9a2e3'][i % 4];
+        cyl(0.06, 0.06, 0.16, col('#dcecf7'), x, 0.1, 0.1, g);
+        cyl(0.055, 0.055, 0.11, col(c), x, 0.08, 0.1, g);
+        cyl(0.065, 0.065, 0.03, col('#8e5d3e'), x, 0.19, 0.1, g);
+      } else if (k === 'pots') {
+        cyl(0.07, 0.05, 0.1, col('#c8704a'), x, 0.08, 0.1, g);
+        ball(0.08, col(['#5fa453', '#7fbf5a', '#4f955a'][i % 3]), x, 0.17, 0.1, g, 1, 0.8, 1);
+      } else {
+        const h = 0.18 + (i % 3) * 0.04;
+        mk(0.06, h, 0.15, col(['#c8454f', '#4e73b6', '#5fa453', '#e0a526', '#8a64b8'][i % 5]), x, 0.025 + h / 2, 0.1, g).rotation.z = i === n - 1 ? 0.3 : 0;
+      }
+    }
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // a cluster of little framed pictures: the sea & a boat, somebody dear, a flower
+  frames(o) {
+    const g = new THREE.Group(), fr = col('#6b4330');
+    const pics = [
+      ['sea', 8, 6, -0.3, 0.06, (p) => { p.rect(0, 0, 8, 6, '#6b4330'); p.rect(1, 1, 6, 2, '#bfe3f2'); p.rect(1, 3, 6, 2, '#3a7cae'); p.px(5, 1, '#ffd66b'); p.px(3, 2, '#fbf1dc'); p.px(3, 3, '#c8454f'); p.px(2, 3, '#c8454f'); }],
+      ['dear', 6, 8, 0.22, 0.12, (p) => { p.rect(0, 0, 6, 8, '#e0a526'); p.rect(1, 1, 4, 6, '#f7d6e0'); p.rect(2, 2, 2, 2, '#f3c9a8'); p.hline(2, 1, 2, '#8a5a36'); p.rect(1, 5, 4, 2, o.coat || '#4e73b6'); }],
+      ['flower', 5, 4, -0.02, -0.3, (p) => { p.rect(0, 0, 5, 4, '#6b4330'); p.rect(1, 1, 3, 2, '#fbf1dc'); p.px(2, 1, '#e97d8f'); p.px(2, 2, '#5fa453'); }],
+    ];
+    for (const [key, w, h, x, y, fn] of pics) front(w / 16, h / 16, 0.05, fr, painted('frame' + key + (o.coat || ''), w, h, fn), x, y, 0.03, g);
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // copper pans & a ladle on a rail
+  pans(o) {
+    const g = new THREE.Group(), cu = col('#c8703a'), cuL = col('#e8a060'), ir = col('#3b3a46');
+    const w = o.w || 1.1;
+    mk(w, 0.04, 0.04, ir, 0, 0, 0.06, g);
+    [[-0.34, 0.15], [0.02, 0.12], [0.36, 0.1]].forEach(([x, r], i) => {
+      mk(0.02, 0.1, 0.02, ir, x, -0.05, 0.06, g);
+      if (i === 1) { mk(0.03, 0.34, 0.02, col('#b8b4c0'), x, -0.24, 0.07, g); ball(0.06, col('#b8b4c0'), x, -0.42, 0.08, g, 1, 0.7, 1); return; }
+      mk(0.04, 0.22, 0.03, ir, x, -0.18, 0.07, g);
+      const pan = cyl(r, r, 0.05, cu, x, -0.3 - r, 0.08, g, 12); pan.rotation.x = Math.PI / 2;
+      const rim = cyl(r * 0.72, r * 0.72, 0.055, cuL, x, -0.3 - r, 0.085, g, 12); rim.rotation.x = Math.PI / 2;
+    });
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // bundles of herbs drying, hung head down from a rail
+  herbs(o) {
+    const g = new THREE.Group(), w = o.w || 1.1, twine = col('#d9c090');
+    mk(w, 0.05, 0.05, woodMat('#8e5d3e'), 0, 0, 0.05, g);
+    const cols = ['#6f9a55', '#8a64b8', '#9ab85a', '#5f8a4a', '#c9a44e'];
+    const n = Math.max(3, Math.round(w / 0.24));
+    for (let i = 0; i < n; i++) {
+      const x = -w / 2 + (i + 0.5) * (w / n), len = 0.14 + (i % 2) * 0.06;
+      mk(0.015, len, 0.015, twine, x, -len / 2, 0.07, g);
+      const b = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.3, 6), col(cols[i % cols.length]));
+      b.position.set(x, -len - 0.13, 0.08); g.add(b);
+      mk(0.05, 0.04, 0.05, twine, x, -len + 0.01, 0.08, g);
+    }
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // a fishing net hung up to dry, cork floats along its top, a glass float in a knot of it
+  nets(o) {
+    const g = new THREE.Group();
+    const net = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.9), painted('net', 21, 15, (p) => {
+      for (let y = 0; y < 15; y++) for (let x = 0; x < 21; x++) if ((x + y) % 4 === 0 || (x - y + 40) % 4 === 0) p.px(x, y, (x + y) % 8 === 0 ? '#9a8a6a' : '#c9b78a');
+      p.hline(0, 0, 21, '#8e7a55');
+    }, { alphaTest: 0.5, side: THREE.DoubleSide }));
+    net.position.set(0, -0.4, 0.05); g.add(net);
+    for (const [x, c] of [[-0.5, '#e8883a'], [-0.1, '#f4efe4'], [0.3, '#e8883a']]) { const f = cyl(0.07, 0.07, 0.12, col(c), x, 0.03, 0.07, g); f.rotation.z = Math.PI / 2; }
+    ball(0.11, toon(R, { color: '#8fd6c8', emissive: '#5fb8a8', emissiveIntensity: 0.25 }), 0.35, -0.55, 0.1, g);
+    mk(0.2, 0.02, 0.02, col('#9a8a6a'), 0.35, -0.44, 0.1, g);
+    return { obj: baked(g), size: [2, 1], wall: true };
+  },
+  // two oars crossed on the wall
+  oars(o) {
+    const g = new THREE.Group(), wd = woodMat('#c49a64'), tip = col(o.color || '#3f7fb5');
+    for (const s of [-1, 1]) {
+      const og = new THREE.Group(); og.rotation.z = s * 0.62; og.position.z = 0.05 + (s > 0 ? 0.03 : 0); g.add(og);
+      mk(0.05, 1.3, 0.04, wd, 0, 0, 0, og);
+      mk(0.14, 0.34, 0.03, wd, 0, -0.62, 0, og);
+      mk(0.145, 0.09, 0.035, tip, 0, -0.76, 0, og);
+      mk(0.07, 0.14, 0.05, woodMat('#6b4330'), 0, 0.62, 0, og);
+    }
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // a fish on a plaque, for whoever lives here and caught it
+  trophy(o) {
+    const g = new THREE.Group();
+    const plaque = painted('plaque', 12, 6, (p) => { const c = ramp('#6b4330'); p.rect(0, 0, 12, 6, c.m); p.rect(1, 1, 10, 4, c.d); p.hline(0, 0, 12, c.l); p.px(5, 5, '#e0a526'); p.px(6, 5, '#e0a526'); });
+    front(0.75, 0.38, 0.05, col('#5a3b2a'), plaque, 0, 0, 0.02, g);
+    const fish = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.25), painted('fishmount', 10, 4, (p) => {
+      p.rect(1, 1, 6, 2, '#6fa0d0'); p.hline(2, 0, 4, '#4e73b6'); p.hline(2, 3, 4, '#bfe3f2'); p.px(0, 2, '#4e73b6'); p.px(1, 1, '#1a1422');
+      p.px(7, 1, '#4e73b6'); p.px(7, 2, '#4e73b6'); p.px(8, 0, '#4e73b6'); p.px(8, 3, '#4e73b6'); p.px(9, 0, '#3f5f9e'); p.px(9, 3, '#3f5f9e'); p.px(3, 2, '#e8f4fb');
+    }, { alphaTest: 0.5 }));
+    fish.position.set(0, 0.01, 0.055); g.add(fish);
+    return { obj: baked(g), size: [1, 1], wall: true };
+  },
+  // a woven basket: vegetables from the garden, balls of wool, loaves, apples
+  basket(o) {
+    const g = new THREE.Group();
+    const weave = painted('weave', 16, 4, (p) => { for (let y = 0; y < 4; y++) for (let x = 0; x < 16; x++) p.px(x, y, (x + (y >> 1) * 2) % 4 < 2 ? '#c89a58' : '#a87a42'); p.hline(0, 0, 16, '#8a5a32'); });
+    cyl(0.26, 0.2, 0.26, weave, 0, 0.13, 0, g, 10);
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.03, 4, 12), col('#8a5a32')); rim.rotation.x = Math.PI / 2; rim.position.y = 0.26; g.add(rim);
+    const k = o.kind || 'veg';
+    if (k === 'veg') {
+      ball(0.13, col('#e8883a'), -0.06, 0.3, 0.02, g, 1.2, 0.8, 1.2); mk(0.03, 0.06, 0.03, col('#5f8a4a'), -0.06, 0.4, 0.02, g);
+      for (const [x, z, r] of [[0.12, -0.06, 0.5], [0.14, 0.07, -0.4]]) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.26, 6), col('#f0934a')); c.position.set(x, 0.3, z); c.rotation.z = Math.PI / 2 + r; g.add(c); ball(0.05, col('#7fbf5a'), x - 0.13, 0.32 + r * 0.05, z, g); }
+      ball(0.07, col('#c8454f'), 0.02, 0.29, -0.13, g);
+    } else if (k === 'yarn') {
+      for (const [x, z, c] of [[-0.08, 0.02, '#e97d8f'], [0.09, -0.04, '#6fa0d0'], [0.02, 0.1, '#f2c14e']]) ball(0.09, col(c), x, 0.3, z, g);
+      for (const s of [-1, 1]) { const n = mk(0.02, 0.4, 0.02, col('#b8b4c0'), 0.04 * s, 0.4, -0.05, g); n.rotation.z = s * 0.4; }
+    } else if (k === 'bread') {
+      for (const [x, z, r] of [[-0.08, 0, 0.3], [0.08, 0.04, -0.2], [0, -0.08, 1.4]]) { const l = ball(0.1, col('#d9a05a'), x, 0.3, z, g, 1.5, 0.75, 0.9); l.rotation.y = r; }
+    } else {
+      for (let i = 0; i < 6; i++) ball(0.065, col(i % 3 ? '#d9364a' : '#8fce66'), Math.cos(i * 1.2) * 0.11, 0.29 + (i % 2) * 0.04, Math.sin(i * 1.2) * 0.1, g);
+    }
+    return { obj: baked(g), size: [1, 1], solid: false };
+  },
+  // a few books, stacked where somebody left them
+  bookstack(o) {
+    const g = new THREE.Group(), cols = ['#4e73b6', '#c8454f', '#5fa453', '#8a64b8', '#e0a526'];
+    const n = o.n || 3;
+    for (let i = 0; i < n; i++) {
+      const b = new THREE.Group(); b.position.y = 0.035 + i * 0.07; b.rotation.y = (i % 2 ? 0.25 : -0.15) + i * 0.1; g.add(b);
+      mk(0.36, 0.065, 0.26, col(cols[(i + (o.seed || 0)) % cols.length]), 0, 0, 0, b);
+      mk(0.33, 0.05, 0.24, col('#f4efe4'), 0.02, 0, 0, b);
+    }
+    return { obj: baked(g), size: [1, 1], solid: false };
+  },
+  // curls of wood shavings on the floor (by a workbench)
+  shavings(o) {
+    const g = new THREE.Group(), w = o.w || 1.2, d = o.d || 0.8, W = Math.round(w * 16), H = Math.round(d * 16);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), painted('shavings' + W + 'x' + H, W, H, (p) => {
+      const r = rng(W * 7 + H);
+      for (let i = 0; i < W * H * 0.06; i++) {
+        const x = Math.floor(r() * W), y = Math.floor(r() * H), cx = W / 2, cy = H / 2;
+        if (((x - cx) / cx) ** 2 + ((y - cy) / cy) ** 2 > 1 - r() * 0.3) continue;
+        const c = r() < 0.5 ? '#e8c890' : '#d9b07a';
+        p.px(x, y, c); if (r() < 0.6) p.px(x + 1, y, c); if (r() < 0.4) p.px(x + 1, y + 1, '#c49a64');
+      }
+    }, { alphaTest: 0.5 }));
+    m.rotation.x = -Math.PI / 2; m.position.y = 0.013; m.receiveShadow = true; g.add(m);
+    return { obj: g, size: [1, 1], flat: true };
+  },
+  // an A-frame chalkboard: a steaming cup, a slice of cake and a heart in chalk (no words to read)
+  chalkboard(o) {
+    const g = new THREE.Group(), wd = woodMat('#8e5d3e');
+    const face = painted('chalk', 10, 13, (p) => {
+      p.rect(0, 0, 10, 13, '#6b4330'); p.rect(1, 1, 8, 11, '#2f3b36');
+      p.rect(2, 3, 3, 3, '#e8e4dc'); p.px(5, 4, '#e8e4dc'); p.px(3, 1, '#9aa89e'); p.px(4, 2, '#9aa89e');
+      p.hline(2, 8, 4, '#f4c6cf'); p.hline(3, 7, 3, '#f4c6cf'); p.hline(2, 9, 4, '#fbf1dc');
+      p.px(7, 8, '#e97d8f'); p.px(8, 8, '#e97d8f'); p.px(7, 9, '#e97d8f'); p.px(8, 9, '#e97d8f'); p.px(7, 7, '#e97d8f'); p.px(8, 10, '#e97d8f');
+      p.hline(2, 11, 6, '#9aa89e');
+    });
+    const b = front(0.62, 0.8, 0.05, wd, face, 0, 0.52, 0.06, g); b.rotation.x = -0.18;
+    const back = mk(0.62, 0.8, 0.05, wd, 0, 0.52, -0.1, g); back.rotation.x = 0.18;
+    return { obj: baked(g), size: [1, 1], solid: true };
+  },
+  // a teapot & two cups, on a table (y: its top)
+  teaset(o) {
+    const g = new THREE.Group(), c = col(o.color || '#f4efe4'), acc = col(o.accent || '#6fa0d0');
+    ball(0.1, c, 0, 0.08, 0, g, 1.1, 0.85, 1.1);
+    cyl(0.045, 0.06, 0.03, acc, 0, 0.165, 0, g);
+    const sp = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 5), c); sp.position.set(0.12, 0.1, 0); sp.rotation.z = -0.9; g.add(sp);
+    const h = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.014, 4, 8), c); h.position.set(-0.11, 0.09, 0); g.add(h);
+    for (const [x, z] of [[0.22, 0.12], [-0.2, 0.14]]) { cyl(0.07, 0.07, 0.012, c, x, 0.006, z, g, 10); cyl(0.04, 0.032, 0.06, c, x, 0.04, z, g); cyl(0.034, 0.034, 0.005, acc, x, 0.068, z, g); }
+    return { obj: baked(g), size: [1, 1], solid: false };
+  },
+  // thank-you cards standing in a row (on a mantelpiece)
+  cards(o) {
+    const g = new THREE.Group();
+    ['#f7d6e0', '#fff3a6', '#dcecf7', '#e6f4d8'].forEach((c, i) => {
+      const f = painted('card' + c, 3, 4, (p) => { p.rect(0, 0, 3, 4, c); p.px(1, 1, '#e97d8f'); p.px(1, 2, '#c8454f'); });
+      const m = front(0.17, 0.22, 0.015, col(c), f, -0.3 + i * 0.2, 0.11, 0, g); m.rotation.y = (i % 2 ? 0.25 : -0.2);
+    });
+    return { obj: baked(g), size: [1, 1], wall: true };
   },
 });
 

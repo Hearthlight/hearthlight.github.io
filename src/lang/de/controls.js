@@ -25,6 +25,7 @@ export const CONTROLS_DE = {
   'Special move': 'Spezialangriff',
   'Ultimate': 'Ulti',
   'Hotbar': 'Schnellleiste',
+  'Wheel': 'Mausrad',
   'Stick': 'Stick',
   'Push far': 'Weit ziehen',
   'Menus': 'Menüs',

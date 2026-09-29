@@ -254,7 +254,7 @@ export class Menu {
       ['Controls', { pad: 'Gamepad', phone: 'Phone', touch: 'Touch screen' }[device()] || 'Keyboard', 'controls'],
       ['Play with your phone', this.world.game.phone.connected ? 'Connected' : this.world.game.phone.net ? 'Waiting' : 'Not connected', 'phone'],
       ['Gamepad rumble', st.rumble === false ? 'Off' : 'On', 'rumble'],
-      ['Pixel size', { '-1': 'Smaller', 0: 'Auto', 1: 'Bigger' }[st.zoom] || 'Auto', 'zoom'],
+      ['Pixel size', st.zoom < 0 ? 'Smaller' : st.zoom > 0 ? 'Bigger' : 'Auto', 'zoom'],
       ['Language', LANGS[st.lang] || 'English', 'lang'],
       ['Saves & backups', '', 'saves'],
       ...(this.world.player ? [['Get unstuck', '', 'unstuck']] : []),
@@ -283,7 +283,7 @@ export class Menu {
     else if (key === 'phone') { if (activate || dir) w.game.phone.openPanel(); return; }
     else if (key === 'controls') { if (activate || dir) w.game.openControls(); return; }
     else if (key === 'rumble') { st.rumble = st.rumble === false; if (st.rumble) w.input.rumble(0.6, 0.4, 160); }
-    else if (key === 'zoom') { st.zoom = cycle([-1, 0, 1], st.zoom); w.game.applyZoom(); }
+    else if (key === 'zoom') { st.zoom = cycle([-1, 0, 1], Math.max(-1, Math.min(1, st.zoom || 0))); w.game.applyZoom(); }
     else if (key === 'lang') st.lang = cycle(Object.keys(LANGS), st.lang);
     else if (key === 'unstuck' && activate) { this.close(); w.unstick(); return; }
     else if (key === 'saves') { if (activate || dir) w.game.saves.open(); return; }

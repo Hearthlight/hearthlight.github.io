@@ -266,6 +266,7 @@ export class Rooms {
       if (!R.busy) continue;
       for (const l of R.lights) if (l.flicker) l.power = l.base * (0.85 + Math.sin(P.t * 13 + R.ox) * 0.08 + Math.sin(P.t * 7.3) * 0.07);
       for (const an of R.room.anims) an(P.t, ACTX);
+      R.room.updateSun(P.state.hour, P.state.weather);
       for (const f of R.room.furniture) {
         if (!f.lid) continue;
         if (f.openT > 0) f.openT -= dt;

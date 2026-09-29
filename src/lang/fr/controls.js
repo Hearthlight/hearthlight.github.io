@@ -27,6 +27,7 @@ export const CONTROLS_FR = {
   'Special move': 'Coup spécial',
   'Ultimate': 'Ultime',
   'Hotbar': 'Barre d’objets',
+  'Wheel': 'Molette',
   'Stick': 'Stick',
   'Push far': 'À fond',
   'Menus': 'Menus',

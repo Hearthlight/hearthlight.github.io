@@ -10,7 +10,7 @@ export const NPCS = {
     home: 'hall',
     title: 'Mayor of Marigold Cove',
     schedule: [
-      [6, 'hall', 'desk'], [10, 'overworld', 'plazaN'], [12.5, 'hall', 'desk'], [16, 'overworld', 'benchW'], [19, 'hall', 'home'],
+      [6, 'hall', 'desk'], [8.5, 'overworld', 'terraceA'], [10, 'overworld', 'plazaN'], [12.5, 'hall', 'desk'], [16, 'overworld', 'benchW'], [19, 'hall', 'home'],
     ],
     loves: ['coffee', 'pumpkin', 'seaglass', 'fish_moonfin'], likes: ['bread', 'cookie', 'apple', 'tart'], hates: ['fish_boot', 'fish_seaweed'],
   },
@@ -22,7 +22,7 @@ export const NPCS = {
     home: 'bakery',
     title: 'Baker',
     schedule: [
-      [6, 'bakery', 'counter'], [18.5, 'overworld', 'plazaE'], [20, 'bakery', 'home'],
+      [6, 'overworld', 'breadRack'], [7, 'bakery', 'counter'], [18.5, 'overworld', 'plazaE'], [20, 'bakery', 'home'],
     ],
     shop: 'bakery', shopHours: [7, 18.5],
     loves: ['strawberry', 'berry', 'apple', 'sunflower'], likes: ['daisy', 'poppy', 'turnip', 'carrot', 'coffee'], hates: ['fish_seaweed', 'fish_boot', 'mushroom'],
@@ -48,7 +48,7 @@ export const NPCS = {
     home: 'shack',
     title: 'Fisherman',
     schedule: [
-      [6, 'overworld', 'pierEnd'], [11, 'shack', 'counter'], [13, 'overworld', 'pierEnd'], [18, 'cafe', 'seatA'], [21, 'shack', 'home'],
+      [6, 'overworld', 'pierEnd'], [11, 'shack', 'counter'], [13, 'overworld', 'pierEnd'], [16, 'overworld', 'nets'], [18, 'cafe', 'seatA'], [21, 'shack', 'home'],
     ],
     shop: 'fish', shopHours: [11, 13],
     loves: ['fish_puffer', 'fish_moonfin', 'coffee', 'fish_mackerel'], likes: ['fish_sardine', 'fish_trout', 'bread', 'shell'], hates: ['sunflower', 'daisy', 'poppy'],
@@ -61,7 +61,7 @@ export const NPCS = {
     home: 'store',
     title: 'Florist & Seed Keeper',
     schedule: [
-      [7, 'store', 'counter'], [17, 'overworld', 'gardenS'], [19, 'store', 'home'],
+      [7, 'overworld', 'seedTable'], [8, 'store', 'counter'], [17, 'overworld', 'gardenS'], [19, 'store', 'home'],
     ],
     shop: 'store', shopHours: [8, 17],
     loves: ['sunflower', 'moonbloom', 'bluebell', 'poppy'], likes: ['daisy', 'turnip', 'carrot', 'strawberry', 'pumpkin'], hates: ['fish_boot', 'fish_seaweed'],
@@ -87,7 +87,7 @@ export const NPCS = {
     home: 'library',
     title: 'Librarian',
     schedule: [
-      [8, 'library', 'desk'], [15, 'overworld', 'benchE'], [17, 'library', 'desk'], [21, 'library', 'home'],
+      [8, 'library', 'desk'], [13, 'overworld', 'terraceB'], [15, 'overworld', 'benchE'], [17, 'library', 'desk'], [21, 'library', 'home'],
     ],
     loves: ['cocoa', 'tart', 'bluebell', 'moonbloom'], likes: ['cookie', 'daisy', 'coffee', 'seaglass'], hates: ['fish_boot', 'fish_crab'],
   },
@@ -112,10 +112,10 @@ export const NPCS = {
     home: 'wren',
     title: 'Painter',
     schedule: [
-      [8, 'overworld', 'riverbank'], [12, 'wren', 'paint'], [15, 'overworld', 'beachE'], [18, 'wren', 'home'],
+      [7, 'overworld', 'wrenPots'], [8, 'overworld', 'riverbank'], [12, 'wren', 'paint'], [15, 'overworld', 'beachE'], [18, 'wren', 'home'],
     ],
     scheduleAfterBridge: [
-      [8, 'overworld', 'easel'], [16, 'overworld', 'beachE'], [18, 'wren', 'home'],
+      [7, 'overworld', 'wrenPots'], [8, 'overworld', 'easel'], [16, 'overworld', 'beachE'], [18, 'wren', 'home'],
     ],
     loves: ['poppy', 'bluebell', 'sunflower', 'cookie', 'moonbloom'], likes: ['daisy', 'shell', 'seaglass', 'strawberry'], hates: ['fish_sardine', 'fish_mackerel', 'fish_boot', 'fish_seaweed'],
   },
@@ -131,7 +131,7 @@ Object.assign(NPCS, {
     home: 'farmhouse',
     title: 'Farmer of Honeydew Fields',
     schedule: [
-      [5.5, 'overworld', 'barnYard'], [9, 'overworld', 'fields'], [12, 'farmhouse', 'table'], [13, 'overworld', 'farmStand'], [17, 'overworld', 'fields'], [19, 'farmhouse', 'home'],
+      [5.5, 'overworld', 'barnYard'], [9, 'overworld', 'fields'], [12, 'farmhouse', 'table'], [13, 'overworld', 'farmStand'], [17, 'overworld', 'fields'], [18.5, 'overworld', 'rocker'], [20, 'farmhouse', 'home'],
     ],
     shop: 'farm', shopHours: [13, 17], shopSpot: 'farmStand',
     loves: ['pumpkin', 'honey', 'bread', 'tart'], likes: ['carrot', 'turnip', 'apple', 'coffee', 'sunflower', 'wheat'], hates: ['fish_boot', 'fish_seaweed', 'glowcap'],

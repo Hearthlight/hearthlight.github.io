@@ -3,6 +3,7 @@
 
 import { THREE, pixelTexture, toon } from '../render/r3d.js';
 import { seeThrough } from '../render/seethrough.js';
+import { windy } from '../render/wind.js';
 import { paintNoise, Painter } from '../art/surfaces.js';
 import { ramp } from '../engine/color.js';
 import { rng, hash2 } from '../engine/util.js';
@@ -124,7 +125,7 @@ function buildTreeChunk(r3d, objects) {
     if (sp === 'snowpine') { buildPines(r3d, group, list, coneGeo, trunkGeo, colliders, true); continue; }
     if (sp === 'palm') { buildPalms(r3d, group, list, colliders); continue; }
     const S = SPECIES[sp];
-    const leafMat = seeThrough(toon(r3d, { map: tuftTexture(S.leaf, sp.length * 7, { blossom: sp === 'cherry' }), key: 'leaf-' + sp }));
+    const leafMat = windy(seeThrough(toon(r3d, { map: tuftTexture(S.leaf, sp.length * 7, { blossom: sp === 'cherry' }), key: 'leaf-' + sp })), { amp: sp === 'big' ? 0.7 : 1 });
     const trunkMat = toon(r3d, { map: barkTexture(S.trunk), key: 'bark-' + sp });
     const tufts = [], trunks = [], fruits = [];
     const e = new THREE.Euler();
@@ -151,7 +152,7 @@ function buildTreeChunk(r3d, objects) {
 }
 
 function buildPines(r3d, group, list, coneGeo, trunkGeo, colliders, snowy = false) {
-  const leafMat = seeThrough(snowy ? toon(r3d, { map: leafTexture('#2f6a55', 79), key: 'leaf-snowpine' }) : toon(r3d, { map: leafTexture('#3f7f55', 77), key: 'leaf-pine' }));
+  const leafMat = windy(seeThrough(snowy ? toon(r3d, { map: leafTexture('#2f6a55', 79), key: 'leaf-snowpine' }) : toon(r3d, { map: leafTexture('#3f7f55', 77), key: 'leaf-pine' })), { amp: 0.75 });
   const trunkMat = toon(r3d, { map: barkTexture('#6b4330'), key: 'bark-pine' });
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   const cones = [], trunks = [], caps = [];
@@ -176,7 +177,7 @@ function buildPines(r3d, group, list, coneGeo, trunkGeo, colliders, snowy = fals
   cones.forEach((t, i) => im2.setMatrixAt(i, t.m));
   const all = [im1, im2];
   if (caps.length) {
-    const im3 = new THREE.InstancedMesh(coneGeo, seeThrough(toon(r3d, { color: 0xf1f5fc, key: 'snowcap' })), caps.length);
+    const im3 = new THREE.InstancedMesh(coneGeo, windy(seeThrough(toon(r3d, { color: 0xf1f5fc, key: 'snowcap' })), { amp: 0.75, weight: '0.8' }), caps.length);
     caps.forEach((t, i) => im3.setMatrixAt(i, t.m));
     all.push(im3);
   }
@@ -189,7 +190,7 @@ function buildPalms(r3d, group, list, colliders) {
   const mats = {
     ptrunk: toon(r3d, { color: 0xa8845a, key: 'palm-trunk' }),
     pring: toon(r3d, { color: 0x7a5a3a, key: 'palm-ring' }),
-    frond: seeThrough(toon(r3d, { map: palmTexture(), alphaTest: 0.5, key: 'palm-frond' })),
+    frond: windy(seeThrough(toon(r3d, { map: palmTexture(), alphaTest: 0.5, key: 'palm-frond' })), { amp: 1.3 }),
     coco: toon(r3d, { color: 0x6b4a2c, key: 'coco' }),
   };
   const geo = { ptrunk: G.cyl, pring: G.cyl, frond: G.fruit, coco: G.coco };
@@ -217,7 +218,7 @@ function buildPalms(r3d, group, list, colliders) {
 export function buildBushesRocks(r3d, objects) {
   const group = new THREE.Group();
   const colliders = [];
-  const bushMat = toon(r3d, { map: leafTexture('#4f9a4c', 21), key: 'leaf-bush' });
+  const bushMat = windy(toon(r3d, { map: leafTexture('#4f9a4c', 21), key: 'leaf-bush' }), { amp: 0.5 });
   const rockGeo = new THREE.IcosahedronGeometry(1, 0);
   const blob = new THREE.IcosahedronGeometry(1, 1);
   const berryMats = { red: toon(r3d, { color: 0xd9364a, key: 'berry-r' }), blue: toon(r3d, { color: 0x4b5fd0, key: 'berry-b' }) };

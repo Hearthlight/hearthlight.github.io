@@ -8,6 +8,7 @@ import { buildTrees, buildBushesRocks } from '../models/nature.js';
 import { buildProp, buildPier, buildBridge, buildLavender, buildWheat, buildReeds, buildLilypads } from '../models/props.js';
 import { TT, TILE } from './tiles.js';
 import { OX, OZ } from './overworld.js';
+import { WIND } from '../render/wind.js';
 
 const CHUNK = 64; // tiles per ground chunk
 
@@ -152,7 +153,9 @@ export class World3D {
     this.leafpiles = this.props.filter((p) => p.leafpile).map((p) => ({ x: p.obj.position.x, z: p.obj.position.z, obj: p.obj, t: 0 }));
 
     // piers & docks (from plank tiles)
-    this.root.add(buildPier(r3d, findPlankRects(map)));
+    const pier = buildPier(r3d, findPlankRects(map));
+    this.pierPosts = pier.userData.posts || [];
+    this.root.add(pier);
 
     // east bridge
     this.bridgeSpan = findBridgeSpan(map);
@@ -188,6 +191,7 @@ export class World3D {
   update(dt, t, tint) {
     const u = this.waterMat.uniforms;
     u.uTime.value = t;
+    WIND.t.value = t;
     if (tint) u.uTint.value.copy(tint);
     for (let i = 0; i < this.fires.length; i++) {
       const f = this.fires[i];
@@ -209,7 +213,7 @@ export class World3D {
         P.foam.scale.set(k, k, 1); P.foam.rotation.z = -t * 0.35;
       }
       else if (a.kind === 'flag' && a.part) a.part.rotation.y = Math.sin(t * 3.1 + a.phase) * 0.3;
-      else if (a.kind === 'rock' && a.part) a.part.rotation.x = Math.sin(t * 1.3 + a.phase) * 0.09;
+      else if (a.kind === 'rock' && a.part) a.part.rotation.x *= Math.max(0, 1 - dt * 1.5);
       else if (a.kind === 'laundry' && a.part) a.part.forEach((c, i) => { c.rotation.x = Math.sin(t * 2.1 + i * 1.3 + a.phase) * 0.14 + 0.05; c.rotation.y = Math.sin(t * 1.3 + i) * 0.08; });
       else if (a.kind === 'fall' && a.part) {
         const P = a.part.sheet ? a.part : { sheet: a.part };

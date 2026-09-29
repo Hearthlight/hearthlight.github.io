@@ -15,6 +15,9 @@ function mat(r3d, canvas, extra = {}) {
 }
 const C = (r3d, key, color, extra = {}) => toon(r3d, { color, key: 'bld-' + key, ...extra });
 const DORMER_ROOFS = new Map();
+// every roof's material, to darken in the rain (systems/weather.js)
+export const WET_ROOFS = new Set();
+const wet = (m) => (WET_ROOFS.add(m), m);
 
 // what a roof is made of: the building's own choice, else what its walls suggest
 function roofKind(st) {
@@ -104,7 +107,7 @@ export function buildBuilding(r3d, b) {
   const projH = Math.round((rise + U + run) * 16) + (gambrel ? 8 : 0);
   const roofW = Math.round((W + ox * 2) * 16);
   const roofTex = pixelTexture(paintRoof(roofW, projH, roofColor, { seed, kind: rk }));
-  const roofMat = toon(r3d, { map: roofTex });
+  const roofMat = wet(toon(r3d, { map: roofTex }));
   roofMat.shadowSide = THREE.DoubleSide;
   const gableMat = mat(r3d, paintWall(D * 16, Math.round(rise * 16) + 2, kind === 'brick' || kind === 'stone' ? 'boards' : kind, { ...wallStyle, wallColor: st.gableColor || st.wallColor }, seed + 2, { foundation: false }));
   gableMat.shadowSide = THREE.DoubleSide;
@@ -174,6 +177,8 @@ export function buildBuilding(r3d, b) {
     }
   }
   const rlen = hip ? Math.max(0.4, len - 2 * Math.min(run, len / 2 - 0.3)) + 0.06 : len + 0.06;
+  // (where the birds come down: along the ridge)
+  const perches = rlen > 0.9 ? [{ x0: x0 + W / 2 - rlen / 2 + 0.25, x1: x0 + W / 2 + rlen / 2 - 0.25, y: rk === 'thatch' ? yr + 0.2 : yr + 0.08, z: zM, kind: 'ridge' }] : [];
   if (thatch) {
     // a thatched ridge: a fat roll of straw pinned with crossed hazel spars
     const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, rlen, 8), C(r3d, 'thatch-ridge-' + RR.d, mix(RR.m, RR.d, 0.5)));
@@ -357,7 +362,7 @@ export function buildBuilding(r3d, b) {
   }));
   lights.push(lampAt ? { x: lampAt.x, y: lampAt.y, z: lampAt.z + 0.35, color: 0xffa24a, power: 0.8 } : { x: dx, y: 1.0, z: zF + 0.6, color: 0xffb35c, power: 0.7 });
 
-  return { group: g, glowMats: [frontMat, ...glowMats], lights, chimneys, colliders, doorWorld: { x: dx, z: zF } };
+  return { group: g, glowMats: [frontMat, ...glowMats], lights, chimneys, colliders, perches, doorWorld: { x: dx, z: zF } };
 }
 
 // A gabled dormer on the front slope: a little wall with a window (lit at night), its own
@@ -390,7 +395,7 @@ function addDormer(r3d, g, glowMats, { xd, zM, zF, oz, yb, yr, run, kind, wallSt
   const rw = Math.round((back + ov) * 16), rh = Math.max(6, Math.round(L * 16)), rkey = 'dormer-roof-' + roofColor + rk + rw + 'x' + rh;
   let rm = DORMER_ROOFS.get(rkey);
   if (!rm) {
-    rm = toon(r3d, { map: pixelTexture(paintRoof(rw, rh, roofColor, { seed: rw * 7 + rh, kind: rk, moss: 0, ridge: false })), side: THREE.DoubleSide });
+    rm = wet(toon(r3d, { map: pixelTexture(paintRoof(rw, rh, roofColor, { seed: rw * 7 + rh, kind: rk, moss: 0, ridge: false })), side: THREE.DoubleSide }));
     rm.shadowSide = THREE.DoubleSide;
     DORMER_ROOFS.set(rkey, rm);
   }
@@ -445,7 +450,7 @@ function addFrontGable(r3d, g, glowMats, { xc, gw, zF, oz, yb, yr, run, kind, wa
   // its roof: two slopes from the ridge down to the main eave's height, running back into the roof
   const L = Math.hypot(hw + ov, yg - yb);
   const rw = Math.max(8, Math.round((zE - zBack) * 16)), rh = Math.max(8, Math.round(L * 16));
-  const rm = toon(r3d, { map: pixelTexture(paintRoof(rw, rh, roofColor, { seed: seed + 13, kind: rk, moss: 0.4, ridge: false })), side: THREE.DoubleSide });
+  const rm = wet(toon(r3d, { map: pixelTexture(paintRoof(rw, rh, roofColor, { seed: seed + 13, kind: rk, moss: 0.4, ridge: false })), side: THREE.DoubleSide }));
   rm.shadowSide = THREE.DoubleSide;
   const uv = [[0, 0], [1, 0], [1, 1], [0, 1]];
   g.add(new THREE.Mesh(polyGeometry([
@@ -530,7 +535,7 @@ function addAnnex(r3d, g, glowMats, { ax0, ax1, zB: zB0, zF, wallH, kind, wallSt
   // the roof: from the house's end wall at the back down to the front, overhanging
   const zf = zF + 0.28, zb = zB - 0.1, L = Math.hypot(zf - zb, hHi - hLo + 0.06);
   const ext0 = side < 0 ? 0.22 : 0.02, ext1 = side < 0 ? 0.02 : 0.22;
-  const rm = toon(r3d, { map: pixelTexture(paintRoof(Math.round((AW + 0.24) * 16), Math.round(L * 16), roofColor, { seed: seed + 33, kind: rk === 'thatch' ? 'shakes' : rk, moss: 0.8, ridge: false })), side: THREE.DoubleSide });
+  const rm = wet(toon(r3d, { map: pixelTexture(paintRoof(Math.round((AW + 0.24) * 16), Math.round(L * 16), roofColor, { seed: seed + 33, kind: rk === 'thatch' ? 'shakes' : rk, moss: 0.8, ridge: false })), side: THREE.DoubleSide }));
   rm.shadowSide = THREE.DoubleSide;
   g.add(new THREE.Mesh(polyGeometry([quad([ax0 - ext0, hLo - 0.06, zf], [ax1 + ext1, hLo - 0.06, zf], [ax1 + ext1, hHi, zb], [ax0 - ext0, hHi, zb])]), rm));
   const eb = new THREE.Mesh(new THREE.BoxGeometry(AW + 0.26, 0.07, 0.06), C(r3d, 'trim-' + T.m, T.m));
@@ -559,7 +564,7 @@ function addTower(r3d, g, glowMats, { cx, cz, r, h, kind, wallStyle, roofColor, 
   g.add(corn);
   const rt = pixelTexture(paintRoof(Math.round(circ * 0.6), Math.round(r * 1.9 * 16), roofColor, { seed: seed + 42, kind: rk, moss: 0.5, eave: false }));
   rt.wrapS = THREE.RepeatWrapping; rt.repeat.set(2, 1);
-  const roof = new THREE.Mesh(new THREE.ConeGeometry(r + 0.2, r * 1.9, 16, 1, true, -Math.PI), toon(r3d, { map: rt, side: THREE.DoubleSide }));
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(r + 0.2, r * 1.9, 16, 1, true, -Math.PI), wet(toon(r3d, { map: rt, side: THREE.DoubleSide })));
   roof.position.set(cx, h + 0.08 + r * 0.95, cz);
   g.add(roof);
   const gold = C(r3d, 'gold', 0xf2c14e);
@@ -852,7 +857,7 @@ function buildLighthouse(r3d, b) {
   g.add(glass);
   const domeT = pixelTexture(paintRoof(48, 14, '#c8454f', { seed: 44, kind: 'tin', moss: 0, eave: false }));
   domeT.wrapS = THREE.RepeatWrapping; domeT.repeat.set(2, 1);
-  const dome = new THREE.Mesh(new THREE.ConeGeometry(0.82, 0.75, 12), toon(r3d, { map: domeT }));
+  const dome = new THREE.Mesh(new THREE.ConeGeometry(0.82, 0.75, 12), wet(toon(r3d, { map: domeT })));
   dome.position.set(cx, yTop + 1.35, cz);
   g.add(dome);
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), toon(r3d, { color: 0xf2c14e, key: 'gold' }));
@@ -894,7 +899,7 @@ function buildWindmill(r3d, b) {
   // cap roof
   const capT = pixelTexture(paintRoof(72, 26, '#b5524a', { seed: 45, kind: 'shingle', moss: 0.6, eave: false }));
   capT.wrapS = THREE.RepeatWrapping; capT.repeat.set(2, 1);
-  const cap = new THREE.Mesh(new THREE.ConeGeometry(1.35, 1.5, 8), toon(r3d, { map: capT }));
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(1.35, 1.5, 8), wet(toon(r3d, { map: capT })));
   const knob = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 6), toon(r3d, { color: 0x6b4330, key: 'millspar' }));
   knob.position.set(cx, towerH + 1.56, cz);
   g.add(knob);

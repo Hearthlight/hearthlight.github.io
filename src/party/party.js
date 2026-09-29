@@ -779,6 +779,9 @@ export class Party {
     const zk = ['Equal', 'NumpadAdd', 'Minus', 'NumpadSubtract', 'Digit0', 'Numpad0'].find((c) => g.input.keys.has(c)) || null;
     if (zk && zk !== this.prevZoomKey && !this.host.menu) this.host.act(zk.startsWith('Digit0') || zk === 'Numpad0' ? 'zauto' : 'zoom', zk === 'Equal' || zk === 'NumpadAdd' ? 1 : -1);
     this.prevZoomKey = zk;
+    // the wheel too (not over someone’s own menu, the map or the host’s menu: they scroll or zoom those)
+    this.wheelCd = Math.max(0, (this.wheelCd || 0) - dt);
+    if (g.input.mouse.wheel && !this.wheelCd && !this.bigMapOpen && !this.host.menu && !this.tvmenus.pointing()) { this.host.act('zoom', g.input.mouse.wheel < 0 ? 1 : -1); g.input.mouse.wheel = 0; this.wheelCd = 0.25; }
     this.saveT = (this.saveT || 0) + dt;
     if (this.saveT >= 30) { this.saveT = 0; this.saveNow(); }
     if (this.paused) { this.updatePaused(dt); return; }
@@ -891,7 +894,7 @@ export class Party {
       }
     }
     // villagers
-    for (const n of this.npcs) { n.baseY = n.seatY !== undefined ? n.seatY : w.groundY(n.pos); n.update(dt, this.npcWorld); }
+    for (const n of this.npcs) { n.baseY = n.seatY !== undefined ? n.seatY : w.groundY(n.pos) + (n.actSeat || 0); n.update(dt, this.npcWorld); }
     // the valley around everyone
     const focus = this.allPlayers().map((p) => p.pos);
     if (!focus.length) focus.push(LOBBY);
@@ -1348,6 +1351,7 @@ export class Party {
     if (mood && mood.amb && !room) { Object.assign(amb, mood.amb); if (night) { amb.birds = 0; amb.night = 0.5; amb.crickets = Math.max(amb.crickets || 0, 0.4); } }
     // indoors: the world outside goes quiet (a fireplace crackles)
     if (room) Object.assign(amb, { birds: 0, crickets: night ? 0.12 : 0, waves: 0, rain: 0, wind: 0, night: 0, fire: room.room.fires.length ? 0.45 : 0 });
+    else Object.assign(amb, this.world.placeSounds(c));      // (the fountain, a saw, the café, near the first view)
     audio.setAmbient(amb);
     this.lighting.weatherDim = (this.act && this.act.dim) || 0;
   }

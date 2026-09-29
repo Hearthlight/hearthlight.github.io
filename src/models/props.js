@@ -8,6 +8,8 @@ import { ramp, mix } from '../engine/color.js';
 import { rng, hash2 } from '../engine/util.js';
 import { flameCluster, embers } from './flame.js';
 import { leafTexture } from './treekit.js';
+import { windy } from '../render/wind.js';
+import { buildBoat } from './boats.js';
 
 const U = 1 / 16;
 export const KOI = { len: 9, arch: 0.42 };
@@ -258,10 +260,10 @@ const PROPS = {
     }
     const cup = toon(R3, { color: 0xfbf1dc, key: 'p-cup' });
     for (const x of [-0.1, 0.12]) g.add(mesh(new THREE.CylinderGeometry(0.035, 0.03, 0.05, 6), cup, x, 0.6, 0.05));
-    g.add(mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.5, 6), toon(R3, { color: 0xf4efe4, key: 'p-white' }), 0, 0.95, 0));
+    g.add(mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.5, 6), toon(R3, { color: 0xf4efe4, key: 'p-white' }), 0, 0.95, -0.34));
     const pp = new Painter(32, 4);
     for (let x = 0; x < 32; x++) pp.vline(x, 0, 4, Math.floor(x / 4) % 2 ? '#fbf1dc' : '#8a5a9e');
-    const para = mesh(new THREE.ConeGeometry(0.72, 0.3, 8, 1, true), toon(R3, { key: 'p-parasol', map: tex('parasol', () => pixelTexture(pp.c)), side: THREE.DoubleSide, shadowSide: THREE.DoubleSide }), 0, 1.62, 0);
+    const para = mesh(new THREE.ConeGeometry(0.62, 0.28, 8, 1, true), toon(R3, { key: 'p-parasol', map: tex('parasol', () => pixelTexture(pp.c)), side: THREE.DoubleSide, shadowSide: THREE.DoubleSide }), 0, 1.66, -0.4);
     g.add(para);
     bake(g);
     out.colliders.push({ x: o.x, z: o.y, r: 0.55 });
@@ -687,25 +689,13 @@ const PROPS = {
     bake(g);
     out.colliders.push({ x: o.x, z: o.y, r: 0.5 });
   },
-  boat(g, o, out, m) {
-    const shape = new THREE.Shape();
-    shape.moveTo(-1.0, 0);
-    shape.quadraticCurveTo(-0.6, 0.42, 0, 0.42);
-    shape.quadraticCurveTo(0.6, 0.42, 1.0, 0);
-    shape.quadraticCurveTo(0.6, -0.42, 0, -0.42);
-    shape.quadraticCurveTo(-0.6, -0.42, -1.0, 0);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.32, bevelEnabled: false, curveSegments: 6 });
-    geo.rotateX(-Math.PI / 2);
-    const hullCol = hash2(Math.floor(o.x), Math.floor(o.y), 3) < 0.5 ? 0x4d7fc4 : 0xd9594c;
-    const hull = mesh(geo, [toon(R3, { color: 0x6b4330, key: 'boatin' }), toon(R3, { color: hullCol, key: 'boathull' + hullCol })], 0, 0, 0);
-    g.add(hull);
-    g.add(mesh(B(0.12, 0.05, 0.7), m.wood, 0.1, 0.33, 0));
-    const oar = mesh(B(0.9, 0.04, 0.08), m.wood, -0.2, 0.36, 0.2);
-    oar.rotation.y = 0.3;
-    g.add(oar);
-    if (o.flip) g.rotation.y = Math.PI * 0.9;
-    else g.rotation.y = 0.15;
-    out.colliders.push({ x: o.x - 0.5, z: o.y, r: 0.45 }, { x: o.x + 0.5, z: o.y, r: 0.45 });
+  // a rowboat moored (the vehicles' own, its oars shipped inside)
+  boat(g, o, out) {
+    const b = buildBoat(R3, 'row', { look: Math.floor(hash2(Math.floor(o.x), Math.floor(o.y), 3) * 4), moored: true });
+    b.rotation.y = Math.PI / 2;
+    g.add(b);
+    g.rotation.y = o.flip ? Math.PI * 0.9 : 0.15;
+    out.colliders.push({ x: o.x - 0.6, z: o.y, r: 0.5 }, { x: o.x + 0.7, z: o.y, r: 0.5 });
   },
   easel(g, o, out, m) {
     const legs = [[-0.2, 0.1], [0.2, 0.1], [0, -0.2]];
@@ -995,9 +985,10 @@ const PROPS = {
     out.colliders.push({ x: o.x, z: o.y, r: 0.42 });
   },
   tent(g, o, out, m) {
-    // a ridge tent of orange canvas: panels sewn together, a patch, the door flaps tied back on a
-    // dark inside, a ridge pole with a pennant, guy ropes out to pegs
-    const w = 1.8, d = 2.0, hgt = 1.3;
+    // a ridge tent of orange canvas (or o.color's): panels sewn together, a patch, the door flaps tied
+    // back on a dark inside, a ridge pole with a pennant, guy ropes out to pegs
+    const w = 1.8, d = 2.0, hgt = 1.3, c0 = o.color || '#e8883a', Rc = ramp(c0);
+    const cR = o.color ? Rc.d : '#d4702c', cF = o.color ? Rc.l : '#f0a060', cRoll = o.color ? mix(c0, Rc.d, 0.5) : '#e07a38';
     const canvasTex = (shade) => tex('tent' + shade, () => {
       const R = ramp(shade), p = new Painter(32, 20), r = rng(3);
       p.rect(0, 0, 32, 20, R.m);
@@ -1008,22 +999,22 @@ const PROPS = {
       return pixelTexture(p.c);
     });
     const cm = (shade, key) => { const t = toon(R3, { map: canvasTex(shade), side: THREE.DoubleSide, key }); t.shadowSide = THREE.DoubleSide; return t; };
-    const L = cm('#e8883a', 'tentcanvasL'), Rm = cm('#d4702c', 'tentcanvasR');
+    const L = cm(c0, 'tentcanvasL' + c0), Rm = cm(cR, 'tentcanvasR' + c0);
     const uv = [[0, 0], [1, 0], [1, 1], [0, 1]];
     g.add(new THREE.Mesh(polyGeometry([quad([-w / 2, 0, -d / 2], [-w / 2, 0, d / 2], [0, hgt, d / 2], [0, hgt, -d / 2], uv)]), L));
     g.add(new THREE.Mesh(polyGeometry([quad([w / 2, 0, d / 2], [w / 2, 0, -d / 2], [0, hgt, -d / 2], [0, hgt, d / 2], uv)]), Rm));
-    const back = toon(R3, { color: 0xd4702c, key: 'tentback', side: THREE.DoubleSide });
+    const back = toon(R3, { color: new THREE.Color(cR).getHex(), key: 'tentback' + c0, side: THREE.DoubleSide });
     g.add(new THREE.Mesh(polyGeometry([tri([w / 2, 0, -d / 2], [-w / 2, 0, -d / 2], [0, hgt, -d / 2])]), back));
     // the front: the doorway open on the dark inside, its two flaps rolled & tied to the sides
     g.add(new THREE.Mesh(polyGeometry([tri([-w / 2, 0, d / 2 - 0.02], [w / 2, 0, d / 2 - 0.02], [0, hgt, d / 2 - 0.02])]), toon(R3, { color: 0x2a1f26, key: 'tentdoor2', side: THREE.DoubleSide })));
-    const flap = toon(R3, { color: 0xf0a060, key: 'tentfront', side: THREE.DoubleSide });
+    const flap = toon(R3, { color: new THREE.Color(cF).getHex(), key: 'tentfront' + c0, side: THREE.DoubleSide });
     g.add(new THREE.Mesh(polyGeometry([
       tri([-w / 2, 0, d / 2], [-0.36, 0, d / 2 + 0.03], [0, hgt, d / 2]),
       tri([0.36, 0, d / 2 + 0.03], [w / 2, 0, d / 2], [0, hgt, d / 2]),
     ]), flap));
     for (const s of [-1, 1]) {
       // (along the doorway's edge, rising from its foot to the ridge)
-      const roll = mesh(new THREE.CylinderGeometry(0.06, 0.075, 0.8, 6), toon(R3, { color: 0xe07a38, key: 'tentroll' }), s * 0.24, 0.42, d / 2 + 0.06);
+      const roll = mesh(new THREE.CylinderGeometry(0.06, 0.075, 0.8, 6), toon(R3, { color: new THREE.Color(cRoll).getHex(), key: 'tentroll' + c0 }), s * 0.24, 0.42, d / 2 + 0.06);
       roll.rotation.z = s * 0.27;
       g.add(roll);
     }
@@ -1499,8 +1490,8 @@ const PROPS = {
       root.rotation.set(Math.sin(a) * 0.9, 0, -Math.cos(a) * 0.9);
       g.add(root);
     }
-    const leaf = toon(R3, { key: 'p-willowtuft', map: tex('willowtuft', () => leafTexture('#86b85e', 91)) });
-    const leafD = toon(R3, { key: 'p-willowtuftd', map: tex('willowtuftd', () => leafTexture('#6a9e50', 92)) });
+    const leaf = windy(toon(R3, { key: 'p-willowtuft', map: tex('willowtuft', () => leafTexture('#86b85e', 91)) }), { weight: '1.0' });
+    const leafD = windy(toon(R3, { key: 'p-willowtuftd', map: tex('willowtuftd', () => leafTexture('#6a9e50', 92)) }), { weight: '1.0' });
     const ico = new THREE.IcosahedronGeometry(1, 1), rr = rng(Math.floor(o.x * 11 + o.y * 5));
     const tufts = [[0, 3.55, 0, 1.05]];
     for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2 + rr() * 0.4; tufts.push([Math.cos(a) * 1.55, 3.1 + rr() * 0.3, Math.sin(a) * 1.25, 0.8 + rr() * 0.2]); }
@@ -1518,7 +1509,9 @@ const PROPS = {
       return pixelTexture(p.c);
     };
     const vines = new THREE.Group();
-    const vm = [toon(R3, { key: 'p-frond1', map: tex('frond1', () => strand('#9fcc6a', '#7fae5a')), alphaTest: 0.5, side: THREE.DoubleSide }), toon(R3, { key: 'p-frond2', map: tex('frond2', () => strand('#8fbe62', '#6a9e50')), alphaTest: 0.5, side: THREE.DoubleSide })];
+    // (the fronds hang from the crown: their tips swing, their tops hold)
+    const fw = { weight: 'clamp((3.1 - position.y) / 2.6, 0.0, 1.0)', amp: 1.4 };
+    const vm = [windy(toon(R3, { key: 'p-frond1', map: tex('frond1', () => strand('#9fcc6a', '#7fae5a')), alphaTest: 0.5, side: THREE.DoubleSide }), fw), windy(toon(R3, { key: 'p-frond2', map: tex('frond2', () => strand('#8fbe62', '#6a9e50')), alphaTest: 0.5, side: THREE.DoubleSide }), fw)];
     for (let i = 0; i < 40; i++) {
       const a = (i / 40) * Math.PI * 2 + rr() * 0.15;
       const rad = 1.9 + rr() * 0.5, len = 1.5 + rr() * 1.3;
@@ -1624,8 +1617,8 @@ export function buildLavender(r3d, list) {
   const g = new THREE.Group();
   if (!list.length) return g;
   const K = 8;
-  const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), toon(r3d, { color: 0x6f9a5a, key: 'lavleaf' }), list.length);
-  const spikes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon(r3d, { color: 0xffffff, key: 'lavflower' }), list.length * K);
+  const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 1), windy(toon(r3d, { color: 0x6f9a5a, key: 'lavleaf' }), { amp: 0.35 }), list.length);
+  const spikes = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), windy(toon(r3d, { color: 0xffffff, key: 'lavflower' }), { weight: 'blade', amp: 0.8 }), list.length * K);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   const c = new THREE.Color();
   const cols = [0x8a64c8, 0x9b7ad8, 0xb89ae8, 0x7a58b8];
@@ -1647,8 +1640,8 @@ export function buildReeds(r3d, list) {
   const g = new THREE.Group();
   if (!list.length) return g;
   const K = 6;
-  const stems = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon(r3d, { color: 0xffffff, key: 'reedstem' }), list.length * K);
-  const heads = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon(r3d, { color: 0x6b4330, key: 'cattail' }), list.length * 2);
+  const stems = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), windy(toon(r3d, { color: 0xffffff, key: 'reedstem' }), { weight: 'blade' }), list.length * K);
+  const heads = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), windy(toon(r3d, { color: 0x6b4330, key: 'cattail' }), { weight: 'top' }), list.length * 2);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler();
   const c = new THREE.Color();
   let hi = 0;
@@ -1694,8 +1687,8 @@ export function buildWheat(r3d, fields) {
       stalks.push([x + (j - 0.5) * 0.1, z, 0.42 + j * 0.16]);
     }
   }
-  const st = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon(r3d, { color: 0xc9a44e, key: 'wheatstalk' }), stalks.length);
-  const hd = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), toon(r3d, { color: 0xf0cf6a, key: 'wheathead' }), stalks.length);
+  const st = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), windy(toon(r3d, { color: 0xc9a44e, key: 'wheatstalk' }), { weight: 'blade', amp: 0.9 }), stalks.length);
+  const hd = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), windy(toon(r3d, { color: 0xf0cf6a, key: 'wheathead' }), { weight: 'top', amp: 0.9 }), stalks.length);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3();
   stalks.forEach(([x, z, h], i) => {
     st.setMatrixAt(i, m4.compose(p.set(x, h / 2, z), q.identity(), s.set(0.05, h, 0.05)));
@@ -1721,6 +1714,7 @@ export function buildPier(r3d, rects) {
     const posts = [];
     if (h > w) { for (let z = y + 0.5; z < y + h; z += 2) posts.push([x + 0.05, z], [x + w - 0.05, z]); }
     else { for (let xx = x + 0.3; xx < x + w; xx += 2) posts.push([xx, y + 0.05], [xx, y + h - 0.05]); }
+    (g.userData.posts = g.userData.posts || []).push(...posts);
     for (const [px, pz] of posts) {
       const p = mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.8, 6), m.darkWood, px, -0.2, pz);
       g.add(p);

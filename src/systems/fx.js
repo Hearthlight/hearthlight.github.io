@@ -4,6 +4,7 @@
 
 import { rng } from '../engine/util.js';
 import { t } from '../i18n.js';
+import { WIND } from '../render/wind.js';
 
 const R = rng(99);
 
@@ -67,6 +68,9 @@ export class Fx {
         case 'ring':
           p.life = 0.8; p.color = opts.color || '#e7f6f4';
           break;
+        case 'plink': // a raindrop's ring on a puddle or the water
+          p.life = 0.4 + R() * 0.2; p.color = opts.color || '#dcebf5';
+          break;
         case 'flash':
           p.life = 0.5; p.color = opts.color || '#fff3c4';
           break;
@@ -96,7 +100,8 @@ export class Fx {
       p.age += dt;
       if (p.kind === 'leaf') { p.x += Math.sin(p.age * 3 + p.phase) * dt * 0.6; }
       if (p.kind === 'note') { p.x += Math.sin(p.age * 4 + p.phase) * dt * 0.4; }
-      if (p.kind === 'chimney') { p.vy *= 1 - 0.22 * dt; p.vx += 0.05 * dt; p.x += Math.sin(p.age * 1.7 + p.phase) * dt * 0.08; }
+      // (a breeze bends it over: the harder the wind, the flatter the plume)
+      if (p.kind === 'chimney') { const k = WIND.amp.value / 0.055; p.vy *= 1 - 0.22 * k * dt; p.vx += 0.05 * k * k * dt; p.x += Math.sin(p.age * 1.7 + p.phase) * dt * 0.08; }
       p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       if (['sparkle', 'splash', 'water', 'soil', 'dust'].includes(p.kind)) p.vy -= 6 * dt;
       if (p.grav) { p.vy -= 1.2 * dt; p.vx *= 0.985; }
@@ -152,6 +157,14 @@ export class Fx {
           ctx.globalAlpha = 0.55 * (1 - k);
           ctx.fillStyle = p.color;
           ctx.fillRect(x - size / 2, y - size / 2, size, size);
+          ctx.globalAlpha = 1;
+          break;
+        }
+        case 'plink': {
+          const sc = r3d.ppu / 16, rr = (0.7 + k * 3.3) * sc, n = rr < 2 ? 6 : 10;
+          ctx.globalAlpha = 0.8 * (1 - k);
+          ctx.fillStyle = p.color;
+          for (let a = 0; a < n; a++) { const ang = (a / n) * Math.PI * 2; ctx.fillRect(Math.round(x + Math.cos(ang) * rr), Math.round(y + Math.sin(ang) * rr * 0.5), 1, 1); }
           ctx.globalAlpha = 1;
           break;
         }

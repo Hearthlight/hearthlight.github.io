@@ -3,7 +3,7 @@
 
 import { THREE, toon } from '../render/r3d.js';
 import { World3D } from '../world/world3d.js';
-import { Interior3D, INTERIORS } from '../world/interiors.js';
+import { Interior3D, INTERIORS, homeMementos } from '../world/interiors.js';
 import '../world/wildrooms.js';
 import { Collision, findUnstuck, stuckAt } from '../world/collision.js';
 import { TT, TINFO } from '../world/tiles.js';
@@ -33,6 +33,9 @@ import { t, tn, num } from '../i18n.js';
 import { Wild } from '../solo/wild.js';
 import { SEE } from '../render/seethrough.js';
 import { chimneySmoke } from '../models/buildings.js';
+import { windFor } from '../render/wind.js';
+import { PerchBirds } from '../systems/perches.js';
+import { WeatherDecor } from '../systems/weather.js';
 
 const MINUTES_PER_SEC = 1.6; // game minutes per real second (≈12.5 real minutes per day)
 
@@ -101,6 +104,8 @@ export class World {
     this.critters = new Critters(this).build();
     this.critters.onSpot = (kind) => this.spotCritter(kind);
     this.over.root.add(this.critters.root);
+    this.perchBirds = new PerchBirds(this).build();
+    this.weatherDecor = new WeatherDecor(this).build();
     this.hud.buildMinimap(m, this.over);
     this.trees = m.objects.filter((o) => ['oak', 'pine', 'cherry', 'apple', 'palm', 'maple', 'snowpine'].includes(o.type));
     // lighthouse beam (visible once restored)
@@ -260,6 +265,7 @@ export class World {
     for (const m of Object.values(this.maps)) m.root.visible = false;
     const m = id === 'overworld' ? this.maps.overworld : this.interiorFor(id);
     m.root.visible = true;
+    if (id === 'home') m.room.setExtras('memento', homeMementos(this.state));
     this.player.map = id;
     this.player.pos = { x, z };
     this.pet.map = id;
@@ -366,9 +372,16 @@ export class World {
     const ACT = {
       pierEnd: 'fish', sawing: 'saw', gardenS: 'garden', benchW: 'bench', benchE: 'bench', riverbank: 'river', beachE: 'sketch', fountainS: n.id === 'pip' ? 'play' : 'stroll', beachW: n.id === 'pip' ? 'play' : 'stroll', plazaW: n.id === 'pip' ? 'play' : 'stroll', plazaE: 'stroll', plazaN: 'stroll', bridgeW: 'river',
       farmStand: 'stand', merchantSpot: 'stand', fields: 'farm', barnYard: 'feed', campfire: 'campfire', bonfire: 'campfire', camp: 'ranger', lakeShore: 'lookout', ferryHelm: 'captain', islandBeach: 'stroll', tentDoor: 'sleep', shrine: 'pray',
+      breadRack: 'bread', terraceA: 'cafe', terraceB: 'cafe', rocker: 'rock', wrenPots: 'garden', seedTable: 'garden', nets: 'mend',
     };
-    const FACES = { farmStand: { x: 0, z: 1 }, merchantSpot: { x: 0, z: 1 }, ferryHelm: { x: 0, z: 1 }, lakeShore: { x: 0, z: -1 }, shrine: { x: 0, z: -1 } };
-    return { map, x, z, spot, act: ACT[spot] || spot, hide: spot === 'tentDoor', face: map === 'overworld' ? FACES[spot] || null : { x: 0, z: 1 } };
+    const FACES = {
+      farmStand: { x: 0, z: 1 }, merchantSpot: { x: 0, z: 1 }, ferryHelm: { x: 0, z: 1 }, lakeShore: { x: 0, z: -1 }, shrine: { x: 0, z: -1 },
+      breadRack: { x: -1, z: 0 }, terraceA: { x: 1, z: 0 }, terraceB: { x: -1, z: 0 }, rocker: { x: 0, z: 1 }, wrenPots: { x: -1, z: 0.2 }, seedTable: { x: -1, z: 0 }, nets: { x: 0, z: -1 },
+    };
+    // (seats: how high the sitter's feet float, so they sit on the bench or chair, not before it)
+    const SEATS = { benchW: 0.3, benchE: 0.3, terraceA: 0.235, terraceB: 0.235, rocker: 0.215 };
+    const rocker = spot === 'rocker' && this.over ? (this.over.props.find((p) => p.kind === 'rocker') || {}).animPart : null;
+    return { map, x, z, spot, act: ACT[spot] || spot, hide: spot === 'tentDoor', face: map === 'overworld' ? FACES[spot] || null : { x: 0, z: 1 }, seat: map === 'overworld' ? SEATS[spot] || 0 : 0, rocker };
   }
 
   placeNpcsNow() {
@@ -1384,7 +1397,7 @@ export class World {
     if (this.mapId === 'overworld') {
       // tall/large canvases get a closer camera so villagers stay readable
       const r = this.r3d;
-      return r.h / 16 > 27 || r.w / 16 > 44 ? 32 : 16;
+      return (this.game.settings.zoom || 0) >= 0 && (r.h / 16 > 27 || r.w / 16 > 44) ? 32 : 16;
     }
     // rooms zoom in as far as their width allows; tall rooms scroll gently
     const def = INTERIORS[this.mapId];
@@ -1474,8 +1487,9 @@ export class World {
     const room = !out && this.maps[this.mapId] && this.maps[this.mapId].room;
     const hearth = room && room.furniture.some((f) => f.def.type === 'fireplace') ? 0.5 : 0;
     const mood = this.wild && this.wild.mood();
+    const loc = out ? this.placeSounds(p) : {};
     if (mood && mood.amb) {
-      const amb = { birds: 0, crickets: 0, waves: 0, rain: s.weather === 'rain' ? 0.9 : 0, wind: 0.15, fire: 0, night: night ? 0.5 : 0, ...mood.amb };
+      const amb = { birds: 0, crickets: 0, waves: 0, rain: s.weather === 'rain' ? 0.9 : 0, wind: 0.15, fire: 0, night: night ? 0.5 : 0, ...mood.amb, ...loc };
       if (night) { amb.birds = 0; amb.crickets = Math.max(amb.crickets || 0, 0.4); }
       audio.setAmbient(amb);
       return;
@@ -1488,7 +1502,20 @@ export class World {
       wind: out ? 0.15 + (this.mapId === 'overworld' && p.z < 30 && p.x > 150 ? 0.3 : 0) + (this.lastArea === 'Frostpine Ridge' ? 0.35 : 0) : 0,
       fire: Math.max(hearth, nearFire * 0.7),
       night: out && night ? 0.5 : 0,
+      ...loc,
     });
+  }
+
+  // the valley's places, heard as you come near: the plaza's fountain, Theo sawing at his sawhorse,
+  // the café's terrace while it's open (not in the rain)
+  placeSounds(p) {
+    const s = this.state, near = (x, z, r) => clamp(1 - Math.hypot(p.x - x, p.z - z) / r, 0, 1);
+    const f = this.over.fountain, theo = this.npcs.find((n) => n.id === 'theo');
+    return {
+      fountain: f ? Math.pow(near(f.x, f.z, 12), 1.3) * 0.9 : 0,
+      saw: theo && theo.map === 'overworld' && theo.activity === 'saw' && !theo.moving ? near(theo.pos.x, theo.pos.z, 15) * 0.85 : 0,
+      cafe: s.hour > 8 && s.hour < 20 && s.weather !== 'rain' ? near(105, 67.6, 11) * 0.8 : 0,
+    };
   }
 
   updateWeatherFx(instant) {
@@ -1694,7 +1721,7 @@ export class World {
       this.pet.update(dt, this.player, col, s.hour >= 21 || s.hour < 6);
     } else this.pet.update(dt, this.player, null, false, true);
     if (this.wild) this.wild.afterMove(dt);
-    for (const n of this.npcs) if (!(this.sail && this.sail.captain === n)) n.baseY = n.map === 'overworld' ? this.groundY(n.pos) : 0;
+    for (const n of this.npcs) if (!(this.sail && this.sail.captain === n)) n.baseY = (n.map === 'overworld' ? this.groundY(n.pos) : 0) + (n.actSeat || 0);
     this.updateNpcs(dt);
     this.updateChatter(dt);
     this.fishing.update(dt, input);
@@ -1747,6 +1774,7 @@ export class World {
       for (const l of room.lights) if (l.flicker) l.power = (l.basePower || (l.basePower = l.power)) * (0.85 + Math.sin(this.t * 13) * 0.08 + Math.sin(this.t * 7.3) * 0.07);
       const actx = { millRunning: !!s.flags.millFixed };
       for (const a of room.anims) a(this.t, actx);
+      room.updateSun(s.hour, s.weather);
     }
     // footsteps
     if (this.player.moving) {
@@ -1779,6 +1807,9 @@ export class World {
   updateScenery(dt, focus) {
     const s = this.state;
     this.over.update(dt, this.t);
+    windFor(s.weather, dt);
+    if (this.perchBirds) this.perchBirds.update(dt, this.t, focus, s.hour, s.weather);
+    if (this.weatherDecor) this.weatherDecor.update(dt, focus, s.hour, s.weather);
     this.forage.updateFireflies(dt, this.t, s.hour >= 19.5 || s.hour < 4.5, true);
     if (this.beam.visible) this.beam.rotation.y = this.t * 0.6;
     this.clouds.material.uniforms.drift.value.set(this.t * 0.9 / CLOUD_SPAN, this.t * 0.18 / CLOUD_SPAN);
@@ -1881,8 +1912,12 @@ export class World {
     const input = this.input, s = this.state;
     // hotbar
     for (let i = 1; i <= HOTBAR; i++) if (input.pressed('hot' + i)) this.selectHot(i - 1);
-    if (input.pressed('hotPrev') || input.mouse.wheel < 0) this.selectHot((s.hot + HOTBAR - 1) % HOTBAR);
-    if (input.pressed('hotNext') || input.mouse.wheel > 0) this.selectHot((s.hot + 1) % HOTBAR);
+    // the wheel zooms (with Shift held, it turns the hotbar); a notch at a time, even on a trackpad
+    const wh = input.mouse.wheel, shift = input.keys.has('ShiftLeft') || input.keys.has('ShiftRight');
+    this.zoomCd = Math.max(0, (this.zoomCd || 0) - dt);
+    if (wh && !shift && !this.zoomCd && this.game.zoomStep(wh < 0 ? 1 : -1)) this.zoomCd = 0.25;
+    if (input.pressed('hotPrev') || (shift && wh < 0)) this.selectHot((s.hot + HOTBAR - 1) % HOTBAR);
+    if (input.pressed('hotNext') || (shift && wh > 0)) this.selectHot((s.hot + 1) % HOTBAR);
     if (input.mouse.pressed) {
       for (const r of this.hud.hotRects) if (input.mouseIn(r.x, r.y, r.w, r.h)) { this.selectHot(r.i); input.mouse.pressed = false; }
     }

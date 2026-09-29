@@ -3,7 +3,7 @@
 // wall stands at z=0 facing south, and the door gap is in the (cut-away) front.
 
 import { THREE, pixelTexture, toon } from '../render/r3d.js';
-import { Painter, paintPlanks, wallFill } from '../art/surfaces.js';
+import { Painter, wallFill } from '../art/surfaces.js';
 import { buildFurniture } from '../models/furniture.js';
 import { ramp, mix as mixc } from '../engine/color.js';
 import { rng, hash2 } from '../engine/util.js';
@@ -29,6 +29,8 @@ export const INTERIORS = {
       { type: 'shelf', x: 0.9, z: 4.8, w: 1.2, kind: 'books' },
       { type: 'plant', x: 8.4, z: 5.9, rw: true },
       { type: 'stove', x: 7.9, z: 0.45 },
+      { type: 'wallshelf', x: 0.85, z: 0.05, y: 1.5, w: 0.9, kind: 'plates' }, { type: 'frames', x: 5.8, z: 0.05, y: 1.75 },
+      { type: 'teaset', x: 6.8, z: 3.4, y: 0.66 }, { type: 'bookstack', x: 0.45, z: 6.1, n: 3 }, { type: 'basket', x: 8.45, z: 4.4, kind: 'yarn', rw: true },
     ],
   },
   bakery: {
@@ -42,6 +44,8 @@ export const INTERIORS = {
       { type: 'table', x: 1.8, z: 5.2, cloth: '#f4a4b6' }, { type: 'chair', x: 1.8, z: 4.4 },
       { type: 'table', x: 7.3, z: 5.2, cloth: '#f4a4b6' }, { type: 'chair', x: 7.3, z: 4.4 },
       { type: 'plant', x: 0.5, z: 3.3 }, { type: 'painting', x: 7.7, z: 0.12, y: 2.0, w: 0.8, kind: 'meadow' },
+      { type: 'pans', x: 1.75, z: 0.05, y: 1.75, w: 1.3 }, { type: 'basket', x: 7.45, z: 2.75, kind: 'bread' }, { type: 'chalkboard', x: 8.5, z: 3.3, rot: -0.4 },
+      { type: 'sacks', x: 0.55, z: 6.2 },
     ],
   },
   store: {
@@ -54,6 +58,7 @@ export const INTERIORS = {
       { type: 'crate', x: 7.3, z: 3.4, fill: '#f4a4b6' }, { type: 'crate', x: 8.2, z: 3.4, fill: '#ffd66b' },
       { type: 'plant', x: 0.5, z: 5.8, color: '#4f955a' }, { type: 'plant', x: 8.5, z: 5.8 }, { type: 'plant', x: 0.5, z: 2.6, color: '#7fbf5a' },
       { type: 'vase', x: 6.1, z: 2.6 },
+      { type: 'herbs', x: 5.85, z: 0.05, y: 1.95, w: 1.2 }, { type: 'basket', x: 7.7, z: 5.6, kind: 'veg' }, { type: 'wallshelf', x: 5.85, z: 0.05, y: 1.2, w: 1.1, kind: 'pots' },
     ],
   },
   cafe: {
@@ -68,6 +73,7 @@ export const INTERIORS = {
       { type: 'table', x: 2.2, z: 4.6 }, { type: 'chair', x: 2.2, z: 5.4, rot: Math.PI },
       { type: 'rug', x: 5, z: 4.6, color: '#8a64b8', rx: 1.4, rz: 0.9 },
       { type: 'plant', x: 9.5, z: 3.4 }, { type: 'lamp', x: 9.5, z: 6.2 }, { type: 'strings', x: 5.1, z: 0.15, y: 2.2 },
+      { type: 'frames', x: 7.4, z: 0.05, y: 1.75, coat: '#8a64b8' }, { type: 'chalkboard', x: 6.4, z: 6.3, rot: 0.3 }, { type: 'teaset', x: 7.1, z: 1.95, y: 0.66, color: '#fbf1dc', accent: '#8a64b8' },
     ],
   },
   hall: {
@@ -81,6 +87,7 @@ export const INTERIORS = {
       { type: 'board', x: 9.6, z: 0.12, y: 1.45, id: 'fundboard' },
       { type: 'sofa', x: 2.2, z: 4.8, color: '#4f6aa3' }, { type: 'plant', x: 0.5, z: 6.3 }, { type: 'plant', x: 10.5, z: 6.3 },
       { type: 'rug', x: 5.5, z: 4.8, color: '#c8454f', round: false }, { type: 'globe', x: 9.8, z: 4.6 },
+      { type: 'frames', x: 2.6, z: 0.05, y: 1.7, coat: '#4f6aa3' }, { type: 'bookstack', x: 6.3, z: 2.0, y: 0.8, n: 2, seed: 2 },
     ],
   },
   library: {
@@ -96,6 +103,7 @@ export const INTERIORS = {
       { type: 'armchair', x: 9.1, z: 5.1, color: '#3f9b98' }, { type: 'lamp', x: 10.2, z: 5.1 },
       { type: 'globe', x: 8.2, z: 3.2 }, { type: 'rug', x: 5.5, z: 5.8, color: '#3f7f7c' },
       { type: 'plant', x: 0.5, z: 3.2 }, { type: 'shelf', x: 0.7, z: 7.2, w: 1, kind: 'books' },
+      { type: 'bookstack', x: 3.7, z: 6.5, n: 4 }, { type: 'bookstack', x: 8.2, z: 6.6, n: 3, seed: 3 }, { type: 'teaset', x: 4.9, z: 3.0, y: 0.8, color: '#dcecf7', accent: '#3f7f7c' },
     ],
   },
   carpenter: {
@@ -107,6 +115,7 @@ export const INTERIORS = {
       { type: 'counter', x: 4.5, z: 3.0, w: 3, color: '#b07b50', register: true },
       { type: 'chair', x: 7.5, z: 4.4 }, { type: 'table', x: 8.5, z: 4.4 }, { type: 'dresser', x: 8.9, z: 2.6 },
       { type: 'barrel', x: 0.6, z: 3.2 }, { type: 'barrel', x: 0.6, z: 4.2, fill: '#b07b50' }, { type: 'plant', x: 9.5, z: 6.2 },
+      { type: 'shavings', x: 1.7, z: 1.75, w: 1.8, d: 0.9 }, { type: 'shavings', x: 7.7, z: 1.5, w: 1.0, d: 0.6 }, { type: 'pegs', x: 6.35, z: 0.05, y: 1.6, kind: 'tools' },
     ],
   },
   shack: {
@@ -119,6 +128,7 @@ export const INTERIORS = {
       { type: 'bed', x: 6.9, z: 1.2, color: '#4e73b6' },
       { type: 'barrel', x: 0.6, z: 3.4, fill: '#7cb6e0' }, { type: 'barrel', x: 0.6, z: 4.4 },
       { type: 'crate', x: 7.3, z: 4.6, fill: '#7cb6e0' }, { type: 'tank', x: 5.4, z: 0.5 },
+      { type: 'nets', x: 5.3, z: 0.05, y: 1.95 }, { type: 'oars', x: 6.9, z: 0.05, y: 1.55 }, { type: 'basket', x: 1.5, z: 4.9, kind: 'apples' },
     ],
   },
   wren: {
@@ -129,6 +139,7 @@ export const INTERIORS = {
       { type: 'painting', x: 4.6, z: 0.12, y: 1.6, kind: 'meadow' }, { type: 'painting', x: 5.8, z: 0.12, y: 1.9, w: 0.7 },
       { type: 'bed', x: 6.1, z: 2.2, color: '#b9a2e3' }, { type: 'rug', x: 3.5, z: 4.2, color: '#f4a4b6' },
       { type: 'plant', x: 0.5, z: 5.2 }, { type: 'candles', x: 5.6, z: 4.8 }, { type: 'vase', x: 0.5, z: 3.4 },
+      { type: 'frames', x: 2.25, z: 0.05, y: 1.85, coat: '#b9a2e3' }, { type: 'basket', x: 6.45, z: 4.0, kind: 'yarn' },
     ],
   },
   lighthouse: {
@@ -156,6 +167,8 @@ export const INTERIORS = {
       { type: 'crate', x: 0.6, z: 5.6, fill: '#f1e2c8' }, { type: 'barrel', x: 0.6, z: 3.2, fill: '#f4f1ec' }, { type: 'sacks', x: 0.7, z: 4.4 },
       { type: 'plant', x: 8.5, z: 5.9 }, { type: 'dresser', x: 8.4, z: 3.6 }, { type: 'clock', x: 3.3, z: 0.12, y: 1.9 },
       { type: 'painting', x: 7.2, z: 0.12, y: 1.9, w: 0.7, kind: 'meadow' },
+      { type: 'pans', x: 0.7, z: 0.05, y: 1.75, w: 1.0 }, { type: 'pegs', x: 8.45, z: 0.05, y: 1.55, w: 1.0, coat: '#c8454f', scarf: '#f2c14e' },
+      { type: 'basket', x: 1.65, z: 6.0, kind: 'veg' }, { type: 'teaset', x: 4.75, z: 3.85, y: 0.66, color: '#fbf1dc', accent: '#c8454f' },
     ],
   },
   barn: {
@@ -170,6 +183,7 @@ export const INTERIORS = {
       { type: 'chicken', x: 4.3, z: 5.6, rot: 0.4 }, { type: 'chicken', x: 6.6, z: 4.9, rot: 2.6, color: '#b8763a' }, { type: 'chicken', x: 7.4, z: 6.2, rot: 1.2 }, { type: 'chicken', x: 3.3, z: 4.6, rot: -0.8, color: '#e0924a' },
       { type: 'lanternhook', x: 5.5, z: 0.15, y: 2.0 }, { type: 'barrel', x: 0.6, z: 6.8 }, { type: 'crate', x: 1.5, z: 7.1, fill: '#e0bf62' },
       { type: 'window', x: 9.8, z: 0.1, y: 1.45, curtain: '#c8454f' }, { type: 'window', x: 1.2, z: 0.1, y: 1.45, curtain: '#c8454f' },
+      { type: 'pegs', x: 3.1, z: 0.05, y: 1.7, kind: 'tools' },
     ],
   },
   windmill: {
@@ -194,6 +208,7 @@ export const INTERIORS = {
       { type: 'shelf', x: 7.4, z: 2.4, w: 1.1, kind: 'bottles' }, { type: 'globe', x: 7.3, z: 4.6 },
       { type: 'anchor', x: 0.6, z: 4.6 }, { type: 'barrel', x: 0.6, z: 5.4, fill: '#7cb6e0' }, { type: 'candles', x: 5.6, z: 2.8 },
       { type: 'rug', x: 3.8, z: 4.2, color: '#3f6f9e', rx: 1.2, rz: 0.8 }, { type: 'tank', x: 6.6, z: 0.5 },
+      { type: 'nets', x: 1.25, z: 0.05, y: 2.0 }, { type: 'bookstack', x: 4.55, z: 2.75, y: 0.66, n: 2, seed: 1 },
     ],
   },
   grotto: {
@@ -234,6 +249,16 @@ export const HOME_LEVELS = {
     ],
   },
 };
+// Nana's cottage fills up with the life you live there: a fish over the mantelpiece once you've
+// caught a few, a basket of your vegetables by the stove, the cards of the friends you've spoiled
+export function homeMementos(s) {
+  const st = (s && s.stats) || {}, out = [];
+  if ((st.fish || 0) >= 5) out.push({ type: 'trophy', x: 4.5, z: 0.47, y: 1.95 });
+  if ((st.crops || 0) >= 10) out.push({ type: 'basket', x: 7.05, z: 0.75, kind: 'veg' });
+  if ((st.gifts || 0) >= 5) out.push({ type: 'cards', x: 4.5, z: 0.53, y: 1.45 });
+  return out;
+}
+
 export function applyHomeLevel(level) {
   const L = HOME_LEVELS[Math.max(1, Math.min(3, level || 1))];
   const items = HOME_BASE.items.map((it) => (it.rw ? { ...it, x: L.w - (9 - it.x) } : it));
@@ -379,7 +404,41 @@ function paintFloor(wT, hT, key) {
     for (let i = 0; i < wT * hT * 0.15; i++) p.px(Math.random() * wT, Math.random() * hT, Math.random() < 0.5 ? R.l : R.d);
     return p.c;
   }
-  return paintPlanks(wT, hT, { dir: 'h', color: F.color, seed: 21 });
+  return paintBoards(wT, hT, F.color, key === 'planks' ? { plank: 6, rough: true } : {});
+}
+
+// floorboards: planks of every length (their ends staggered, two nails at each end), each a touch
+// lighter or darker than its neighbours, grain streaks & a knot here and there, soft gaps between
+// them (rough boards: wider, more gap, more knots)
+function paintBoards(wT, hT, color, { plank = 5, rough = false } = {}) {
+  const p = new Painter(wT, hT), R = ramp(color), r = rng(wT * 7 + hT * 3 + plank);
+  const gap = mixc(R.d, R.o, rough ? 0.6 : 0.25), nail = mixc(R.d, R.o, 0.5);
+  const tints = [R.m, mixc(R.m, R.l, 0.45), mixc(R.m, R.d, 0.3), mixc(R.m, R.l, 0.2), mixc(R.m, R.h, 0.15)];
+  const ends = [];
+  for (let y0 = 0; y0 < hT; y0 += plank) {
+    for (let x = -Math.floor(r() * 44); x < wT;) {
+      const len = (rough ? 30 : 24) + Math.floor(r() * 40), base = tints[Math.floor(r() * tints.length)];
+      const x0 = Math.max(0, x), x1 = Math.min(wT, x + len);
+      p.rect(x0, y0, x1 - x0, plank - 1, base);
+      p.hline(x0, y0, x1 - x0, mixc(base, R.h, 0.25));
+      for (let k = 0; k < len / 8; k++) {
+        const gx = x + Math.floor(r() * len), gy = y0 + 1 + Math.floor(r() * (plank - 2)), gl = 3 + Math.floor(r() * 8);
+        if (gx >= x0 && gx < x1) p.hline(gx, gy, Math.min(gl, x1 - gx), mixc(base, R.d, 0.3));
+      }
+      if (r() < (rough ? 0.35 : 0.15)) {
+        const kx = x + 5 + Math.floor(r() * Math.max(1, len - 10)), ky = y0 + 1 + Math.floor(r() * Math.max(1, plank - 3));
+        if (kx >= x0 && kx + 1 < x1) { p.px(kx, ky, R.d); p.px(kx + 1, ky, mixc(R.d, base, 0.4)); p.px(kx, ky + 1, mixc(R.d, base, 0.5)); }
+      }
+      p.hline(x0, y0 + plank - 1, x1 - x0, gap);
+      if (x + len < wT && x + len > 0) ends.push([x + len - 1, y0]);
+      x += len;
+    }
+  }
+  for (const [x, y0] of ends) {
+    p.vline(x, y0, plank - 1, gap);
+    for (const nx of [x - 2, x + 2]) { p.px(nx, y0 + 1, nail); p.px(nx, y0 + plank - 3, nail); }
+  }
+  return p.c;
 }
 
 // --- builder -------------------------------------------------------------------
@@ -410,7 +469,7 @@ export class Interior3D {
     this.root.add(floor);
     this.floorMesh = floor;
     // back wall
-    const wallTex = pixelTexture(paintWallpaper(w * 16, Math.round(WALL_H * 16), this.def.wall));
+    const wallTex = pixelTexture(paintWallpaper(Math.round((w + 0.6) * 16), Math.round(WALL_H * 16), this.def.wall));
     const trim = toon(r3d, { color: 0x3b2a2e, key: 'walltrim' });
     const wallMat = toon(r3d, { map: wallTex });
     this.wallMat = wallMat;
@@ -443,6 +502,9 @@ export class Interior3D {
     this.colliders.push({ rect: [-1, d, door + 1, 1] }, { rect: [door + 1, d, w - door + 1, 1] });
 
     for (const it of [...this.def.items, ...extraItems]) this.addItem(it);
+    // sunlight through the windows (updateSun)
+    this.suns = [];
+    if (!this.def.dark && !this.def.outdoor) for (const it of [...this.def.items, ...extraItems]) if (it.type === 'window') this.addSun(it.x);
     this.r3d.scene.add(this.root);
     this.root.visible = false;
     return this;
@@ -480,6 +542,42 @@ export class Interior3D {
     return entry;
   }
 
+  // a patch of sunlight on the floor in front of a window, the shadow of its bars in it
+  addSun(x) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(12), 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2));
+    geo.setIndex([0, 2, 1, 0, 3, 2]);
+    const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: sunTex(), color: 0xffe6b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    m.frustumCulled = false; m.visible = false;
+    this.root.add(m);
+    this.suns.push({ m, x });
+  }
+  // the sun's patches: there by day (warmer early & late), slanting & lengthening away from noon,
+  // faint under clouds, gone in the rain & at night
+  updateSun(hour, weather) {
+    if (!this.suns || !this.suns.length) return;
+    const k = Math.max(0, Math.min(1, (hour - 6.6) / 1.4, (18.9 - hour) / 1.4));
+    const a = k * (weather === 'sun' ? 1 : weather === 'cloudy' ? 0.3 : 0) * 0.32;
+    const off = hour - 12.5, len = 1.3 + Math.abs(off) * 0.1, skew = Math.max(-0.75, Math.min(0.75, -off * 0.14));
+    const warm = hour < 9 || hour > 16.5;
+    for (const S of this.suns) {
+      S.m.visible = a > 0.01;
+      if (!S.m.visible) continue;
+      S.m.material.opacity = a;
+      S.m.material.color.setHex(warm ? 0xffc27a : 0xffe6b0);
+      const pos = S.m.geometry.attributes.position, z0 = 0.3, z1 = z0 + len, x0 = S.x - 0.45, x1 = S.x + 0.45, sx = skew * len;
+      pos.setXYZ(0, x0, 0.016, z0); pos.setXYZ(1, x1, 0.016, z0); pos.setXYZ(2, x1 + sx, 0.016, z1); pos.setXYZ(3, x0 + sx, 0.016, z1);
+      pos.needsUpdate = true;
+    }
+  }
+
+  // a set of items that comes & goes (the home's mementos): the old ones out, the new ones in
+  setExtras(tag, items) {
+    for (const f of this.furniture.filter((e) => e.def.tag === tag)) this.removeItem(f);
+    for (const it of items) this.addItem({ ...it, tag });
+  }
+
   removeItem(entry) {
     this.root.remove(entry.obj || entry.res.obj);
     this.furniture = this.furniture.filter((f) => f !== entry);
@@ -490,7 +588,7 @@ export class Interior3D {
 
   setWallpaper(key) {
     this.def.wall = key;
-    this.wallMat.map = pixelTexture(paintWallpaper(this.def.w * 16, Math.round(WALL_H * 16), key));
+    this.wallMat.map = pixelTexture(paintWallpaper(Math.round((this.def.w + 0.6) * 16), Math.round(WALL_H * 16), key));
     this.wallMat.needsUpdate = true;
   }
 
@@ -499,6 +597,17 @@ export class Interior3D {
     this.floorMesh.material.map = pixelTexture(paintFloor(this.def.w * 16, this.def.d * 16, key));
     this.floorMesh.material.needsUpdate = true;
   }
+}
+
+// the panes of a window, as sunlight lets them through (the bars stay dark)
+let SUN = null;
+function sunTex() {
+  if (SUN) return SUN;
+  const p = new Painter(16, 16);
+  p.rect(0, 0, 16, 16, '#000000');
+  p.rect(1, 1, 14, 14, '#ffffff');
+  p.rect(7, 1, 2, 14, '#000000'); p.rect(1, 7, 14, 2, '#000000');
+  return (SUN = pixelTexture(p.c));
 }
 
 export { hash2 };

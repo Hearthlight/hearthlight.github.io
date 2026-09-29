@@ -573,7 +573,7 @@ export class Wild {
     for (const n of this.npcs) {
       n.model.root.visible = out && !n.hidden;
       if (!out) continue;
-      n.baseY = n.seatY !== undefined ? n.seatY : w.groundY(n.pos);
+      n.baseY = n.seatY !== undefined ? n.seatY : w.groundY(n.pos) + (n.actSeat || 0);
       n.update(dt, this.npcWorld);
       if (n.bubbleT > 0 && (n.bubbleT -= dt) <= 0) { n.bubble = null; n.talking = false; }
     }

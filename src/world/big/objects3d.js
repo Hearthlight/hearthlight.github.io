@@ -4,6 +4,7 @@
 
 import { THREE, pixelTexture, toon } from '../../render/r3d.js';
 import { seeThrough } from '../../render/seethrough.js';
+import { windy } from '../../render/wind.js';
 import { Painter } from '../../art/surfaces.js';
 import { ramp } from '../../engine/color.js';
 import { rng, hash2 } from '../../engine/util.js';
@@ -52,12 +53,16 @@ function barkTexture(color) {
 }
 const mat = (key, make) => MAT[key] || (MAT[key] = make());
 // (leaves thin out in front of whoever stands behind them, in party mode)
-const leaf = (key, color, seed) => mat('leaf-' + key, () => seeThrough(toon(R3D, { map: leafTexture(color, seed), key: 'bigleaf-' + key })));
+// (and sway in the wind: stiff pines, supple bamboo)
+const LEAF_WIND = { pine: 0.75, snowpine: 0.75, bush: 0.5, fern: 0.6, acacia: 0.8, mangrove: 0.7, treefern: 0.9, cycad: 0.6, bamboo: 1.1 };
+const leaf = (key, color, seed) => mat('leaf-' + key, () => windy(seeThrough(toon(R3D, { map: leafTexture(color, seed), key: 'bigleaf-' + key })), { amp: LEAF_WIND[key] ?? 1 }));
 const SEE_FLAT = new Set(['capw', 'palmleaf', 'snow', 'puff']);
 // crowns in tufts (treekit.js), the same as the valley's trees
-const crown = (key, color, seed, blossom = false) => mat('crown-' + key, () => seeThrough(toon(R3D, { map: tuftTexture(color, seed, { blossom }), key: 'bigcrown-' + key })));
+const crown = (key, color, seed, blossom = false) => mat('crown-' + key, () => windy(seeThrough(toon(R3D, { map: tuftTexture(color, seed, { blossom }), key: 'bigcrown-' + key }))));
 const bark = (key, color) => mat('bark-' + key, () => toon(R3D, { map: barkTexture(color), key: 'bigbark-' + key }));
-const flat = (key, color, extra = {}) => mat('flat-' + key, () => { const m = toon(R3D, { color, key: 'bigflat-' + key, ...extra }); return SEE_FLAT.has(key) ? seeThrough(m) : m; });
+// (grass & reeds bend from their foot, a reed's head rides its tip, snow sits on a pine's tier)
+const FLAT_WIND = { reed: { weight: 'blade' }, reedtip: { weight: 'top' }, tallgrass: { weight: 'blade', amp: 1.2 }, snow: { weight: '0.8', amp: 0.75 } };
+const flat = (key, color, extra = {}) => mat('flat-' + key, () => { let m = toon(R3D, { color, key: 'bigflat-' + key, ...extra }); if (SEE_FLAT.has(key)) m = seeThrough(m); return FLAT_WIND[key] ? windy(m, FLAT_WIND[key]) : m; });
 
 // a bush's layout
 const BLOBS = {
@@ -109,7 +114,7 @@ export function buildChunkObjects(r3d, objs) {
         break;
       }
       case 'palm': {
-        const fm = mat('palm-frond', () => seeThrough(toon(R3D, { map: palmTexture(), alphaTest: 0.5, key: 'bigpalm-frond' })));
+        const fm = mat('palm-frond', () => windy(seeThrough(toon(R3D, { map: palmTexture(), alphaTest: 0.5, key: 'bigpalm-frond' })), { amp: 1.3 }));
         palm(x, z + 0.05, h + x * 0.011, (part, px, py, pz, sx, sy, sz, ry, rx, rz, tn) => {
           if (part === 'frond') put('palm-frond', G.box, fm, px, py, pz, sx, sy, sz, ry, col.setRGB(tn[0], tn[1], tn[2]).clone(), rx, rz);
           else if (part === 'coco') put('coco', G.blob1, flat('coco', 0x6b4a2c), px, py, pz, sx, sy, sz);

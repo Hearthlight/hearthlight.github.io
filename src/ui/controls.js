@@ -125,7 +125,7 @@ export class ControlsPanel {
   rows(kind) {
     if (kind === 'keys') return [
       [t('Walk'), moveKeys()], [t('Run'), 'Shift'], [t('Talk & use'), keyCap('KeyE')], [t('Jump'), t('Space')], [t('Special move'), keyCap('KeyF')],
-      [t('Dodge'), keyCap('KeyC')], [t('Ultimate'), keyCap('KeyG')], [t('Pause'), 'Esc'], [t('Bag & journal'), 'Tab'], [t('Map'), keyCap('KeyM')], [t('Hotbar'), keyCap('KeyQ') + ' ' + keyCap('KeyR')], [t('Display'), keyCap('KeyV')],
+      [t('Dodge'), keyCap('KeyC')], [t('Ultimate'), keyCap('KeyG')], [t('Pause'), 'Esc'], [t('Bag & journal'), 'Tab'], [t('Map'), keyCap('KeyM')], [t('Hotbar'), keyCap('KeyQ') + ' ' + keyCap('KeyR')], [t('Display'), keyCap('KeyV')], [t('Zoom'), t('Wheel')],
     ];
     if (kind === 'pad') return [
       [t('Walk'), t('Stick')], [t('Run'), padName('run')], [t('Talk & use'), padName('interact')], [t('Jump'), padName('jump')], [t('Special move'), padName('special')],

@@ -14,7 +14,7 @@ import { Creator } from './ui/creator.js';
 import { panel, button, UI, fitText, bindInput, ctl, device, closeButton } from './ui/ui.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
-import { newState, loadGame, saveGame, hasSave, loadSettings, hearts } from './state.js';
+import { newState, loadGame, saveGame, hasSave, loadSettings, saveSettings, hearts } from './state.js';
 import { NPCS, NPC_ORDER } from './data/npcs.js';
 import { ITEMS } from './data/items.js';
 import { audio } from './engine/audio.js';
@@ -187,6 +187,20 @@ export class Game {
   }
 
   applyZoom() { this.display.setZoomBias(this.settings.zoom || 0); }
+  // the mouse wheel (solo): the pixels a size bigger (+1) or smaller (-1), as far as makes sense on
+  // this screen — a view some 16 to 64 tiles across (zoomed out, the camera's own close-up for big
+  // canvases gives way: World.ppuBase). It moves the Pixel size setting, saved with it.
+  zoomStep(dir) {
+    const d = this.display, st = this.settings, cur = st.zoom || 0;
+    const across = (b) => { const ws = Math.max(1, d.wscaleFor(b)), ww = Math.ceil(d.devW / ws / 2) * 2, wh = Math.ceil(d.devH / ws / 2) * 2; return ww / (b >= 0 && (wh / 16 > 27 || ww / 16 > 44) ? 32 : 16); };
+    const now = across(cur);
+    for (let b = cur + dir; Math.abs(b) <= 4; b += dir) {
+      const tw = across(b);
+      if (tw < 16 || tw > 64) return false;
+      if (Math.abs(tw - now) > 0.5) { st.zoom = b; saveSettings(st); this.applyZoom(); return true; }
+    }
+    return false;
+  }
 
   // ------------------------------------------------------------------ title
   toTitle() {

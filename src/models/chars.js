@@ -902,6 +902,10 @@ export class CharModel {
     else if (kind === 'book') { B(5, 4, 1.4, m('#3f7f7c'), -2, -5, 3); B(4.6, 3.6, 1.5, m('#fbf1dc'), -2, -5, 3.1); }
     else if (kind === 'brush') { B(1, 7, 1, m('#b07b50'), 0, -5, 2).rotation.x = -0.6; B(1.4, 2, 1.4, m('#ec5f73'), 0, -8, 4); }
     else if (kind === 'hammer') { B(1, 7, 1, m('#8e5d3e'), 0, -5, 2); B(4, 2, 2, m('#6a6571'), 0, -8.5, 2); }
+    // a hand saw: a wooden grip, the blade reaching out ahead with its teeth underneath
+    else if (kind === 'saw') { B(2, 3, 2, m('#8e5d3e'), 0, -5.5, 2); B(1, 3.2, 11, m('#c9c4cc'), 0, -6.6, 8); B(1.1, 0.8, 11, m('#8a8594'), 0, -8.3, 8); }
+    else if (kind === 'loaf') { B(2.6, 2.6, 9, m('#c98a4a'), 0, -6.5, 3.5); B(2.7, 0.6, 1, m('#f0cf8a'), 0, -5.2, 1.5); B(2.7, 0.6, 1, m('#f0cf8a'), 0, -5.2, 4.5); }
+    else if (kind === 'cup') { B(2.4, 2.4, 2.4, m('#fbf1dc'), 0, -6, 2.2); B(2, 0.5, 2, m('#6b4330'), 0, -4.9, 2.2); B(0.8, 1.2, 0.8, m('#fbf1dc'), 1.5, -6, 2.2); }
     else if (kind === 'lantern') { B(1, 3, 1, m('#5a3b2a'), 0, -5, 2); B(4, 4, 4, m('#ffc070', '#ffb050'), 0, -8.5, 2); }
     // a toasting stick by the campfire (its marshmallow browns: camp.js recolours `mallow`)
     else if (kind === 'marshmallow') {

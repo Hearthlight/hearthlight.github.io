@@ -162,24 +162,35 @@ export class Npc {
     }
     // activity flavour: held props, poses & little particles
     const act = moving ? null : this.activity;
-    const PROPS = { fish: 'rod', guitar: 'guitar', saw: 'hammer', easel: 'brush', paint: 'brush', garden: 'can', farm: 'can', ranger: 'book', bench: this.id === 'mabel' ? 'book' : null, festival: 'lantern', desk: null };
+    const PROPS = { fish: 'rod', guitar: 'guitar', saw: 'saw', easel: 'brush', paint: 'brush', garden: 'can', farm: 'can', ranger: 'book', bench: this.id === 'mabel' ? 'book' : null, festival: 'lantern', desk: null, bread: 'loaf', cafe: 'cup' };
     this.model.setProp(this.talking ? null : (PROPS[act] || null));
-    const sit = act === 'bench' || act === 'campfire';
+    const sit = act === 'bench' || act === 'campfire' || act === 'cafe' || act === 'rock';
+    // (on a bench or a chair: up on its seat; a rocker rocks with whoever sits in it)
+    this.actSeat = sit && this.target && this.target.seat ? this.target.seat : 0;
+    const clk = (this.clk = (this.clk || 0) + dt);
+    let lean = 0;
+    if (act === 'rock' && !this.talking) {
+      lean = Math.sin(clk * 1.3) * 0.09;
+      if (this.target && this.target.rocker) this.target.rocker.rotation.x = lean;
+    }
     this.fxT = (this.fxT || 0) - dt;
     if (this.fxT <= 0 && world.fx && this.map === world.mapId && !this.talking) {
       this.fxT = 0.9 + Math.random() * 0.8;
       if (act === 'guitar') world.fx.emit('note', this.pos.x + 0.2, 1.3, this.pos.z, 1);
-      else if (act === 'saw') world.fx.emit('dust', this.pos.x + this.dir.x * 0.5, 0.4, this.pos.z + this.dir.z * 0.5, 3, { color: '#d9b07a' });
+      else if (act === 'saw') world.fx.emit('dust', this.pos.x + 0.75, 0.45, this.pos.z + 0.05, 3, { color: '#e8cf9c' });
+      else if (act === 'cafe' && Math.random() < 0.35) world.fx.emit('smoke', this.pos.x + (this.restDir ? this.restDir.x * 0.4 : 0), 0.75, this.pos.z, 1, { color: '#f4efe4' });
       else if (act === 'garden' || act === 'farm') world.fx.emit('water', this.pos.x + this.dir.x * 0.6, 0.4, this.pos.z + this.dir.z * 0.6, 3);
       else if (act === 'feed') world.fx.emit('dust', this.pos.x + this.dir.x * 0.7, 0.3, this.pos.z + this.dir.z * 0.7, 4, { color: '#e8c46a' });
       else if (act === 'pray' && Math.random() < 0.4) world.fx.emit('sparkle', this.pos.x, 1.3, this.pos.z - 0.6, 2, { color: '#fff3a6' });
       else if ((act === 'easel' || act === 'paint') && Math.random() < 0.5) world.fx.emit('sparkle', this.pos.x + this.dir.x * 0.5, 1.0, this.pos.z + this.dir.z * 0.5, 2, { color: ['#ec5f73', '#7cc4e8', '#ffd66b'][Math.floor(Math.random() * 3)] });
     }
     const FACE = {
-      fish: { x: 0, z: 1 }, guitar: { x: 0, z: 1 }, bench: { x: 0, z: 1 }, river: { x: 1, z: 0 }, easel: { x: 0, z: -1 }, saw: { x: 0.6, z: -0.8 }, garden: { x: 0, z: -1 }, sketch: { x: 0, z: 1 }, festival: { x: 0, z: 1 },
+      fish: { x: 0, z: 1 }, guitar: { x: 0, z: 1 }, bench: { x: 0, z: 1 }, river: { x: 1, z: 0 }, easel: { x: 0, z: -1 }, saw: { x: 1, z: 0 }, garden: { x: 0, z: -1 }, sketch: { x: 0, z: 1 }, festival: { x: 0, z: 1 },
+      bread: { x: 0, z: -1 }, mend: { x: 0, z: -1 },
       stand: { x: 0, z: 1 }, farm: { x: 0, z: -1 }, feed: { x: 0, z: 1 }, lookout: { x: 0.3, z: -1 }, pray: { x: 0, z: -1 }, campfire: { x: 0.66, z: -0.75 }, ranger: { x: -0.4, z: 0.9 },
     };
-    const rest = FACE[act] || this.restDir || null;
+    const tf = this.target && this.map === 'overworld' && this.target.face;
+    const rest = tf || FACE[act] || this.restDir || null;
     if (this.hopDelay >= 0) { this.hopDelay -= dt; if (this.hopDelay < 0) this.jumpV = this.def.kid ? 5.2 : 4.4; }
     if (this.jumpV !== 0 || this.jumpY > 0) {
       this.jumpV -= 21 * dt; this.jumpY += this.jumpV * dt;
@@ -193,8 +204,12 @@ export class Npc {
       talking: this.talking && this.speaking, mood: this.mood,
       expr: this.forceExpr || null,
       air: this.jumpY > 0 || this.jumpV > 0 ? this.jumpV : null, squash: this.squash,
-      sit,
-      armPose: act === 'fish' ? -0.9 : act === 'guitar' ? -0.8 : act === 'festival' ? -1.2 : act === 'bench' && this.id === 'mabel' ? -0.9 : undefined,
+      sit, lean,
+      // (sawing strokes, loaves set out, a sip of coffee now and then, a net held up to mend)
+      armPose: act === 'fish' ? -0.9 : act === 'guitar' ? -0.8 : act === 'festival' ? -1.2 : act === 'bench' && this.id === 'mabel' ? -0.9
+        : act === 'saw' ? -0.8 + Math.sin(clk * 8) * 0.32 : act === 'bread' ? -1.15 + Math.sin(clk * 1.7) * 0.14
+        : act === 'cafe' ? ((clk % 7) > 5.9 ? -2.05 : -0.6) : act === 'mend' ? -1.55 + Math.sin(clk * 6) * 0.12 : undefined,
+      armPoseL: act === 'saw' ? -0.95 : act === 'bread' ? -1.05 + Math.sin(clk * 1.7 + 1.4) * 0.12 : act === 'mend' ? -1.5 + Math.cos(clk * 6) * 0.12 : undefined,
     });
     this.model.root.visible = !this.hidden;
   }

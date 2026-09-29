@@ -72,6 +72,8 @@ export class Display {
   }
 
   setZoomBias(b) { this.zoomBias = b; this.resize(); }
+  // the world scale a zoom bias would give (the solo game's; Party Mode sets its own)
+  wscaleFor(b) { return Math.max(1, Math.round(Math.min(this.devW / WORLD_TARGET_W, this.devH / WORLD_TARGET_H)) + b); }
 
   // Party Mode on a TV/projector wants a wider view than the solo game
   setWorldTarget(w, h) { this.worldTarget = w ? { w, h } : null; this.forcedWscale = null; this.resize(); }

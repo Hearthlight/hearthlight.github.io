@@ -9,6 +9,8 @@
 //  zipline   — a quick slide down a cable
 
 import { THREE, toon } from '../render/r3d.js';
+import { buildBoat } from '../models/boats.js';
+import { WIND } from '../render/wind.js';
 import { TT } from '../world/tiles.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
@@ -19,7 +21,7 @@ const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2;
 
 export const VEHICLES = {
   rowboat: { name: 'Rowboat', seats: [[-0.36, 0.25, 0.1], [0.36, 0.25, 0.1]], reach: 1.9 },
-  sailboat: { name: 'Sailboat', seats: [[0, 0.32, 1.3], [-0.45, 0.32, 0.5], [0.45, 0.32, 0.5], [-0.45, 0.32, -0.3], [0.45, 0.32, -0.3], [-0.45, 0.32, -1.1], [0.45, 0.32, -1.1], [0, 0.32, -1.7]], reach: 2.6 },
+  sailboat: { name: 'Sailboat', seats: [[0.4, 0.34, -1.8], [-0.45, 0.32, 0.55], [0.45, 0.32, 0.55], [-0.45, 0.32, -0.25], [0.45, 0.32, -0.25], [-0.45, 0.32, -1.05], [0.45, 0.32, -1.05], [0, 0.74, 1.5]], reach: 2.6 },
   minecart: { name: 'Minecart', seats: [[-0.22, 0.36, 0], [0.22, 0.36, 0]], reach: 1.6 },
   glider: { name: 'Glider', seats: [[0, -0.9, 0]], reach: 1.8 },
   sled: { name: 'Sled', seats: [[0, 0.2, -0.15], [0, 0.2, 0.45]], reach: 1.5 },
@@ -73,7 +75,7 @@ export class Vehicles {
   spawn(kind, x, z, opts = {}) {
     const def = VEHICLES[kind];
     const v = { kind, def, x, z, y: 0, heading: opts.heading || 0, speed: 0, riders: new Array(def.seats.length).fill(null), home: opts.home || opts.pad || { x, z }, idle: 0, ...opts };
-    v.obj = buildVehicle(this.party.r3d, kind);
+    v.obj = buildVehicle(this.party.r3d, kind, this.list.filter((o) => o.kind === kind).length);
     this.root.add(v.obj);
     if (kind === 'zipline') this.root.add(buildCable(this.party.r3d, v.line));
     if (kind === 'balloon') { v.alt = 0; v.leg = null; }
@@ -216,8 +218,22 @@ export class Vehicles {
     v.obj.position.set(v.x, (v.y || 0) + (v.bob || 0), v.z);
     v.obj.rotation.y = v.heading;
     const u = v.obj.userData;
-    if (u.oars) for (const o of u.oars) o.rotation.x = Math.sin((v.oar || 0) * Math.PI * 2) * 0.6;
-    if (u.sail) u.sail.rotation.y = 0.9 + Math.sin(this.party.t * 0.7 + v.x) * 0.06;
+    // oars: swept back through the water, lifted clear on the way forward
+    if (u.oars) { const ph = (v.oar || 0) * Math.PI * 2; for (const o of u.oars) { const sd = o.userData.side; o.rotation.set(0, -sd * Math.sin(ph) * 0.5, sd * (0.04 - Math.cos(ph) * 0.1)); } }
+    // sails swing out to whichever side the wind blows (further the more it's behind), fill with it
+    // (fuller when trimmed), and go slack head to wind; the burgee streams with it
+    if (u.sail) {
+      const w = Math.atan2(WIND.dir.value.x, WIND.dir.value.y), rel = angDiff(v.heading, w), dt = Math.min(0.1, this.party.t - (v.sailT ?? this.party.t));
+      v.sailT = this.party.t;
+      if (v.sailSide === undefined || Math.abs(rel) > 0.2 && Math.abs(rel) < Math.PI - 0.2) v.sailSide = rel > 0 ? -1 : 1;   // (no flapping across dead downwind)
+      const out = 0.12 + 1.25 * Math.pow(1 - Math.abs(rel) / Math.PI, 0.8), to = v.sailSide * out;
+      v.sailA = v.sailA === undefined ? to : v.sailA + (to - v.sailA) * Math.min(1, dt * 1.5);
+      const fill = (0.35 + 0.65 * Math.min(1, Math.abs(v.sailA) / 0.6)) * (1 + 0.25 * Math.min(1, v.boost || 0)), side = v.sailA >= 0 ? 1 : -1;
+      u.sail.rotation.y = v.sailA + Math.sin(this.party.t * 0.7 + v.x) * 0.04;
+      u.sail.scale.x = side * fill;
+      u.jib.scale.x = Math.max(-1, Math.min(1, v.sailA / 0.4)) * (0.8 + 0.2 * fill);
+      u.burgee.rotation.y = rel + Math.sin(this.party.t * 9 + v.z) * 0.15;
+    }
     if (u.flame) u.flame.visible = (v.burn || 0) > 0;
     if (u.wheels) for (const w of u.wheels) w.rotation.x += v.speed * 0.04;
   }
@@ -474,38 +490,13 @@ export class Vehicles {
 }
 
 // ------------------------------------------------------------------ models
-export function buildVehicle(r3d, kind) {
+export function buildVehicle(r3d, kind, look = 0) {
+  if (kind === 'rowboat' || kind === 'sailboat') return buildBoat(r3d, kind === 'rowboat' ? 'row' : 'sail', { look });
   const g = new THREE.Group();
   const M = (c, e) => toon(r3d, { color: c, emissive: e || 0x000000, emissiveIntensity: e ? 1 : 1, key: 'veh' + c + (e || '') });
   const B = (w, h, d, m, x, y, z, parent = g) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true; parent.add(b); return b; };
   const wood = M(0x9a6440), dark = M(0x6b4330), light = M(0xc89a68);
-  if (kind === 'rowboat') {
-    B(1.1, 0.12, 2.3, dark, 0, 0.06, 0);
-    for (const sx of [-0.55, 0.55]) B(0.1, 0.34, 2.2, wood, sx, 0.2, 0);
-    B(1.1, 0.34, 0.1, wood, 0, 0.2, -1.12); B(0.8, 0.3, 0.1, wood, 0, 0.2, 1.12);
-    B(1.0, 0.06, 0.3, light, 0, 0.26, 0.1); B(1.0, 0.06, 0.3, light, 0, 0.26, -0.7);
-    const oars = [];
-    for (const sx of [-1, 1]) { const o = new THREE.Group(); o.position.set(sx * 0.62, 0.36, 0.1); B(1.2, 0.05, 0.06, light, sx * 0.55, 0, 0, o); B(0.3, 0.03, 0.16, light, sx * 1.15, -0.05, 0, o); g.add(o); oars.push(o); }
-    g.userData.oars = oars;
-    B(0.4, 0.03, 0.4, M(0xd9594c), 0, 0.37, -1.0);
-  } else if (kind === 'sailboat') {
-    B(1.7, 0.16, 4.4, dark, 0, 0.08, 0);
-    for (const sx of [-0.85, 0.85]) B(0.12, 0.42, 4.2, wood, sx, 0.25, 0);
-    B(1.6, 0.42, 0.12, wood, 0, 0.25, -2.15);
-    const bow = new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.1, 4), wood); bow.rotation.x = Math.PI / 2; bow.rotation.y = Math.PI / 4; bow.position.set(0, 0.25, 2.7); bow.scale.set(1, 1, 0.5); g.add(bow);
-    B(1.5, 0.05, 3.9, light, 0, 0.3, 0);
-    B(0.14, 4.2, 0.14, dark, 0, 2.3, 0.4);
-    // a striped lateen sail, swung out a little so everyone can see it
-    const sail = new THREE.Group();
-    sail.position.set(0, 0, 0.4); sail.rotation.y = 0.9;
-    const cloth = new THREE.Mesh(triGeo([[0, 4.3, 0], [0, 0.75, -2.4], [0, 0.85, 1.2]]), toon(r3d, { map: stripeTex('#fbf1dc', '#d9594c', 6), side: THREE.DoubleSide, key: 'veh-sail2' }));
-    cloth.castShadow = true;
-    sail.add(cloth);
-    B(0.08, 0.08, 3.6, dark, 0, 0.8, -0.6, sail);
-    g.add(sail);
-    g.userData.sail = sail;
-    B(0.3, 0.2, 0.05, M(0xf4c542), 0, 4.45, 0.4);
-  } else if (kind === 'minecart') {
+  if (kind === 'minecart') {
     B(1.0, 0.5, 1.3, M(0x7a5a4a), 0, 0.45, 0);
     B(1.06, 0.08, 1.36, M(0x3b3a46), 0, 0.72, 0); B(1.06, 0.08, 1.36, M(0x3b3a46), 0, 0.3, 0);
     const wheels = [];

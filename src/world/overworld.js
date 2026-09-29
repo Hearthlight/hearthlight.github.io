@@ -372,7 +372,7 @@ export function buildOverworld() {
   add('stonelantern', 44.2, 19.4); add('stonelantern', 47.8, 19.4);
   add('bigtree', 50.5, 21.5);
   add('waterfall', LAKE.x + 0.5, LAKE.z - LAKE.rz);        // (on the rock's edge, over the lake; the stream is tiles x-1…x+1)
-  add('rowboat', 106, 18.6); add('bench', 118.5, 22.5);
+  add('rowboat', 107.3, 18.2); add('bench', 118.5, 22.5);
   add('sign', 91.5, 36.5, { text: '↑ Waterfall Lake · ← Camp' });
   add('lamp', 91, 42); add('lamp', 94.5, 30.5); add('lamp', 108.5, 22.2);
   for (const [x, y] of [[139, 32], [141.5, 36], [144, 33.5], [146, 35.5], [138.5, 35], [143, 30.8], [140.5, 38], [145.5, 31.5], [136.8, 33]]) add('glowcap', x, y);
@@ -527,7 +527,7 @@ const V = {
   shackDoor: [32.5, 51.5], carpenterDoor: [23.5, 16.5], bridgeW: [66.3, 30.4], bridgeE: [75, 29.5], easel: [79.2, 20.4],
   stones: [86.5, 25], bigtree: [89.5, 39.5], lighthouseDoor: [86.5, 53.5], pond: [13, 10], woods: [47.5, 7.5],
   orchard: [62, 37], stall: [50.5, 39.5], plazaN: [47, 26.6], fountainS: [47.2, 31.6], plazaE: [51.2, 30.2],
-  plazaW: [43, 30.4], benchW: [40, 34.7], benchE: [53, 34.7], guitar: [50.2, 32.6], beachW: [40.5, 54.2],
+  plazaW: [43, 30.4], benchW: [40, 34.03], benchE: [53, 34.03], guitar: [50.2, 32.6], beachW: [40.5, 54.2],
   beachE: [58.5, 55.2], gardenS: [17.5, 26.5], sawing: [26.4, 17.2], riverbank: [66.2, 27.4], ferryDock: [50.4, 65.4],
 };
 export const POINTS = Object.fromEntries(Object.entries(V).map(([k, [x, z]]) => [k, [x + OX, z + OZ]]));
@@ -537,4 +537,7 @@ Object.assign(POINTS, {
   grove: [141.5, 36.8], hilltop: [161, 28.4], willowBench: [152.5, 70.4], islandDock: [160, 108.8], islandBeach: [163, 116.5],
   bluffs: [20, 87.6], lavender: [156, 79.4], merchantSpot: [OX + 51.7, OZ + 38.7],
   frostpine: [200, 22.5], koiPond: [207, 63], boardwalk: [200, 86.6], mapleHollow: [21, 17], pasture: [16.5, 47],
+  // (by the new yard things: the bread rack, the café's terrace chairs, the rocker, pots, seedlings, nets)
+  breadRack: [89.02, 60.52], terraceA: [102.26, 67.52], terraceB: [107.79, 67.52], rocker: [6.8, 66.44],
+  wrenPots: [76.98, 79.42], seedTable: [77.52, 67.56], nets: [72.25, 89.85],
 });

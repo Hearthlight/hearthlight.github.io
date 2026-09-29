@@ -64,14 +64,16 @@ const MUFFLE_GAIN = 0.8;    // extra music attenuation while muffled
 const MIX_TRIM = 0.7;       // pre-compressor trim (offsets the compressor's makeup gain)
 
 const KINDS = ['master', 'music', 'sfx', 'ambient'];
-const AMB_KEYS = ['birds', 'crickets', 'waves', 'rain', 'wind', 'fire', 'night'];
+const AMB_KEYS = ['birds', 'crickets', 'waves', 'rain', 'wind', 'fire', 'night', 'fountain', 'saw', 'cafe'];
+// (sounds of a place, heard as you come near it: silent unless a call gives their level)
+const LOCAL_AMB = new Set(['fountain', 'saw', 'cafe']);
 
 const state = {
   vol: { master: 1, music: 1, sfx: 1, ambient: 1 }, // slider positions 0..1
   track: null,         // logical current track (what the game asked for)
   pendingFade: 2.5,    // fade to use when a pre-unlock request finally starts
   muffled: false,
-  amb: { birds: 0, crickets: 0, waves: 0, rain: 0, wind: 0, fire: 0, night: 0 },
+  amb: { birds: 0, crickets: 0, waves: 0, rain: 0, wind: 0, fire: 0, night: 0, fountain: 0, saw: 0, cafe: 0 },
   disabled: false,     // Web Audio unavailable/failed → everything is a no-op
   lastBlip: -1,
   stepFoot: 0,
@@ -2540,6 +2542,67 @@ const AMB = {
     seal(g);
   } },
 
+  // The plaza's fountain: water pouring into its basins (two trickling bands that swell & ebb, a
+  // soft body under them) and drops plinking into the pool.
+  fountain: { base: 0.4, send: 0.16, build(L, t) {
+    for (let side = 0; side < 2; side++) {
+      const n = loopNoise(L, 'white', t);
+      const bp = filt('bandpass', side ? 1700 : 2500, 0.9);
+      const g = gainAt(0.26);
+      lfoNode(L, side ? 0.37 : 0.53, 0.07, g.gain, t);
+      const pn = panNode(side ? 0.3 : -0.3);
+      if (pn) chain(L, n, bp, g, pn, L.out); else chain(L, n, bp, g, L.out);
+    }
+    const b = loopNoise(L, 'pink', t);
+    chain(L, b, filt('lowpass', 600, 0.5), gainAt(0.16), L.out);
+  },
+  interval: (L) => expWait(12 * (0.3 + L.target)),
+  event(L, t) {
+    const g = makeGroup(rand(0.3, 0.8), rand(-0.5, 0.5), 0, L.out);
+    const f = rand(900, 2200);
+    sTone(g, t, f, rand(0.02, 0.045), 0.001, rand(0.03, 0.06), 'sine', f * rand(1.3, 1.9), 0.035);
+    seal(g);
+  } },
+
+  // Somebody sawing a plank: a stroke every 0.4 s, the push & the pull a little apart in pitch.
+  saw: { base: 0.6, send: 0.05,
+  interval: () => rand(0.37, 0.43),
+  event(L, t) {
+    L.data.up = !L.data.up;
+    const g = makeGroup(1, 0.1, 0, L.out), f = L.data.up ? rand(2500, 2900) : rand(1900, 2200);
+    sNoise(g, t, 'white', 'bandpass', f, 2.5, 0.36, 0.06, 0.26, f * (L.data.up ? 0.85 : 1.15));
+    sNoise(g, t, 'pink', 'bandpass', f * 0.45, 1.5, 0.16, 0.05, 0.22);
+    seal(g);
+  } },
+
+  // A café terrace: people talking (two voices of formant-filtered breath, in syllables, pausing
+  // between phrases) and now & then a cup set down on its saucer.
+  cafe: { base: 0.45, send: 0.12, build(L, t) {
+    L.data.v = [];
+    for (let i = 0; i < 2; i++) {
+      const g = gainAt(0.02), pn = panNode(i ? 0.35 : -0.35);
+      const f1 = filt('bandpass', i ? 520 : 380, 3), f2 = filt('bandpass', i ? 1700 : 1300, 4);
+      const n = loopNoise(L, 'pink', t);
+      n.connect(f1); n.connect(f2); f1.connect(g); f2.connect(g);
+      L.nodes.push(f1, f2);
+      if (pn) chain(L, g, pn, L.out); else chain(L, g, L.out);
+      L.data.v.push({ g, f1, f2 });
+    }
+  },
+  interval: () => rand(0.11, 0.26),
+  event(L, t) {
+    const v = pick(L.data.v || []);
+    if (v) {
+      if (chance(0.22)) glide(v.g.gain, 0.02, t, 0.12);        // (a pause between phrases)
+      else {
+        glide(v.g.gain, rand(0.18, 0.5), t, 0.025);
+        v.g.gain.setTargetAtTime(0.04, t + rand(0.07, 0.12), 0.05);
+        glide(v.f1.frequency, rand(300, 750), t, 0.03); glide(v.f2.frequency, rand(1000, 2100), t, 0.03);
+      }
+    }
+    if (chance(0.035)) { const g = makeGroup(rand(0.4, 0.8), rand(-0.4, 0.4), 0, L.out); crystal(g, t, rand(2600, 3400), 0.045, 0.16); seal(g); }
+  } },
+
   // Night air: a very soft low hush with slow "breathing" and a faint high air.
   night: { base: 0.23, send: 0.1, build(L, t) {
     const n = loopNoise(L, 'pink', t);
@@ -2798,11 +2861,15 @@ export const audio = {
     if (live()) playFootstep(surface);
   }),
 
-  /** levels: { birds, crickets, waves, rain, wind, fire, night } each 0..1; omitted keys keep their target. */
+  /** levels: { birds, crickets, waves, rain, wind, fire, night, fountain, saw, cafe } each 0..1; omitted keys
+   *  keep their target — but a place's own sounds (fountain, saw, cafe) fall silent. */
   setAmbient: safe('setAmbient', (levels) => {
     if (!levels || typeof levels !== 'object') return;
     for (const k of AMB_KEYS) {
-      if (!(k in levels)) continue;
+      if (!(k in levels)) {
+        if (LOCAL_AMB.has(k) && state.amb[k] > 0) { state.amb[k] = 0; if (live()) applyAmbient(k, 0); }
+        continue;
+      }
       const v = clamp(num(levels[k], state.amb[k]), 0, 1);
       state.amb[k] = v;
       if (live()) applyAmbient(k, v);

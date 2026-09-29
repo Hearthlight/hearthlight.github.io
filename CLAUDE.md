@@ -134,14 +134,22 @@ src/ui/       hud, menu, dialogue, shop, creator, ui (panels, `ctl`, key hints);
               Controls screen: keyboard · gamepad · phone), osk.js (on-screen keyboard for names)
 src/render/   r3d (low-res toon renderer, oblique ortho camera, post pass, split views: the
               world's matrices once a frame), cull.js (split views: each hides what it can't see
-              nor shadow), lighting (time of day, lamp pool), portraits
+              nor shadow), lighting (time of day, lamp pool), portraits, wind.js (`windy(mat)`:
+              leaves & grass sway in the vertex shader, whole texels; `WIND` strength follows the
+              weather and bends the chimneys' smoke)
 src/art/      procedural painters: terrain (ground texture + water info), surfaces, icons
 src/models/   buildings (a house's `style`: roofKind, storeys, hip, roofShape, gable, annex, porch,
-              tower, ivy, stack, smoke hours…), nature & treekit (trees), props, furniture, chars
-              (voxel chibis), geom (merging, soft boxes)
+              tower, ivy, stack, smoke hours…; `perches` for birds, `WET_ROOFS`), nature & treekit
+              (trees), props, furniture (rugs painted at 16 texels, the trades' clutter), boats.js
+              (the rowboat & sailboat, lofted clinker hulls: vehicles, moored props, the stilt
+              house's dinghy), chars (voxel chibis), geom (merging, soft boxes)
 src/world/    overworld (valley map 240x128, POINTS, AREAS), world3d (valley scene),
               collision (circle vs tiles/colliders, A*), interiors, tiles (TT types)
-src/scenes/   world.js — the solo game scene (also hosts shared systems used by the party)
+src/scenes/   world.js — the solo game scene (also hosts shared systems used by the party:
+              villagers' activities at their spots — `ACT`, `FACES`, `SEATS` in `scheduleFor` —,
+              `placeSounds` (fountain, saw, café), the wheel's zoom → `game.zoomStep`)
+src/systems/  fx (particles), perches.js (birds landing on ridges, posts, lamps), weather.js
+              (puddles & rain rings, wet roofs, dawn mist on the water), critters, fishing…
 src/solo/     wild.js (the wild lands in solo: a party of one), herotab.js (menu's Hero page),
               wanderers.js (Rook, Sigrid, Moss, Kai), phone.js (a phone as the solo controller)
 src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (split-screen),

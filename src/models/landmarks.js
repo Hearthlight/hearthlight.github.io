@@ -11,7 +11,9 @@ import { polyGeometry, quad, tri } from './geom.js';
 import { ramp } from '../engine/color.js';
 import { rng } from '../engine/util.js';
 import { installDawn, installPeaks, installFrontier } from './v7/landmarks7.js';
-import { flameCluster } from './flame.js';
+import { flameCluster, embers } from './flame.js';
+import { buildProp } from './props.js';
+import { buildBoat } from './boats.js';
 
 export const LANDMARKS = {
   windmill: { w: 3, d: 3, desc: 'Windy Heights stone windmill with four turning lattice sails' },
@@ -217,7 +219,8 @@ export function buildLandmark(r3d, kind, opts = {}) {
   const seed = Number.isFinite(opts.seed) ? Math.abs(Math.floor(opts.seed)) % 1000003 : 0;
   const g = new THREE.Group();
   g.name = 'landmark:' + kind;
-  const out = { obj: g, colliders: [], lights: [], anim: null, decks: [] };
+  // (chimneys: where smoke or steam rises, as the valley's chimneys — { x, y, z, smoke: 'hearth' | 'always'… })
+  const out = { obj: g, colliders: [], lights: [], anim: null, decks: [], chimneys: [] };
   f(g, out, m, rng(seed * 7919 + 101), seed, opts.poi || {}, r3d);
   g.traverse((c) => { if (c.isMesh) { c.castShadow = !c.userData.noCast; c.receiveShadow = true; } });
   g.userData.landmark = kind;
@@ -595,17 +598,6 @@ const marble = () => T('marble', () => {
   for (let i = 0; i < 20; i++) p.px(rr() * 16, rr() * 16, '#faf6ef');
   return tex(p.c, 1);
 });
-// rising, shrinking puffs of smoke/steam; returns an updater (t) => void
-function smoke(g, x, y, z, n = 3, { color = 0xd8d4dc, rise = 1.4, size = 0.2, speed = 0.35, spread = 0.18 } = {}) {
-  const mat = C('smoke' + color, color), ps = [];
-  for (let i = 0; i < n; i++) ps.push(glow(put(g, BOX1(), mat, x, y, z)));
-  return (t) => ps.forEach((p, i) => {
-    const l = (t * speed + i / n) % 1, k = size * (0.45 + l * 0.9) * (l > 0.75 ? (1 - l) / 0.25 : 1);
-    p.position.set(x + Math.sin(t * 0.9 + i * 2) * spread * l, y + l * rise, z + Math.cos(t * 0.7 + i) * spread * l * 0.5);
-    p.scale.setScalar(Math.max(0.001, k));
-    p.rotation.set(l * 2, l * 3 + i, 0);
-  });
-}
 
 BUILD.cloud_temple = (g, out, m, r, seed) => {
   const mb = marble(), white = C('templewhite', 0xf6f2ea), gold = GL('templegold', 0xf2c14e, 0x6a4a10, 0.25), cz = -0.2, CR = 1.75;
@@ -795,9 +787,7 @@ BUILD.yurt = (g, out, m, r, seed) => {
   put(g, B(0.06, 1.3, 0.06), m.dark, 1.02, 0.65, 1.12);
   put(g, B(0.22, 0.04, 0.04), m.dark, 0.93, 1.28, 1.12);
   lantern(g, out, 0.84, 1.1, 1.12, { s: 0.7 });
-  const puff = smoke(g, 0, 2.1, 0, 3, { rise: 1.5, size: 0.18, color: 0xd8d4dc });
-  out.anim = (t) => puff(t);
-  out.anim(0);
+  out.chimneys.push({ x: 0, y: 2.08, z: 0, smoke: 'always', seed });
   out.colliders.push({ x: 0, z: 0, r: 1.45 });
 };
 
@@ -1384,7 +1374,7 @@ BUILD.frog_throne = (g, out, m, r) => {
   out.colliders.push({ x: 0, z: cz - 0.1, r: 0.75 }, { x: -1.65, z: cz - 0.1, r: 0.12 }, { x: 1.65, z: cz - 0.1, r: 0.12 });
 };
 
-BUILD.stilt_house = (g, out, m, r, seed) => {
+BUILD.stilt_house = (g, out, m, r, seed, poi, r3d) => {
   const F = 0.9, zb = -1.45, zf = 0.05, zp = 1.05, H = 1.35, zm = (zb + zf) / 2;
   put(g, TB(2.5, 0.12, zp - zb), [m.dark, m.dark, m.planks, m.dark, m.dark, m.dark], 0, F - 0.06, (zb + zp) / 2);
   const posts = [];
@@ -1406,29 +1396,21 @@ BUILD.stilt_house = (g, out, m, r, seed) => {
   for (const s of [-1, 1]) put(g, B(2.9, 0.08, run / Math.cos(ang)), roofM, 0, ridge - rise / 2, zm + (s * run) / 2, 0, s * ang);
   put(g, geo('shgable', () => polyGeometry([tri([1.25, F + H, zf], [1.25, F + H, zb], [1.25, ridge, zm]), tri([-1.25, F + H, zb], [-1.25, F + H, zf], [-1.25, ridge, zm])])), side);
   put(g, TB(0.34, 0.8, 0.34), m.stone, 0.7, ridge - 0.05, zm - 0.3);
-  const puff = smoke(g, 0.7, ridge + 0.45, zm - 0.3, 3, { rise: 1.3, size: 0.17, color: 0xd8d4dc });
+  out.chimneys.push({ x: 0.7, y: ridge + 0.38, z: zm - 0.3, smoke: 'hearth', seed });
   // porch railing, steps, lanterns on the corner posts
   const rails = [[-1.2, F + 0.3, 0.1, 0.08, 0.6, 0.08], [1.2, F + 0.3, 0.1, 0.08, 0.6, 0.08], [-0.45, F + 0.3, 1.0, 0.08, 0.6, 0.08], [0.45, F + 0.3, 1.0, 0.08, 0.6, 0.08], [-1.2, F + 0.55, 1.0, 0.1, 1.1, 0.1], [1.2, F + 0.55, 1.0, 0.1, 1.1, 0.1]];
   rails.push([-1.2, F + 0.58, 0.55, 0.06, 0.06, 0.95], [1.2, F + 0.58, 0.55, 0.06, 0.06, 0.95], [-0.83, F + 0.58, 1.0, 0.8, 0.06, 0.06], [0.83, F + 0.58, 1.0, 0.8, 0.06, 0.06]);
   inst(g, BOX1(), m.wood, rails);
   inst(g, BOX1(), m.planks, [[0, 0.3375, 1.125, 0.9, 0.675, 0.15], [0, 0.225, 1.275, 0.9, 0.45, 0.15], [0, 0.1125, 1.425, 0.9, 0.225, 0.15]]);
   for (const s of [-1, 1]) lantern(g, out, s * 1.2, F + 1.22, 1.0, { s: 0.75 });
-  // a little rowboat tied to the porch
-  const bc = [0x4d7fc4, 0xd9594c, 0x3f9b98][seed % 3];
+  // a little rowboat tied to the porch (the vehicles' own, its oars shipped)
   const boat = grp(g, 1.0, 0, 1.3);
-  const bgeo = geo('dinghy', () => {
-    const sh = new THREE.Shape();
-    sh.moveTo(-0.5, 0); sh.quadraticCurveTo(-0.3, 0.2, 0, 0.2); sh.quadraticCurveTo(0.3, 0.2, 0.5, 0); sh.quadraticCurveTo(0.3, -0.2, 0, -0.2); sh.quadraticCurveTo(-0.3, -0.2, -0.5, 0);
-    const eg = new THREE.ExtrudeGeometry(sh, { depth: 0.2, bevelEnabled: false, curveSegments: 6 });
-    eg.rotateX(-Math.PI / 2);
-    return eg;
-  });
-  put(boat, bgeo, [C('boatin', 0x6b4330), C('boathull' + bc, bc)]);
-  put(boat, B(0.06, 0.03, 0.34), m.wood, 0, 0.17, 0);
-  put(boat, B(0.7, 0.03, 0.06), m.wood, 0.05, 0.21, 0, 0.3);
-  beam(g, m.rope, 1.2, 0.72, 1.0, 1.42, 0.18, 1.3, 0.02);
+  const dinghy = buildBoat(r3d, 'row', { look: seed % 4, moored: true, foam: false });
+  dinghy.rotation.y = Math.PI / 2; dinghy.scale.setScalar(0.5); dinghy.position.y = 0.09;   // (pulled up on the bank)
+  boat.add(dinghy);
+  beam(g, m.rope, 1.2, 0.72, 1.0, 1.36, 0.22, 1.3, 0.02);
   const ph = r() * 6;
-  out.anim = (t) => { puff(t); boat.position.y = Math.sin(t * 1.8 + ph) * 0.02; boat.rotation.z = Math.sin(t * 1.3 + ph) * 0.03; };
+  out.anim = (t) => { boat.position.y = Math.sin(t * 1.8 + ph) * 0.02; boat.rotation.z = Math.sin(t * 1.3 + ph) * 0.03; };
   out.anim(0);
   out.decks.push({ rect: [-1.25, zf, 2.5, zp - zf], y: F }, { rect: [-0.45, 1.05, 0.9, 0.15], y: 0.675 }, { rect: [-0.45, 1.2, 0.9, 0.15], y: 0.45 }, { rect: [-0.45, 1.35, 0.9, 0.15], y: 0.225 });
   out.colliders.push({ rect: [-1.25, zb, 2.5, zf - zb] }, { rect: [-1.3, zf, 0.12, 1.0] }, { rect: [1.18, zf, 0.12, 1.0] }, { rect: [-1.25, 0.95, 0.8, 0.12] }, { rect: [0.45, 0.95, 0.8, 0.12] });
@@ -1571,18 +1553,10 @@ BUILD.onsen = (g, out, m, r, seed) => {
   glow(put(g, geo('paperlampgeo', () => new THREE.CylinderGeometry(0.14, 0.14, 0.32, 8)), paper, -0.66, 1.24, -0.3));
   put(g, geo('bucket', () => new THREE.CylinderGeometry(0.13, 0.11, 0.18, 8)), m.wood, -0.72, 0.29, 1.35);
   put(g, B(0.34, 0.18, 0.28), m.wood, -1.2, 0.29, 1.5);
-  // steam off the water
-  const steam = [];
-  for (let i = 0; i < 5; i++) {
-    const mat = toon(R3, { color: 0xf8fbff, transparent: true, depthWrite: false });
-    mat.opacity = 0;
-    steam.push({ p: glow(put(g, BOX1(), mat, 0, 0.3, 0)), mat, x: 0.3 + (i % 3) * 0.8, z: -0.9 + i * 0.5, o: i / 5 });
-  }
+  // steam off the water (as the chimneys' smoke: it drifts with the wind)
+  for (const [x, z] of [[0.35, -0.8], [1.35, -0.1], [0.75, 0.9]]) out.chimneys.push({ x, y: 0.22, z, smoke: 'always', seed: seed + x * 10 });
   const ph = r() * 6;
-  out.anim = (t) => {
-    for (const s of steam) { const l = (t * 0.22 + s.o) % 1; s.p.position.set(s.x + Math.sin(t * 0.8 + s.o * 6) * 0.15 * l, 0.25 + l * 1.4, s.z); s.p.scale.setScalar(0.18 + l * 0.35); s.p.rotation.y = l * 2 + s.o * 5; s.mat.opacity = Math.sin(l * Math.PI) * 0.45; }
-    norens.forEach((n, i) => { n.rotation.x = Math.sin(t * 1.5 + i * 1.3 + ph) * 0.12; });
-  };
+  out.anim = (t) => { norens.forEach((n, i) => { n.rotation.x = Math.sin(t * 1.5 + i * 1.3 + ph) * 0.12; }); };
   out.anim(0);
   out.lights.push({ x: -0.66, y: 1.2, z: -0.1, color: 0xffa860, power: 1.1, lamp: true }, { x: 1.05, y: 0.6, z: 0.4, color: 0x9fe0f0, power: 0.5 });
   out.decks.push({ rect: [-2.45, -0.4, 2.1, 2.3], y: 0.2 });
@@ -1768,35 +1742,37 @@ BUILD.waystone = (g, out, m, r) => {
   out.colliders.push({ x: 0, z: 0, r: 0.45 });
 };
 
-BUILD.camp = (g, out, m, r, seed) => {
-  const v = seed % 4, tc = [0xe8883a, 0x5f9a4c, 0x4d7fc4, 0xc8454f][v], ds = { side: THREE.DoubleSide, shadowSide: THREE.DoubleSide };
-  const tA = C('camptent' + v, tc, ds), tB = C('camptentb' + v, new THREE.Color(tc).multiplyScalar(0.84).getHex(), ds), tF = C('camptentf' + v, new THREE.Color(tc).lerp(new THREE.Color(0xffffff), 0.25).getHex(), ds);
-  // the tent (door to the south)
-  const tx = -1.1, tz = -0.45, w = 1.5, d = 1.6, h = 1.2;
-  put(g, geo('ctentL', () => polyGeometry([quad([-w / 2, 0, -d / 2], [-w / 2, 0, d / 2], [0, h, d / 2], [0, h, -d / 2])])), tA, tx, 0, tz);
-  put(g, geo('ctentR', () => polyGeometry([quad([w / 2, 0, d / 2], [w / 2, 0, -d / 2], [0, h, -d / 2], [0, h, d / 2])])), tB, tx, 0, tz);
-  put(g, geo('ctentF', () => polyGeometry([tri([-w / 2, 0, d / 2], [w / 2, 0, d / 2], [0, h, d / 2]), tri([w / 2, 0, -d / 2], [-w / 2, 0, -d / 2], [0, h, -d / 2])])), tF, tx, 0, tz);
-  put(g, geo('ctentD', () => polyGeometry([tri([-0.3, 0, d / 2 + 0.01], [0.3, 0, d / 2 + 0.01], [0, h * 0.7, d / 2 + 0.01])])), C('tentdoor', 0x3b2a2e), tx, 0, tz);
-  put(g, B(0.05, 1.35, 0.05), m.dark, tx, 0.67, tz + d / 2 + 0.04);
-  // the campfire: stone ring, crossed logs, flames, a pot on a tripod
-  const fx = 0.75, fz = 0.25;
+BUILD.camp = (g, out, m, r, seed, poi, r3d) => {
+  // the valley's own camp pieces: the sewn ridge tent (in this camp's colour), log seats with their
+  // moss & fungus, a crate; a campfire of stones & crossed logs, embers, flames and its smoke
+  const v = seed % 4, tc = ['#e8883a', '#5f9a4c', '#4d7fc4', '#c8454f'][v];
+  const piece = (o, x, z, ry = 0) => {
+    const P = buildProp(r3d, { ...o, x: 0, y: 0 });
+    P.obj.position.set(x, 0, z); P.obj.rotation.y = ry;
+    g.add(P.obj);
+    const c = Math.cos(ry), s = Math.sin(ry);
+    for (const q of P.colliders) out.colliders.push(q.rect ? { rect: [q.rect[0] + x, q.rect[1] + z, q.rect[2], q.rect[3]] } : { x: x + q.x * c + q.z * s, z: z - q.x * s + q.z * c, r: q.r });
+    return P;
+  };
+  const tent = piece({ type: 'tent', color: tc }, -1.0, -0.55);
+  const fx = 0.8, fz = 0.25;
   inst(g, ROCK(), C('campstone', 0x8a858e), Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return [fx + Math.cos(a) * 0.38, 0.06, fz + Math.sin(a) * 0.3, 0.1, 0.08, 0.09, a]; }));
   for (const ry of [0.5, -0.5]) put(g, geo('camplog', () => new THREE.CylinderGeometry(0.06, 0.07, 0.6, 6)), C('camplog', 0x6b4330), fx, 0.08, fz, ry, 0, Math.PI / 2);
+  const coals = embers(R3); coals.position.set(fx, 0.04, fz); g.add(coals);
   const fire = flames(g, fx, 0.08, fz, 1);
   for (const a of [0.3, 2.4, 4.5]) beam(g, m.dark, fx + Math.cos(a) * 0.45, 0, fz + Math.sin(a) * 0.4, fx, 1.05, fz, 0.04);
   put(g, B(0.015, 0.2, 0.015), m.iron, fx, 0.95, fz);
   put(g, geo('pot', () => new THREE.CylinderGeometry(0.16, 0.12, 0.2, 8)), m.iron, fx, 0.76, fz);
-  // log seats, a crate & a bedroll
-  const bark = C('logbark', 0x7a5238), end = C('logend', 0xd9b07a);
-  put(g, geo('seatlogx', () => new THREE.CylinderGeometry(0.17, 0.18, 1.0, 8)), [bark, end, end], fx, 0.17, 1.2, 0, 0, Math.PI / 2);
-  put(g, geo('seatlogz', () => new THREE.CylinderGeometry(0.17, 0.18, 0.9, 8)), [bark, end, end], 1.75, 0.17, 0.2, 0, Math.PI / 2);
-  put(g, TB(0.55, 0.45, 0.45), m.wood, -1.55, 0.225, 0.95, 0.2);
-  put(g, B(0.6, 0.05, 0.5), m.dark, -1.55, 0.47, 0.95, 0.2);
-  put(g, geo('bedroll', () => new THREE.CylinderGeometry(0.12, 0.12, 0.62, 8)), C('bedroll' + v, [0xc8454f, 0x3f6f9e, 0x6d4a8a, 0x3f9b98][v]), -0.5, 0.12, 0.8, 0.2, 0, Math.PI / 2);
-  out.anim = (t) => flick(fire, t);
+  out.chimneys.push({ x: fx, y: 0.95, z: fz, smoke: 'always', seed });
+  piece({ type: 'logseat' }, fx, 1.25);
+  piece({ type: 'logseat' }, 1.8, 0.2, Math.PI / 2);
+  piece({ type: 'crate' }, -2.0, 1.0, 0.2);
+  put(g, geo('bedroll', () => new THREE.CylinderGeometry(0.12, 0.12, 0.62, 8)), C('bedroll' + v, [0xc8454f, 0x3f6f9e, 0x6d4a8a, 0x3f9b98][v]), -0.3, 0.12, 0.95, 0.2, 0, Math.PI / 2);
+  const pen = tent.animPart;
+  out.anim = (t) => { flick(fire, t); if (pen) pen.rotation.y = Math.sin(t * 3.1 + seed) * 0.3; };
   out.anim(0);
   out.lights.push({ x: fx, y: 0.7, z: fz + 0.2, color: 0xff5f2a, power: 1.9, lamp: true, fire: true, flicker: true, dist: 9 });
-  out.colliders.push({ rect: [tx - w / 2, tz - d / 2, w, d] }, { x: fx, z: fz, r: 0.45 }, { x: fx - 0.3, z: 1.2, r: 0.22 }, { x: fx + 0.3, z: 1.2, r: 0.22 }, { x: 1.75, z: -0.05, r: 0.22 }, { x: 1.75, z: 0.45, r: 0.22 }, { x: -1.55, z: 0.95, r: 0.35 });
+  out.colliders.push({ x: fx, z: fz, r: 0.45 });
 };
 
 // World v7: the Dawnlands' landmarks, built with this file's helpers
