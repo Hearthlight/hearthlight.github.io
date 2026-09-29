@@ -53,4 +53,9 @@ export const MULTI10_FR = {
   "Tap an item to ship the whole stack · tap outside to leave": "Touche un article pour expédier toute la pile · touche à côté pour partir",
   "{a} ship one · {b} close": "{a} en expédier un · {b} fermer",
   "Tap Close, or outside, to go back": "Touche Fermer, ou à côté, pour revenir",
+  "Stuck? Tap here to get out": "Coincé ? Touche ici pour sortir",
+  "Stuck? Get unstuck on your phone": "Coincé ? Décoince-toi depuis ton téléphone",
+  "Stuck? {key} → Get unstuck": "Coincé ? {key} → Se décoincer",
+  "Stuck? Look at your phone": "Coincé ? Regarde ton téléphone",
+  "Stuck? Get unstuck": "Coincé ? Se décoincer",
 };

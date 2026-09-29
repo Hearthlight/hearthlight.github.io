@@ -252,7 +252,7 @@ class TvHero extends HeroTab {
     if (P.phase !== 'lobby' && P.camp) btn('camp', t('Light a campfire'), () => { P.tvmenus.close(p); P.camp.build(p); }, '#b8502a');
     if (P.phase !== 'lobby') btn('unstuck', t('Get unstuck'), () => { P.tvmenus.close(p); P.unstick(p); });
     btn('leave', this.asking('leave') ? t('Press again') : t('Leave the party'), () => this.twice('leave', () => { P.tvmenus.close(p); P.removePlayer(p); }), this.asking('leave') ? '#c8454f' : '#8a7a98');
-    if (!this.home) this.home = 'name';
+    if (!this.home) this.home = p.stuckOffer && P.phase !== 'lobby' ? 'unstuck' : 'name';
     // how you play, on your own buttons
     const kx = bx + bw + 10, kw = A.x + A.w - kx;
     if (kw < 70) return;
@@ -318,8 +318,9 @@ export class TvMenus {
     let tab = this.tabs.get(p);
     if (!tab) { tab = new TvHero(P, p); this.tabs.set(p, tab); }
     tab.syncPages();
-    // (a talent point waiting: straight to the talents)
+    // (a talent point waiting: straight to the talents — seemingly stuck: straight to « Get unstuck »)
     if (p.fighter && tab.points() > 0) tab.page = 'talents';
+    if (p.stuckOffer && P.phase !== 'lobby') tab.page = 'you';
     tab.focus = null; tab.confirm = null;
     const real = p.input;
     p.input = new QuietInput(real);

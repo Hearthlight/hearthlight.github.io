@@ -55,6 +55,7 @@ import { findUnstuck, stuckAt } from '../world/collision.js';
 import { Stage } from '../saga/stage.js';
 import { CHAPTERS as SAGA_CHAPTERS } from '../saga/chapters/index.js';
 import { ViewCull } from '../render/cull.js';
+import { StuckWatch } from '../entities/stuck.js';
 
 export const PARTY_COLORS = [
   { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
@@ -459,6 +460,8 @@ export class Party {
     a.jumpY = 0; a.jumpV = 0;
     this.world.fx.emit('sparkle', s.x, 1.2, s.z, 14, { color: p.color });
     audio.sfx('poof', { volume: 0.6 });
+    if (p.stuckWatch) p.stuckWatch.reset();
+    p.stuckOffer = false;
     this.toast(t('{name} got unstuck!', { name: p.name }), p.color);
   }
 
@@ -834,6 +837,17 @@ export class Party {
       if (p.portraitDue > 0 && (p.portraitDue -= dt) <= 0) this.sendPortrait(p);
     }
     this.separatePlayers(col);
+    // (a hero pushing and going nowhere, or boxed in: « Get unstuck » comes forward — stuck.js)
+    const roam = this.exploring() && this.phase !== 'lobby';
+    for (const p of this.players) {
+      if (!p.connected) { p.stuckOffer = false; continue; }
+      const v = p.input.moveVector(), sw = p.stuckWatch || (p.stuckWatch = new StuckWatch());
+      p.stuckOffer = sw.update(dt, {
+        pushing: Math.hypot(v.x, v.y) > 0.5, pos: p.pos,
+        busy: !roam || frozenAll || p.frozen || !!p.vehicle || !!p.mount || !!p.swimming || !!p.dive || !!p.sleeping || !!(p.fighter && p.fighter.down) || this.tvmenus.isOpen(p),
+        boxedAt: () => stuckAt(col, p.pos.x, p.pos.z),
+      });
+    }
     if (this.rooms && !frozenAll) this.rooms.update(sdt);
     if (this.mounts && !frozenAll) this.mounts.update(sdt);
     if (this.dinos && !frozenAll) this.dinos.update(sdt);
@@ -905,6 +919,7 @@ export class Party {
         if (f.down) { ctx.a = null; ctx.b = null; ctx.x = null; ctx.y = null; ctx.hint = t(this.combat.pvp ? 'Bonked! Back in a moment…' : 'Having a little nap… a friend can help you up!'); }
       }
       if (p.mount) { const h = p.mount; ctx.cd = h.abilCd > 0 ? Math.ceil((h.abilCd / h.D.ability.cd) * 10) * 10 : 0; }
+      if (p.stuckOffer && !scene) ctx.stuck = 1;          // (the phone offers « Get unstuck » up front)
       this.sendCtx(p, ctx);
     }
     for (const q of this.toasts) q.t += dt;
@@ -1527,6 +1542,18 @@ export class Party {
     }
     // villagers’ words go on top of the crowd’s name tags
     for (const b of said) bubble(ctx, b.x, b.y, b.text, { wrapW: 150 });
+    // (a hero who seems stuck: how to get out, over their head)
+    // (two heroes stuck side by side: their bubbles stack rather than overlap)
+    const stuckSays = [];
+    for (const p of this.players) {
+      if (!p.stuckOffer || p.hidden || this.dialogue.active) continue;
+      const u = this.toUi(v, p.pos.x, 2.2 + (p.actor.baseY || 0), p.pos.z);
+      const say = p.kind === 'phone' ? t('Stuck? Look at your phone') : t('Stuck? {key} → Get unstuck', { key: keyOf(p, 'm') });
+      let y = u.y - 14;
+      for (const q of stuckSays) if (Math.abs(q.x - u.x) < 110 && Math.abs(q.y - y) < 24) y = q.y - 24;
+      stuckSays.push({ x: u.x, y });
+      bubble(ctx, u.x, y + Math.sin(this.t * 3) * 1.5, say, { wrapW: 180 });
+    }
     if (this.arena) this.arena.drawLabels(ctx, v);
     if (this.mounts) this.mounts.drawLabels(ctx, v);
     if (this.races) this.races.drawLabels(ctx, v);

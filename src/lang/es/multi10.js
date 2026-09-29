@@ -53,4 +53,9 @@ export const MULTI10_ES = {
   "Tap an item to ship the whole stack · tap outside to leave": "Toca un artículo para enviar todo el montón · toca fuera para salir",
   "{a} ship one · {b} close": "{a} enviar uno · {b} cerrar",
   "Tap Close, or outside, to go back": "Toca Cerrar, o fuera, para volver",
+  "Stuck? Tap here to get out": "¿Atascado? Toca aquí para salir",
+  "Stuck? Get unstuck on your phone": "¿Atascado? Libérate desde tu teléfono",
+  "Stuck? {key} → Get unstuck": "¿Atascado? {key} → Liberarse",
+  "Stuck? Look at your phone": "¿Atascado? Mira tu teléfono",
+  "Stuck? Get unstuck": "¿Atascado? Liberarse",
 };

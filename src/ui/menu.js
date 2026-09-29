@@ -23,6 +23,8 @@ import { DIFFS } from '../party/host.js';
 const TABS = [['bag', 'Bag'], ['quests', 'Journal'], ['friends', 'Friends'], ['collection', 'Collection'], ['map', 'Map'], ['hero', 'Hero']];
 const TABS_SHORT = ['Bag', 'Tasks', 'Pals', 'Finds', 'Map', 'Hero'];
 const PAUSE = [['Resume', 'resume'], ['Save game', 'save'], ['Settings', 'settings'], ['Controls', 'controls'], ['Back to title', 'title']];
+// (the hero seems stuck — entities/stuck.js: the way out comes first)
+const UNSTUCK_ROW = ['Get unstuck', 'unstuck'];
 const CATS = { tool: 'Tool', seed: 'Seeds', crop: 'Crop', forage: 'Forage', fish: 'Fish', junk: 'Junk', food: 'Food', key: 'Special', furniture: 'Furniture', decor: 'Decor', material: 'Material', critter: 'Critter' };
 const COLLECT = ['fish_sardine', 'fish_mackerel', 'fish_crab', 'fish_puffer', 'fish_moonfin', 'fish_minnow', 'fish_trout', 'fish_carp', 'fish_koi', 'fish_goldfish',
   'fish_perch', 'fish_bass', 'fish_pike', 'fish_eel', 'fish_char', 'fish_icefin', 'fish_catfish', 'fish_seaweed', 'fish_boot',
@@ -142,6 +144,7 @@ export class Menu {
     if (back || start || (this.closeRect && input.mouse.pressed && mouseOn(this.closeRect))) { this.close(); return; }
     // (Tab / Select: over to the book)
     if (input.pressed('menu')) { input.consume('menu'); this.showTab(this.lastTab || 'bag'); return; }
+    const PAUSE = this.pauseRows();
     if (input.repeat('up')) { this.sel = (this.sel + PAUSE.length - 1) % PAUSE.length; audio.sfx('select', { volume: 0.4 }); }
     if (input.repeat('down')) { this.sel = (this.sel + 1) % PAUSE.length; audio.sfx('select', { volume: 0.4 }); }
     for (const r of this.rowRects || []) if (mouseOn(r)) {
@@ -151,9 +154,12 @@ export class Menu {
     if (input.pressed('interact')) { input.consume('interact'); this.pauseDo(PAUSE[this.sel][1]); }
   }
 
+  pauseRows() { return this.world.stuckOffer && this.world.player ? [UNSTUCK_ROW, ...PAUSE] : PAUSE; }
+
   pauseDo(k) {
     const w = this.world;
     if (k === 'resume') this.close();
+    else if (k === 'unstuck') { this.close(); w.unstick(); if (w.stuckWatch) w.stuckWatch.reset(); w.stuckOffer = false; }
     else if (k === 'save') { const ok = w.save('manual'); this.savedFlash = ok ? this.t : -this.t; audio.sfx(ok ? 'confirm' : 'error'); }
     else if (k === 'settings') { this.page = 'settings'; this.from = 'pause'; this.sel = 0; audio.sfx('page'); }
     else if (k === 'controls') { audio.sfx('page'); w.game.openControls(); }
@@ -174,7 +180,7 @@ export class Menu {
   updateSettingsPage(input) {
     const back = input.pressed('cancel') || input.pressed('menu'), start = input.pressed('pause') && !input.pressed('cancel');
     if (back || start || (this.closeRect && input.mouse.pressed && input.mouseIn(this.closeRect.x, this.closeRect.y, this.closeRect.w, this.closeRect.h))) {
-      if (this.from === 'pause' && !start) { this.page = 'pause'; this.from = null; this.sel = PAUSE.findIndex((r) => r[1] === 'settings'); audio.sfx('page'); input.consume(); return; }
+      if (this.from === 'pause' && !start) { this.page = 'pause'; this.from = null; this.sel = this.pauseRows().findIndex((r) => r[1] === 'settings'); audio.sfx('page'); input.consume(); return; }
       this.close();
       return;
     }
@@ -360,6 +366,7 @@ export class Menu {
     ctx.fillStyle = 'rgba(20,14,28,0.55)';
     ctx.fillRect(0, 0, W, H);
     const rh = 16, cardH = 46, footH = w.input.touchMode ? 4 : 16;
+    const PAUSE = this.pauseRows();
     const pw = Math.min(W - 16, 250), ph = Math.min(H - 20, cardH + 8 + PAUSE.length * rh + footH);
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2) + 4;
     // the title tab, a little lantern beside it
@@ -392,7 +399,7 @@ export class Menu {
     PAUSE.forEach(([label, key], i) => {
       const y = py + cardH + 6 + i * rh, on = i === this.sel && !this.confirm;
       if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 3, pw - 16, rh - 2); drawText(ctx, '♥', px + 14, y + 1, { color: '#ec5f73' }); }
-      drawText(ctx, t(label), px + 26, y + 1, { color: key === 'title' ? '#8e4a3e' : UI.ink });
+      drawText(ctx, t(label), px + 26, y + 1, { color: key === 'title' ? '#8e4a3e' : key === 'unstuck' ? '#3f8a4a' : UI.ink });
       if (key === 'save') {
         const note = saved ? t('Saved ✓') : failed ? t('Couldn’t save!') : this.savedAgo();
         drawText(ctx, fitText(note, pw - 60 - measure(t(label))), px + pw - 14, y + 1, { color: saved ? '#4f955a' : failed ? '#c8454f' : '#b8a080', align: 'right' });

@@ -209,6 +209,7 @@ export class SoloPhone {
       const full = (f.moves ? f.moves.special.cd : f.cls.special.cd) * (f.mods.cdr || 1);
       if (c.x && f.cd > 0) c.cd = Math.round((100 * f.cd) / full);
     }
+    if (w.stuckOffer) c.stuck = 1;       // (seemingly stuck: the phone offers the way out — entities/stuck.js)
     const held = s.bag[s.hot];
     c.hot = held && ITEMS[held.id] ? t(ITEMS[held.id].name) + (held.qty > 1 ? ` ×${held.qty}` : '') : t('(empty hands)');
     return c;

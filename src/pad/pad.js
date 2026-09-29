@@ -147,7 +147,7 @@ function onMessage(m) {
       break;
     case 'tally': if (S.choice && S.choice.id === m.id) S.choice.tally = m.counts; break;
     case 'ctx':
-      S.ctx = { a: m.a || null, b: m.b === undefined ? t('Hop') : m.b, x: m.x || null, y: m.y || null, hint: m.hint || '', hp: m.hp, lv: m.lv, cd: m.cd || 0, mode: m.mode || 'play', page: typeof m.page === 'string' ? m.page : null, hot: m.hot || '', ic: m.ic || {}, camp: !!m.camp, ult: typeof m.ult === 'number' ? m.ult : null, uic: m.uic || null };
+      S.ctx = { a: m.a || null, b: m.b === undefined ? t('Hop') : m.b, x: m.x || null, y: m.y || null, hint: m.hint || '', hp: m.hp, lv: m.lv, cd: m.cd || 0, mode: m.mode || 'play', page: typeof m.page === 'string' ? m.page : null, hot: m.hot || '', ic: m.ic || {}, camp: !!m.camp, stuck: !!m.stuck, ult: typeof m.ult === 'number' ? m.ult : null, uic: m.uic || null };
       if (m.score !== undefined) S.score = m.score;
       break;
     case 'cls': if (CLASSES[m.v]) { S.cls = m.v; store.set('cls', m.v); } break;
@@ -738,6 +738,8 @@ function drawSolo() {
     wrap(hint || t('Have fun!'), W - tx - 18).slice(0, Math.max(1, Math.floor((y + cardH - hy - 2) / 11))).forEach((l, i) => drawText(ctx, l, tx, hy + i * 11, { color: '#5a4a5a' }));
     y += cardH + 6;
   }
+  // (the game thinks you're stuck: the way out, first)
+  if (mode === 'play' && c.stuck) { pill(6, y, W - 12, 22, t('Stuck? Get unstuck'), 'stucks', () => { soloAct('unstuck'); buzz([20, 30, 20]); }, { color: '#4f955a' }); y += 28; }
   // the solo game's own buttons (in a menu: the tabs & close)
   if (mode !== 'talk' && mode !== 'wait') {
     const row = mode === 'menu' && c.page === 'pause' ? [[t('Resume'), 'pause', '#4f955a', 'play']]
@@ -837,6 +839,11 @@ function drawPad() {
       pill(tx + bw + 4, yy, bw, 14, fitText(t('Gear'), bw - 6), 'lgear', () => { S.menu = 'gear'; S.gearSel = null; }, { color: '#5a7ab8' });
     }
     infoH = cardH + 8;
+  }
+  // (the big screen thinks you're stuck: the way out, right here)
+  if (!lobby && S.ctx.stuck) {
+    pill(land ? Math.round(W / 2 - 90) : 6, top + infoH, land ? 180 : W - 12, 22, t('Stuck? Get unstuck'), 'stuckp', () => { send({ t: 'unstuck' }); buzz([20, 30, 20]); }, { color: '#4f955a' });
+    infoH += 28;
   }
   // the host's big Start button
   if (lobby && S.host) {

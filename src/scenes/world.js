@@ -23,7 +23,8 @@ import { applyHomeLevel } from '../world/interiors.js';
 import { Hud, dayLabel } from '../ui/hud.js';
 import { Menu } from '../ui/menu.js';
 import { Shop, SHOPS } from '../ui/shop.js';
-import { emote as drawEmote, keyHint, tag, bubble, UI, keyCap, ctl } from '../ui/ui.js';
+import { emote as drawEmote, keyHint, tag, bubble, UI, keyCap, ctl, button, device } from '../ui/ui.js';
+import { StuckWatch } from '../entities/stuck.js';
 import { drawText, measure } from '../engine/font.js';
 import { addItem, removeItem, countItem, hasItem, saveGame, DAY_START, DAY_END, HOTBAR, fogReveal } from '../state.js';
 import { audio } from '../engine/audio.js';
@@ -1647,6 +1648,15 @@ export class World {
     this.player.onIce = underfoot === TT.ICE || underfoot === TT.GLACIER;
     // (swimming, riding & boats: the wild lands move the hero)
     if (!(W && W.movePlayer(dt, input, col, frozen))) this.player.update(dt, input, col, frozen);
+    // (pushing and going nowhere, or boxed in: « Get unstuck » comes forward — entities/stuck.js)
+    const mv = input.moveVector(), sw = this.stuckWatch || (this.stuckWatch = new StuckWatch());
+    this.stuckOffer = sw.update(dt, {
+      pushing: !frozen && Math.hypot(mv.x, mv.y) > 0.5, pos: this.player.pos,
+      busy: this.busy > 0 || !!this.cinematic || !!this.sail || this.fishing.active || !!(W && (W.me.vehicle || W.me.mount || W.afloat())),
+      boxedAt: () => stuckAt(col, this.player.pos.x, this.player.pos.z, { room: this.mapId === 'overworld' ? 40 : 8 }),
+    });
+    const SR = this.stuckRect;
+    if (this.stuckOffer && SR && input.mouse.pressed && input.mouseIn(SR.x, SR.y, SR.w, SR.h)) { input.mouse.pressed = false; this.unstick(); sw.reset(); this.stuckOffer = false; }
     if (W && W.petAway()) {
       // the pet waits on the shore while you swim or sail, and runs back to you after
       this.pet.model.root.visible = false;
@@ -1921,6 +1931,8 @@ export class World {
     this.fx.emit('sparkle', s.x, 1.2, s.z, 14, { color: '#ffd66b' });
     audio.sfx('poof', { volume: 0.6 });
     this.hud.toast(t('Unstuck! ♥'));
+    if (this.stuckWatch) this.stuckWatch.reset();
+    this.stuckOffer = false;
     return true;
   }
 
@@ -2066,6 +2078,16 @@ export class World {
       const label = t(f.label);
       if (this.input.touchMode) tag(ctx, u.x - (measure(label) + 8) / 2, u.y - 16, label, '#2a1f33');
       else keyHint(ctx, u.x, u.y - 16, ctl('interact'), label);
+    }
+    // (the hero seems stuck: a bubble over them — tap it, or the pause menu's first line)
+    this.stuckRect = null;
+    if (this.stuckOffer && !this.dialogue.active && !this.menu.open && !this.shop.open_ && !this.busy && !this.cinematic && !this.game.overlay) {
+      const p = this.player, u = this.toUi(p.pos.x, 2.1 + (p.baseY || 0) + (p.jumpY || 0), p.pos.z), dev = device();
+      const label = dev === 'touch' ? t('Stuck? Tap here to get out') : dev === 'phone' ? t('Stuck? Get unstuck on your phone')
+        : t('Stuck? {key} → Get unstuck', { key: ctl('pause') });
+      const w2 = measure(label) + 12, x = Math.round(u.x - w2 / 2), y = Math.round(u.y - 30 + Math.sin(this.t * 3) * 1.5);
+      button(ctx, x, y, w2, 14, label, { color: '#4f955a' });
+      this.stuckRect = { x: x - 2, y: y - 2, w: w2 + 4, h: 18 };
     }
     // (placed furniture at home: it can go back in the bag)
     const pa = !this.dialogue.active && !this.menu.open && !this.busy && !this.input.touchMode && this.placedAhead();
