@@ -244,8 +244,15 @@ function atlasFor(color) {
 }
 
 const ACCENTS = /[̀-ͯ]/g;
+// (asked for every glyph drawn: characters without a glyph of their own are looked up once)
+const NORM = new Map();
 function normChar(ch) {
   if (glyphs[ch] || G[ch]) return ch;
+  let n = NORM.get(ch);
+  if (n === undefined) { n = normSlow(ch); NORM.set(ch, n); }
+  return n;
+}
+function normSlow(ch) {
   const plain = ch.normalize('NFD').replace(ACCENTS, '');
   if (G[plain]) return plain;
   if (ch === '’' || ch === '‘') return "'";

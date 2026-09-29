@@ -441,7 +441,11 @@ export function buildChunkObjects(r3d, objs) {
       im.instanceColor.needsUpdate = true;
     }
     im.instanceMatrix.needsUpdate = true;
-    im.castShadow = true; im.receiveShadow = true;
+    // (tiny pieces — lichen, rail bars, pebbles — cast no shadow worth drawing)
+    if (!b.geo.boundingSphere) b.geo.computeBoundingSphere();
+    let big = 0;
+    for (const m of b.m) { const e = m.elements; big = Math.max(big, Math.hypot(e[0], e[1], e[2]), Math.hypot(e[4], e[5], e[6]), Math.hypot(e[8], e[9], e[10])); }
+    im.castShadow = b.geo.boundingSphere.radius * big >= 0.12; im.receiveShadow = true;
     im.computeBoundingSphere();
     group.add(im);
   }

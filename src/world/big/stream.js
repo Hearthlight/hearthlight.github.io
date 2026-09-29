@@ -300,6 +300,9 @@ export class ChunkStreamer {
     const rects = this.deckRects(c);
     if (rects.length) c.objs.add(buildPier(this.r3d, rects));
     this.root.add(c.objs);
+    // (a chunk's things never move: their matrices once, not every frame)
+    c.objs.updateMatrixWorld(true);
+    c.objs.matrixWorldAutoUpdate = false;
     if (this.big.pois) this.big.pois.show(c.k, true);
     this.addLights(c);
     this.stats.built++; this.stats.buildMs += performance.now() - t0;

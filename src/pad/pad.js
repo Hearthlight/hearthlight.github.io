@@ -286,6 +286,7 @@ function hit(p) {
 
 cv.addEventListener('pointerdown', (e) => {
   e.preventDefault();
+  lastTouch = performance.now();
   const p = toUi(e);
   const r = hit(p);
   if (!r) return;
@@ -312,6 +313,7 @@ cv.addEventListener('pointerdown', (e) => {
 cv.addEventListener('pointermove', (e) => {
   const q = pointers.get(e.pointerId);
   if (!q) return;
+  lastTouch = performance.now();
   const p = toUi(e);
   if (q.kind === 'stick') { stick.x = p.x; stick.y = p.y; }
   else if (q.kind === 'map') PM.move(mapBox(), e.pointerId, p, performance.now());
@@ -1606,15 +1608,20 @@ function drawHostGone() {
 }
 
 // ------------------------------------------------------------------ loop
-let last = performance.now();
+let last = performance.now(), lastDraw = 0, lastTouch = 0;
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   S.t += dt;
-  regions = [];
-  ctx.clearRect(0, 0, W, H);
-  // (a screen that fails to draw must never freeze the controller: the stick & the loop go on)
-  try { drawScreen(); S.drawError = null; } catch (e) { console.error(e); S.drawError = String(e); }
+  // (a controller lying still needs no 60 redraws a second — 30 spare eight phones' batteries;
+  // full speed while a finger is on it)
+  if (now - lastTouch < 800 || now - lastDraw >= 30 || frame.manual) {
+    lastDraw = now;
+    regions = [];
+    ctx.clearRect(0, 0, W, H);
+    // (a screen that fails to draw must never freeze the controller: the stick & the loop go on)
+    try { drawScreen(); S.drawError = null; } catch (e) { console.error(e); S.drawError = String(e); }
+  }
   updateStick(now);
   if (!frame.manual) requestAnimationFrame(frame);
 }

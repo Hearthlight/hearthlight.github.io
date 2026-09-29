@@ -500,5 +500,15 @@ export class Enemy {
     this.combat.root.remove(this.obj);
     this.combat.root.remove(this.shadow);
     if (this.ice) this.combat.root.remove(this.ice);
+    // (its model is its own — fresh boxes and balls, own() materials: give them back to the GPU,
+    // or every foe ever beaten stays in memory; a shared one used again just uploads again)
+    if (!this.disposed) {
+      this.disposed = true;
+      this.obj.traverse((m) => {
+        if (!m.isMesh) return;
+        if (m.geometry) m.geometry.dispose();
+        for (const q of Array.isArray(m.material) ? m.material : [m.material]) if (q && q.dispose) q.dispose();
+      });
+    }
   }
 }

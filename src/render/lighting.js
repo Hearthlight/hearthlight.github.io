@@ -48,7 +48,8 @@ export class Lighting {
     this.drain = 0;         // 0..1 colours drained (a land whose Great Hearth is out)
     this.sepia = 0;         // 0..1 an old photograph's tint (a scene's flashback)
     this.glowTex = makeGlowTexture();
-    this.glowMat = new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffc070, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
+    // (lamps: a warm amber halo — a paler gold turned the grass under them yellow-green)
+    this.glowMat = new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffa058, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
     // (a fire's own halo: red-orange and low — the lamps' pale gold turned the grass round a
     // campfire yellow-green and washed its flames out)
     this.fireGlowMat = new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff6a2c, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
@@ -181,7 +182,7 @@ export class Lighting {
       if (!c) { l.intensity = 0; continue; }
       const s = c[1];
       l.position.set(s.x, s.y, s.z);
-      l.color.set(s.color || 0xffb862);
+      l.color.set(s.color || 0xff9c52);
       l.distance = s.dist || (s.lamp ? 8 : 4.6);
       l.intensity = (s.always ? Math.max(level, 0.6) : level) * (s.power || 1) * LIGHT * (s.lamp || s.always ? 1.1 : 0.8);
     }

@@ -87,12 +87,19 @@ export function drawMark(ctx, m, x, y, time = 0) {
 export function drawMarks(ctx, M, marks, time) { for (const m of marks) { const q = M(m.x, m.z); drawMark(ctx, m, q.x, q.y, time); } }
 
 // everything on the map right now: each system's marks, the activity's, the objective
+// (asked for every frame by the minimaps: the list is kept a third of a second)
+let ORDER = null;
 export function collectMarks(P, target = null) {
+  const now = P.t || 0, c = P._marks, tx = target ? target.x : null, tz = target ? target.z : null;
+  if (c && c.tx === tx && c.tz === tz && now >= c.t && now - c.t < 0.33) return c.list;
+  if (!ORDER) ORDER = new Map(MARK_ORDER.map((k, i) => [k, i]));
   const out = [];
   for (const S of [P.events, P.races, P.secrets, P.encounters, P.travel, P.lairs, P.rares]) if (S && S.mapMarks) S.mapMarks(out);
   if (P.act && P.act.mapMarks) P.act.mapMarks(out);
   if (P.mapMarks) P.mapMarks(out);
   const tgt = target || (P.act && P.act.target);
   if (tgt) out.push({ k: 'target', x: tgt.x, z: tgt.z, name: t('Objective') });
-  return out.sort((a, b) => MARK_ORDER.indexOf(a.k) - MARK_ORDER.indexOf(b.k));
+  out.sort((a, b) => (ORDER.get(a.k) ?? -1) - (ORDER.get(b.k) ?? -1));
+  P._marks = { t: now, tx, tz, list: out };
+  return out;
 }

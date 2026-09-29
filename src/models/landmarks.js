@@ -181,7 +181,7 @@ function inst(g, geometry, material, items) {
   return im;
 }
 // small hanging/standing lantern centred at (x, y, z) + its warm lamp light
-function lantern(g, out, x, y, z, { s = 1, mat = M.lamp, color = 0xffb862, power = 1.0, lx = x, ly = y, lz = z, flicker = false } = {}) {
+function lantern(g, out, x, y, z, { s = 1, mat = M.lamp, color = 0xff9c52, power = 1.0, lx = x, ly = y, lz = z, flicker = false } = {}) {
   const l = grp(g, x, y, z);
   put(l, B(0.2 * s, 0.05 * s, 0.2 * s), M.iron, 0, -0.14 * s, 0);
   glow(put(l, B(0.16 * s, 0.22 * s, 0.16 * s), mat, 0, 0, 0));

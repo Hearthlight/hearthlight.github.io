@@ -22,7 +22,9 @@ export class R3D {
     try {
       renderer = new THREE.WebGLRenderer({
         canvas: this.canvas, antialias: false, alpha: false,
-        preserveDrawingBuffer: true, powerPreference: 'high-performance',
+        // (no preserved buffer: every render is copied to the 2D layers right away, in the same task —
+        // keeping it costs a buffer copy a frame on phones' GPUs)
+        preserveDrawingBuffer: false, powerPreference: 'high-performance',
       });
     } catch (e) {
       this.ok = false;
@@ -186,7 +188,9 @@ export class R3D {
 
     // shadow camera follows the view, snapped to its own texel grid
     const sun = this.sun;
-    const span = Math.max(hw, this.h / 2 / ppu) + 10;
+    // (the view plus a margin for what stands just outside it and casts into it: 5 tiles — 10
+    // drew three shadow casters in four for nothing)
+    const span = Math.max(hw, this.h / 2 / ppu) + 5;
     const s = sun.shadow.camera;
     s.left = -span; s.right = span; s.top = span; s.bottom = -span;
     s.updateProjectionMatrix();
@@ -215,7 +219,7 @@ export class R3D {
   // move the sun's shadow frustum over a panel before rendering it
   aimShadow(x, z, vw, vh, ppu) {
     const sun = this.sun;
-    const span = Math.max(vw / 2 / ppu, vh / 2 / ppu) + 10;
+    const span = Math.max(vw / 2 / ppu, vh / 2 / ppu) + 5;
     const s = sun.shadow.camera;
     s.left = -span; s.right = span; s.top = span; s.bottom = -span;
     s.updateProjectionMatrix();

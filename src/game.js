@@ -70,7 +70,8 @@ export class Game {
     this.display.onResize((d) => this.r3d.resize(d.ww, d.wh));
     this.applyZoom();
     this.r3d.resize(this.display.ww, this.display.wh);
-    this.lighting = new Lighting(this.r3d);
+    // (a phone: 8 lights in the pool — every lit pixel loops over them all; its small view needs fewer)
+    this.lighting = new Lighting(this.r3d, this.display.phone ? 8 : 14);
     this.portraits = new Portraits(this.r3d);
     this.state = newState({ name: 'Sprout', look: {} });
     this.dialogue = new Dialogue(this);

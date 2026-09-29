@@ -36,6 +36,11 @@ function mats(r3d) {
   return M;
 }
 
+function bigEnough(m) {
+  const g = m.geometry;
+  if (!g.boundingSphere) g.computeBoundingSphere();
+  return g.boundingSphere.radius * Math.max(m.scale.x, m.scale.y, m.scale.z) >= 0.12;
+}
 function mesh(geo, mat, x, y, z) {
   const m = new THREE.Mesh(geo, mat);
   m.position.set(x, y, z);
@@ -53,7 +58,8 @@ export function buildProp(r3d, o, ctx = {}) {
   if (!f) return null;
   f(g, o, out, m, r3d, ctx);
   g.position.set(X, 0, Z);
-  g.traverse((c) => { if (c.isMesh) { c.castShadow = c.userData.noCast ? false : true; c.receiveShadow = true; } });
+  // (a bolt, a lid, a little bar casts no shadow worth its draw call)
+  g.traverse((c) => { if (c.isMesh) { c.castShadow = !c.userData.noCast && bigEnough(c); c.receiveShadow = true; } });
   return out;
 }
 
@@ -69,7 +75,7 @@ const PROPS = {
     cap.rotation.y = Math.PI / 4;
     g.add(cap);
     out.colliders.push({ x: o.x, z: o.y, r: 0.15 });
-    out.lights.push({ x: o.x, y: 1.7, z: o.y + 0.05, color: 0xffb862, power: 1.4, lamp: true });
+    out.lights.push({ x: o.x, y: 1.7, z: o.y + 0.05, color: 0xff9c52, power: 1.4, lamp: true });
   },
   bench(g, o, out, m) {
     g.add(mesh(B(1.3, 0.08, 0.38), m.wood, 0, 0.36, 0));
@@ -444,7 +450,7 @@ const PROPS = {
     const l = mesh(B(0.18, 0.22, 0.18), m.glass, 0.24, 1.02, 0);
     l.userData.noCast = true;
     g.add(l);
-    out.lights.push({ x: o.x + 0.24, y: 1.0, z: o.y + 0.1, color: 0xffb862, power: 1.0, lamp: true });
+    out.lights.push({ x: o.x + 0.24, y: 1.0, z: o.y + 0.1, color: 0xff9c52, power: 1.0, lamp: true });
     out.colliders.push({ x: o.x, z: o.y, r: 0.1 });
   },
   shrine(g, o, out, m) {
