@@ -22,17 +22,18 @@ single image or audio file in the game.
 
 ## Play
 
-- **Browser version** — planned at <https://hearthlight.github.io>. Until the public launch,
-  use the local instructions below. A computer is best; the game plays on a phone too.
-- **Build it yourself** — follow the [local setup and build instructions](#run-it-yourself).
-- **Downloads** — Mac, Windows and Linux builds will appear on the
-  [releases page](https://github.com/Hearthlight/hearthlight.github.io/releases) after validation.
-  The apps aren't signed (that costs money every year), so the first time:
+- **Browser version** — play now at **<https://hearthlight.github.io>**, nothing to install. A
+  computer is best; the game plays on a phone too.
+- **Downloads** — the desktop app for Mac, Windows and Linux is on the
+  [latest release](https://github.com/Hearthlight/hearthlight.github.io/releases/latest) (Party
+  Mode works offline there: phones join over your Wi-Fi). The apps aren't signed (that costs money
+  every year), so the first time:
   - **Mac**: right-click (or Ctrl-click) *Hearthlight* in Applications → **Open** → **Open**. On
     recent macOS, if it still refuses: System Settings → Privacy & Security → **Open Anyway**.
   - **Windows**: when SmartScreen says « Windows protected your PC », click **More info** → **Run
     anyway** (in French: *Informations complémentaires* → *Exécuter quand même*).
   - **Linux**: make the `.AppImage` executable (`chmod +x Hearthlight-*.AppImage`) and run it.
+- **Build it yourself** — follow the [local setup and build instructions](#run-it-yourself).
 - **Languages**: English, Français, Español, Deutsch, Italiano — picked from your system, changed
   in Settings (the phones follow the big screen).
 
