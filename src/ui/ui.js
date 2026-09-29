@@ -65,6 +65,8 @@ export function ctl(action, dev = device()) {
 // a gamepad's face buttons in their colours (the others are little dark caps)
 const FACE = { A: '#5fb85a', B: '#e0584f', X: '#4f8fe0', Y: '#e8b83a', '✕': '#6f9cf0', '○': '#e8646a', '□': '#d884c0', '△': '#4fc098' };
 export const isFace = (label) => !!FACE[label];
+// (the font's A and B are 4 px wide: on a button, 5-px ones sit right in its middle, like X & Y)
+const FACE5 = { A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'], B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'] };
 // a round button, 11 px across, centred on (cx, cy)
 export function faceGlyph(ctx, cx, cy, label) {
   const rows = [3, 7, 9, 9, 11, 11, 11, 9, 9, 7, 3];
@@ -72,7 +74,10 @@ export function faceGlyph(ctx, cx, cy, label) {
   rows.forEach((w, j) => { ctx.fillStyle = '#2a1f33'; ctx.fillRect(x0 + (11 - w) / 2 - 1, y0 + j, w + 2, 1); });
   rows.forEach((w, j) => { if (j === 0 || j === 10) return; ctx.fillStyle = FACE[label] || '#8a7a98'; ctx.fillRect(x0 + (11 - w) / 2 + (w >= 9 ? 1 : 0), y0 + j, w - (w >= 9 ? 2 : 0), 1); });
   ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.fillRect(x0 + 3, y0 + 1, 5, 1);
-  drawText(ctx, label, x0 + 6, y0 + 2, { color: '#fff7e6', align: 'center' });
+  const g = FACE5[label];
+  if (!g) { drawText(ctx, label, x0 + 5.5, y0 + 2, { color: '#fff7e6', align: 'center' }); return; }
+  ctx.fillStyle = '#fff7e6';
+  g.forEach((r, j) => { for (let i = 0; i < 5; i++) if (r[i] === '#') ctx.fillRect(x0 + 3 + i, y0 + 2 + j, 1, 1); });
 }
 
 // Shorten text with "…" so it fits maxW pixels.

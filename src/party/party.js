@@ -45,7 +45,7 @@ import { cleanLook, randomLook } from '../data/looks.js';
 import { NPCS } from '../data/npcs.js';
 import { newState } from '../state.js';
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton, button } from '../ui/ui.js';
+import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton, button, isFace, faceGlyph } from '../ui/ui.js';
 import { Dialogue } from '../ui/dialogue.js';
 import { audio } from '../engine/audio.js';
 import { TT } from '../world/tiles.js';
@@ -64,6 +64,9 @@ export const PARTY_COLORS = [
 const VOICES = [70, 58, 76, 64, 72, 60, 80, 66];
 export const LOBBY = { x: POINTS.fountain[0], z: POINTS.fountain[1] + 3.6 };
 const NO_INPUT = { pressed: () => false, repeat: () => false, down: () => false, consume() {}, mouse: { pressed: false, moved: false }, mouseIn: () => false };
+// the buttons' everyday jobs, which a keyboard's or a gamepad's player knows by heart: no chip
+// under their hero for these (the special move is X's everyday job too — `x` left undefined)
+const EVERYDAY = { a: ['Attack', 'Release!', 'Wave', 'Next', 'Continue'], b: ['Jump', 'Hop'], y: ['Dodge', 'Whistle'] };
 
 // The shared dialogue box: A shows the whole line at once, A again moves on — as fast as
 // you like, with just a blink between the two so a double press can't skip a line unseen.
@@ -584,6 +587,88 @@ export class Party {
     if (this.vote) this.sendVote(p);
   }
 
+  // What a player's buttons do here and now, in English: A, B, X & Y (null: nothing; X left
+  // undefined: the special move) and a hint — the activity's, then a boat, a swim, a mount, a
+  // campfire, a scene or a fight close by. A phone shows it all (padCtx); a keyboard's or a
+  // gamepad's player, the chips under their hero (updateChips).
+  ctxOf(p) {
+    let ctx = this.vote ? { a: null, b: null, hint: 'Vote on your phone!' }
+      : this.phase === 'lobby' ? { a: 'Wave', b: 'Hop', hint: '' }
+        : this.act ? this.act.ctxFor(p) : { a: null, b: 'Hop', hint: '' };
+    if (!this.vote && this.phase !== 'lobby' && !this.dialogue.active) {
+      const vc = this.vehicles && this.vehicles.ctxFor(p);
+      if (p.vehicle && vc) ctx = { ...vc, x: null };
+      else if (p.swimming) ctx = vc && vc.a ? { ...this.swim.ctxFor(p), a: vc.a, hint: vc.hint, vars: vc.vars } : this.swim.ctxFor(p);
+      else if (vc && vc.a) ctx = { ...ctx, a: vc.a, hint: vc.hint, vars: vc.vars };
+    }
+    if (!this.vote && !this.dialogue.active && !p.vehicle && !p.swimming && this.mounts) ctx = this.mounts.ctxFor(p, ctx) || ctx;
+    if (!this.vote && !this.dialogue.active && this.camp && this.phase !== 'lobby') ctx = this.camp.ctxFor(p, ctx) || ctx;
+    // a scene is playing: everyone watches the big screen (the host may skip it)
+    const scene = this.stage && this.stage.active;
+    if (scene && !this.vote) ctx = { a: this.dialogue.active ? 'Next' : null, b: null, x: null, y: this.host.isHost(p) ? 'Skip' : null, hint: p.remote ? 'A scene is playing — watch your screen!' : 'A scene is playing — watch the big screen!' };
+    const C = this.combat, fi = p.fighter;
+    if (C && fi && !fi.down && !p.mount && !p.vehicle && !p.swimming && !this.vote && !scene && (C.pvp || C.enemies.some((e) => e.alive && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 9))) ctx = { ...ctx, y: 'Dodge' };
+    if (ctx.x === undefined && (this.vote || this.dialogue.active)) ctx.x = null;
+    return ctx;
+  }
+
+  // …for a phone: translated, with the buttons' pictures, your health, level, cooldowns & ultimate
+  padCtx(p, ctx) {
+    const fi = p.fighter, scene = this.stage && this.stage.active;
+    const ic = padIcons({ a: ctx.a, x: ctx.x === undefined && fi ? (fi.moves || fi.cls).special.name : ctx.x, y: ctx.y }, fi, p.mount && p.mount.D);
+    ctx = { ...ctx, a: ctx.a ? t(ctx.a) : ctx.a, b: ctx.b ? t(ctx.b) : ctx.b, x: ctx.x ? t(ctx.x) : ctx.x, y: ctx.y ? t(ctx.y) : null, hint: ctx.hint ? t(ctx.hint, ctx.vars) : '' };
+    if (ic && !(fi && fi.down)) ctx.ic = ic;
+    delete ctx.vars;
+    const f = p.fighter;
+    if (f) {
+      ctx.hp = Math.max(0, Math.round((f.hp / f.maxHp) * 20)) * 5;
+      ctx.lv = f.level;
+      ctx.cd = f.cd > 0 ? Math.ceil((f.cd / (f.cls.special.cd * f.mods.cdr)) * 10) * 10 : 0;
+      ctx.cls = f.clsId;
+      if (f.ultId && !f.down && !p.mount && !p.vehicle) { ctx.ult = Math.floor(f.ult); ctx.uic = ULTS[f.ultId].icon; }
+      if (ctx.x === undefined) ctx.x = t(f.cls.special.name);
+      if (f.down) { ctx.a = null; ctx.b = null; ctx.x = null; ctx.y = null; ctx.hint = t(this.combat.pvp ? 'Bonked! Back in a moment…' : 'Having a little nap… a friend can help you up!'); }
+    }
+    if (p.mount) { const h = p.mount; ctx.cd = h.abilCd > 0 ? Math.ceil((h.abilCd / h.D.ability.cd) * 10) * 10 : 0; }
+    if (p.stuckOffer && !scene) ctx.stuck = 1;          // (the phone offers « Get unstuck » up front)
+    return ctx;
+  }
+
+  // …for a keyboard's or a gamepad's player, who has no phone to read: the chips drawn under
+  // their hero — only what's special here and now (Board, Row, Get out, Open, Chat…), never the
+  // everyday Attack, Jump or Dodge, and none while a scene, a talk, a vote or their menu is on.
+  // They teach, then get out of the way: a new one shows for a few seconds (its first three
+  // times), then only while you stand still a moment; once you've pressed its button there,
+  // you know it — it doesn't come back this party.
+  updateChips(p, ctx, dt) {
+    const c = p.chips || (p.chips = { list: [], k: 0, ids: new Set(), fresh: 0, idle: 0, was: {}, offer: {}, used: new Set(), seen: new Map() });
+    for (const k of ['a', 'b', 'x', 'y']) {
+      const on = p.input.down(k);
+      if (on && !c.was[k] && c.offer[k]) c.used.add(c.offer[k]);
+      c.was[k] = on;
+    }
+    const f = p.fighter, S = this.stage;
+    const quiet = this.phase === 'lobby' || this.vote || this.dialogue.active || (S && (S.active || S.barK > 0)) || (this.act && this.act.overlay)
+      || p.hidden || (f && f.down) || this.tvmenus.isOpen(p);
+    const list = [], offer = {};
+    if (!quiet) for (const k of ['a', 'b', 'x', 'y']) {
+      const l = ctx[k];
+      if (!l || (EVERYDAY[k] || []).includes(l)) continue;
+      // (« Grab » and « GRAB! » are one thing to learn)
+      const id = offer[k] = k + ':' + l.toLowerCase().replace(/[^a-z]/g, '');
+      if (!c.used.has(id)) list.push({ id, key: keyOf(p, k), label: t(l) });
+    }
+    c.offer = offer;
+    if (list.some((q) => !c.ids.has(q.id))) { c.fresh = 4; for (const q of list) if (!c.ids.has(q.id)) c.seen.set(q.id, (c.seen.get(q.id) || 0) + 1); }
+    c.ids = new Set(list.map((q) => q.id));
+    c.fresh -= dt;
+    c.idle = p.input.active ? 0 : c.idle + dt;
+    const show = list.filter((q) => (c.fresh > 0 && c.seen.get(q.id) <= 3) || c.idle > 1.5);
+    // (the last ones stay drawn while they fade)
+    if (show.length) { c.list = show; c.k = Math.min(1, c.k + dt * 8); }
+    else c.k = Math.max(0, c.k - dt * (list.length ? 2.5 : 6));
+  }
+
   sendCtx(p, ctx) {
     if (p.kind !== 'phone') return;
     const key = JSON.stringify(ctx);
@@ -901,43 +986,13 @@ export class Party {
     w.updateScenery(dt, focus);
     w.critters.update(dt, w.t, this.allPlayers().map((p) => p.actor).concat(focus.length ? [] : [{ pos: LOBBY }]), s.hour);
     w.fx.update(dt);
-    // phones: button labels, hints, and your health & special when fighting
+    // what everyone's buttons do here and now: on the phones' screens, and as chips under the
+    // hero of each keyboard's or gamepad's player (drawChips)
     for (const p of this.players) {
-      if (p.kind !== 'phone' || !p.connected) continue;
-      let ctx = this.vote ? { a: null, b: null, hint: 'Vote on your phone!' }
-        : this.phase === 'lobby' ? { a: 'Wave', b: 'Hop', hint: '' }
-          : this.act ? this.act.ctxFor(p) : { a: null, b: 'Hop', hint: '' };
-      if (!this.vote && this.phase !== 'lobby' && !this.dialogue.active) {
-        const vc = this.vehicles && this.vehicles.ctxFor(p);
-        if (p.vehicle && vc) ctx = { ...vc, x: null };
-        else if (p.swimming) ctx = vc && vc.a ? { ...this.swim.ctxFor(p), a: vc.a, hint: vc.hint, vars: vc.vars } : this.swim.ctxFor(p);
-        else if (vc && vc.a) ctx = { ...ctx, a: vc.a, hint: vc.hint, vars: vc.vars };
-      }
-      if (!this.vote && !this.dialogue.active && !p.vehicle && !p.swimming && this.mounts) ctx = this.mounts.ctxFor(p, ctx) || ctx;
-      if (!this.vote && !this.dialogue.active && this.camp && this.phase !== 'lobby') ctx = this.camp.ctxFor(p, ctx) || ctx;
-      // a scene is playing: everyone watches the big screen (the host may skip it)
-      const scene = this.stage && this.stage.active;
-      if (scene && !this.vote) ctx = { a: this.dialogue.active ? 'Next' : null, b: null, x: null, y: this.host.isHost(p) ? 'Skip' : null, hint: p.remote ? 'A scene is playing — watch your screen!' : 'A scene is playing — watch the big screen!' };
-      const C = this.combat, fi = p.fighter;
-      if (C && fi && !fi.down && !p.mount && !p.vehicle && !p.swimming && !this.vote && !scene && (C.pvp || C.enemies.some((e) => e.alive && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 9))) ctx = { ...ctx, y: 'Dodge' };
-      if (ctx.x === undefined && (this.vote || this.dialogue.active)) ctx.x = null;
-      const ic = padIcons({ a: ctx.a, x: ctx.x === undefined && fi ? (fi.moves || fi.cls).special.name : ctx.x, y: ctx.y }, fi, p.mount && p.mount.D);
-      ctx = { ...ctx, a: ctx.a ? t(ctx.a) : ctx.a, b: ctx.b ? t(ctx.b) : ctx.b, x: ctx.x ? t(ctx.x) : ctx.x, y: ctx.y ? t(ctx.y) : null, hint: ctx.hint ? t(ctx.hint, ctx.vars) : '' };
-      if (ic && !(fi && fi.down)) ctx.ic = ic;
-      delete ctx.vars;
-      const f = p.fighter;
-      if (f) {
-        ctx.hp = Math.max(0, Math.round((f.hp / f.maxHp) * 20)) * 5;
-        ctx.lv = f.level;
-        ctx.cd = f.cd > 0 ? Math.ceil((f.cd / (f.cls.special.cd * f.mods.cdr)) * 10) * 10 : 0;
-        ctx.cls = f.clsId;
-        if (f.ultId && !f.down && !p.mount && !p.vehicle) { ctx.ult = Math.floor(f.ult); ctx.uic = ULTS[f.ultId].icon; }
-        if (ctx.x === undefined) ctx.x = t(f.cls.special.name);
-        if (f.down) { ctx.a = null; ctx.b = null; ctx.x = null; ctx.y = null; ctx.hint = t(this.combat.pvp ? 'Bonked! Back in a moment…' : 'Having a little nap… a friend can help you up!'); }
-      }
-      if (p.mount) { const h = p.mount; ctx.cd = h.abilCd > 0 ? Math.ceil((h.abilCd / h.D.ability.cd) * 10) * 10 : 0; }
-      if (p.stuckOffer && !scene) ctx.stuck = 1;          // (the phone offers « Get unstuck » up front)
-      this.sendCtx(p, ctx);
+      if (!p.connected) continue;
+      const ctx = this.ctxOf(p);
+      if (p.kind === 'phone') this.sendCtx(p, this.padCtx(p, ctx));
+      else this.updateChips(p, ctx, dt);
     }
     for (const q of this.toasts) q.t += dt;
     if (this.obj) this.obj.t += dt;
@@ -1424,6 +1479,8 @@ export class Party {
     if (this.fade < 1) {
       for (const v of cam.views) {
         ctx.save(); this.clipPath(ctx, v, true);
+        // (the chips first: a friend's marker, a word or a boat's key stays readable over them)
+        this.drawChips(ctx, v);
         this.drawLabels(ctx, v);
         if (this.combat) this.combat.drawLabels(ctx, v);
         ctx.restore();
@@ -1598,6 +1655,35 @@ export class Party {
     if (this.rooms && !scene) this.rooms.drawLabels(ctx, v);
     if (this.act) this.act.drawLabels(ctx, v);
     if (this.vehicles && !scene) this.vehicles.drawLabels(ctx, v, this);
+  }
+
+  // Under the hero of each keyboard's or gamepad's player this view follows: what their buttons
+  // do here and now (updateChips), on their own keys — [E] Row [Space] Get out, (A) Board (B) Dive.
+  // Heroes side by side get their rows stacked; a row stays inside its view.
+  drawChips(ctx, v) {
+    if (this.remoteFor || this.fade > 0.3 || (this.stage && (this.stage.active || this.stage.barK > 0))) return;
+    const d = this.display, R = v.rect, a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h), rows = [];
+    for (const p of v.members) {
+      const c = p.chips;
+      if (!c || c.k <= 0 || p.kind === 'phone' || !p.connected || p.hidden) continue;
+      // (from the ground under them: the ring, which stays put when they jump, rides or swim)
+      const u = this.toUi(v, p.pos.x, p.ring.position.y, p.pos.z), pad = p.kind === 'gamepad';
+      rows.push({ p, c, pad, x: u.x, y: u.y + 6, w: chipsWidth(c.list, pad) });
+    }
+    rows.sort((q, r) => q.y - r.y);
+    rows.forEach((r, i) => {
+      for (let k = 0; k < 8; k++) {
+        const hit = rows.slice(0, i).find((q) => Math.abs(q.x - r.x) < (q.w + r.w) / 2 + 2 && Math.abs(q.y - r.y) < CHIP_H + 1);
+        if (!hit) break;
+        r.y = hit.y + CHIP_H + 1;
+      }
+    });
+    for (const r of rows) {
+      // (coming in: a little rise as it fades up)
+      ctx.globalAlpha = r.c.k;
+      chipRow(ctx, clamp(r.x - r.w / 2, a.x + 2, b.x - r.w - 2), Math.min(r.y + Math.round((1 - r.c.k) * 3), b.y - CHIP_H - 2), r.c.list, r.p.color, r.pad);
+    }
+    ctx.globalAlpha = 1;
   }
 
   // Friends this view doesn't show (at home with their own camera, or far off): an arrow on
@@ -1977,6 +2063,30 @@ function menuCap(ctx, x, y, key, open) {
   ctx.fillStyle = open ? '#e0a526' : '#5a3b2a'; ctx.fillRect(x, y, w, 9);
   ctx.fillStyle = '#fff7e6'; for (const k of [2, 4, 6]) ctx.fillRect(x + 2, y + k, 5, 1);
   drawText(ctx, key, x + 10, y + 1, { color: '#fff7e6' });
+}
+
+// a row of chips under a hero: each a key (a gamepad's A B X Y as its round button) and what it
+// does, on a dark strip underlined in the player's colour; (x, y): its top left
+const CHIP_H = 13;
+const chipKeyW = (it, pad) => (pad && isFace(it.key) ? 13 : measure(it.key) + 6);
+function chipsWidth(list, pad) { return list.reduce((w, it) => w + chipKeyW(it, pad) + 3 + measure(it.label) + 7, 0) - 1; }
+function chipRow(ctx, x, y, list, color, pad) {
+  const w = chipsWidth(list, pad), X = Math.round(x), Y = Math.round(y), h = CHIP_H;
+  ctx.fillStyle = 'rgba(30,20,40,0.78)'; ctx.fillRect(X + 1, Y, w - 2, h); ctx.fillRect(X, Y + 1, w, h - 2);
+  ctx.fillStyle = color; ctx.fillRect(X + 1, Y + h - 1, w - 2, 1);
+  let cx = X + 3;
+  for (const it of list) {
+    const kw = chipKeyW(it, pad);
+    if (pad && isFace(it.key)) faceGlyph(ctx, cx + 6, Y + 6, it.key);
+    else {
+      // (a key cap: paper, with a shaded lip)
+      ctx.fillStyle = '#fff3c4'; ctx.fillRect(cx, Y + 1, kw, 9);
+      ctx.fillStyle = '#c9a77c'; ctx.fillRect(cx, Y + 10, kw, 1);
+      drawText(ctx, it.key, cx + kw / 2, Y + 2, { color: '#3b2a2e', align: 'center' });
+    }
+    drawText(ctx, it.label, cx + kw + 3, Y + 2, { color: '#fff7e6' });
+    cx += kw + 3 + measure(it.label) + 7;
+  }
 }
 
 function playerPip(ctx, x, y, color, low, t) {
