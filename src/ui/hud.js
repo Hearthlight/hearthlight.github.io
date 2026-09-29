@@ -265,7 +265,9 @@ export class Hud {
     let rightBottom = ry;
     const objKey = q ? q.id + '|' + String(q.objective) : '';
     if (objKey !== this.objKey) { if (this.objKey !== undefined && objKey) this.objShowT = 6; this.objKey = objKey; }
-    const qMode = this.objShowT > 0 ? 'full' : mode;
+    // (a phone held sideways: one line at most — the touch buttons need the right-hand side)
+    const shortTouch = g.input.touchMode && H < 300;
+    const qMode = shortTouch ? (mode === 'minimal' && !(this.objShowT > 0) ? 'minimal' : 'compact') : this.objShowT > 0 ? 'full' : mode;
     if (q && qMode === 'minimal') {
       // (a star to click or tap for the whole display again)
       const sx = W - 19, sy = ry;
@@ -323,14 +325,18 @@ export class Hud {
     }
     const chipsAt = chipsBottom;
 
-    // ---- toasts (bottom-left, above hotbar)
-    let ty = Math.min(H - 44, tipTop);
+    // ---- toasts (bottom-left, above hotbar) — on a short screen they may cover the tip, never
+    // the clock at the top (nor a touch screen's stick at the bottom)
+    const tLines = this.toasts.map((t) => wrap(t.text, Math.min(W - 40, 330) - (t.icon ? 26 : 12)));
+    const stack = tLines.reduce((n, l) => n + 11 + l.length * 10, 0), floor = H - (g.input.touchMode ? 96 : 44);
+    let ty = Math.min(floor, tipTop);
+    if (ty - stack < 38) ty = Math.min(floor, 38 + stack);
     const toastBox = { x0: 5, x1: 5, y0: ty, y1: ty };
     for (let i = this.toasts.length - 1; i >= 0; i--) {
       const t = this.toasts[i], L = t.life || 3.2;
       const a = t.age < 0.2 ? t.age / 0.2 : t.age > L - 0.5 ? (L - t.age) / 0.5 : 1;
       const slide = Math.round((1 - Math.min(1, t.age / 0.18)) * -30);
-      const lines = wrap(t.text, Math.min(W - 40, 330) - (t.icon ? 26 : 12));
+      const lines = tLines[i];
       const tw = Math.max(...lines.map((l) => measure(l))) + (t.icon ? 26 : 12), th = 8 + lines.length * 10;
       ctx.globalAlpha = Math.max(0, Math.min(1, a));
       panel(ctx, 5 + slide, ty - th, tw, th);

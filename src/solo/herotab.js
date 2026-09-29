@@ -240,7 +240,8 @@ export class HeroTab {
     dl.forEach((l, j) => drawText(ctx, l, rx, dy + j * 9, { color: UI.inkSoft }));
     // how to fight, on this device
     const kn = (k) => W.keyName(k);
-    const help = wrap(t('{a} attack (hold it: a big one) · {x} {special} · {y} dodge · {b} jump', { a: kn('a'), x: kn('x'), y: kn('y'), b: kn('b'), special: t(sp.name) }), lw);
+    const help = wrap(this.world.input.touchMode ? t('The round buttons: attack (hold it: a big one) · {special} · dodge · jump', { special: t(sp.name) })
+      : t('{a} attack (hold it: a big one) · {x} {special} · {y} dodge · {b} jump', { a: kn('a'), x: kn('x'), y: kn('y'), b: kn('b'), special: t(sp.name) }), lw);
     const hy = Math.max(y + 2, A.y + A.h - help.length * 9);
     help.forEach((l, i) => drawText(ctx, l, A.x, hy + i * 9, { color: '#b8a080' }));
   }

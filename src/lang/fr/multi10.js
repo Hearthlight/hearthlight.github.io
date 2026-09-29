@@ -67,4 +67,6 @@ export const MULTI10_FR = {
   "Copy the invitation link": "Copier le lien d’invitation",
   "Copied! Paste it to your friends": "Copié ! Colle-le à tes amis",
   "Far away? They can play from home with it": "Loin d’ici ? Avec ce lien, on joue de chez soi",
+  "The round buttons: attack (hold it: a big one) · {special} · dodge · jump": "Les boutons ronds : attaquer (maintenu : un gros coup) · {special} · esquiver · sauter",
+  "Tap: the valley": "Touche : la vallée",
 };

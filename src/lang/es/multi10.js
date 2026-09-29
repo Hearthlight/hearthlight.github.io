@@ -67,4 +67,6 @@ export const MULTI10_ES = {
   "Copy the invitation link": "Copiar el enlace de invitación",
   "Copied! Paste it to your friends": "¡Copiado! Pégalo a tus amigos",
   "Far away? They can play from home with it": "¿Lejos? Con este enlace se juega desde casa",
+  "The round buttons: attack (hold it: a big one) · {special} · dodge · jump": "Los botones redondos: atacar (mantenido: un golpe fuerte) · {special} · esquivar · saltar",
+  "Tap: the valley": "Toca: el valle",
 };

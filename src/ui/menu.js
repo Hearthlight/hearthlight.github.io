@@ -383,7 +383,7 @@ export class Menu {
     const w = this.world, s = w.state, W = w.display.w, H = w.display.h, G = w.game;
     ctx.fillStyle = 'rgba(20,14,28,0.55)';
     ctx.fillRect(0, 0, W, H);
-    const rh = 16, cardH = 46, footH = w.input.touchMode ? 4 : 16;
+    const rh = w.input.touchMode ? 20 : 16, cardH = 46, footH = w.input.touchMode ? 4 : 16;    // (a finger: taller rows)
     const PAUSE = this.pauseRows();
     const pw = Math.min(W - 16, 250), ph = Math.min(H - 20, cardH + 8 + PAUSE.length * rh + footH);
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2) + 4;
@@ -415,14 +415,14 @@ export class Menu {
     this.rowRects = [];
     const saved = this.savedFlash > 0 && this.t - this.savedFlash < 2.5, failed = this.savedFlash < 0 && this.t + this.savedFlash < 2.5;
     PAUSE.forEach(([label, key], i) => {
-      const y = py + cardH + 6 + i * rh, on = i === this.sel && !this.confirm;
-      if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 3, pw - 16, rh - 2); drawText(ctx, '♥', px + 14, y + 1, { color: '#ec5f73' }); }
+      const y = py + cardH + 6 + i * rh + Math.floor((rh - 16) / 2), on = i === this.sel && !this.confirm;
+      if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 3 - Math.floor((rh - 16) / 2), pw - 16, rh - 2); drawText(ctx, '♥', px + 14, y + 1, { color: '#ec5f73' }); }
       drawText(ctx, t(label), px + 26, y + 1, { color: key === 'title' ? '#8e4a3e' : key === 'unstuck' ? '#3f8a4a' : UI.ink });
       if (key === 'save') {
         const note = saved ? t('Saved ✓') : failed ? t('Couldn’t save!') : this.savedAgo();
         drawText(ctx, fitText(note, pw - 60 - measure(t(label))), px + pw - 14, y + 1, { color: saved ? '#4f955a' : failed ? '#c8454f' : '#b8a080', align: 'right' });
       }
-      this.rowRects.push({ x: px + 8, y: y - 3, w: pw - 16, h: rh - 2, i });
+      this.rowRects.push({ x: px + 8, y: y - 3 - Math.floor((rh - 16) / 2), w: pw - 16, h: rh - 2, i });
     });
     if (!w.input.touchMode) {
       const hint = t('{a} choose · {b} resume', { a: ctl('interact'), b: device() === 'pad' ? ctl('pause') : ctl('cancel') });
@@ -735,7 +735,8 @@ export class Menu {
     const found = (st.flags.areas || []).length;
     const info = t('{day} · {time} · ♥ you · {n}/{total} places found', { day: dayLabel(st.day), time: timeLabel(st.hour), n: found, total: AREAS.length });
     const zoomHint = device() === 'pad' ? t(this.mapZoom ? (w.wild && w.wild.big ? '{a}: the whole world' : '{a}: show the whole valley') : '{a}: zoom in', { a: ctl('interact') })
-      : t(this.mapZoom ? (w.wild && w.wild.big ? 'E / click: the whole world' : 'E / click: show the whole valley') : 'E / click: zoom in');
+      : w.input.touchMode ? t(this.mapZoom ? (w.wild && w.wild.big ? 'Tap: the whole world' : 'Tap: show the whole valley') : 'Tap: zoom in')
+        : t(this.mapZoom ? (w.wild && w.wild.big ? 'E / click: the whole world' : 'E / click: show the whole valley') : 'E / click: zoom in');
     drawText(ctx, info, px + 12, py + ph - 26, { color: UI.inkSoft });
     // side by side when there's room, otherwise the hint drops a line
     const sideBySide = measure(info) + measure(zoomHint) + 12 <= pw - 24;
@@ -751,7 +752,7 @@ export class Menu {
     const r = drawWorldPanel(P, ctx, box.x, box.y + 8, box.w, box.h - 8, { counts: true, view: this.worldView });
     if (r) this.mapRect = [r.mx, r.my, r.mw, r.mh];
     const z = { a: ctl('interact'), z: ctl('special') + ' ' + ctl('dodge') };
-    const hint = device() === 'pad' ? t('{a}: the valley · {z}: zoom · the stick moves it', z) : t('{a}: the valley · wheel or {z}: zoom', z);
+    const hint = device() === 'pad' ? t('{a}: the valley · {z}: zoom · the stick moves it', z) : w.input.touchMode ? t('Tap: the valley') : t('{a}: the valley · wheel or {z}: zoom', z);
     drawText(ctx, hint, px + pw - 12, py + ph - 26, { color: '#b8a080', align: 'right' });
   }
 

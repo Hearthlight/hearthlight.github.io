@@ -278,7 +278,7 @@ export class Creator {
       moves.forEach(([ic, key], i) => {
         const mx = x + i * 24;
         drawIcon(ctx, ic, mx, yy);
-        drawText(ctx, fitText(key, 23), mx + 9, yy + 20, { color: '#b8a080', align: 'center' });
+        if (device() !== 'touch') drawText(ctx, fitText(key, 23), mx + 9, yy + 20, { color: '#b8a080', align: 'center' });   // (a finger has its own round buttons)
       });
       const nx = x + 100, nw = w - 100;
       drawText(ctx, fitText(t(C.heavy.name), nw), nx, yy + 1, { color: UI.ink });

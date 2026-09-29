@@ -36,6 +36,8 @@ export class Game {
   constructor() {
     this.display = new Display(document.getElementById('world'), document.getElementById('ui'));
     this.input = new Input(this.display);
+    // (a phone: its finger from the start — the touch controls and the hints that go with them)
+    if (this.display.phone) { this.input.touchMode = true; this.input.lastDevice = 'touch'; }
     bindInput(this.input);
     this.settings = loadSettings();
     setLang(this.settings.lang);
@@ -380,7 +382,9 @@ export class Game {
     if (w.menu.open) { w.menu.draw(ctx); return; }
     // menu
     const items = this.titleItems().map(([label, key]) => [t(label), key]);
-    const mw = Math.max(130, ...items.map(([label]) => measure(label) + 44)), mh = items.length * 16 + 10;
+    // (a finger wants taller rows)
+    const rh = this.input.touchMode ? 21 : 16;
+    const mw = Math.max(130, ...items.map(([label]) => measure(label) + 44)), mh = items.length * rh + 10;
     // Reserve the actual footer height, including wrapped translations and the phone safe area.
     const footerTop = this.projectLinks && !this.projectLinks.hidden
       ? this.projectLinks.getBoundingClientRect().top * H / window.innerHeight : H;
@@ -392,11 +396,11 @@ export class Game {
     ctx.fillRect(mx, my, mw, 1);
     this.titleRects = [];
     items.forEach(([label], i) => {
-      const y = my + 6 + i * 16;
+      const y = my + 6 + i * rh + Math.floor((rh - 16) / 2);
       const on = i === this.titleSel;
-      if (on) { ctx.fillStyle = 'rgba(246,211,143,0.22)'; ctx.fillRect(mx + 4, y - 3, mw - 8, 14); drawText(ctx, '♥', mx + 12, y, { color: '#ec5f73' }); }
+      if (on) { ctx.fillStyle = 'rgba(246,211,143,0.22)'; ctx.fillRect(mx + 4, y - 3 - Math.floor((rh - 16) / 2), mw - 8, rh - 2); drawText(ctx, '♥', mx + 12, y, { color: '#ec5f73' }); }
       drawText(ctx, label, W / 2 + 4, y, { color: on ? '#fff3c4' : '#d9c8b0', align: 'center', shadow: '#2a1f33' });
-      this.titleRects.push({ x: mx, y: y - 3, w: mw, h: 14, i });
+      this.titleRects.push({ x: mx, y: y - 3 - Math.floor((rh - 16) / 2), w: mw, h: rh - 2, i });
     });
     if (this.confirmNew) {
       const yes = t('Start over'), no = t('Keep it');

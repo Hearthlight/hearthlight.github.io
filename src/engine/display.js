@@ -5,6 +5,13 @@
 
 const UI_MIN_W = 420, UI_MIN_H = 250;
 const UI_MIN_W_PORTRAIT = 240, UI_MIN_H_PORTRAIT = 380;
+// a phone (a finger, a small screen): chunkier pixels still — its short side down to 232 UI
+// pixels (an iPhone's 3× screen then shows 5 device pixels a UI pixel, not 4)
+const PHONE_SHORT = 232;
+const isPhone = () => {
+  const touch = (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints || 0) > 0;
+  return touch && Math.min(window.innerWidth || 1024, window.innerHeight || 768) < 540;
+};
 const WORLD_TARGET_W = 400, WORLD_TARGET_H = 290;
 
 export class Display {
@@ -31,7 +38,8 @@ export class Display {
     // UI layer
     // phones in portrait get chunkier UI pixels so text stays readable
     this.portrait = H > W * 1.15;
-    const mw = this.portrait ? UI_MIN_W_PORTRAIT : UI_MIN_W, mh = this.portrait ? UI_MIN_H_PORTRAIT : UI_MIN_H;
+    this.phone = isPhone();
+    const mw = this.portrait ? (this.phone ? PHONE_SHORT : UI_MIN_W_PORTRAIT) : UI_MIN_W, mh = this.portrait ? UI_MIN_H_PORTRAIT : (this.phone ? PHONE_SHORT : UI_MIN_H);
     const us = Math.max(1, Math.floor(Math.min(W / mw, H / mh)));
     this.scale = us;
     this.w = Math.floor(W / us);
