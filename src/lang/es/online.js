@@ -82,4 +82,11 @@ export const ONLINE = {
   "For friends on another screen: the link includes the game view and controls.": "Para amigos en otra pantalla: el enlace incluye el juego y los controles.",
   "This closes the room for everyone. Your progress is saved before leaving.": "La sala se cerrará para todos. El progreso se guarda antes de salir.",
   "Saves & backups": "Partidas guardadas y restauración",
+  "Choose a saved game.": "Elige una partida guardada.",
+  "No saved game on this device.": "No hay partidas guardadas en este dispositivo.",
+  "Solo game": "Partida individual",
+  "Multiplayer game": "Partida multijugador",
+  "Day {n}": "Día {n}",
+  "Connection mode": "¿Cómo jugar?",
+  "Resume this game": "Retomar esta partida",
 };

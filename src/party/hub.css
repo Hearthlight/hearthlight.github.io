@@ -17,7 +17,7 @@
 .party-dialog details { border-top: 1px solid #765765; margin-top: 16px; }
 .party-dialog summary { padding: 14px 0; cursor: pointer; color: #f6d38f; }
 .party-dialog label { display: block; margin: 12px 0; }
-.party-dialog input { display: block; box-sizing: border-box; width: 100%; color: #302238; background: #fff5df; border: 2px solid #b28d5e; border-radius: 0; padding: 10px; margin: 6px 0; font: 14px/1.4 ui-monospace,monospace; user-select: text; }
+.party-dialog input, .party-dialog select { display: block; box-sizing: border-box; width: 100%; color: #302238; background: #fff5df; border: 2px solid #b28d5e; border-radius: 0; padding: 10px; margin: 6px 0; font: 14px/1.4 ui-monospace,monospace; user-select: text; }
 .party-dialog a { display: block; color: #aad7ff; margin: 12px 0; }
 .invite-card { background: #322339; padding: 12px; margin-bottom: 12px; }
 .invite-card canvas { display: block; width: 140px; max-width: 100%; height: auto; image-rendering: pixelated; margin: 12px auto; }

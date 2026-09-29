@@ -1,6 +1,7 @@
 # Playing together and returning later
 
-Choose **Party Mode** on the title screen to create, resume or join a party.
+Choose **Continue** on the title screen to select your saved solo or multiplayer game.
+Choose **Party Mode** to create or join a party.
 Paste a complete controller or remote-play invitation to join an existing lobby or game.
 This does not create a new room.
 
@@ -36,7 +37,7 @@ While a solo game or party is open, refreshing or closing the page asks for conf
 
 Adventure progress, player profiles and the most recent safe outdoor positions are kept on the host device. Saves run every 30 seconds, when the page is hidden, and before leaving a party. **Save now** saves immediately. A storage failure is shown; **Export save** can still export the party's pending progress from memory.
 
-**Resume our adventure** shows the saved chapter and date, opens the lobby, and resumes the adventure when the host starts. It restores quest progress and player profiles, and returns players near saved outdoor positions. An unfinished cinematic, arena round or exact mid-combat state is not a resumable checkpoint.
+**Continue** lists the saved solo game with its character and day, and the multiplayer game with its chapter, date and players. Choose the multiplayer connection mode (same screen or from home), then **Resume this game**. This opens the lobby and resumes the adventure when the host starts. It restores quest progress and player profiles, and returns players near saved outdoor positions. An unfinished cinematic, arena round or exact mid-combat state is not a resumable checkpoint.
 
 **Export save** creates a JSON backup containing solo and party progress. **Import save** is available under **Party Mode → Saves & backups** before hosting and asks for confirmation before replacing the included modes. Credentials and unrelated browser settings are excluded. The backup is validated before writing, and a failed import attempts to restore the previous values.
 

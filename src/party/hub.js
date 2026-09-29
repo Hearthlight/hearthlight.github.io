@@ -2,6 +2,7 @@ import { t, onLang } from '../i18n.js';
 import { partySummary, exportSave, importSave, validateSave, cloudSave } from './saves.mjs';
 import { qrCanvas } from './qr.js';
 import { invitationUrl } from './invitations.mjs';
+import { loadGame } from '../state.js';
 
 const node = (tag, text, attrs = {}) => { const el = document.createElement(tag); if (text) el.textContent = text; Object.assign(el, attrs); return el; };
 export class PartyHub {
@@ -42,36 +43,33 @@ export class PartyHub {
   message(text, bad = false) { const el = this.notice || this.status; el.textContent = t(text); el.classList.toggle('error', bad); this.status.textContent = t(text); }
   button(parent, label, action) { const b = node('button', t(label)); b.type = 'button'; b.onclick = () => Promise.resolve().then(action).catch((e) => this.message(e.message || 'Save failed', true)); parent.append(b); return b; }
   section(label, parent = this.dialog) { const section = node('section'); section.append(node('h3', t(label))); parent.append(section); return section; }
-  open() {
+  open(view = 'party') {
     const p = this.game.mode === 'party' ? this.game.party : null;
     if (!p && this.game.mode !== 'title') return;
+    this.view = !p && view === 'continue' ? 'continue' : 'party';
     if (!this.dialog.open) {
       this.pausedParty = p; this.wasPaused = !!p?.paused;
       if (p && !this.wasPaused) p.host.setPaused(true, t('Invite friends'));
     }
     this.game.input.keys.clear(); this.game.input.consume();
     this.inviting = null;
-    this.dialog.setAttribute('aria-label', t(p ? 'Invite friends' : 'Party Mode ♥ 1–8'));
+    const title = p ? 'Invite friends' : this.view === 'continue' ? 'Continue' : 'Party Mode ♥ 1–8';
+    this.dialog.setAttribute('aria-label', t(title));
     this.dialog.replaceChildren(); this.confirmButton = null;
-    const header = node('header'); header.append(node('h2', t(p ? 'Invite friends' : 'Party Mode ♥ 1–8')));
+    const header = node('header'); header.append(node('h2', t(title)));
     this.button(header, p ? 'Close' : 'Back to title', () => this.close()); this.dialog.append(header);
     this.notice = node('p', '', { className: 'hub-notice' }); this.notice.setAttribute('role', 'status'); this.dialog.append(this.notice);
-    if (p) this.invite(p); else this.startOptions();
+    if (p) this.invite(p); else if (this.view === 'continue') this.resumeOptions(); else this.startOptions();
     this.backups();
     if (p) this.button(this.dialog, 'Back to title', () => this.returnToTitle());
     if (!this.dialog.open) this.dialog.showModal();
   }
   startOptions() {
-    const section = this.section('Create a party'), summary = partySummary();
+    const section = this.section('Create a party');
     const host = (options) => { if (this.game.mode !== 'title') return; this.close(); this.game.toParty(options); };
     this.button(section, 'Play on the same screen', () => host({}));
-    this.button(section, 'Play from home', () => host({ online: true, resume: !!summary }));
+    this.button(section, 'Play from home', () => host({ online: true }));
     section.append(node('p', t('Friends can join in the lobby or during the game.')));
-    if (summary) {
-      const date = summary.savedAt ? new Date(summary.savedAt).toLocaleString() : '';
-      this.button(section, 'Resume our adventure', () => host({ resume: true }));
-      section.append(node('p', t('Chapter {n}', { n: summary.chapter }) + (date ? ' · ' + date : '')));
-    }
     const join = this.section('Join friends');
     const form = node('form'), field = node('input', '', { type: 'text', placeholder: t('Paste an invitation link'), autocomplete: 'off' });
     const label = node('label', t('Invitation link')); label.append(field); form.append(label);
@@ -87,6 +85,29 @@ export class PartyHub {
     join.append(form);
     join.append(node('p', t('Paste the link your friend sent you, even if the game has already started.')));
     join.append(node('a', t('Use this device as a controller'), { href: 'pad.html' }));
+  }
+  resumeOptions() {
+    const solo = loadGame(), party = partySummary();
+    this.dialog.append(node('p', t(solo || party ? 'Choose a saved game.' : 'No saved game on this device.')));
+    if (solo) {
+      const section = this.section('Solo game');
+      section.append(node('p', [solo.player.name, t('Day {n}', { n: solo.day })].join(' · ')));
+      this.button(section, 'Resume this game', () => { if (this.game.mode !== 'title') return; this.close(); this.game.continueGame(); });
+    }
+    if (party) {
+      const section = this.section('Multiplayer game');
+      const date = party.savedAt ? new Date(party.savedAt).toLocaleString() : '';
+      section.append(node('p', t('Chapter {n}', { n: party.chapter }) + (date ? ' · ' + date : '')));
+      const players = Array.isArray(party.players) ? party.players.filter((name) => typeof name === 'string').slice(0, 8) : [];
+      if (players.length) section.append(node('p', players.join(', ')));
+      const label = node('label', t('Connection mode')), connection = node('select');
+      connection.append(node('option', t('Play on the same screen'), { value: 'local' }), node('option', t('Play from home'), { value: 'online' }));
+      label.append(connection); section.append(label);
+      this.button(section, 'Resume this game', () => {
+        if (this.game.mode !== 'title') return;
+        this.close(); this.game.toParty({ resume: true, online: connection.value === 'online' });
+      });
+    }
   }
   invite(p) {
     const section = this.section('Invite friends');
@@ -188,7 +209,7 @@ export class PartyHub {
       importSave(snapshot);
       if (credentials) this.remember(credentials);
       else localStorage.removeItem('hearthlight.cloud.v1'); // do not overwrite a different cloud adventure
-      this.game.toTitle(); this.open(); this.message('Save restored');
+      this.game.toTitle(); this.open('continue'); this.message('Save restored');
     });
   }
   async upload(manual) {

@@ -59,14 +59,15 @@ adventure together — the camera splits the screen when you wander apart.
 
 ## Invite friends and resume an adventure
 
-Choose **Party Mode** on the title screen to create, resume or join a party.
+Choose **Continue** on the title screen to select your saved solo or multiplayer game.
+Choose **Party Mode** to create or join a party.
 Use **Invite friends** in the lobby or during a game.
 Share the **Play from home** invitation for guests who need the game image on their own
 computer or phone. The host keeps the game running; each guest controls a character through
 keyboard, gamepad or touch. Remote Play shares the host's game view and audio, with a
 reduced-frame-rate, silent fallback for browsers or networks without live video support.
 
-**Resume our adventure**, local export/import and an optional online backup make it possible
+**Continue**, local export/import and an optional online backup make it possible
 to return later or move a save to another host. Keep the online recovery key private.
 See [online play and saves](docs/ONLINE.md) for controls, limitations and self-hosting.
 

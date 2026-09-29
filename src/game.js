@@ -219,7 +219,7 @@ export class Game {
 
   titleItems() {
     const items = [];
-    if (this.hasSave) items.push(['Continue', 'continue']);
+    if (this.hasSave || this.partySaveAvailable) items.push(['Continue', 'continue']);
     items.push(['New Game', 'new']);
     items.push(['Party Mode ♥ 1–8', 'party']);
     items.push(['Controls', 'controls']);
@@ -264,7 +264,7 @@ export class Game {
   titleActivate(what) {
     audio.unlock();
     audio.sfx('confirm');
-    if (what === 'continue') this.continueGame();
+    if (what === 'continue') this.partyHub.open('continue');
     else if (what === 'new') { if (this.hasSave) { this.confirmNew = true; this.confirmSel = 1; } else this.toCreator(); }
     else if (what === 'settings') this.world.menu.show('settings');
     else if (what === 'controls') this.openControls();
