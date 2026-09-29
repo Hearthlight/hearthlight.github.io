@@ -8,7 +8,7 @@
 // host phone gets it as data (`{t:'hmenu'}`) and sends back `{t:'hact'}`.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI } from '../ui/ui.js';
+import { panel, UI, fitText } from '../ui/ui.js';
 import { audio } from '../engine/audio.js';
 import { saveSettings } from '../state.js';
 import { t, getLang, setLang, LANGS } from '../i18n.js';
@@ -259,6 +259,16 @@ export class Host {
     this.setPaused(false);
   }
 
+  activateMenuItem(it, dir = 0) {
+    const M = this.menu;
+    if (!it || (it.kind === 'player' && !it.action)) return;
+    if (it.confirm && M.confirm !== it.id) { M.confirm = it.id; audio.sfx('select'); return; }
+    M.confirm = null;
+    audio.sfx('confirm', { volume: 0.6 });
+    this.act(it.id, dir);
+    if (this.menu === M && it.id === 'pause') this.closeMenu();
+  }
+
   updateMenu(dt) {
     const M = this.menu, g = this.party.game.input;
     M.t += dt;
@@ -266,79 +276,100 @@ export class Host {
     M.tab = Math.max(0, Math.min(tabs.length - 1, M.tab));
     const items = tabs[M.tab].items;
     M.sel = Math.max(0, Math.min(items.length - 1, M.sel));
-    const it = items[M.sel];
+    const select = (i) => { if (M.sel !== i) { M.sel = i; M.confirm = null; audio.sfx('select', { volume: 0.4 }); } };
+    const tab = (i) => { M.tab = (i + tabs.length) % tabs.length; M.sel = 0; M.confirm = null; audio.sfx('page', { volume: 0.4 }); };
     if (g.pressed('cancel') || g.pressed('pause')) { g.consume(); if (M.confirm) M.confirm = null; else this.closeMenu(); return; }
-    if (g.repeat('up')) { M.sel = (M.sel + items.length - 1) % items.length; M.confirm = null; audio.sfx('select', { volume: 0.4 }); }
-    if (g.repeat('down')) { M.sel = (M.sel + 1) % items.length; M.confirm = null; audio.sfx('select', { volume: 0.4 }); }
-    const lr = g.repeat('left') ? -1 : g.repeat('right') ? 1 : 0;
+    const hit = (this.menuHits || []).find((r) => g.mouseIn(r.x, r.y, r.w, r.h));
+    if (hit && g.mouse.moved && hit.sel !== undefined) select(hit.sel);
+    if (g.mouse.pressed) {
+      g.mouse.pressed = false;
+      if (hit) {
+        if (hit.close) this.closeMenu();
+        else if (hit.tab !== undefined) tab(hit.tab);
+        else if (hit.scroll) select(Math.max(0, Math.min(items.length - 1, M.sel + hit.scroll)));
+        else if (hit.sel !== undefined) { select(hit.sel); this.activateMenuItem(items[hit.sel], hit.dir || 0); }
+      }
+      return;
+    }
+    if (g.mouse.wheel) { select(Math.max(0, Math.min(items.length - 1, M.sel + Math.sign(g.mouse.wheel)))); g.mouse.wheel = 0; }
+    if (g.repeat('up')) select((M.sel + items.length - 1) % items.length);
+    if (g.repeat('down')) select((M.sel + 1) % items.length);
+    const it = items[M.sel], lr = g.repeat('left') ? -1 : g.repeat('right') ? 1 : 0;
     if (lr) {
-      if (it && it.kind === 'choice') { this.act(it.id, lr); audio.sfx('select', { volume: 0.5 }); }
-      else { M.tab = (M.tab + lr + tabs.length) % tabs.length; M.sel = 0; M.confirm = null; audio.sfx('page', { volume: 0.4 }); }
+      if (it?.kind === 'choice') { this.act(it.id, lr); audio.sfx('select', { volume: 0.5 }); }
+      else { tab(M.tab + lr); return; }
     }
-    if (g.pressed('hotPrev') || g.pressed('menu')) { M.tab = (M.tab + tabs.length - 1) % tabs.length; M.sel = 0; }
-    if (g.pressed('interact') || g.pressed('jump')) {
-      g.consume('interact', 'jump');
-      if (!it) return;
-      if (it.kind === 'player' && !it.action) return;
-      if (it.confirm && M.confirm !== it.id) { M.confirm = it.id; audio.sfx('select'); return; }
-      M.confirm = null;
-      audio.sfx('confirm', { volume: 0.6 });
-      const keep = this.menu;
-      this.act(it.id, 0);
-      if (this.menu === keep && (it.id === 'pause')) this.closeMenu();
-    }
+    if (g.pressed('hotPrev') || g.pressed('menu')) { tab(M.tab - 1); return; }
+    if (g.pressed('hotNext')) { tab(M.tab + 1); return; }
+    if (g.pressed('interact') || g.pressed('jump')) { g.consume('interact', 'jump'); this.activateMenuItem(it); }
   }
 
   drawMenu(ctx) {
     const M = this.menu, P = this.party, W = P.display.w, H = P.display.h;
     ctx.fillStyle = 'rgba(20,14,28,0.55)'; ctx.fillRect(0, 0, W, H);
-    const tabs = this.tabs(), tab = tabs[M.tab], items = tab.items;
-    const pw = Math.min(W - 24, 330), rowH = 16;
-    const ph = Math.min(H - 20, 58 + items.length * rowH + 14);
+    const tabs = this.tabs(); M.tab = Math.min(M.tab, tabs.length - 1);
+    const items = tabs[M.tab].items; M.sel = Math.max(0, Math.min(M.sel, items.length - 1));
+    const pw = Math.min(W - 16, 350), rowH = 16, footerH = 43;
+    const ph = Math.min(H - 16, 42 + items.length * rowH + footerH);
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
     panel(ctx, px, py, pw, ph);
+    this.menuHits = [];
+    const hit = (x, y, w, h, data) => this.menuHits.push({ x, y, w, h, ...data });
     crown(ctx, px + 10, py + 8, '#e0a526');
-    drawText(ctx, t('Host menu'), px + 24, py + 8, { color: '#8a5234' });
-    drawText(ctx, t('big screen'), px + pw - 10, py + 8, { color: UI.inkSoft, align: 'right' });
-    // tabs
+    drawText(ctx, fitText(t('Host menu'), pw - 90), px + 24, py + 8, { color: '#8a5234' });
+    const closeW = Math.min(60, measure(t('Close')) + 12), closeX = px + pw - closeW - 6;
+    ctx.fillStyle = '#e8d6b4'; ctx.fillRect(closeX, py + 4, closeW, 14);
+    drawText(ctx, fitText(t('Close'), closeW - 8), closeX + closeW / 2, py + 8, { color: UI.ink, align: 'center' });
+    hit(closeX, py + 4, closeW, 14, { close: true });
     const tw = Math.floor((pw - 16) / tabs.length);
     tabs.forEach((tb, i) => {
       const x = px + 8 + i * tw, on = i === M.tab;
       ctx.fillStyle = on ? '#fbf1dc' : '#e8d6b4'; ctx.fillRect(x + 1, py + 22, tw - 2, 14);
       ctx.fillStyle = on ? '#e0a526' : '#c9a77c'; ctx.fillRect(x + 1, py + 22, tw - 2, 2);
-      drawText(ctx, t(tb.label), x + tw / 2, py + 26, { color: on ? UI.ink : UI.inkSoft, align: 'center' });
+      drawText(ctx, fitText(t(tb.label), tw - 6), x + tw / 2, py + 26, { color: on ? UI.ink : UI.inkSoft, align: 'center' });
+      hit(x, py + 22, tw, 14, { tab: i });
     });
-    // rows (scroll if needed)
-    const top = py + 42, room = Math.floor((ph - 58) / rowH);
+    const top = py + 42, room = Math.max(1, Math.floor((ph - 42 - footerH) / rowH));
     const first = Math.max(0, Math.min(items.length - room, M.sel - room + 2));
+    const right = px + pw - (items.length > room ? 23 : 12);
     items.slice(first, first + room).forEach((it, k) => {
       const i = first + k, y = top + k * rowH, on = i === M.sel;
-      if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 6, y - 3, pw - 12, rowH - 1); drawText(ctx, '♥', px + 11, y + 1, { color: '#ec5f73' }); }
-      const ink = it.danger ? '#a8483a' : UI.ink;
-      if (it.kind === 'player') {
-        ctx.fillStyle = '#3b2a2e'; ctx.fillRect(px + 20, y - 1, 9, 9); ctx.fillStyle = it.color; ctx.fillRect(px + 21, y, 7, 7);
-        drawText(ctx, it.label, px + 34, y + 1, { color: it.away ? '#8a7a98' : ink });
-        if (it.host) crown(ctx, px + 36 + measure(it.label), y, '#e0a526');
-        drawText(ctx, t(it.sub), px + 150, y + 1, { color: it.away ? '#a8483a' : UI.inkSoft });
-        if (it.action) drawText(ctx, M.confirm === it.id ? t('press again to confirm') : t(it.action), px + pw - 12, y + 1, { color: M.confirm === it.id ? '#c8454f' : '#4f73b6', align: 'right' });
-        return;
-      }
-      if (it.color) { ctx.fillStyle = it.color; ctx.fillRect(px + 20, y - 1, 3, 10); }
-      const text = M.confirm === it.id ? t('press again to confirm') : label(it);
-      drawText(ctx, text, px + (it.color ? 27 : 20), y + 1, { color: M.confirm === it.id ? '#c8454f' : it.hot ? '#3f8a4a' : ink });
+      if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 6, y - 3, right - px - 2, rowH - 1); drawText(ctx, '♥', px + 11, y + 1, { color: '#ec5f73' }); }
+      const ink = it.danger ? '#a8483a' : it.hot ? '#3f8a4a' : UI.ink;
+      let left = px + 20;
+      if (it.kind === 'player') { ctx.fillStyle = it.color; ctx.fillRect(left, y, 7, 7); left += 12; }
+      else if (it.color) { ctx.fillStyle = it.color; ctx.fillRect(left, y - 1, 3, 10); left += 7; }
+      let value = '';
+      if (it.kind === 'choice') value = `◂ ${it.value} ▸`;
+      else if (it.kind === 'player' && it.action) value = t(it.action);
+      const valueW = value ? Math.min(measure(value), Math.floor((right - left) * 0.52)) : 0;
+      const text = M.confirm === it.id ? t('press again to confirm') : it.kind === 'player' ? it.label : label(it);
+      drawText(ctx, fitText(text, right - left - (valueW ? valueW + 8 : 0)), left, y + 1, { color: M.confirm === it.id ? '#c8454f' : ink });
+      if (value) drawText(ctx, fitText(value, valueW), right, y + 1, { color: '#8a5234', align: 'right' });
+      // Arrow targets come before the row, so clicking left really decreases the value.
       if (it.kind === 'choice') {
-        const v = `◂ ${it.value} ▸`;
-        drawText(ctx, v, px + pw - 12, y + 1, { color: '#8a5234', align: 'right' });
-        if (it.bar) {
-          const [cur, n] = it.bar, bx = px + pw - 16 - measure(v) - n * 5;
-          for (let j = 0; j < n; j++) { ctx.fillStyle = j === cur ? '#e0a526' : j < cur ? '#c9a77c' : '#e8d6b4'; ctx.fillRect(bx + j * 5, y + 2, 4, 5); }
-        }
-      } else if (it.sub && on) drawText(ctx, t(it.sub), px + pw - 12, y + 1, { color: UI.inkSoft, align: 'right' });
+        hit(right - valueW - 3, y - 3, 13, rowH, { sel: i, dir: -1 });
+        hit(right - 9, y - 3, 13, rowH, { sel: i, dir: 1 });
+      }
+      hit(px + 6, y - 3, right - px, rowH, { sel: i });
     });
+    if (items.length > room) {
+      const x = px + pw - 16, bottom = top + (room - 1) * rowH;
+      for (const [y, dir, glyph] of [[top - 3, -1, '↑'], [bottom - 3, 1, '↓']]) {
+        ctx.fillStyle = '#e8d6b4'; ctx.fillRect(x, y, 10, 13);
+        drawText(ctx, glyph, x + 2, y + 3, { color: UI.inkSoft }); hit(x, y, 10, 13, { scroll: dir });
+      }
+    }
+    // Descriptions have their own wrapped footer; they never share a line with an action.
+    const footY = py + ph - footerH;
+    ctx.fillStyle = '#dfc9a4'; ctx.fillRect(px + 8, footY, pw - 16, 1);
+    const selected = items[M.sel];
+    const description = selected?.sub ? t(selected.sub) : '';
+    wrap(description, pw - 20).slice(0, 2).forEach((line, i) => drawText(ctx, line, px + 10, footY + 5 + i * 9, { color: UI.inkSoft }));
     const hint = t('↑↓ choose · ←→ change or switch tab · E/A confirm · Esc/B close');
-    const hl = wrap(hint, pw - 16);
-    hl.slice(0, 1).forEach((l) => drawText(ctx, l, px + pw / 2, py + ph - 11, { color: '#b8a080', align: 'center' }));
+    drawText(ctx, fitText(hint, pw - 16), px + pw / 2, py + ph - 11, { color: '#a38a65', align: 'center' });
   }
+
 }
 
 // a menu row's label, translated (place names get a capital letter)

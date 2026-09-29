@@ -81,6 +81,7 @@ export class Creator {
     out.push(...this.tabs[this.tab].rows);
     out.push({ key: 'random', type: 'button', label: '★ Surprise me' });
     out.push({ key: 'done', type: 'button', label: this.mode === 'new' ? 'Begin your story →' : 'Done', main: true });
+    if (this.mode === 'new') out.push({ key: 'back', type: 'button', label: 'Back to title' });
     return out;
   }
 
@@ -176,7 +177,7 @@ export class Creator {
       input.consume('interact');
       this.activate(r);
     }
-    if (this.mode !== 'new' && input.pressed('cancel')) { this.finish(); return; }
+    if (input.pressed('cancel')) { if (this.mode === 'new') this.back = true; else this.finish(); input.textHandler = null; input.consume(); return; }
     // mouse
     if (this.hit) {
       for (const h of this.hit) {
@@ -215,6 +216,7 @@ export class Creator {
       return;
     }
     if (r.key === 'random') this.randomize();
+    else if (r.key === 'back') this.back = true;
     else if (r.key === 'done') this.finish();
     else if (r.type === 'tabs') this.setTab(this.tab + 1);
     else if (r.list) this.step(r, 1);
@@ -405,6 +407,9 @@ export class Creator {
     drawText(ctx, fitText(hint, pw - 8), px + pw / 2, py + ph - 14, { color: '#b8a080', align: 'center' });
     if (this.mode === 'new') {
       drawText(ctx, fitText(t('Who will come home to Marigold Cove?'), W - 20), 10, 10, { color: '#fff7e6', shadow: '#2a1f33' });
+      const back = items.findIndex((r) => r.key === 'back'), bw = Math.min(W - 20, measure(t('Back to title')) + 18);
+      button(ctx, 10, 24, bw, 15, t('Back to title'), { hot: this.sel === back });
+      this.hit.push({ x: 10, y: 24, w: bw, h: 15, sel: back });
       drawText(ctx, t('drag to spin'), 10, (portrait ? py : H) - 16, { color: '#fff7e6', shadow: '#2a1f33' });
     }
     this.drawDemoFx(ctx);

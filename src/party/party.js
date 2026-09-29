@@ -260,6 +260,14 @@ export class Party {
     this.sceneMusic = null;
     this.act = null;
     this.loadProfiles();
+    for (const local of this.options.reload?.locals || []) {
+      const id = local.kind === 'keys' ? 'keys-' + local.layout : 'pad-' + local.index;
+      if (this.byId.has(id)) continue;
+      const profile = this.profiles[id] || {};
+      const input = local.kind === 'keys' ? new KeyInput(this.game.input.keys, local.layout) : new PadInput(local.index);
+      const p = this.addPlayer({ id, kind: local.kind, input, name: profile.name || t('Keys'), look: profile.look || randomLook() });
+      if (p) p.ready = true;
+    }
     this.net.start(this.options);
     audio.playMusic('day', { fade: 1.5 });
     audio.setAmbient({ birds: 0.7, crickets: 0, waves: 0.35, rain: 0, wind: 0.15, fire: 0, night: 0 });
@@ -956,6 +964,16 @@ export class Party {
 
   updateLobby(dt) {
     this.pollLocalJoins();
+    const reload = this.options.reload;
+    if (reload?.activity) {
+      // Let returning phones reconnect before resuming; local players need no new join press.
+      if (this.players.some((p) => p.connected)) this.reloadT = (this.reloadT || 0) + dt;
+      if (this.reloadT >= 1) {
+        const activity = reload.activity; this.options.reload = null; this.options.resume = false;
+        this.startAct(activity); return;
+      }
+      return;
+    }
     // drop phones that left while we were still in the lobby
     for (const p of this.players.slice()) if (!p.connected && this.t - p.goneAt > 20) this.removePlayer(p);
     for (const p of this.players) {

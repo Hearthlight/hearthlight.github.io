@@ -14,7 +14,7 @@ import { Creator } from './ui/creator.js';
 import { panel, button, UI, fitText, bindInput, ctl, device } from './ui/ui.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
-import { newState, loadGame, saveGame, hasSave, deleteSave, loadSettings, hearts } from './state.js';
+import { newState, loadGame, saveGame, hasSave, loadSettings, hearts } from './state.js';
 import { NPCS, NPC_ORDER } from './data/npcs.js';
 import { ITEMS } from './data/items.js';
 import { audio } from './engine/audio.js';
@@ -24,6 +24,7 @@ import { applyHomeLevel } from './world/interiors.js';
 import { Party } from './party/party.js';
 import { PartyHub } from './party/hub.js';
 import { partySummary } from './party/saves.mjs';
+import { SessionRecovery } from './session.mjs';
 import { setLang, loadLang, t, tn, num } from './i18n.js';
 import { SoloPhone } from './solo/phone.js';
 import { ControlsPanel } from './ui/controls.js';
@@ -39,6 +40,7 @@ export class Game {
     this.settings = loadSettings();
     setLang(this.settings.lang);
     this.mode = 'boot';
+    this.recovery = new SessionRecovery({ save: () => this.saveBeforeLeaving(), snapshot: () => this.sessionSnapshot() });
     this.partyHub = new PartyHub(this);
     this.projectLinks = document.getElementById('project-links');
     this.t = 0;
@@ -51,6 +53,7 @@ export class Game {
   }
 
   async start() {
+    const reload = this.recovery.take(performance.getEntriesByType('navigation')[0]?.type);
     const t0 = performance.now();
     // (the chosen language's dictionary before the first word is drawn)
     await loadLang(this.settings.lang);
@@ -81,6 +84,8 @@ export class Game {
     console.log('world built in', Math.round(performance.now() - t0), 'ms');
     this.applySettings();
     this.toTitle();
+    if (reload?.mode === 'game' && hasSave()) this.continueGame();
+    else if (reload?.mode === 'party') this.toParty({ online: reload.online, resume: !!reload.activity, reload });
     let last = performance.now();
     const loop = (ts) => {
       const dt = Math.max(0, Math.min(0.05, (ts - last) / 1000));
@@ -89,10 +94,19 @@ export class Game {
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
-    const autosave = () => { if (this.mode === 'party') this.party.saveNow(); else if (this.mode === 'game' && this.world.player) this.world.save('quiet'); };
-    window.addEventListener('pagehide', autosave);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
-    window.addEventListener('beforeunload', autosave);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) this.recovery.checkpoint(); });
+  }
+
+  saveBeforeLeaving() {
+    if (this.mode === 'party') this.party.saveNow();
+    else if (this.mode === 'game' && this.world.player) this.world.save('quiet');
+  }
+
+  sessionSnapshot() {
+    if (this.mode !== 'party') return { mode: this.mode };
+    const p = this.party;
+    return { mode: 'party', online: !!p.options.online, activity: p.phase === 'lobby' ? null : p.actKind,
+      locals: p.players.filter((q) => q.connected && q.kind !== 'phone').map((q) => ({ kind: q.kind, layout: q.input.layoutId, index: q.input.index })) };
   }
 
   frame(dt) {
@@ -170,6 +184,7 @@ export class Game {
 
   // ------------------------------------------------------------------ title
   toTitle() {
+    this.recovery.setActive(false);
     const w = this.world;
     this.mode = 'title';
     this.overlay = null;
@@ -229,12 +244,11 @@ export class Game {
     if (this.confirmNew) {
       if (input.pressed('left') || input.pressed('right')) { this.confirmSel = 1 - this.confirmSel; audio.sfx('select'); }
       if (input.pressed('cancel')) { this.confirmNew = false; return; }
-      if (input.mouse.pressed && this.confirmRects) {
-        for (const r of this.confirmRects) if (input.mouseIn(r.x, r.y, r.w, r.h)) this.confirmSel = r.i;
-      }
-      if (input.pressed('interact') || input.mouse.pressed) {
+      const clicked = input.mouse.pressed && this.confirmRects?.find((r) => input.mouseIn(r.x, r.y, r.w, r.h));
+      if (clicked) { this.confirmSel = clicked.i; input.mouse.pressed = false; }
+      if (input.pressed('interact') || clicked) {
         input.consume('interact');
-        if (this.confirmSel === 0) { deleteSave(); this.confirmNew = false; this.toCreator(); }
+        if (this.confirmSel === 0) { this.confirmNew = false; this.toCreator(); }
         else this.confirmNew = false;
       }
       return;
@@ -266,6 +280,7 @@ export class Game {
     this.phone.stop();           // (Party Mode hosts its own room)
     this.party = new Party(this, options);
     this.party.enter();
+    this.recovery.setActive(true);
   }
 
   drawTitle() {
@@ -398,6 +413,11 @@ export class Game {
   updateCreator(dt) {
     const c = this.creator;
     c.update(dt, this.input);
+    if (c.back) {
+      this.r3d.scene.remove(this.preview.root); this.r3d.scene.remove(this.previewPet.root);
+      this.preview = this.previewPet = this.creator = null;
+      this.input.textHandler = null; this.input.consume(); this.toTitle(); return;
+    }
     // (the hero tab: the weapon in hand, turned three-quarters to show it swing)
     const hero = c.onHero && c.onHero();
     this.preview.setProp(hero ? CLASSES[c.cls].weapon : null);      // (it does nothing when it's the same)
@@ -449,6 +469,7 @@ export class Game {
     this.resetWorldForGame();
     this.world.enter(true);
     saveGame(s);
+    this.recovery.setActive(true);
   }
 
   continueGame() {
@@ -458,6 +479,7 @@ export class Game {
     this.mode = 'game';
     this.resetWorldForGame();
     this.world.enter(false);
+    this.recovery.setActive(true);
   }
 
   resetWorldForGame() {

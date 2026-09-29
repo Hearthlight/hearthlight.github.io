@@ -45,6 +45,16 @@ function createWindow(port) {
   });
   win.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   win.webContents.session.setPermissionCheckHandler(() => false);
+  win.webContents.on('will-prevent-unload', (event) => {
+    const fr = app.getLocale().startsWith('fr');
+    const choice = dialog.showMessageBoxSync(win, {
+      type: 'question', title: 'Hearthlight',
+      message: fr ? 'Quitter ou recharger la partie ?' : 'Leave or reload the game?',
+      detail: fr ? 'La progression est sauvegardée. Après un rechargement, la partie reprend automatiquement.' : 'Progress is saved. After a reload, the game resumes automatically.',
+      buttons: fr ? ['Rester en jeu', 'Continuer'] : ['Stay in game', 'Continue'], defaultId: 0, cancelId: 0,
+    });
+    if (choice === 1) event.preventDefault();
+  });
   win.on('closed', () => { win = null; });
 }
 
@@ -75,4 +85,4 @@ app.whenReady().then(async () => {
   app.on('activate', () => { if (!win) createWindow(relay.O.port); });
 });
 app.on('window-all-closed', () => { app.quit(); });
-app.on('before-quit', () => { if (relay) relay.close(); });
+app.on('will-quit', () => { if (relay) relay.close(); });

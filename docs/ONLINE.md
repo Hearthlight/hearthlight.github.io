@@ -28,6 +28,8 @@ Phones and remote players reconnect automatically. **Reconnect** retries from th
 
 ## Local saves and resume
 
+While a solo game or party is open, refreshing or closing the page asks for confirmation in browsers that support it. If you confirm a refresh, the same tab resumes the saved solo game or party activity automatically, including local keyboard/gamepad players. Phones reconnect to the host's room. Returning to the title deliberately clears automatic resume. This protection relies on browser storage; mobile browsers may close a tab without showing a confirmation.
+
 Adventure progress, player profiles and the most recent safe outdoor positions are kept on the host device. Saves run every 30 seconds, when the page is hidden, and before leaving a party. **Save now** saves immediately. A storage failure is shown; **Export save** can still export the party's pending progress from memory.
 
 **Resume our adventure** shows the saved chapter and date, opens the lobby, and resumes the adventure when the host starts. It restores quest progress and player profiles, and returns players near saved outdoor positions. An unfinished cinematic, arena round or exact mid-combat state is not a resumable checkpoint.
