@@ -111,7 +111,8 @@ export class Dialogue {
       const before = Math.floor(L.shown);
       L.shown = Math.min(stripTags(L.text).length, L.shown + dt * speed * 1.4);
       if (Math.floor(L.shown) !== before && Math.floor(L.shown) % 3 === 0) audio.sfx('typewriter', { volume: 0.35 });
-      if (input.pressed('interact') || input.mouse.pressed) {
+      if (input.pressed('interact') || input.pressed('cancel') || input.mouse.pressed) {
+        input.consume('cancel');
         if (L.shown < stripTags(L.text).length) L.shown = stripTags(L.text).length;
         else { this.letter = null; audio.sfx('page'); L.resolve(); }
         input.consume('interact');

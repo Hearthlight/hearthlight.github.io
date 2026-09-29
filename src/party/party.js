@@ -45,7 +45,7 @@ import { cleanLook, randomLook } from '../data/looks.js';
 import { NPCS } from '../data/npcs.js';
 import { newState } from '../state.js';
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl } from '../ui/ui.js';
+import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton } from '../ui/ui.js';
 import { Dialogue } from '../ui/dialogue.js';
 import { audio } from '../engine/audio.js';
 import { TT } from '../world/tiles.js';
@@ -748,6 +748,14 @@ export class Party {
     // M on the big screen’s keyboard shows the world map
     const mKey = g.input.keys.has('KeyM');
     if (mKey && !this.prevM && !this.host.menu) this.bigMapOpen = !this.bigMapOpen;
+    // (the map open: its Close button, Esc / Start / B on the big screen, or a local player's B, closes it)
+    if (this.bigMapOpen && !this.host.menu) {
+      const C = this.mapCloseR, gi = g.input, byB = this.players.find((p) => p.kind !== 'phone' && p.connected && p.input.pressed('b'));
+      if (gi.pressed('cancel') || gi.pressed('pause') || byB || (gi.mouse.pressed && C && gi.mouseIn(C.x, C.y, C.w, C.h))) {
+        this.bigMapOpen = false; gi.mouse.pressed = false; gi.consume();
+        if (byB) byB.input.edges.delete('b');
+      }
+    }
     this.prevM = mKey;
     // (the map open: the mouse zooms & moves it; ± zoom it rather than the camera)
     if (this.bigMapOpen && !this.host.menu) this.mapView.mouse(g.input, this.centroid()); else if (!this.bigMapOpen) this.mapView.reset();
@@ -1609,6 +1617,7 @@ export class Party {
     drawText(ctx, t(R.id === 'dawn' ? 'The Dawnlands' : 'The Hearthlands'), W / 2, 6, { color: '#fff3c4', align: 'center', outline: '#241a2e' });
     this.mapView.hint = t('Wheel or + / - to zoom · drag to move');
     drawWorldPanel(this, ctx, 0, 14, W, H - 14, { counts: true, view: this.mapView });
+    this.mapCloseR = closeButton(ctx, W - 4, 1);
   }
 
   drawToasts(ctx) {

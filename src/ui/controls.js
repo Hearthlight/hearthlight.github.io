@@ -5,7 +5,7 @@
 // phone's card opens its code; on the gamepad's, a little rumble to say hello.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, button, UI, fitText, keyCap, moveKeys, device, padName, isFace, faceGlyph } from './ui.js';
+import { panel, button, UI, fitText, keyCap, moveKeys, device, padName, isFace, faceGlyph, ctl, closeButton } from './ui.js';
 import { padLabel } from '../engine/input.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
@@ -45,6 +45,9 @@ export class ControlsPanel {
     this.t += dt;
     if (this.hello > 0) this.hello -= dt;
     if (input.pressed('cancel') || input.pressed('menu') || input.pressed('pause')) { this.close(); return; }
+    // (its Close button, or a click or tap outside)
+    const C = this.closeR, P = this.panelR, m = input.mouse;
+    if (m.pressed && ((C && input.mouseIn(C.x, C.y, C.w, C.h)) || (P && !input.mouseIn(P.x, P.y, P.w, P.h)))) { m.pressed = false; this.close(); return; }
     if (input.repeat('left')) { this.sel = (this.sel + 2) % 3; audio.sfx('select', { volume: 0.4 }); }
     if (input.repeat('right')) { this.sel = (this.sel + 1) % 3; audio.sfx('select', { volume: 0.4 }); }
     for (const r of this.rects || []) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
@@ -73,7 +76,7 @@ export class ControlsPanel {
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
     panel(ctx, px, py, pw, ph);
     drawText(ctx, t('Controls'), px + pw / 2, py + 7, { color: '#8a5234', align: 'center' });
-    const sub = wrap(t('Play with whichever you like: the game follows the one in your hands.'), pw - 24).slice(0, 2);
+    const sub = wrap(t('Play with whichever you like: the game follows the one in your hands.'), pw - 130).slice(0, 2);   // (clear of the Close button)
     sub.forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 18 + i * 9, { color: UI.inkSoft, align: 'center' }));
     const pad = this.pad(), phone = this.game.phone;
     const cy = py + 24 + sub.length * 9, gap = 6, cw = Math.floor((pw - 20 - gap * 2) / 3), ch = py + ph - 24 - cy;
@@ -111,8 +114,11 @@ export class ControlsPanel {
       } else wrap(t('Keys follow your keyboard’s layout (AZERTY and QWERTZ too).'), cw - 12).slice(0, 2).forEach((l, j) => drawText(ctx, l, cx + 6, cy + ch - 21 + j * 9, { color: '#b8a080' }));
     });
     // the way out
-    const hint = now === 'pad' ? t('{a} choose · {b} close', { a: padName('interact'), b: padName('cancel') }) : t('E choose · Esc close');
-    drawText(ctx, fitText(hint, pw - 20), px + pw / 2, py + ph - 14, { color: '#b8a080', align: 'center' });
+    const hint = now === 'pad' || now === 'phone' ? t('{a} choose · {b} close', { a: ctl('interact'), b: ctl('cancel') })
+      : now === 'touch' ? t('Tap Close, or outside, to go back') : t('E choose · Esc close');
+    drawText(ctx, fitText(hint, pw - 20), px + pw / 2, py + ph - 14, { color: UI.inkSoft, align: 'center' });
+    this.panelR = { x: px, y: py, w: pw, h: ph };
+    this.closeR = closeButton(ctx, px + pw - 6, py + 5);
   }
 
   // the lines of a card: [what, which]

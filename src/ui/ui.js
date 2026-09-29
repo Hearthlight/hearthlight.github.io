@@ -164,6 +164,19 @@ export function tag(ctx, x, y, text, bg = '#6b4330', fg = '#fff7e6') {
   return w;
 }
 
+// A panel's Close button: a ✕ and the word, big enough for a finger, drawn right-aligned at
+// `right`; returns its rect (the caller closes on a click or a tap in it — and says which
+// key does too, with ctl('cancel'))
+export function closeButton(ctx, right, y, { hot = false } = {}) {
+  const label = t('Close'), w = measure(label) + 20, h = 14, x = Math.round(right - w);
+  button(ctx, x, y, w, h, '', { hot, color: hot ? null : '#8e5d3e' });
+  const ink = hot ? '#3b2a2e' : '#fff7e6', cx = x + 7, cy = y + 7;
+  ctx.fillStyle = ink;
+  for (let i = -2; i <= 2; i++) { ctx.fillRect(cx + i, cy + i, 1, 1); ctx.fillRect(cx + i, cy - i, 1, 1); }
+  drawText(ctx, label, x + 13, y + 3, { color: ink });
+  return { x, y, w, h };
+}
+
 export function button(ctx, x, y, w, h, label, { hot = false, disabled = false, color = null } = {}) {
   x = Math.round(x); y = Math.round(y);
   const base = disabled ? '#b8aa9a' : color || (hot ? '#e0a526' : '#8e5d3e');

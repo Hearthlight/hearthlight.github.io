@@ -178,7 +178,8 @@ export class Creator {
       this.activate(r);
     }
     // (a new hero isn't thrown away by one stray key: back to the title takes a second press)
-    if (input.pressed('cancel')) {
+    // (the wardrobe also closes with the phone's Close, which says « menu »)
+    if (input.pressed('cancel') || (this.mode !== 'new' && input.pressed('menu') && !input.textHandler)) {
       input.consume();
       if (this.mode !== 'new') { this.finish(); input.textHandler = null; return; }
       if (this.backAsk && this.t < this.backAsk) { this.back = true; input.textHandler = null; return; }

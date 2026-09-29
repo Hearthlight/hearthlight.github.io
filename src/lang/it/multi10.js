@@ -47,4 +47,10 @@ export const MULTI10_IT = {
   "this phone is my controller": "questo telefono è il mio controller",
   "On my own screen": "Sul mio schermo",
   "from home: the game shows here": "da casa: il gioco si vede qui",
+  "↑↓ choose · ←→ change or switch tab · {a} confirm · {b} close": "↑↓ scegli · ←→ cambia o passa di scheda · {a} conferma · {b} chiudi",
+  "{b} close": "{b} chiudi",
+  "Tap an item to buy or sell it · tap outside to leave": "Tocca un articolo per comprarlo o venderlo · tocca fuori per uscire",
+  "Tap an item to ship the whole stack · tap outside to leave": "Tocca un articolo per spedire tutta la pila · tocca fuori per uscire",
+  "{a} ship one · {b} close": "{a} spediscine uno · {b} chiudi",
+  "Tap Close, or outside, to go back": "Tocca Chiudi, o fuori, per tornare indietro",
 };

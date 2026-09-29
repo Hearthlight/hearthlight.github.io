@@ -1,7 +1,7 @@
 // Shop screens: buy & sell lists, quantities, prices, owner portrait.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, button, coinIcon, UI, tag, fitText, ctl, device } from './ui.js';
+import { panel, button, coinIcon, UI, tag, fitText, ctl, device, closeButton } from './ui.js';
 import { drawIcon } from '../art/icons.js';
 import { ITEMS } from '../data/items.js';
 import { countItem, addItem, removeItem } from '../state.js';
@@ -128,6 +128,9 @@ export class Shop {
     }
     if (this.tabRects) for (const r of this.tabRects) if (input.mouse.pressed && input.mouseIn(r.x, r.y, r.w, r.h)) { this.tab = r.i; this.sel = 0; this.scroll = 0; audio.sfx('select'); }
     if (this.closeRect && input.mouse.pressed && input.mouseIn(this.closeRect.x, this.closeRect.y, this.closeRect.w, this.closeRect.h)) { this.close(); return; }
+    // (a click or a tap outside the panel leaves too)
+    const P = this.panelRect;
+    if (P && input.mouse.pressed && !input.mouseIn(P.x, P.y, P.w, P.h)) { input.mouse.pressed = false; this.close(); return; }
     if (input.pressed('interact')) { input.consume('interact'); this.transact(items); }
     void s;
   }
@@ -177,11 +180,12 @@ export class Shop {
     const portrait = w.portraitOf(this.def.owner, 'happy');
     ctx.fillStyle = '#e9d6b0'; ctx.fillRect(px + 8, py + 8, 36, 36);
     if (portrait) ctx.drawImage(portrait, 0, 0, 44, 44, px + 4, py + 4, 44, 44);
-    // coins
-    const ct = num(s.coins);
-    coinIcon(ctx, px + pw - measure(ct) - 22, py + 11);
-    drawText(ctx, ct, px + pw - 12, py + 10, { color: this.flash > 0 ? '#b8862a' : UI.ink, align: 'right' });
-    drawText(ctx, fitText(t(this.def.title), pw - 52 - measure(ct) - 30), px + 52, py + 10, { color: '#8a5234', scale: 1 });
+    // a real Close button (top right), the coins beside it
+    this.closeRect = closeButton(ctx, px + pw - 8, py + 7);
+    const ct = num(s.coins), cr = this.closeRect.x - 8;
+    coinIcon(ctx, cr - measure(ct) - 10, py + 11);
+    drawText(ctx, ct, cr, py + 10, { color: this.flash > 0 ? '#b8862a' : UI.ink, align: 'right' });
+    drawText(ctx, fitText(t(this.def.title), cr - measure(ct) - 16 - (px + 52)), px + 52, py + 10, { color: '#8a5234', scale: 1 });
     const greet = this.msg || t(this.tab === 0 ? 'Take a look around!' : 'What would you like to sell?');
     drawText(ctx, fitText(greet, pw - 60), px + 52, py + 22, { color: UI.inkSoft });
     // tabs
@@ -242,8 +246,11 @@ export class Shop {
       const lines = wrap(ITEMS[cur].desc ? t(ITEMS[cur].desc) : '', pw - 24);
       lines.slice(0, 2).forEach((l, i) => drawText(ctx, i === 1 && lines.length > 2 ? fitText(l + '…', pw - 24) : l, px + 12, py + ph - 32 + i * 10, { color: UI.inkSoft }));
     }
-    drawText(ctx, device() === 'pad' ? t('{a} buy/sell · {b} close', { a: ctl('interact'), b: ctl('cancel') }) : t('E buy/sell · Esc close'), px + pw - 12, py + ph - 12, { color: '#b8a080', align: 'right' });
-    this.closeRect = { x: px + pw - 16, y: py + 2, w: 14, h: 12 };
-    drawText(ctx, '✕', px + pw - 10, py + 4, { color: '#8a5234', align: 'center' });
+    // (how to buy and how to leave, in the words of the device in hand)
+    const dev = device();
+    const how = dev === 'touch' ? t('Tap an item to buy or sell it · tap outside to leave')
+      : t('{a} buy/sell · {b} close', { a: ctl('interact'), b: ctl('cancel') });
+    drawText(ctx, fitText(how, pw - 24), px + pw - 12, py + ph - 12, { color: UI.inkSoft, align: 'right' });
+    this.panelRect = { x: px, y: py, w: pw, h: ph };
   }
 }

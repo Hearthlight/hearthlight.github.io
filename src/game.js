@@ -11,7 +11,7 @@ import { Portraits } from './render/portrait.js';
 import { World } from './scenes/world.js';
 import { Dialogue } from './ui/dialogue.js';
 import { Creator } from './ui/creator.js';
-import { panel, button, UI, fitText, bindInput, ctl, device } from './ui/ui.js';
+import { panel, button, UI, fitText, bindInput, ctl, device, closeButton } from './ui/ui.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
 import { newState, loadGame, saveGame, hasSave, loadSettings, hearts } from './state.js';
@@ -115,7 +115,11 @@ export class Game {
     this.input.update(dt);
     this.phone.update(dt);
     // (the saves page open over the game: nothing reads a key meanwhile)
-    if (this.saves.isOpen) { this.input.keys.clear(); this.input.consume(); this.saves.update(); this.draw(); return; }
+    // (a phone or a gamepad closes it with its own Close / B)
+    if (this.saves.isOpen) {
+      if (this.input.pressed('cancel') || this.input.pressed('menu')) this.saves.close();
+      this.input.keys.clear(); this.input.consume(); this.saves.update(); this.draw(); return;
+    }
     if (this.phone.panelOpen) this.phone.updatePanel(dt, this.input);
     else if (this.controls.open) this.controls.update(dt, this.input);
     else if (this.mode === 'title') this.updateTitle(dt);
@@ -572,7 +576,7 @@ export class Game {
       this.overlay = {
         update: (dt, input) => {
           tm += dt;
-          if (tm > 0.9 && (input.pressed('interact') || input.mouse.pressed || tm > 7)) { input.consume('interact'); this.overlay = null; resolve(); }
+          if (tm > 0.9 && (input.pressed('interact') || input.pressed('cancel') || input.pressed('menu') || input.mouse.pressed || tm > 7)) { input.consume(); this.overlay = null; resolve(); }
         },
         draw: (ctx) => {
           const W = this.display.w, H = this.display.h;
@@ -630,7 +634,7 @@ export class Game {
   openShipping() {
     return new Promise((resolve) => {
       const w = this.world, s = this.state;
-      let sel = 0, rows = [];
+      let sel = 0, rows = [], closeR = null, panelR = null;
       const list = () => {
         const out = [];
         for (const slot of s.bag) if (slot && ITEMS[slot.id] && ITEMS[slot.id].sell && !['key', 'tool'].includes(ITEMS[slot.id].cat) && !out.includes(slot.id)) out.push(slot.id);
@@ -641,7 +645,9 @@ export class Game {
       this.overlay = {
         update: (dt, input) => {
           const items = list();
-          if (input.pressed('cancel') || input.pressed('menu') || input.pressed('pause')) { this.overlay = null; audio.sfx('close'); input.consume(); resolve(); return; }
+          // (its Close button, a click or tap outside, or the device's own cancel)
+          const tap = input.mouse.pressed, inR = (r) => r && input.mouseIn(r.x, r.y, r.w, r.h);
+          if (input.pressed('cancel') || input.pressed('menu') || input.pressed('pause') || (tap && (inR(closeR) || (panelR && !inR(panelR))))) { input.mouse.pressed = false; this.overlay = null; audio.sfx('close'); input.consume(); resolve(); return; }
           if (input.repeat('up')) sel = Math.max(0, sel - 1);
           if (input.repeat('down')) sel = Math.min(items.length - 1, sel + 1);
           const ship = (all) => {
@@ -666,9 +672,11 @@ export class Game {
           const pw = Math.min(W - 16, 270), ph = Math.min(H - 20, 200);
           const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
           panel(ctx, px, py, pw, ph);
-          const paid = t('Paid tomorrow: {n}¢', { n: num(total()) });
-          drawText(ctx, fitText(t('Shipping Crate'), pw - 34 - measure(paid)), px + 12, py + 10, { color: '#8a5234' });
-          drawText(ctx, paid, px + pw - 12, py + 10, { color: '#b8862a', align: 'right' });
+          panelR = { x: px, y: py, w: pw, h: ph };
+          closeR = closeButton(ctx, px + pw - 8, py + 6);
+          const paid = t('Paid tomorrow: {n}¢', { n: num(total()) }), pr = closeR.x - 8;
+          drawText(ctx, fitText(t('Shipping Crate'), pr - measure(paid) - 12 - (px + 12)), px + 12, py + 10, { color: '#8a5234' });
+          drawText(ctx, paid, pr, py + 10, { color: '#b8862a', align: 'right' });
           const items = list();
           rows = [];
           items.slice(0, Math.floor((ph - 50) / 16)).forEach((id, i) => {
@@ -681,8 +689,12 @@ export class Game {
             rows.push({ x: px + 8, y: y - 2, w: pw - 16, h: 16, i });
           });
           if (!items.length) wrap(t('Nothing to ship. Crops, fish & forage sell here.'), pw - 24).forEach((l, i) => drawText(ctx, l, W / 2, py + 40 + i * 10, { color: UI.inkSoft, align: 'center' }));
-          const how = device() === 'pad' ? t('{a} ship one · {x} ship all · {b} close', { a: ctl('interact'), x: ctl('special'), b: ctl('cancel') }) : t('E ship one · Shift+E ship all · Esc close');
-          drawText(ctx, fitText(how, pw - 12), px + pw / 2, py + ph - 12, { color: '#b8a080', align: 'center' });
+          const dev = device();
+          const how = dev === 'pad' ? t('{a} ship one · {x} ship all · {b} close', { a: ctl('interact'), x: ctl('special'), b: ctl('cancel') })
+            : dev === 'touch' ? t('Tap an item to ship the whole stack · tap outside to leave')
+              : dev === 'phone' ? t('{a} ship one · {b} close', { a: ctl('interact'), b: ctl('cancel') })
+                : t('E ship one · Shift+E ship all · Esc close');
+          drawText(ctx, fitText(how, pw - 12), px + pw / 2, py + ph - 12, { color: UI.inkSoft, align: 'center' });
         },
       };
     });
@@ -718,7 +730,7 @@ export class Game {
           tm += dt;
           if (!shoot && Math.random() < dt * 0.35) shoot = { x: 0.2 + Math.random() * 0.6, y: 0.1 + Math.random() * 0.3, t: 0 };
           if (shoot) { shoot.t += dt; if (shoot.t > 0.9) shoot = null; }
-          if (tm > 1.2 && (input.pressed('interact') || input.pressed('cancel') || input.mouse.pressed)) {
+          if (tm > 1.2 && (input.pressed('interact') || input.pressed('cancel') || input.pressed('menu') || input.mouse.pressed)) {
             input.consume();
             this.overlay = null;
             audio.sfx('close');
@@ -796,7 +808,7 @@ export class Game {
         update: (dt, input) => {
           tm += dt;
           this.world.update(dt);
-          if ((tm > 20 && (input.pressed('interact') || input.mouse.pressed)) || tm > 42 || (tm > 3 && input.pressed('cancel'))) { input.consume(); this.overlay = null; resolve(); }
+          if ((tm > 20 && (input.pressed('interact') || input.mouse.pressed)) || tm > 42 || (tm > 3 && (input.pressed('cancel') || input.pressed('menu')))) { input.consume(); this.overlay = null; resolve(); }
         },
         draw: (ctx) => {
           const W = this.display.w, H = this.display.h;

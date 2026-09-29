@@ -8,7 +8,7 @@
 // host phone gets it as data (`{t:'hmenu'}`) and sends back `{t:'hact'}`.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, fitText } from '../ui/ui.js';
+import { panel, UI, fitText, ctl } from '../ui/ui.js';
 import { audio } from '../engine/audio.js';
 import { saveSettings } from '../state.js';
 import { t, getLang, setLang, LANGS } from '../i18n.js';
@@ -100,7 +100,7 @@ export class Host {
     for (const gp of pads) if (gp && gp.buttons[9] && gp.buttons[9].pressed) { now.add(gp.index); if (!this.prevStart.has(gp.index)) start = true; }
     this.prevStart = now;
     if (this.menu) this.updateMenu(dt);
-    else if ((g.pressed('pause') || start) && !P.vote) { g.consume(); this.openMenu(); }
+    else if ((g.pressed('pause') || start) && !P.vote && !P.bigMapOpen) { g.consume(); this.openMenu(); }   // (the map open: that closes it — party.js)
     if (this.skipAll > 0) {
       this.skipAll -= dt;
       if (P.dialogue.active) { this.skipAll = Math.max(this.skipAll, 1.2); P.dialogue.skip(); }
@@ -147,7 +147,8 @@ export class Host {
       { id: 'music', kind: 'choice', label: 'Music', value: vol('music') * 10 + '%', bar: [vol('music'), 11] },
       { id: 'sfx', kind: 'choice', label: 'Sounds', value: vol('sfx') * 10 + '%', bar: [vol('sfx'), 11] },
       { id: 'lang', kind: 'choice', label: 'Language', value: LANGS[getLang()] },
-      { id: 'saves', kind: 'button', label: 'Saves & backups', sub: 'save now, export or import a file, an online backup' },
+      // (files and keys want the big screen's mouse: not in the host phone's copy of the menu)
+      { id: 'saves', kind: 'button', label: 'Saves & backups', sub: 'save now, export or import a file, an online backup', screen: true },
     ];
     const players = P.players.map((q) => ({
       id: 'p:' + q.slot, kind: 'player', label: q.name, color: q.color,
@@ -188,7 +189,7 @@ export class Host {
     if (id === 'zauto') { Z.set('auto'); Z.flashT = 1.8; this.opts.zoom = 'auto'; this.saveOpts(); return; }
     if (id === 'map') { P.bigMapOpen = !P.bigMapOpen; return; }
     if (id.startsWith('inv:')) { const it = P.inviteItems().find((x) => x.id === id); if (it && it.url) copyText(it.url).then((ok) => P.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a')); return; }
-    if (id === 'saves') { this.closeMenu(); g.saves.open(); return; }
+    if (id === 'saves') { if (!from) { this.closeMenu(); g.saves.open(); } return; }
     if (id.startsWith('tv:')) { const q = P.players.find((x) => x.slot === +id.slice(3)); this.closeMenu(); if (q && !P.tvmenus.blocked()) { if (P.tvmenus.cur) P.tvmenus.close(P.tvmenus.cur.p, true); P.tvmenus.openFor(q); } return; }
     if (id.startsWith('travel:')) { this.setPaused(false); this.closeMenu(); if (P.travel) P.travel.goByName(id.slice(7)); return; }
     if (id === 'diff') {
@@ -245,7 +246,7 @@ export class Host {
     if (!h || h.kind !== 'phone' || !h.connected) return;
     const tabs = this.tabs().map((tb) => ({
       id: tb.id, label: t(tb.label),
-      items: tb.items.map((it) => ({ ...it, label: it.kind === 'player' ? it.label : label(it), sub: it.sub ? t(it.sub) : '', action: it.action ? t(it.action) : null })),
+      items: tb.items.filter((it) => !it.screen).map((it) => ({ ...it, label: it.kind === 'player' ? it.label : label(it), sub: it.sub ? t(it.sub) : '', action: it.action ? t(it.action) : null })),
     }));
     const msg = { t: 'hmenu', tabs, paused: !!this.party.paused, title: t('Host menu') };
     const key = JSON.stringify(msg);
@@ -412,7 +413,7 @@ export class Host {
     const selected = items[M.sel];
     const description = selected?.sub && !invite ? t(selected.sub) : '';
     wrap(description, pw - 20).slice(0, 2).forEach((line, i) => drawText(ctx, line, px + 10, footY + 5 + i * 9, { color: UI.inkSoft }));
-    const hint = t('↑↓ choose · ←→ change or switch tab · E/A confirm · Esc/B close');
+    const hint = t('↑↓ choose · ←→ change or switch tab · {a} confirm · {b} close', { a: ctl('interact'), b: ctl('cancel') });
     drawText(ctx, fitText(hint, pw - 16), px + pw / 2, py + ph - 11, { color: '#a38a65', align: 'center' });
   }
 

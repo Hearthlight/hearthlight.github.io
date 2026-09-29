@@ -730,7 +730,12 @@ export class Menu {
     drawText(ctx, hint, px + pw - 12, py + ph - 26, { color: '#b8a080', align: 'right' });
   }
 
-  tabsHint() { return device() === 'pad' ? t('{prev}/{next} tabs · {b} close', { prev: ctl('hotPrev'), next: ctl('hotNext'), b: ctl('cancel') }) : t('{prev}/{next} tabs · Esc close', { prev: keyCap('KeyQ'), next: keyCap('KeyR') }); }
+  tabsHint() {
+    const dev = device();
+    return dev === 'pad' ? t('{prev}/{next} tabs · {b} close', { prev: ctl('hotPrev'), next: ctl('hotNext'), b: ctl('cancel') })
+      : dev === 'phone' ? t('{b} close', { b: ctl('cancel') })
+        : t('{prev}/{next} tabs · Esc close', { prev: keyCap('KeyQ'), next: keyCap('KeyR') });
+  }
 
   // (`bare`: a page of its own, its name on the tab above)
   drawSettings(ctx, px, py, pw, ph, bare = false) {
