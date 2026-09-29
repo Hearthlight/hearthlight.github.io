@@ -184,11 +184,29 @@ export class Menu {
       this.close();
       return;
     }
+    if (this.dragSliders(input)) return;
     this.updateSettings(input);
     for (const r of this.rowRects || []) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
       if (input.mouse.moved) this.sel = r.i;
       if (input.mouse.pressed) { input.mouse.pressed = false; this.sel = r.i; this.changeSetting(1, true); }
     }
+  }
+
+  // the volume bars follow a click, a drag or a finger (5 % steps); true while one is held
+  dragSliders(input) {
+    const m = input.mouse, st = this.world.settings, bars = this.sliderRects || [];
+    if (m.pressed) {
+      const b = bars.find((r) => input.mouseIn(r.x - 6, r.y, r.w + 12, r.h));
+      if (b) { this.dragging = b.key; this.sel = b.i; m.pressed = false; }
+    }
+    if (!this.dragging) return false;
+    const b = bars.find((r) => r.key === this.dragging);
+    if (b) {
+      const v = Math.round(Math.max(0, Math.min(1, (m.x - b.x) / b.w)) * 20) / 20;
+      if (v !== st[b.key]) { st[b.key] = v; this.world.game.applySettings(); if (b.key === 'sfx' && this.t - (this.tickT || 0) > 0.12) { this.tickT = this.t; audio.sfx('select', { volume: 0.5 }); } }
+    }
+    if (!m.down) { this.dragging = null; saveSettings(st); this.world.game.applySettings(); }
+    return true;
   }
 
   updateList(input, n, onPick) {
@@ -748,7 +766,7 @@ export class Menu {
   drawSettings(ctx, px, py, pw, ph, bare = false) {
     if (!bare) drawText(ctx, t('Settings'), px + 12, py + 10, { color: '#8a5234' });
     const rows = this.settingsRows(), top = py + (bare ? 12 : 26);
-    this.rowRects = [];
+    this.rowRects = []; this.sliderRects = [];
     // (rows squeeze a little when there are many)
     const rh = Math.max(12, Math.min(17, Math.floor((ph - (bare ? 32 : 46)) / rows.length)));
     rows.forEach(([label, val, key], i) => {
@@ -759,12 +777,15 @@ export class Menu {
       if (val !== '') {
         const isVol = /%$/.test(val);
         if (isVol) {
-          const v = parseInt(val, 10) / 100;
-          const bx = px + pw - 110;
-          ctx.fillStyle = '#c9a77c'; ctx.fillRect(bx, y + 2, 80, 5);
-          ctx.fillStyle = '#e0a526'; ctx.fillRect(bx, y + 2, Math.round(80 * v), 5);
-          ctx.fillStyle = '#6b4330'; ctx.fillRect(bx + Math.round(80 * v) - 1, y, 3, 9);
+          // (the bar, then the number clear of its knob; a drag or a tap sets it — dragSliders)
+          const v = parseInt(val, 10) / 100, bw = 80, bx = px + pw - 26 - measure('100%') - bw;
+          ctx.fillStyle = '#c9a77c'; ctx.fillRect(bx, y + 2, bw, 5);
+          ctx.fillStyle = '#e0a526'; ctx.fillRect(bx, y + 2, Math.round(bw * v), 5);
+          const kx = bx + Math.round(bw * v), held = this.dragging === key;
+          ctx.fillStyle = '#3b2a22'; ctx.fillRect(kx - 2, y - 1, 5, 11);
+          ctx.fillStyle = held ? '#e0a526' : '#8e5d3e'; ctx.fillRect(kx - 1, y, 3, 9);
           drawText(ctx, val, px + pw - 16, y + 1, { color: UI.inkSoft, align: 'right' });
+          this.sliderRects.push({ key, i, x: bx, y: y - 3, w: bw, h: rh - 2 });
         } else {
           // language names are always written in their own language
           const shown = key === 'lang' ? val : t(val);
