@@ -7,6 +7,7 @@ import { seeThrough } from '../../render/seethrough.js';
 import { Painter } from '../../art/surfaces.js';
 import { ramp } from '../../engine/color.js';
 import { rng, hash2 } from '../../engine/util.js';
+import { broadleaf, palm, leafTexture as tuftTexture, palmTexture } from '../../models/treekit.js';
 
 let R3D = null;
 const GEO = {}, MAT = {};
@@ -53,13 +54,13 @@ const mat = (key, make) => MAT[key] || (MAT[key] = make());
 // (leaves thin out in front of whoever stands behind them, in party mode)
 const leaf = (key, color, seed) => mat('leaf-' + key, () => seeThrough(toon(R3D, { map: leafTexture(color, seed), key: 'bigleaf-' + key })));
 const SEE_FLAT = new Set(['capw', 'palmleaf', 'snow', 'puff']);
+// crowns in tufts (treekit.js), the same as the valley's trees
+const crown = (key, color, seed, blossom = false) => mat('crown-' + key, () => seeThrough(toon(R3D, { map: tuftTexture(color, seed, { blossom }), key: 'bigcrown-' + key })));
 const bark = (key, color) => mat('bark-' + key, () => toon(R3D, { map: barkTexture(color), key: 'bigbark-' + key }));
 const flat = (key, color, extra = {}) => mat('flat-' + key, () => { const m = toon(R3D, { color, key: 'bigflat-' + key, ...extra }); return SEE_FLAT.has(key) ? seeThrough(m) : m; });
 
-// canopy layouts (like the valley's trees)
+// a bush's layout
 const BLOBS = {
-  oak: [[0, 1.55, 0, 0.82], [-0.55, 1.28, 0.12, 0.58], [0.56, 1.3, 0.08, 0.6], [0.02, 2.12, -0.06, 0.58], [0.12, 1.18, 0.42, 0.52]],
-  maple: [[0, 1.6, 0, 0.84], [-0.58, 1.3, 0.1, 0.6], [0.6, 1.34, 0.05, 0.6], [0.05, 2.2, -0.05, 0.6], [-0.1, 1.22, 0.46, 0.52]],
   bush: [[0, 0.34, 0, 0.42], [-0.3, 0.26, 0.1, 0.3], [0.32, 0.27, 0.06, 0.32], [0.05, 0.52, -0.05, 0.28]],
 };
 const MAPLES = ['#d9543c', '#e8883a', '#eab83a'];
@@ -86,15 +87,15 @@ export function buildChunkObjects(r3d, objs) {
     const s = o.s || 1, h = o.v || 0, x = o.x, z = o.y - 0.15, rot = h * Math.PI * 2;
     switch (o.type) {
       case 'oak': case 'maple': case 'cherry': case 'redmaple': {
-        const sp = o.type === 'maple' || o.type === 'redmaple' ? 'maple' : 'oak';
-        const lm = o.type === 'maple' ? leaf('maple' + Math.floor(h * 3), MAPLES[Math.floor(h * 3)], 61 + Math.floor(h * 3)) : o.type === 'redmaple' ? leaf('red' + Math.floor(h * 4), REDS[Math.floor(h * 4)], 151 + Math.floor(h * 4)) : o.type === 'cherry' ? leaf('cherry', '#f2a3bf', 42) : leaf('oak', '#5aa452', 21);
+        const sp = o.type === 'maple' || o.type === 'redmaple' ? 'maple' : o.type;
+        const v = o.type === 'maple' ? Math.floor(h * 3) : o.type === 'redmaple' ? Math.floor(h * 4) : '';
+        const lm = o.type === 'maple' ? crown('maple' + v, MAPLES[v], 61 + v) : o.type === 'redmaple' ? crown('red' + v, REDS[v], 151 + v) : o.type === 'cherry' ? crown('cherry', '#f2a3bf', 42, true) : crown('oak', '#5aa452', 21);
         const sc = o.forest ? 0.92 + h * 0.3 : 1 + h * 0.12;
-        put('trunk-' + o.type, G.trunk, bark('oak', '#7a5238'), x, 0, z, 0.3 * sc, 1.15 * sc, 0.3 * sc, rot);
-        const tint = 0.9 + hash2(Math.floor(x * 3), Math.floor(z * 3), 6) * 0.18;
-        for (const [dx, dy, dz, r] of BLOBS[sp]) {
-          const c = Math.cos(rot), si = Math.sin(rot), rx = dx * c - dz * si, rz2 = dx * si + dz * c;
-          put('blob-' + o.type + (o.type === 'maple' ? Math.floor(h * 3) : o.type === 'redmaple' ? Math.floor(h * 4) : ''), G.blob, lm, x + rx * sc, dy * sc, z + rz2 * sc, r * sc, r * sc * 0.92, r * sc, 0, col.setRGB(tint, tint, tint).clone());
-        }
+        const tint = 0.92 + hash2(Math.floor(x * 3), Math.floor(z * 3), 6) * 0.14, bk = bark('oak', '#7a5238');
+        broadleaf(sp, x, z, h + x * 0.013 + z * 0.007, sc, (part, px, py, pz, sx, sy, sz, ry, rx, rz, tn) => {
+          if (part === 'tuft') put('blob-' + o.type + v, G.blob1, lm, px, py, pz, sx, sy, sz, ry, col.setRGB(tn[0] * tint, tn[1] * tint, tn[2] * tint).clone(), rx, rz);
+          else put('trunk-' + o.type, G.trunk, bk, px, py, pz, sx, sy, sz, ry, null, rx, rz);
+        });
         break;
       }
       case 'pine': case 'snowpine': {
@@ -108,19 +109,12 @@ export function buildChunkObjects(r3d, objs) {
         break;
       }
       case 'palm': {
-        const lean = (h - 0.5) * 0.6;
-        let px = 0, py = 0;
-        for (let i = 0; i < 6; i++) {
-          px += 0.05 + i * 0.012;
-          put(i % 2 ? 'palm-ring' : 'palm-trunk', G.cyl, flat(i % 2 ? 'palmring' : 'palmtrunk', i % 2 ? 0x7a5a3a : 0xa8845a), x + px * Math.cos(lean), py, z + px * Math.sin(lean), 0.28 - i * 0.016, 0.45, 0.28 - i * 0.016, 0, null, 0, -0.08 - i * 0.03);
-          py += 0.43;
-        }
-        const tx = x + px * Math.cos(lean), tz = z + px * Math.sin(lean);
-        for (let i = 0; i < 7; i++) {
-          const a = (i / 7) * Math.PI * 2 + h;
-          put('palm-leaf', G.box, flat('palmleaf', 0x5fae5a), tx + Math.cos(a) * 0.5, py + 0.02, tz + Math.sin(a) * 0.5, 1.1, 0.06, 0.28, -a, null, 0, -0.45);
-        }
-        put('coco', G.blob1, flat('coco', 0x6b4a2c), tx + 0.12, py - 0.1, tz + 0.1, 0.1, 0.1, 0.1);
+        const fm = mat('palm-frond', () => seeThrough(toon(R3D, { map: palmTexture(), alphaTest: 0.5, key: 'bigpalm-frond' })));
+        palm(x, z + 0.05, h + x * 0.011, (part, px, py, pz, sx, sy, sz, ry, rx, rz, tn) => {
+          if (part === 'frond') put('palm-frond', G.box, fm, px, py, pz, sx, sy, sz, ry, col.setRGB(tn[0], tn[1], tn[2]).clone(), rx, rz);
+          else if (part === 'coco') put('coco', G.blob1, flat('coco', 0x6b4a2c), px, py, pz, sx, sy, sz);
+          else put(part === 'pring' ? 'palm-ring' : 'palm-trunk', G.cyl, flat(part === 'pring' ? 'palmring' : 'palmtrunk', part === 'pring' ? 0x7a5a3a : 0xa8845a), px, py, pz, sx, sy, sz, ry, null, rx, rz);
+        });
         break;
       }
       case 'bush': case 'fern': {

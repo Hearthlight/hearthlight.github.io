@@ -6,15 +6,17 @@ import { seeThrough } from '../render/seethrough.js';
 import { paintNoise, Painter } from '../art/surfaces.js';
 import { ramp } from '../engine/color.js';
 import { rng, hash2 } from '../engine/util.js';
+import { broadleaf, palm, leafTexture as tuftTexture, palmTexture } from './treekit.js';
 
+// leaf & bark colours (the crowns' shapes: treekit.js)
 const SPECIES = {
-  oak: { leaf: '#5aa452', trunk: '#7a5238', blobs: [[0, 1.55, 0, 0.82], [-0.55, 1.28, 0.12, 0.58], [0.56, 1.3, 0.08, 0.6], [0.02, 2.12, -0.06, 0.58], [0.12, 1.18, 0.42, 0.52]], trunkH: 1.15, trunkW: 0.3 },
-  cherry: { leaf: '#f2a3bf', trunk: '#6e4a3c', blobs: [[0, 1.6, 0, 0.8], [-0.6, 1.35, 0.1, 0.56], [0.62, 1.38, 0.05, 0.58], [0.05, 2.15, -0.05, 0.55], [-0.1, 1.25, 0.45, 0.5]], trunkH: 1.2, trunkW: 0.28 },
-  apple: { leaf: '#6fb85a', trunk: '#7a5238', blobs: [[0, 1.45, 0, 0.8], [-0.52, 1.2, 0.1, 0.56], [0.55, 1.22, 0.06, 0.58], [0, 2.0, -0.05, 0.52]], trunkH: 1.05, trunkW: 0.28, fruit: '#e0463f' },
-  maple_r: { leaf: '#d9543c', trunk: '#5e4032', blobs: [[0, 1.6, 0, 0.84], [-0.58, 1.3, 0.1, 0.6], [0.6, 1.34, 0.05, 0.6], [0.05, 2.2, -0.05, 0.6], [-0.1, 1.22, 0.46, 0.52]], trunkH: 1.2, trunkW: 0.28 },
-  maple_o: { leaf: '#e8883a', trunk: '#5e4032', blobs: [[0, 1.55, 0, 0.82], [-0.55, 1.28, 0.12, 0.58], [0.56, 1.3, 0.08, 0.6], [0.02, 2.12, -0.06, 0.58], [0.12, 1.18, 0.42, 0.52]], trunkH: 1.15, trunkW: 0.28 },
-  maple_y: { leaf: '#eab83a', trunk: '#6b4a34', blobs: [[0, 1.5, 0, 0.8], [-0.52, 1.24, 0.1, 0.56], [0.55, 1.26, 0.06, 0.58], [0, 2.05, -0.05, 0.54]], trunkH: 1.1, trunkW: 0.26 },
-  big: { leaf: '#4f9a52', trunk: '#6b4a34', blobs: [[0, 3.2, 0, 1.7], [-1.3, 2.7, 0.3, 1.2], [1.35, 2.75, 0.2, 1.25], [0.1, 4.3, -0.1, 1.2], [0.2, 2.5, 0.95, 1.05], [-0.8, 3.8, 0.4, 0.9], [0.9, 3.9, 0.3, 0.9]], trunkH: 2.6, trunkW: 0.7 },
+  oak: { leaf: '#5aa452', trunk: '#7a5238' },
+  cherry: { leaf: '#f2a3bf', trunk: '#6e4a3c' },
+  apple: { leaf: '#6fb85a', trunk: '#7a5238', fruit: '#e0463f' },
+  maple_r: { leaf: '#d9543c', trunk: '#5e4032' },
+  maple_o: { leaf: '#e8883a', trunk: '#5e4032' },
+  maple_y: { leaf: '#eab83a', trunk: '#6b4a34' },
+  big: { leaf: '#4f9a52', trunk: '#6b4a34' },
 };
 
 function leafTexture(color, seed) {
@@ -80,6 +82,7 @@ const GEO = {};
 function geos() {
   if (!GEO.blob) {
     GEO.blob = new THREE.IcosahedronGeometry(1, 2);
+    GEO.tuft = new THREE.IcosahedronGeometry(1, 1);
     GEO.trunk = new THREE.CylinderGeometry(0.5, 0.62, 1, 6);
     GEO.trunk.translate(0, 0.5, 0);
     GEO.cone = new THREE.ConeGeometry(1, 1, 7);
@@ -121,40 +124,27 @@ function buildTreeChunk(r3d, objects) {
     if (sp === 'snowpine') { buildPines(r3d, group, list, coneGeo, trunkGeo, colliders, true); continue; }
     if (sp === 'palm') { buildPalms(r3d, group, list, colliders); continue; }
     const S = SPECIES[sp];
-    const leafMat = seeThrough(toon(r3d, { map: leafTexture(S.leaf, sp.length * 7), key: 'leaf-' + sp }));
+    const leafMat = seeThrough(toon(r3d, { map: tuftTexture(S.leaf, sp.length * 7, { blossom: sp === 'cherry' }), key: 'leaf-' + sp }));
     const trunkMat = toon(r3d, { map: barkTexture(S.trunk), key: 'bark-' + sp });
-    const blobs = [], trunks = [], fruits = [];
+    const tufts = [], trunks = [], fruits = [];
+    const e = new THREE.Euler();
     for (const o of list) {
       const h = hash2(Math.floor(o.x * 10), Math.floor(o.y * 10), 5);
       const sc = o.forest ? 0.92 + h * 0.3 : 1.0 + h * 0.12;
       const bx = o.x, bz = o.y - 0.15;
-      const rot = h * Math.PI * 2;
-      trunks.push({ m: m4.clone().compose(p.set(bx, 0, bz), q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), s.set(S.trunkW * sc, S.trunkH * sc, S.trunkW * sc)) });
-      const tint = 0.9 + hash2(Math.floor(o.x * 3), Math.floor(o.y * 3), 6) * 0.18;
-      for (const [dx, dy, dz, r] of S.blobs) {
-        const c = Math.cos(rot), si = Math.sin(rot);
-        const rx = dx * c - dz * si, rz = dx * si + dz * c;
-        const jitter = 0.92 + hash2(Math.floor((o.x + dx) * 13), Math.floor((o.y + dy) * 13), 7) * 0.16;
-        blobs.push({
-          m: m4.clone().compose(p.set(bx + rx * sc, dy * sc, bz + rz * sc), q.identity(), s.set(r * sc * jitter, r * sc * jitter * 0.92, r * sc * jitter)),
-          c: col.setRGB(tint, tint, tint).clone(),
-        });
-      }
-      if (S.fruit) {
-        const rr = rng(Math.floor(o.x * 100 + o.y));
-        for (let i = 0; i < 7; i++) {
-          const a = rr() * Math.PI * 2, e = rr() * 0.9;
-          const [bxo, byo, bzo, br] = S.blobs[i % S.blobs.length];
-          const fx = bx + (bxo + Math.cos(a) * br * 0.98) * sc;
-          const fy = (byo + Math.sin(e) * br * 0.7) * sc;
-          const fz = bz + (bzo + Math.sin(a) * br * 0.98) * sc + 0.05;
-          fruits.push({ m: m4.clone().compose(p.set(fx, fy, fz), q.identity(), s.set(0.09, 0.09, 0.09)) });
-        }
-      }
+      const tint = 0.92 + hash2(Math.floor(o.x * 3), Math.floor(o.y * 3), 6) * 0.14;
+      const kind = sp === 'big' ? 'big' : sp.startsWith('maple') ? 'maple' : sp;
+      broadleaf(kind, bx, bz, h + o.x * 0.013 + o.y * 0.007, sc, (part, x, y, z, sx, sy, sz, ry, rx, rz, tn) => {
+        const m = m4.clone().compose(p.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), s.set(sx, sy, sz));
+        if (part === 'tuft') tufts.push({ m, c: col.setRGB(tn[0] * tint, tn[1] * tint, tn[2] * tint).clone() });
+        else if (part === 'fruit') fruits.push({ m });
+        else trunks.push({ m });
+      }, { fruit: !!S.fruit });
       colliders.push({ x: bx, z: bz + 0.1, r: sp === 'big' ? 0.6 : 0.24 });
     }
     addInstanced(trunkGeo, trunkMat, trunks);
-    addInstanced(blobGeo, leafMat, blobs);
+    // (small tufts: a coarser ball looks the same at 16 pixels and costs a quarter)
+    addInstanced(sp === 'big' ? blobGeo : GEO.tuft, leafMat, tufts);
     if (fruits.length) addInstanced(GEO.fruit, toon(r3d, { color: S.fruit, key: 'fruit' }), fruits);
   }
   return { group, colliders };
@@ -194,35 +184,32 @@ function buildPines(r3d, group, list, coneGeo, trunkGeo, colliders, snowy = fals
 }
 
 function buildPalms(r3d, group, list, colliders) {
-  const trunkMat = toon(r3d, { color: 0xa8845a, key: 'palm-trunk' });
-  const ringMat = toon(r3d, { color: 0x7a5a3a, key: 'palm-ring' });
-  const leafMat = seeThrough(toon(r3d, { color: 0x5fae5a, key: 'palm-leaf' }));
+  const G = geos();
+  if (!G.cyl) { G.cyl = new THREE.CylinderGeometry(0.5, 0.5, 1, 8); G.cyl.translate(0, 0.5, 0); G.coco = new THREE.IcosahedronGeometry(1, 1); }
+  const mats = {
+    ptrunk: toon(r3d, { color: 0xa8845a, key: 'palm-trunk' }),
+    pring: toon(r3d, { color: 0x7a5a3a, key: 'palm-ring' }),
+    frond: seeThrough(toon(r3d, { map: palmTexture(), alphaTest: 0.5, key: 'palm-frond' })),
+    coco: toon(r3d, { color: 0x6b4a2c, key: 'coco' }),
+  };
+  const geo = { ptrunk: G.cyl, pring: G.cyl, frond: G.fruit, coco: G.coco };
+  const parts = { ptrunk: [], pring: [], frond: [], coco: [] };
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler(), c = new THREE.Color();
   for (const o of list) {
-    const g = new THREE.Group();
-    let x = 0, y = 0;
-    for (let i = 0; i < 6; i++) {
-      const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.14 - i * 0.008, 0.16 - i * 0.008, 0.45, 6), i % 2 ? ringMat : trunkMat);
-      x += 0.05 + i * 0.012;
-      seg.position.set(x, y + 0.225, 0);
-      seg.rotation.z = -0.08 - i * 0.03;
-      g.add(seg);
-      y += 0.43;
-    }
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2;
-      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.06, 0.28), leafMat);
-      leaf.position.set(x + Math.cos(a) * 0.5, y + 0.02, Math.sin(a) * 0.5);
-      leaf.rotation.y = -a;
-      leaf.rotation.z = -0.45;
-      g.add(leaf);
-    }
-    const coco = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), toon(r3d, { color: 0x6b4a2c, key: 'coco' }));
-    coco.position.set(x + 0.12, y - 0.1, 0.1);
-    g.add(coco);
-    g.position.set(o.x, 0, o.y - 0.1);
-    g.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
-    group.add(g);
+    palm(o.x, o.y - 0.1, hash2(Math.floor(o.x * 10), Math.floor(o.y * 10), 17), (part, x, y, z, sx, sy, sz, ry, rx, rz, tn) => {
+      parts[part].push({ m: m4.clone().compose(p.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), s.set(sx, sy, sz)), c: tn ? c.setRGB(tn[0], tn[1], tn[2]).clone() : null });
+    });
     colliders.push({ x: o.x, z: o.y, r: 0.22 });
+  }
+  for (const [k, l] of Object.entries(parts)) {
+    if (!l.length) continue;
+    const im = new THREE.InstancedMesh(geo[k], mats[k], l.length);
+    l.forEach((it, i) => { im.setMatrixAt(i, it.m); if (it.c) im.setColorAt(i, it.c); });
+    im.castShadow = im.receiveShadow = true;
+    im.instanceMatrix.needsUpdate = true;
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    im.computeBoundingSphere();
+    group.add(im);
   }
 }
 
