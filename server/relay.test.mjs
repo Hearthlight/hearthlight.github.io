@@ -183,6 +183,21 @@ test('remote video is opt-in per guest and cannot be sent by a guest', async (t)
   assert.equal((await fetch(f.http + '/health')).status, 200);
 });
 
+test('an addressed image reaches only its own remote guest', async (t) => {
+  const f = await fixture(t), host = await f.connect('role=host'), room = await host.next('room');
+  assert.equal(room.frames, 2);
+  const a = await f.connect(`role=pad&code=${room.code}&id=alice`); await a.next('hello');
+  const b = await f.connect(`role=pad&code=${room.code}&id=bob`); await b.next('hello');
+  for (const id of ['alice', 'bob']) host.ws.send(JSON.stringify({ t: 'remote', id, on: true }));
+  host.ws.send(JSON.stringify({ t: 'send', id: '*', d: { t: 'barrier' } })); await a.next('barrier'); await b.next('barrier');
+  let leaked = false; a.ws.on('message', (_, binary) => { if (binary) leaked = true; });
+  const image = Buffer.from([255, 216, 1, 2, 255, 217]);
+  host.ws.send(Buffer.concat([Buffer.from([1, 3]), Buffer.from('bob'), image]));
+  assert.deepEqual((await b.next('frame')).data, image);
+  host.ws.send(JSON.stringify({ t: 'send', id: 'alice', d: { t: 'barrier' } })); await a.next('barrier');
+  assert.equal(leaked, false);
+});
+
 test('TURN credentials are short-lived and issued only to room owners', async (t) => {
   const secret = 'test-only-turn-secret', urls = 'turn:example.invalid:3478';
   const f = await fixture(t, { turnSecret: secret, turnUrls: urls });

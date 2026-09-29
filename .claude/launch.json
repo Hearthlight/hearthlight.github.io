@@ -4,20 +4,44 @@
     {
       "name": "hearthlight",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["tools/devserver.py", "8765"],
+      "runtimeArgs": [
+        "tools/devserver.py",
+        "8765"
+      ],
       "port": 8765
     },
     {
       "name": "hearthlight-alt",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["tools/devserver.py", "8766"],
+      "runtimeArgs": [
+        "tools/devserver.py",
+        "8766"
+      ],
       "port": 8766
     },
     {
       "name": "hearthlight-reel",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["tools/devserver.py", "8767"],
+      "runtimeArgs": [
+        "tools/devserver.py",
+        "8767"
+      ],
       "port": 8767
+    },
+    {
+      "name": "hearthlight-relay",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server/relay.mjs",
+        "--static",
+        ".",
+        "--lan",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8792"
+      ],
+      "port": 8792
     }
   ]
 }

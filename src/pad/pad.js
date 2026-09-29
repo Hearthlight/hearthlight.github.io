@@ -14,6 +14,7 @@ import { t, setLang, detectLang, onLang } from '../i18n.js';
 import { relayUrl } from '../party/net.js';
 import { PadMap } from './padmap.js';
 import { RemoteGuest } from './remote.js';
+import { qrCanvas } from '../party/qr.js';
 
 const PM = new PadMap();
 
@@ -159,6 +160,13 @@ function onMessage(m) {
       if (!S.host && S.menu === 'host') S.menu = false;
       break;
     case 'hmenu': S.hmenu = m; break;
+    // the party's two invitations (the Invite page): a link for friends at home, one for phones in the room
+    case 'invite': {
+      const str = (v) => (typeof v === 'string' && /^https?:\/\//.test(v) ? v : '');
+      S.invite = { home: str(m.home), room: str(m.room), code: typeof m.code === 'string' ? m.code : '', lan: !!m.lan };
+      if (S.invite.room && (!S.inviteQr || S.inviteQr.text !== S.invite.room)) qrCanvas(S.invite.room).then((q) => { S.inviteQr = q; }).catch(() => {});
+      break;
+    }
     case 'mounts': S.mounts = { owned: Array.isArray(m.owned) ? m.owned : [], all: Array.isArray(m.all) ? m.all : null, active: m.active || null }; break;
     case 'pets': S.pets = { list: Array.isArray(m.list) ? m.list : [], active: m.active || null }; break;
     case 'prog': S.prog = m; break;
@@ -166,7 +174,8 @@ function onMessage(m) {
     case 'wmapBase': PM.onBase(m); break;
     case 'wmap': PM.onUpdate(m); break;
     case 'pause': S.paused = m.v ? { by: m.by || '' } : null; break;
-    case 'ended': S.kicked = true; S.joined = false; S.error = t('The party has ended. Ask the host for a new invitation.'); break;
+    // (the big screen's farewell stays, if it said one)
+    case 'ended': S.kicked = true; S.joined = false; S.error = S.screen === 'message' && S.message && S.message.text ? S.message.text : t('The party has ended. Ask the host for a new invitation.'); break;
     case 'hostgone': S.hostGone = true; break;
     case 'hostback': S.hostGone = false; hi(); break;
     case 'who': hi(); break;
@@ -416,19 +425,20 @@ function background() {
     ctx.fillRect(x, y, 1, 1);
   }
 }
-function header(title, right = W - 28) {
-  const col = S.me ? S.me.color : '#e0a526';
-  ctx.fillStyle = '#20172a'; ctx.fillRect(0, 0, W, 20);
+function header(title, right = W - 28, hb = 20) {
+  const col = S.me ? S.me.color : '#e0a526', o = Math.round((hb - 20) / 2);
+  ctx.fillStyle = '#20172a'; ctx.fillRect(0, 0, W, hb);
   ctx.fillStyle = col; ctx.fillRect(0, 0, W, 3);
   if (S.me) {
     const tag = `P${S.me.slot + 1}`;
     const tw = measure(tag) + 8;
-    ctx.fillStyle = col; ctx.fillRect(4, 6, tw, 11);
-    drawText(ctx, tag, 4 + tw / 2, 8, { color: '#241a2e', align: 'center' });
-    drawText(ctx, S.me.name, 8 + tw, 8, { color: '#fff7e6' });
-    if (S.host) drawText(ctx, '♛', 12 + tw + measure(S.me.name), 8, { color: '#f6c65b' });
-  } else drawText(ctx, title || 'Hearthlight', 6, 8, { color: '#fff7e6' });
-  if (S.me && S.ctx.lv && S.phase !== 'lobby') drawText(ctx, t('Lv{n}', { n: S.ctx.lv }), right - 4, 8, { color: '#ffd66b', align: 'right' });
+    ctx.fillStyle = col; ctx.fillRect(4, 6 + o, tw, 11);
+    drawText(ctx, tag, 4 + tw / 2, 8 + o, { color: '#241a2e', align: 'center' });
+    const room = right - 12 - tw - (S.me && S.ctx.lv && S.phase !== 'lobby' ? 30 : 0);
+    drawText(ctx, fitText(S.me.name, room), 8 + tw, 8 + o, { color: '#fff7e6' });
+    if (S.host && measure(S.me.name) < room - 10) drawText(ctx, '♛', 12 + tw + measure(S.me.name), 8 + o, { color: '#f6c65b' });
+  } else drawText(ctx, title || 'Hearthlight', 6, 8 + o, { color: '#fff7e6' });
+  if (S.me && S.ctx.lv && S.phase !== 'lobby') drawText(ctx, t('Lv{n}', { n: S.ctx.lv }), right - 4, 8 + o, { color: '#ffd66b', align: 'right' });
 }
 function portraitBox(x, y, size) {
   const col = S.me ? S.me.color : '#e0a526';
@@ -733,24 +743,28 @@ function drawSolo() {
 function drawPad() {
   const land = W > H;
   const lobby = S.phase === 'lobby';
-  // top-right: the menu (or back to the wardrobe in the lobby), the host's crown, the map
-  // and, in the evening, a campfire (the menu has it all day)
-  const styleW = lobby ? measure(t('Style')) + 26 : 0;
-  const hostX = lobby ? W - styleW - 26 : W - 46, mapX = (S.host ? hostX : W - 24) - 22, campX = mapX - 22;
-  const camp = !lobby && S.ctx.camp;
+  // top-right, big enough for a thumb: the menu (or back to the wardrobe in the lobby), the
+  // host's crown, the map (in the lobby: the invitations) and, in the evening, a campfire
+  const HB = 28, bw = 26, bh = 24, by = 2, gap = 3;
+  const styleW = lobby ? measure(t('Style')) + 28 : 0;
+  let right = W - 3;
+  const slot = (w) => { right -= w; const at = right; right -= gap; return at; };
+  const menuX = slot(lobby ? styleW : bw), hostX = S.host ? slot(bw) : 0;
+  const mapX = !lobby ? slot(bw) : 0, invX = lobby ? slot(bw) : 0, camp = !lobby && S.ctx.camp, campX = camp ? slot(bw) : 0;
   background();
-  header(null, lobby ? (S.host ? hostX : W - styleW - 4) : camp ? campX : mapX);
-  if (lobby) iconBtn(W - styleW - 4, 1, styleW, 18, 'shirt', 'look', () => { S.view = 'look'; S.ready = false; send({ t: 'ready', v: false }); }, { color: '#6a4a88', label: t('Style') });
-  else iconBtn(W - 24, 1, 20, 18, 'menu', 'menu', () => { S.menu = S.menu ? false : 'main'; }, { color: '#6a5a7a', badge: S.prog && S.prog.points > 0 ? '•' : '' });
-  if (S.host) hostPill(hostX);
-  if (!lobby) iconBtn(mapX, 1, 20, 18, 'map', 'mapp', openMap, { color: '#4a7ab8' });
-  if (camp) iconBtn(campX, 1, 20, 18, 'campfire', 'campp', () => { send({ t: 'camp' }); buzz(15); }, { color: '#b8502a' });
+  header(null, right + gap, HB);
+  if (lobby) iconBtn(menuX, by, styleW, bh, 'shirt', 'look', () => { S.view = 'look'; S.ready = false; send({ t: 'ready', v: false }); }, { color: '#6a4a88', label: t('Style') });
+  else iconBtn(menuX, by, bw, bh, 'menu', 'menu', () => { S.menu = S.menu ? false : 'main'; }, { color: '#6a5a7a', badge: S.prog && S.prog.points > 0 ? '•' : '' });
+  if (S.host) hostPill(hostX, bw, bh, by);
+  if (!lobby) iconBtn(mapX, by, bw, bh, 'map', 'mapp', openMap, { color: '#4a7ab8' });
+  if (lobby) iconBtn(invX, by, bw, bh, 'invite', 'invp', openInvite, { color: '#4f955a' });
+  if (camp) iconBtn(campX, by, bw, bh, 'campfire', 'campp', () => { send({ t: 'camp' }); buzz(15); }, { color: '#b8502a' });
   // hint / score strip (in the lobby, the host starts the party)
   const L = S.lobby, allReady = !!(L && L.total && L.ready >= L.total);
   const hint = !lobby ? S.ctx.hint || ''
     : S.host ? (allReady ? t('Everyone’s ready — start the party when you like!') : t('Start the party whenever you like (or wait for everyone to be ready)'))
       : L && L.host ? t('♛ {name} starts the party — walk around!', { name: L.host }) : t('Waiting for everyone… walk around!');
-  const top = 24;
+  const top = HB + 4;
   let infoH;
   const score = S.score !== null && S.score !== undefined ? String(S.score) : '';
   const hp = !lobby && typeof S.ctx.hp === 'number' ? S.ctx.hp : null;
@@ -796,13 +810,11 @@ function drawPad() {
     pill(land ? Math.round(W / 2 - 90) : 6, top + infoH, land ? 180 : W - 12, 20, label, 'hstart', () => { send({ t: 'start' }); buzz([20, 40, 20]); }, { color: allReady ? '#4f955a' : '#6a8a5a' });
     infoH += 26;
   }
-  const zoneY = top + infoH;
-  const { ay, rA, rB } = drawControls(zoneY, lobby);
-  // the host zooms the big screen's camera right from here
-  if (S.host && !S.menu) {
-    const btnTop = S.ctx.x && !lobby ? ay - rA - rB * 2 - 36 : ay - rA - 18;
-    zoomRocker(land, zoneY + 6, btnTop);
-  }
+  let zoneY = top + infoH;
+  // the host zooms the big screen's camera right from here: a row under the card (in the
+  // header when the phone lies on its side)
+  if (S.host && !S.menu && zoomItem()) { if (land) zoomBar(W / 2, 5, 18); else { zoomBar(W / 2, zoneY, 20); zoneY += 26; } }
+  drawControls(zoneY, lobby);
   if (S.paused && S.menu !== 'host') drawPausedCard();
   if (S.menu === 'main') drawMenu();
   else if (S.menu === 'cls') drawHeroMenu();
@@ -812,6 +824,7 @@ function drawPad() {
   else if (S.menu === 'gear') drawGear();
   else if (S.menu === 'host') drawHostMenu();
   else if (S.menu === 'map') drawMapScreen();
+  else if (S.menu === 'invite') drawInvite();
 }
 
 // ------------------------------------------------------------------ the world map (on the phone)
@@ -847,7 +860,7 @@ function drawMapScreen() {
 }
 
 // ------------------------------------------------------------------ the host's crown & menu
-function hostPill(x) { iconBtn(x, 1, 20, 18, 'crown', 'hostpill', () => { S.menu = S.menu === 'host' ? false : 'host'; S.hconfirm = null; }, { color: '#d8962a' }); }
+function hostPill(x, w = 20, h = 18, y = 1) { iconBtn(x, y, w, h, 'crown', 'hostpill', () => { S.menu = S.menu === 'host' ? false : 'host'; S.hconfirm = null; }, { color: '#d8962a' }); }
 
 // the camera zoom as the host menu last described it
 function zoomItem() {
@@ -869,8 +882,8 @@ function magnifier(x, y, color) {
   ctx.fillRect(x + 4, y + 4, 1, 1); ctx.fillRect(x + 5, y + 5, 1, 1); ctx.fillRect(x + 6, y + 6, 1, 1);
 }
 
-// + / − / Auto: a little rocker on the right (portrait) or in the header
-function zoomRocker(land, y0, y1) {
+// − ▮▮▮▮ + Auto: the camera zoom in one row, centred on cx (under the card, or in the header)
+function zoomBar(cx, y, h) {
   const it = zoomItem();
   if (!it) return;
   const [cur, n] = it.bar || [0, 1];
@@ -879,44 +892,89 @@ function zoomRocker(land, y0, y1) {
   const zout = () => { hostSend('zoom', -1); flash(); };
   const zauto = () => { hostSend('zauto'); flash(); };
   const autoCol = it.auto ? '#4f955a' : '#6a5a7a';
-  const tall = 76 + n * 4;
-  if (!land && y1 - y0 >= tall) {
-    const bw = 24, x = W - bw - 6;
-    const y = y0 + Math.min(12, Math.floor((y1 - y0 - tall) / 2));
-    ctx.fillStyle = 'rgba(15,10,22,0.55)'; ctx.fillRect(x - 3, y - 3, bw + 6, tall + 6);
-    magnifier(x + bw / 2 - 3, y, '#f6d38f');
-    pill(x, y + 10, bw, 18, '', 'zin', zin);
-    plusMinus(x + bw / 2, y + 19, true, 'zin');
-    const ty = y + 32;
-    for (let j = 0; j < n; j++) {
-      ctx.fillStyle = j === cur ? '#f6c65b' : j < cur ? '#8e7a9a' : '#4a3d58';
-      ctx.fillRect(x + 6, ty + (n - 1 - j) * 4, bw - 12, 3);
-    }
-    pill(x, ty + n * 4 + 2, bw, 18, '', 'zout', zout);
-    plusMinus(x + bw / 2, ty + n * 4 + 11, false, 'zout');
-    pill(x - 2, ty + n * 4 + 24, bw + 4, 14, t('Auto'), 'zauto', zauto, { color: autoCol });
-    if (S.t < (S.zoomFlashT || 0)) {
-      const txt = it.value, tw = measure(txt) + 8;
-      ctx.fillStyle = 'rgba(20,14,28,0.85)'; ctx.fillRect(x - tw - 6, y + 12, tw, 12);
-      drawText(ctx, txt, x - tw / 2 - 6, y + 14, { color: '#fff3c4', align: 'center' });
-    }
-    return;
-  }
-  // landscape (or no room): along the header, left of the crown
-  const bw = 18, gap = 2, tw = n * 4, total = 10 + bw + gap + tw + gap + bw + gap + 30;
-  const x0 = Math.round(W / 2 - total / 2);
-  magnifier(x0, 7, '#f6d38f');
-  pill(x0 + 10, 3, bw, 14, '', 'zout', zout);
-  plusMinus(x0 + 10 + bw / 2, 10, false, 'zout');
-  const tx = x0 + 10 + bw + gap;
-  for (let j = 0; j < n; j++) { ctx.fillStyle = j === cur ? '#f6c65b' : j < cur ? '#8e7a9a' : '#4a3d58'; ctx.fillRect(tx + j * 4, 8, 3, 6); }
-  pill(tx + tw + gap, 3, bw, 14, '', 'zin', zin);
-  plusMinus(tx + tw + gap + bw / 2, 10, true, 'zin');
-  pill(tx + tw + gap + bw + gap, 3, 30, 14, t('Auto'), 'zauto', zauto, { color: autoCol });
+  const bw = h + 10, gap = 3, tw = n * 5, aw = Math.max(34, measure(t('Auto')) + 12), total = 11 + bw + gap + tw + gap + bw + gap + aw;
+  const x0 = Math.round(cx - total / 2);
+  ctx.fillStyle = 'rgba(15,10,22,0.5)'; ctx.fillRect(x0 - 4, y - 2, total + 8, h + 4);
+  magnifier(x0, y + Math.round(h / 2) - 3, '#f6d38f');
+  pill(x0 + 11, y, bw, h, '', 'zout', zout);
+  plusMinus(x0 + 11 + bw / 2, y + h / 2, false, 'zout');
+  const tx = x0 + 11 + bw + gap;
+  for (let j = 0; j < n; j++) { ctx.fillStyle = j === cur ? '#f6c65b' : j < cur ? '#8e7a9a' : '#4a3d58'; ctx.fillRect(tx + j * 5, y + 3, 4, h - 6); }
+  pill(tx + tw + gap, y, bw, h, '', 'zin', zin);
+  plusMinus(tx + tw + gap + bw / 2, y + h / 2, true, 'zin');
+  pill(tx + tw + gap + bw + gap, y, aw, h, t('Auto'), 'zauto', zauto, { color: autoCol });
   if (S.t < (S.zoomFlashT || 0)) {
     const txt = it.value, w2 = measure(txt) + 8;
-    ctx.fillStyle = 'rgba(20,14,28,0.85)'; ctx.fillRect(Math.round(W / 2 - w2 / 2), 21, w2, 12);
-    drawText(ctx, txt, W / 2, 23, { color: '#fff3c4', align: 'center' });
+    ctx.fillStyle = 'rgba(20,14,28,0.85)'; ctx.fillRect(Math.round(cx - w2 / 2), y + h + 3, w2, 12);
+    drawText(ctx, txt, cx, y + h + 5, { color: '#fff3c4', align: 'center' });
+  }
+}
+
+// ------------------------------------------------------------------ inviting friends
+// (any phone: the lobby's envelope, the menu's Invite tile, the host menu's Invite tab)
+function openInvite() { S.menu = 'invite'; }
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* below */ }
+  try { const a = document.createElement('textarea'); a.value = text; a.style.position = 'fixed'; a.style.opacity = '0'; document.body.append(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return ok; } catch (e) { return false; }
+}
+// the phone's own share sheet (messages, mail…), else the clipboard
+function shareLink(url, id) {
+  const note = (text) => { S.shareNote = { id, text, until: S.t + 2.6 }; };
+  buzz(12);
+  if (navigator.share) navigator.share({ title: 'Hearthlight', text: t('Come and play Hearthlight with us!'), url }).then(() => note(t('Sent!'))).catch(() => {});
+  else copyText(url).then((ok) => note(ok ? t('Link copied') : t('Couldn’t copy the link')));
+}
+function drawInvite() {
+  ctx.fillStyle = 'rgba(15,10,22,0.8)'; ctx.fillRect(0, 0, W, H);
+  regions.push({ kind: 'tap', id: 'iscrim', x: 0, y: 0, w: W, h: H, fn: () => {} });
+  const px = 6, pw = W - 12, py = 6, ph = H - 12;
+  panel(ctx, px, py, pw, ph);
+  drawGlyph(ctx, 'invite', px + 6, py + 4, 1);
+  drawText(ctx, fitText(t('Invite friends'), pw - 60), px + 26, py + 8, { color: '#8a5234' });
+  iconBtn(px + pw - 28, py + 3, 24, 20, 'close', 'idone', () => { S.menu = false; }, { color: '#a8483a' });
+  drawInviteBody(px + 6, py + 28, pw - 12, ph - 34);
+}
+function drawInviteBody(x, y, w, h) {
+  const I = S.invite;
+  if (!I) { drawText(ctx, t('Opening the room…'), x + w / 2, y + 30, { color: UI.inkSoft, align: 'center' }); return; }
+  const land = w > h * 1.3, cw = land ? Math.floor((w - 6) / 2) : w;
+  const note = (id, bx, by2, bw2) => { if (S.shareNote && S.shareNote.id === id && S.t < S.shareNote.until) drawText(ctx, fitText(S.shareNote.text, bw2), bx + bw2 / 2, by2, { color: '#3f8a4a', align: 'center' }); };
+  // friends at home: a link to send
+  let cy = y;
+  const homeH = land ? h : 88;
+  ctx.fillStyle = UI.paperShade; ctx.fillRect(x, cy, cw, homeH);
+  ctx.fillStyle = '#4f955a'; ctx.fillRect(x, cy, 3, homeH);
+  drawText(ctx, fitText(t(I.lan && I.home ? 'Another screen on this Wi-Fi' : 'Friends at home'), cw - 12), x + 8, cy + 5, { color: INK });
+  const homeText = I.home ? t(I.lan ? 'Send the link to a computer or tablet on this Wi-Fi: it shows the game with its own camera.' : 'Send them the link: they watch the game on their own screen, with their own camera, and play with you.')
+    : t('Playing from home needs the online version of the game (hearthlight.github.io).');
+  wrap(homeText, cw - 14).slice(0, land ? 6 : 3).forEach((l, i) => drawText(ctx, l, x + 8, cy + 17 + i * 10, { color: '#5a4a5a' }));
+  if (I.home) {
+    const by2 = land ? cy + h - 42 : cy + homeH - 26;
+    pill(x + 8, by2, cw - 16, 20, t('Send the invitation'), 'ihome', () => shareLink(I.home, 'home'), { color: '#4f955a' });
+    note('home', x + 8, by2 - 11, cw - 16);
+  }
+  // friends in the room: this phone's screen is a QR code too
+  const rx = land ? x + cw + 6 : x; cy = land ? y : y + homeH + 6;
+  const rh = land ? h : y + h - cy;
+  ctx.fillStyle = UI.paperShade; ctx.fillRect(rx, cy, cw, rh);
+  ctx.fillStyle = '#4f73b6'; ctx.fillRect(rx, cy, 3, rh);
+  drawText(ctx, fitText(t('Friends in the room'), cw - 12), rx + 8, cy + 5, { color: INK });
+  const sl = wrap(t('They scan this code with their phone:'), cw - 14).slice(0, 2);
+  sl.forEach((l, i) => drawText(ctx, l, rx + 8, cy + 16 + i * 10, { color: '#5a4a5a' }));
+  const q = S.inviteQr, codeY = cy + rh - (I.room ? 46 : 22), qTop = cy + 20 + sl.length * 10;
+  if (q && I.room) {
+    const room = Math.min(cw - 16, codeY - qTop - 6), m = Math.max(1, Math.floor(room / q.width)), qs = q.width * m, qx = rx + Math.round((cw - qs) / 2), qy = qTop + Math.max(0, Math.round((codeY - qTop - 6 - qs) / 2));
+    ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
+    ctx.imageSmoothingEnabled = false; ctx.drawImage(q, qx, qy, qs, qs);
+  }
+  if (I.code) {
+    const lw = measure(t('code')) + 4, cw2 = measure(I.code, 2), c0 = rx + Math.round((cw - lw - cw2) / 2);
+    drawText(ctx, t('code'), c0, codeY + 5, { color: UI.inkSoft });
+    drawText(ctx, I.code, c0 + lw, codeY, { color: INK, scale: 2 });
+  }
+  if (I.room) {
+    pill(rx + 8, cy + rh - 24, cw - 16, 20, t('Share the controller link'), 'iroom', () => shareLink(I.room, 'room'), { color: '#4f73b6' });
+    note('room', rx + 8, cy + rh - 35, cw - 16);
   }
 }
 
@@ -951,6 +1009,8 @@ function drawHostMenu() {
     tapArea('htab' + i, x, ty - 4, tw, 30, () => { S.htab = i; S.hscroll = 0; S.hconfirm = null; });
   });
   drawText(ctx, tabs[S.htab].label, px + pw / 2, ty + 26, { color: INK, align: 'center' });
+  // (the Invite tab: the invitations page itself)
+  if (tabs[S.htab].id === 'invite') { drawInviteBody(px + 6, ty + 38, pw - 12, py + ph - ty - 44); return; }
   // rows, each as tall as its words (a second line wraps instead of being cut short)
   const items = tabs[S.htab].items, rw = pw - 12;
   const top = ty + 38, bottom = py + ph - 6;
@@ -968,7 +1028,7 @@ function drawHostMenu() {
     if (i < items.length) pill(px + 10 + half, bottom - 17, half, 16, '↓', 'hdown', () => { S.hscroll = i; });
   }
 }
-const HOST_TAB_GLYPH = { game: 'flag', travel: 'waystone', camera: 'camera', options: 'cog', players: 'people' };
+const HOST_TAB_GLYPH = { game: 'flag', invite: 'invite', travel: 'waystone', camera: 'camera', options: 'cog', players: 'people' };
 
 function hostSend(id, dir = 0) { send({ t: 'hact', id, dir }); buzz(12); }
 
@@ -1115,6 +1175,7 @@ function drawMenu() {
     { id: 'mapm', glyph: 'map', label: t('Map'), color: '#4a7ab8', fn: openMap },
     !solo && { id: 'lookm', glyph: 'shirt', label: t('Outfit'), color: '#6a4a88', fn: () => { S.menu = false; S.view = 'look'; } },
     !solo && S.phase !== 'lobby' && { id: 'campm', glyph: 'campfire', label: t('Campfire'), color: '#b8502a', fn: () => { S.menu = false; send({ t: 'camp' }); buzz(15); } },
+    !solo && { id: 'invm', glyph: 'invite', label: t('Invite'), color: '#4f955a', fn: openInvite },
     solo && { id: 'bike', glyph: 'bike', label: t('Bicycle'), color: '#4a8a9a', fn: () => { S.menu = false; soloAct('bike'); } },
     solo && { id: 'hudm', glyph: 'screen', label: t('Display'), color: '#4a6a8a', fn: () => { soloAct('hud'); } },
   ].filter(Boolean);

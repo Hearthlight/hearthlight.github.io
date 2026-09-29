@@ -91,6 +91,7 @@ export class RemoteGuest {
       for (const [key, value] of Object.entries(buttons)) if (!!this.held[key] !== value) this.send({ t: 'b', k: key, v: value });
       this.held = buttons;
     }
-    this.wasDriving = active;
+    // (keep driving until the stop itself went out: a release inside the throttle is sent next time)
+    this.wasDriving = active || (this.lastVector !== '0,0' && !!this.lastVector);
   }
 }

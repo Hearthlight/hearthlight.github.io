@@ -283,14 +283,18 @@ export function createRelay(opts = {}) {
     clearTimeout(room.expiry); room.expiry = null;
     if (old && old !== ws) old.close(4000, 'replaced');
     ws.bucket = new Bucket(...O.hostRate);
-    sendJson(ws, { t: 'room', code: room.code, token: room.token, remoteKey: room.remoteKey, remote: true, iceServers: iceServers() });
+    sendJson(ws, { t: 'room', code: room.code, token: room.token, remoteKey: room.remoteKey, remote: true, frames: 2, iceServers: iceServers() });
     for (const [id, p] of room.pads) { sendJson(ws, { t: 'join', id }); sendJson(p, { t: 'hostback' }); }
     ws.on('message', (data, isBinary) => {
       ws.last = Date.now();
       if (isBinary) {
-        // Images only come from the host and go to explicitly admitted remote players.
+        // Images only come from the host and go to explicitly admitted remote players: one of
+        // them ([1, id length, id…] then the JPEG — each friend at home has their own camera),
+        // or all of them (a bare JPEG).
+        let to = null;
+        if (data.length > 2 && data[0] === 1) { const n = data[1]; to = data.subarray(2, 2 + n).toString(); data = data.subarray(2 + n); }
         if (data.length > 128 * 1024 || data.length < 4 || data[0] !== 0xff || data[1] !== 0xd8 || !room.videoRate.take()) return;
-        const viewers = [...room.pads.values()].filter((p) => p.remoteView && p.readyState === 1);
+        const viewers = to !== null ? [room.pads.get(to)].filter((p) => p && p.remoteView && p.readyState === 1) : [...room.pads.values()].filter((p) => p.remoteView && p.readyState === 1);
         if (!viewers.length || !videoBudget.take(data.length * viewers.length)) return;
         count(data.length * viewers.length);
         for (const p of viewers) if (p.bufferedAmount < 128 * 1024) p.send(data, { binary: true }, () => {});

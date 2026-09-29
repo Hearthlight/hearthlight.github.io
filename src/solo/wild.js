@@ -863,6 +863,7 @@ export class Wild {
   propFor() {
     const m = this.me;
     if (m.swimming || m.vehicle || m.mount) return null;
+    if (m.mallow) return 'marshmallow';     // (by a campfire: camp.js)
     if (this.armed()) return m.fighter.down ? null : m.fighter.prop || m.fighter.cls.weapon;
     return undefined;
   }

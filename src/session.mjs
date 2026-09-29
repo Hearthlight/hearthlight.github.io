@@ -6,9 +6,11 @@ export class SessionRecovery {
   constructor({ save, snapshot, events = window, storage = () => window.sessionStorage }) {
     Object.assign(this, { save, snapshot, events, storage });
     this.active = false;
+    this.ask = true;             // (false: save and go without a word — the solo game resumes itself)
     this.beforeUnload = (event) => {
       if (!this.active) return;
       this.checkpoint();
+      if (!this.ask) return;
       event.preventDefault();
       event.returnValue = '';
     };

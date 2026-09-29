@@ -205,6 +205,7 @@ export class Combat {
   armPoseOf(p) {
     const f = p.fighter;
     if (f.down) return undefined;
+    if (p.mallow) return p.mallow.pose;     // (toasting a marshmallow by the fire: camp.js)
     if (f.spin) return -1.6;
     if (f.charging) return SWUNG.has(f.prop) ? -2.9 : -1.5 + Math.sin(this.party.t * 30) * 0.05;
     const act = f.act;

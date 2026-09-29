@@ -1,27 +1,17 @@
-.party-tools { position: fixed; z-index: 4; top: max(12px,env(safe-area-inset-top)); right: max(12px,env(safe-area-inset-right)); max-width: calc(100vw - 24px); display: flex; flex-wrap: wrap; justify-content: end; gap: 6px; font: 13px/1.4 ui-monospace,monospace; }
-.party-tools[hidden] { display: none; }
-.party-tools button, .party-dialog button { color: #fff3c4; background: #34263e; border: 2px solid #967651; box-shadow: 2px 2px #14121c; padding: 10px 14px; font: bold 14px/1.4 ui-monospace,monospace; cursor: pointer; }
-.party-tools button:hover, .party-dialog button:hover { background: #514052; border-color: #f6d38f; }
-.save-status { max-width: 260px; color: #fff3c4; background: #241b2ee8; }
-.save-status:empty { display: none; }
-.party-dialog { color: #fff3c4; background: #241b2e; border: 3px solid #b28d5e; padding: 20px; width: min(640px,calc(100vw - 48px)); max-height: calc(100dvh - 72px); font: 14px/1.6 ui-monospace,monospace; touch-action: auto; }
+/* Saves & backups (src/party/hub.js): a paper page over the game, in the game's colours */
+.party-dialog { color: #3b2a2e; background: #fbf1dc; border: 3px solid #5a3b2a; box-shadow: 0 0 0 3px #c9a77c inset, 4px 5px 0 #14121c99; padding: 20px 22px; width: min(600px,calc(100vw - 48px)); max-height: calc(100dvh - 72px); font: 14px/1.55 ui-monospace,Menlo,Consolas,monospace; touch-action: auto; }
 .party-dialog::backdrop { background: #100c1bcc; }
 .party-dialog header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.party-dialog h2 { margin: 0; font-size: 22px; }
-.party-dialog h3 { margin: 0 0 8px; color: #f6d38f; }
-.party-dialog h4 { margin: 0 0 8px; }
-.party-dialog section { border-top: 1px solid #765765; padding: 16px 0; }
-.party-dialog p { color: #dacabc; }
-.party-dialog button { margin: 5px 8px 5px 0; }
+.party-dialog h2 { margin: 0; font-size: 20px; color: #8a5234; letter-spacing: 1px; }
+.party-dialog h3 { margin: 0 0 6px; color: #8a5234; font-size: 15px; }
+.party-dialog section { border-top: 2px dashed #c9a77c; padding: 14px 0 6px; margin-top: 12px; }
+.party-dialog p { color: #7a6060; margin: 6px 0; }
+.party-dialog button { color: #fff7e6; background: #8e5d3e; border: 2px solid #3b2a22; box-shadow: 0 2px #3b2a22; padding: 8px 14px; margin: 5px 8px 5px 0; font: bold 14px/1.3 ui-monospace,Menlo,Consolas,monospace; cursor: pointer; }
+.party-dialog button:hover, .party-dialog button:focus-visible { background: #a8703f; }
 .party-dialog button:disabled { opacity: 0.5; cursor: default; }
-.party-dialog details { border-top: 1px solid #765765; margin-top: 16px; }
-.party-dialog summary { padding: 14px 0; cursor: pointer; color: #f6d38f; }
-.party-dialog label { display: block; margin: 12px 0; }
-.party-dialog input, .party-dialog select { display: block; box-sizing: border-box; width: 100%; color: #302238; background: #fff5df; border: 2px solid #b28d5e; border-radius: 0; padding: 10px; margin: 6px 0; font: 14px/1.4 ui-monospace,monospace; user-select: text; }
-.party-dialog a { display: block; color: #aad7ff; margin: 12px 0; }
-.invite-card { background: #322339; padding: 12px; margin-bottom: 12px; }
-.invite-card canvas { display: block; width: 140px; max-width: 100%; height: auto; image-rendering: pixelated; margin: 12px auto; }
-.hub-notice { color: #aee9bc !important; }
-.hub-notice.error, .save-status.error { color: #ffb8b8 !important; }
-.party-dialog :focus-visible, .party-tools :focus-visible { outline: 3px solid #f6d38f; outline-offset: 3px; }
-@media(max-width:600px) { .party-tools { top: 8px; right: 8px; } .party-tools button { padding: 6px 8px; font-size: 11px; } .save-status { font-size: 10px; } .party-dialog { padding: 12px; } }
+.party-dialog label { display: block; margin: 10px 0; color: #3b2a2e; }
+.party-dialog input { display: block; box-sizing: border-box; width: 100%; color: #3b2a2e; background: #fff8ea; border: 2px solid #8e5d3e; border-radius: 0; padding: 9px; margin: 6px 0; font: 14px/1.4 ui-monospace,Menlo,Consolas,monospace; user-select: text; }
+.hub-notice { color: #3f8a4a !important; min-height: 1.4em; }
+.hub-notice.error { color: #a8483a !important; }
+.party-dialog :focus-visible { outline: 3px solid #e0a526; outline-offset: 2px; }
+@media(max-width:600px) { .party-dialog { padding: 12px; } }

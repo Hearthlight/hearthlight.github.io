@@ -40,8 +40,9 @@ import { WORLD13_ES } from './world13.js';
 import { CONTROLS_ES } from './controls.js';
 import { RELEASE9_ES } from './release9.js';
 import { CLASSES9_ES } from './classes9.js';
+import { MULTI10_ES } from './multi10.js';
 
-export const ES = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_ES, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_ES, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_ES, ...WORLD7, ...CH2_ES, ...CH3_ES, ...CH4_ES, ...CH5_ES, ...CH6_ES, ...CH7_ES, ...CH8_ES, ...CH9_ES, ...CH10_ES, ...WORLD13_ES, ...CONTROLS_ES, ...RELEASE9_ES, ...CLASSES9_ES };
+export const ES = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_ES, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_ES, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_ES, ...WORLD7, ...CH2_ES, ...CH3_ES, ...CH4_ES, ...CH5_ES, ...CH6_ES, ...CH7_ES, ...CH8_ES, ...CH9_ES, ...CH10_ES, ...WORLD13_ES, ...CONTROLS_ES, ...RELEASE9_ES, ...CLASSES9_ES, ...MULTI10_ES };
 
 // lines said to the whole party (ustedes): looked up first in Party Mode
 export const ES_GROUP = {};

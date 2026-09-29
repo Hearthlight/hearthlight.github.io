@@ -1,31 +1,60 @@
 # Playing together and returning later
 
-Choose **Continue** on the title screen to select your saved solo or multiplayer game.
-Choose **Party Mode** to create or join a party.
-Paste a complete controller or remote-play invitation to join an existing lobby or game.
-This does not create a new room.
+**Party Mode** on the title screen opens the lobby at once — there is nothing to choose first.
+Phones in the room scan the lobby's QR code; keyboard players press E (WASD) or Enter (arrows),
+gamepads press A. Friends can join in the lobby or at any time during the game.
 
-- **Play on the same screen** uses the current relay. The desktop app uses the local Wi-Fi relay and works offline.
-- **Play from home** uses the public Hearthlight relay, including from the desktop app.
-- **Join the party!** accepts a complete invitation from a host. The desktop app opens Internet invitations in your browser.
+## Inviting
 
-During a party, **Invite friends** remains available in the lobby and in game. Links update automatically when the room connects or reconnects; opening the panel keeps the same room. It pauses the game while the host uses the panel and restores its previous pause state when closed.
+The invitations live in the menu, never on top of the game:
 
-The lobby has a visible **Back to title** button. Leaving a room with players asks for confirmation, saves progress and closes the room for everyone. The invitation panel also offers this action during play. **Saves & backups** groups export, import and online backup tools.
+- the big screen's menu (Esc, or Start on a gamepad) → **Invite**;
+- the host phone's crown menu → **Invite**;
+- any phone: the envelope in the lobby, or **Invite** in its menu — with the phone's own share
+  sheet (messages, mail…) and a QR code on the phone's screen for a friend sitting next to you.
 
-## Two invitations
+Two invitations, one party:
 
-**Phone controller** opens the existing controller: useful for people watching the same screen.
+- **Friends in the room** — the controller page (`pad.html#CODE`): the phone becomes their
+  controller and everyone watches the big screen, which splits when players wander apart.
+- **Friends at home** — the remote page (`play.html#CODE.key`): the game streams to their own
+  screen with **their own camera**. They are left out of the big screen's split; every view
+  shows an arrow at its edge, in a player's colour, towards anyone it doesn't frame (with the
+  distance). Scenes are shared: during a cutscene everyone sees the same shot.
 
-**Play from home** opens `play.html`: the guest sees the host's game, hears its audio when supported, and controls their own character. It supports keyboard, gamepad and the existing touch controller. Menus, votes, character appearance and equipment remain available in the controller panel.
+The remote invitation needs a relay that other networks can reach: the web version's. A relay on
+the local network (the desktop app, the dev server) offers the same link for another screen on
+the same Wi-Fi.
 
-Keyboard: WASD (physical ZQSD on AZERTY) or arrows to move; E / Enter for action, Space to jump, F for the special, R to dodge, G for the ultimate, Tab for the menu. A gamepad uses A/B/X/Y and the right stick button for the ultimate; Back opens the menu and Start toggles readiness in the lobby. Use the visible Start button to start the adventure.
+The lobby shows where the invitations are (« Friends at home? Esc → Invite »). Ending the party
+is in the menu (**End the party**, confirmed, progress saved first).
 
-Remote Play transmits the host's shared game view, including its split screen. It does not create a separate camera or run a second simulation on each guest. The host must keep the game open and visible. The host computer and upload connection determine streaming capacity.
+## Keyboard and gamepad players
 
-The remote invitation includes an unguessable key in its URL fragment. Share it with invited players. The four-letter controller code alone does not grant video access. No desktop, camera or microphone is captured: only the game canvases and generated game audio.
+Each has their own menu on the big screen (hero, talents, gear, look, map, journal): **Tab**
+(WASD keys), **⌫** (arrow keys) or **Select** on a gamepad. The key is written on a tab above
+their badge, said in a bubble when they join, and the host menu's first page lists « Alex's own
+menu » for each of them.
 
-WebRTC carries the live video (up to 960×540 at 30 fps) and audio. Authenticated TURN on the VPS handles networks that cannot connect directly. If video capture or WebRTC is unavailable, a bounded JPEG relay keeps the game playable at up to eight images per second, without audio; the guest sees that status explicitly. The public relay limits fallback video traffic and drops stale images before they can delay controls.
+## Remote play
+
+`play.html` shows the stream and a controller panel (the phone's pages: look, hero, talents, gear,
+votes). Keyboard: WASD (physical ZQSD on AZERTY) or arrows to move; E / Enter for action, Space to
+jump, F for the special, R to dodge, G for the ultimate, Tab for the menu. A gamepad uses A/B/X/Y
+and the right stick button for the ultimate; Back opens the menu and Start toggles readiness in
+the lobby.
+
+The host draws each remote player's own view (their camera, the shared HUD, dialogue and scenes;
+not the big screen's own menus) into a canvas of theirs, 960×540, and streams it over WebRTC with
+the game's audio (up to 30 fps, about 1 ms of the host's frame per guest). A video link that
+doesn't come up within 8 seconds gets a fresh offer (twice). If WebRTC is unavailable, JPEG
+images through the relay keep the game playable (up to eight a second, no audio); the relay
+addresses each image to its own guest. The host must keep the game open and visible; its upload
+connection limits how many guests can stream.
+
+The remote invitation includes an unguessable key in its URL fragment. Share it with invited
+players. The four-letter controller code alone does not grant video access. No desktop, camera or
+microphone is captured: only the game's own canvases and generated audio.
 
 ## Reconnect
 
@@ -37,9 +66,9 @@ While a solo game or party is open, refreshing or closing the page asks for conf
 
 Adventure progress, player profiles and the most recent safe outdoor positions are kept on the host device. Saves run every 30 seconds, when the page is hidden, and before leaving a party. **Save now** saves immediately. A storage failure is shown; **Export save** can still export the party's pending progress from memory.
 
-**Continue** lists the saved solo game with its character and day, and the multiplayer game with its chapter, date and players. Choose the multiplayer connection mode (same screen or from home), then **Resume this game**. This opens the lobby and resumes the adventure when the host starts. It restores quest progress and player profiles, and returns players near saved outdoor positions. An unfinished cinematic, arena round or exact mid-combat state is not a resumable checkpoint.
+**Continue** goes straight back to the saved game when there is one; with both a solo game and a party adventure it asks which (the character and day, or the chapter and players). The party's opens the lobby and resumes the adventure when the host starts. It restores quest progress and player profiles, and returns players near saved outdoor positions. An unfinished cinematic, arena round or exact mid-combat state is not a resumable checkpoint.
 
-**Export save** creates a JSON backup containing solo and party progress. **Import save** is available under **Party Mode → Saves & backups** before hosting and asks for confirmation before replacing the included modes. Credentials and unrelated browser settings are excluded. The backup is validated before writing, and a failed import attempts to restore the previous values.
+**Export save** creates a JSON backup containing solo and party progress. **Import save** is available under **Settings → Saves & backups** on the title screen and asks for confirmation before replacing the included modes. Credentials and unrelated browser settings are excluded. The backup is validated before writing, and a failed import attempts to restore the previous values.
 
 Browser saves belong to that browser and site address. Export/import transfers progress between the VPS site, GitHub Pages and the desktop app. Returning phones keep their profile through their locally stored player ID; a different phone/browser receives a new identity.
 

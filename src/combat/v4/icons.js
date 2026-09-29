@@ -110,6 +110,8 @@ const GLYPHS = {
   info: (g, c) => { circ(g, 8, 8, 6.8, c.m); box(g, 7, 7, 2, 5.5, c.l); box(g, 5.8, 12, 4.4, 1.3, c.l); box(g, 5.8, 7, 2, 1.3, c.l); circ(g, 8, 4.5, 1.3, c.l); },
   close: (g, c) => { line(g, 4, 4, 12, 12, 2.8, c.m); line(g, 12, 4, 4, 12, 2.8, c.m); },
   menu: (g, c) => { for (const y of [3.5, 8, 12.5]) line(g, 2.5, y, 13.5, y, 2.4, c.m); },
+  // an envelope with a heart on it: inviting friends
+  invite: (g, c) => { box(g, 1, 4.5, 13.5, 10, c.d); box(g, 2, 5.5, 11.5, 8, c.m); poly(g, [[2, 5.5], [7.75, 10.5], [13.5, 5.5]], c.l); line(g, 2.2, 5.7, 7.75, 10.4, 1, c.d); line(g, 13.3, 5.7, 7.75, 10.4, 1, c.d); circ(g, 11.3, 2.9, 1.9, '#ec5f73'); circ(g, 14.1, 2.9, 1.9, '#ec5f73'); poly(g, [[9.5, 3.4], [15.9, 3.4], [12.7, 7.2]], '#ec5f73'); },
   // (Release v9) the Lamplighter, the Gardener, the Cook and the Tinkerer
   lantern: (g, c) => { line(g, 2, 15, 9, 4, 1.6, '#8a5a36'); line(g, 9, 4, 12, 4, 1.4, c.d); box(g, 10.5, 5, 4, 5, c.d); box(g, 11, 5.6, 3, 3.8, c.m); box(g, 11.6, 6.2, 1.2, 2, c.l); box(g, 10, 4.2, 5, 1.2, c.d); },
   flare: (g, c) => { star(g, 8, 8, 7, 2.2, 8, c.m, 0); star(g, 8, 8, 4.2, 1.6, 8, c.l, P / 8); circ(g, 8, 8, 2, '#ffffff'); },
@@ -167,7 +169,7 @@ const COL = {
   bag: ['#b07b50', '#d8a870', '#5a3a28'], pet: ['#e8803a', '#fff7ee', '#2a2433'], map: ['#e8d0a0', '#fff0cc', '#8a5a36'], horseshoe: ['#b8bcc8', '#ffffff', '#4a4a5a'], armory: ['#5a7ab8', '#9fc0ec', '#3a3028'],
   shirt: ['#b07ad0', '#e8c8ff', '#5a3478'], campfire: ['#ff8a2a', '#ffe066', '#a02a10'], bike: ['#ff7a4a', '#eef0f8', '#3a3048'],
   buoy: ['#e04848', '#fff7ee', '#8a2020'], door: ['#b07b50', '#e0a870', '#5a3a28'], cog: ['#b8b8c8', '#ffffff', '#5a5a6a'],
-  people: ['#6a8ac8', '#f0a0b0', '#2a3a58'], flag: ['#ec5f73', '#ffc0cc', '#6b4330'], camera: ['#7a7a8a', '#9fdcff', '#2a2a38'],
+  people: ['#6a8ac8', '#f0a0b0', '#2a3a58'], invite: ['#f3e3c3', '#fff8ea', '#8e5d3e'], flag: ['#ec5f73', '#ffc0cc', '#6b4330'], camera: ['#7a7a8a', '#9fdcff', '#2a2a38'],
   waystone: ['#9a94a8', '#9fdcff', '#5a5466'], globe: ['#3a7cae', '#7cc464', '#1f3a58'], info: ['#5a8ad0', '#ffffff', '#2a3a68'],
   close: ['#fff7ee', '#ffffff', '#8a2020'], menu: ['#fff7ee', '#ffffff', '#5a4a60'], pause: ['#fff7ee', '#ffffff', '#5a4a60'],
   lantern: ['#ffc94a', '#fff3c4', '#3b2a2e'], flare: ['#ffe066', '#fffbe0', '#e0a526'], beacon: ['#ffc94a', '#fff3c4', '#3b2a2e'],

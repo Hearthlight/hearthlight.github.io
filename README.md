@@ -59,17 +59,23 @@ adventure together — the camera splits the screen when you wander apart.
 
 ## Invite friends and resume an adventure
 
-Choose **Continue** on the title screen to select your saved solo or multiplayer game.
-Choose **Party Mode** to create or join a party.
-Use **Invite friends** in the lobby or during a game.
-Share the **Play from home** invitation for guests who need the game image on their own
-computer or phone. The host keeps the game running; each guest controls a character through
-keyboard, gamepad or touch. Remote Play shares the host's game view and audio, with a
-reduced-frame-rate, silent fallback for browsers or networks without live video support.
+**Party Mode** opens the lobby straight away: phones in the room scan its code. To invite
+anyone else, open the menu (Esc or Start — or the crown on the host's phone) and pick
+**Invite**; any phone has the same page behind its envelope. Two invitations, one party:
 
-**Continue**, local export/import and an optional online backup make it possible
-to return later or move a save to another host. Keep the online recovery key private.
-See [online play and saves](docs/ONLINE.md) for controls, limitations and self-hosting.
+- **Friends in the room** scan the code: their phone becomes their controller, and everyone
+  watches the big screen (it splits when you wander apart).
+- **Friends at home** get a link: the game streams to their own screen with **a camera of their
+  own** (no split for them), played with a keyboard, a gamepad or their phone. Arrows at the edge
+  of each view say where the others are. The host keeps the game open; a slower, silent
+  fallback takes over when a network blocks live video.
+
+Keyboard and gamepad players have their own menu (hero, talents, gear, look): its key is shown
+on their badge (Tab, ⌫, Select…), and the host menu lists it too.
+
+**Continue** goes straight back to your saved game (or asks which one, solo or party).
+Settings → **Saves & backups** exports, imports or backs up a save online — keep the recovery
+key private. See [online play and saves](docs/ONLINE.md) for controls, limitations and self-hosting.
 
 ## How it's made
 

@@ -120,6 +120,10 @@ export class Host {
       game.push({ id: 'skipall', kind: 'button', label: 'Skip the whole scene' });
     }
     if (P.phase === 'lobby' && !P.vote && !P.choosing && here) game.push({ id: 'vote', kind: 'button', label: 'Start the vote now' });
+    // (players on this screen: their own menu — hero, talents, gear, look — is one key away)
+    for (const q of P.players) if (q.kind !== 'phone' && q.connected) {
+      game.push({ id: 'tv:' + q.slot, kind: 'button', raw: true, color: q.color, label: t('{name}’s own menu', { name: q.name }), sub: t('hero, talents, gear, look… — {key} opens it any time', { key: P.keyOf(q, 'm') }) });
+    }
     if (kind) game.push({ id: 'restart', kind: 'button', label: 'Restart this activity', confirm: true });
     for (const a of ACTS) {
       if (a.min && here < a.min) continue;
@@ -143,6 +147,7 @@ export class Host {
       { id: 'music', kind: 'choice', label: 'Music', value: vol('music') * 10 + '%', bar: [vol('music'), 11] },
       { id: 'sfx', kind: 'choice', label: 'Sounds', value: vol('sfx') * 10 + '%', bar: [vol('sfx'), 11] },
       { id: 'lang', kind: 'choice', label: 'Language', value: LANGS[getLang()] },
+      { id: 'saves', kind: 'button', label: 'Saves & backups', sub: 'save now, export or import a file, an online backup' },
     ];
     const players = P.players.map((q) => ({
       id: 'p:' + q.slot, kind: 'player', label: q.name, color: q.color,
@@ -152,6 +157,7 @@ export class Host {
     }));
     const tabs = [
       { id: 'game', label: 'Game', items: game },
+      { id: 'invite', label: 'Invite', items: P.inviteItems() },
       { id: 'camera', label: 'Camera', items: camera },
       { id: 'options', label: 'Options', items: options },
       { id: 'players', label: 'Players', items: players },
@@ -181,6 +187,9 @@ export class Host {
     if (id === 'zoom') { if (dir) Z.step(dir > 0 ? 1 : -1); else Z.set('auto'); Z.flashT = 1.8; this.opts.zoom = Z.mode; this.saveOpts(); return; }
     if (id === 'zauto') { Z.set('auto'); Z.flashT = 1.8; this.opts.zoom = 'auto'; this.saveOpts(); return; }
     if (id === 'map') { P.bigMapOpen = !P.bigMapOpen; return; }
+    if (id.startsWith('inv:')) { const it = P.inviteItems().find((x) => x.id === id); if (it && it.url) copyText(it.url).then((ok) => P.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a')); return; }
+    if (id === 'saves') { this.closeMenu(); g.saves.open(); return; }
+    if (id.startsWith('tv:')) { const q = P.players.find((x) => x.slot === +id.slice(3)); this.closeMenu(); if (q && !P.tvmenus.blocked()) { if (P.tvmenus.cur) P.tvmenus.close(P.tvmenus.cur.p, true); P.tvmenus.openFor(q); } return; }
     if (id.startsWith('travel:')) { this.setPaused(false); this.closeMenu(); if (P.travel) P.travel.goByName(id.slice(7)); return; }
     if (id === 'diff') {
       const i = DIFF_ORDER.indexOf(this.opts.diff);
@@ -246,8 +255,9 @@ export class Host {
   }
 
   // ------------------------------------------------------------------ the big screen's menu
-  openMenu() {
-    this.menu = { tab: 0, sel: 0, confirm: null, t: 0 };
+  openMenu(tab = null) {
+    const i = tab ? this.tabs().findIndex((tb) => tb.id === tab) : 0;
+    this.menu = { tab: Math.max(0, i), sel: 0, confirm: null, t: 0 };
     audio.sfx('open', { volume: 0.6 });
     this.setPaused(true, t('The big screen'));
   }
@@ -304,13 +314,42 @@ export class Host {
     if (g.pressed('interact') || g.pressed('jump')) { g.consume('interact', 'jump'); this.activateMenuItem(it); }
   }
 
+  // the Invite tab: two cards — friends in the room (a phone scans the code) and friends at
+  // home (a link to send) — each with its QR code and a button to copy the link
+  drawInvite(ctx, px, top, pw, bottom, items, hit) {
+    const M = this.menu, P = this.party, cw = Math.floor((pw - 22) / 2), ch = bottom - top;
+    items.forEach((it, i) => {
+      const x = px + 8 + i * (cw + 6), y = top - 2, on = M.sel === i;
+      ctx.fillStyle = on ? UI.selEdge : '#dfc9a4'; ctx.fillRect(x - 1, y - 1, cw + 2, ch + 2);
+      ctx.fillStyle = on ? '#fff7e2' : UI.paperShade; ctx.fillRect(x, y, cw, ch);
+      drawText(ctx, fitText(t(it.label), cw - 8), x + cw / 2, y + 5, { color: '#8a5234', align: 'center' });
+      const q = it.url ? (i === 0 ? P.qrPlay : P.qr) : null, btnY = y + ch - 17;
+      let ty = y + 17;
+      if (q) {
+        const m = Math.max(1, Math.floor(Math.min(cw - 16, btnY - ty - 24) / q.width)), qs = q.width * m, qx = x + Math.round((cw - qs) / 2);
+        ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, ty - 2, qs + 4, qs + 4);
+        ctx.imageSmoothingEnabled = false; ctx.drawImage(q, qx, ty, qs, qs);
+        ty += qs + 5;
+        drawText(ctx, fitText(it.url.replace(/^https?:\/\//, '').replace(/#.*$/, ''), cw - 6), x + cw / 2, ty, { color: '#4f73b6', align: 'center' });
+        if (it.code) drawText(ctx, t('code {code}', { code: it.code }), x + cw / 2, ty + 10, { color: UI.ink, align: 'center' });
+      } else wrap(t(it.sub), cw - 12).slice(0, 7).forEach((l, k) => drawText(ctx, l, x + 6, ty + 4 + k * 10, { color: UI.inkSoft }));
+      if (it.action) {
+        const bl = t(it.action), bw = Math.min(cw - 12, measure(bl) + 14), bx = x + Math.round((cw - bw) / 2);
+        ctx.fillStyle = '#3b2a22'; ctx.fillRect(bx, btnY + 1, bw, 13);
+        ctx.fillStyle = on ? '#4f955a' : '#8e5d3e'; ctx.fillRect(bx, btnY, bw, 12);
+        drawText(ctx, fitText(bl, bw - 6), bx + bw / 2, btnY + 3, { color: '#fff7e6', align: 'center' });
+      }
+      hit(x, y, cw, ch, { sel: i });
+    });
+  }
+
   drawMenu(ctx) {
     const M = this.menu, P = this.party, W = P.display.w, H = P.display.h;
     ctx.fillStyle = 'rgba(20,14,28,0.55)'; ctx.fillRect(0, 0, W, H);
     const tabs = this.tabs(); M.tab = Math.min(M.tab, tabs.length - 1);
     const items = tabs[M.tab].items; M.sel = Math.max(0, Math.min(M.sel, items.length - 1));
     const pw = Math.min(W - 16, 350), rowH = 16, footerH = 43;
-    const ph = Math.min(H - 16, 42 + items.length * rowH + footerH);
+    const ph = Math.min(H - 16, tabs[M.tab].id === 'invite' ? 250 : 42 + items.length * rowH + footerH);
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
     panel(ctx, px, py, pw, ph);
     this.menuHits = [];
@@ -330,9 +369,11 @@ export class Host {
       hit(x, py + 22, tw, 14, { tab: i });
     });
     const top = py + 42, room = Math.max(1, Math.floor((ph - 42 - footerH) / rowH));
+    const invite = tabs[M.tab].id === 'invite';
+    if (invite) this.drawInvite(ctx, px, top, pw, py + ph - footerH - 4, items, hit);
     const first = Math.max(0, Math.min(items.length - room, M.sel - room + 2));
     const right = px + pw - (items.length > room ? 23 : 12);
-    items.slice(first, first + room).forEach((it, k) => {
+    (invite ? [] : items).slice(first, first + room).forEach((it, k) => {
       const i = first + k, y = top + k * rowH, on = i === M.sel;
       if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 6, y - 3, right - px - 2, rowH - 1); drawText(ctx, '♥', px + 11, y + 1, { color: '#ec5f73' }); }
       const ink = it.danger ? '#a8483a' : it.hot ? '#3f8a4a' : UI.ink;
@@ -353,7 +394,7 @@ export class Host {
       }
       hit(px + 6, y - 3, right - px, rowH, { sel: i });
     });
-    if (items.length > room) {
+    if (!invite && items.length > room) {
       const x = px + pw - 16, bottom = top + (room - 1) * rowH;
       for (const [y, dir, glyph] of [[top - 3, -1, '↑'], [bottom - 3, 1, '↓']]) {
         ctx.fillStyle = '#e8d6b4'; ctx.fillRect(x, y, 10, 13);
@@ -372,8 +413,18 @@ export class Host {
 
 }
 
+// the clipboard, or the old way (an http:// page on the Wi-Fi has no clipboard API)
+export async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* below */ }
+  try {
+    const a = document.createElement('textarea'); a.value = text; a.style.position = 'fixed'; a.style.opacity = '0';
+    document.body.append(a); a.select(); const ok = document.execCommand('copy'); a.remove(); return ok;
+  } catch (e) { return false; }
+}
+
 // a menu row's label, translated (place names get a capital letter)
 function label(it) {
+  if (it.raw) return it.label;
   const s = t(it.label);
   return it.cap ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }

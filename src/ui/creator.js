@@ -177,7 +177,13 @@ export class Creator {
       input.consume('interact');
       this.activate(r);
     }
-    if (input.pressed('cancel')) { if (this.mode === 'new') this.back = true; else this.finish(); input.textHandler = null; input.consume(); return; }
+    // (a new hero isn't thrown away by one stray key: back to the title takes a second press)
+    if (input.pressed('cancel')) {
+      input.consume();
+      if (this.mode !== 'new') { this.finish(); input.textHandler = null; return; }
+      if (this.backAsk && this.t < this.backAsk) { this.back = true; input.textHandler = null; return; }
+      this.backAsk = this.t + 3; audio.sfx('select');
+    }
     // mouse
     if (this.hit) {
       for (const h of this.hit) {
@@ -408,7 +414,9 @@ export class Creator {
     if (this.mode === 'new') {
       drawText(ctx, fitText(t('Who will come home to Marigold Cove?'), W - 20), 10, 10, { color: '#fff7e6', shadow: '#2a1f33' });
       const back = items.findIndex((r) => r.key === 'back'), bw = Math.min(W - 20, measure(t('Back to title')) + 18);
-      button(ctx, 10, 24, bw, 15, t('Back to title'), { hot: this.sel === back });
+      const asking = this.backAsk && this.t < this.backAsk;
+      button(ctx, 10, 24, bw, 15, t('Back to title'), { hot: this.sel === back || asking });
+      if (asking) drawText(ctx, fitText(t('Press again to leave — this hero won’t be kept'), W - bw - 30), bw + 16, 28, { color: '#ffd66b', shadow: '#2a1f33' });
       this.hit.push({ x: 10, y: 24, w: bw, h: 15, sel: back });
       drawText(ctx, t('drag to spin'), 10, (portrait ? py : H) - 16, { color: '#fff7e6', shadow: '#2a1f33' });
     }

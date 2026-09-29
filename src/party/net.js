@@ -51,7 +51,7 @@ export class PartyNet {
       try { m = JSON.parse(e.data); } catch (err) { return; }
       if (!m || typeof m !== 'object') return;
       if (m.t === 'room') {
-        this.code = m.code; this.remoteKey = m.remoteKey || ''; this.remoteSupported = !!m.remote; this.iceServers = m.iceServers || []; this.status = 'open'; this.retry = 0;
+        this.code = m.code; this.remoteKey = m.remoteKey || ''; this.remoteSupported = !!m.remote; this.addressed = m.frames >= 2; this.iceServers = m.iceServers || []; this.status = 'open'; this.retry = 0;
         if (this.onRoom) this.onRoom(m);
         try { sessionStorage.setItem('hl.partyCode', m.code); sessionStorage.setItem('hl.partyToken', m.token || ''); } catch (err) { /* ignore */ }
       } else if (m.t === 'error') {
@@ -91,7 +91,15 @@ export class PartyNet {
 
   video(id, on) { if (this.ws?.readyState === 1) this.ws.send(JSON.stringify({ t: 'remote', id, on })); }
 
-  frame(blob) { if (this.ws?.readyState === 1 && this.ws.bufferedAmount < 128 * 1024) this.ws.send(blob); }
+  // a JPEG for one friend at home (a relay that knows addressed frames: [1, id length, id…]
+  // before the picture; an older one hands it to every remote viewer)
+  frame(blob, id) {
+    if (this.ws?.readyState !== 1 || this.ws.bufferedAmount >= 128 * 1024) return;
+    if (!id || !this.addressed) { this.ws.send(blob); return; }
+    const head = new TextEncoder().encode(id).slice(0, 64), b = new Uint8Array(2 + head.length);
+    b[0] = 1; b[1] = head.length; b.set(head, 2);
+    this.ws.send(new Blob([b, blob]));
+  }
 
   get playUrl() {
     if (!this.joinUrl || !this.remoteKey) return '';

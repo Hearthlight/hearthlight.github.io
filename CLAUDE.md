@@ -27,6 +27,10 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   de, it — and each one's party lines; `--list` prints them, `--lang=de` one language);
   `node tools/i18n-check.mjs es` compares a language's files with their French twins. Screens in a
   language: `tools/langshots.js` (`start('de')`). Syntax check: `node --check file.js`.
+- Remote play (`play.html#CODE.key`, a friend at home) needs the Node relay — the Python dev
+  server has none: `node server/relay.mjs --static . --lan --host 0.0.0.0 --port 8792` (once
+  `npm --prefix server ci`). Each remote player gets their own camera (`p.rcam`, drawn by
+  `Party.drawRemote` into `remote-host.js`'s canvases); the big screen frames the others.
 - Test Party Mode with 1, 4 and 8 bots; check the solo game still works and the whole story
   in `T.autoplay()` (the first bot wears the crown and starts the party: `{t:'start'}`).
 - Solo quick start: `D.pause(true); await D.newGame('Alex'); await D.skip(200);
@@ -133,7 +137,9 @@ src/scenes/   world.js — the solo game scene (also hosts shared systems used b
 src/solo/     wild.js (the wild lands in solo: a party of one), herotab.js (menu's Hero page),
               wanderers.js (Rook, Sigrid, Moss, Kai), phone.js (a phone as the solo controller)
 src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (split-screen),
-              inputs.js, tvmenu.js (a gamepad / keyboard player's own menu on the big screen:
+              inputs.js, remote-host.js (friends at home: their own camera, streamed over
+              WebRTC), hub.js (Settings' Saves & backups page), tvmenu.js (a gamepad / keyboard
+              player's own menu on the big screen:
               the solo Hero page + their own page; one at a time, a queue), net.js, story.js + games.js (Starfall Festival), explore.js,
               arena.js (Festival Ring: site + waves/brawl/king), arena3d.js (its
               buildings & instanced crowd), host.js (crown & host menu), zones.js,

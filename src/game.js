@@ -22,7 +22,7 @@ import { drawIcon } from './art/icons.js';
 import { OX, OZ } from './world/overworld.js';
 import { applyHomeLevel } from './world/interiors.js';
 import { Party } from './party/party.js';
-import { PartyHub } from './party/hub.js';
+import { SavesDialog } from './party/hub.js';
 import { partySummary } from './party/saves.mjs';
 import { SessionRecovery } from './session.mjs';
 import { setLang, loadLang, t, tn, num } from './i18n.js';
@@ -41,7 +41,7 @@ export class Game {
     setLang(this.settings.lang);
     this.mode = 'boot';
     this.recovery = new SessionRecovery({ save: () => this.saveBeforeLeaving(), snapshot: () => this.sessionSnapshot() });
-    this.partyHub = new PartyHub(this);
+    this.saves = new SavesDialog(this);      // Saves & backups (Settings · the host menu's Options)
     this.projectLinks = document.getElementById('project-links');
     this.t = 0;
     this.overlay = null;
@@ -114,8 +114,8 @@ export class Game {
     if (this.mode !== 'game') this.input.touchUi = true;
     this.input.update(dt);
     this.phone.update(dt);
-    if (this.partyHub.dialog.open) { this.input.keys.clear(); this.input.consume(); }
-    if (this.partyHub.dialog.open && this.mode !== 'party') { this.draw(); this.partyHub.update(); return; }
+    // (the saves page open over the game: nothing reads a key meanwhile)
+    if (this.saves.isOpen) { this.input.keys.clear(); this.input.consume(); this.saves.update(); this.draw(); return; }
     if (this.phone.panelOpen) this.phone.updatePanel(dt, this.input);
     else if (this.controls.open) this.controls.update(dt, this.input);
     else if (this.mode === 'title') this.updateTitle(dt);
@@ -124,12 +124,11 @@ export class Game {
     else if (this.mode === 'party') this.party.update(dt);
     this.input.mouse.moved = false;
     this.draw();
-    this.partyHub.update();
   }
 
   draw() {
     if (this.projectLinks) {
-      const hidden = this.mode !== 'title' || this.world.menu.open || this.controls.open || this.phone.panelOpen || this.confirmNew;
+      const hidden = this.mode !== 'title' || this.world.menu.open || this.controls.open || this.phone.panelOpen || this.confirmNew || !!this.continuePick || this.saves.isOpen;
       if (this.projectLinks.hidden !== hidden) this.projectLinks.hidden = hidden;
     }
     if (this.mode === 'title') this.drawTitle();
@@ -191,6 +190,7 @@ export class Game {
     this.titleSel = 0;
     this.titleT = 0;
     this.confirmNew = false;
+    this.continuePick = null;
     this.state = newState({ name: 'Sprout', look: {} });
     this.state.hour = 19.3;
     for (const m of Object.values(w.maps)) m.root.visible = false;
@@ -240,6 +240,7 @@ export class Game {
     if (Math.random() < dt * 3) for (const c of w.over.chimneys) if (Math.random() < 0.3) w.fx.emit('smoke', c.x, c.y, c.z, 1);
     if (w.menu.open) { w.menu.update(dt, input); return; }
     const items = this.titleItems();
+    if (this.continuePick) { this.updateContinuePick(input); return; }
     if (this.confirmNew) {
       if (input.pressed('left') || input.pressed('right')) { this.confirmSel = 1 - this.confirmSel; audio.sfx('select'); }
       if (input.pressed('cancel')) { this.confirmNew = false; return; }
@@ -264,11 +265,59 @@ export class Game {
   titleActivate(what) {
     audio.unlock();
     audio.sfx('confirm');
-    if (what === 'continue') this.partyHub.open('continue');
+    if (what === 'continue') this.continueWhich();
     else if (what === 'new') { if (this.hasSave) { this.confirmNew = true; this.confirmSel = 1; } else this.toCreator(); }
     else if (what === 'settings') this.world.menu.show('settings');
     else if (what === 'controls') this.openControls();
-    else if (what === 'party') this.partyHub.open();
+    else if (what === 'party') this.toParty({});
+  }
+
+  // Continue: straight back in when there's one saved game; the solo cove or the party's
+  // adventure to choose from when there are both
+  continueWhich() {
+    const solo = this.hasSave ? loadGame() : null, party = partySummary();
+    if (solo && party) { this.continuePick = { sel: 0, solo, party }; return; }
+    if (solo) this.continueGame(); else if (party) this.toParty({ resume: true }); else this.toCreator();
+  }
+
+  updateContinuePick(input) {
+    const C = this.continuePick;
+    if (input.repeat('up') || input.repeat('down')) { C.sel = 1 - C.sel; audio.sfx('select'); }
+    if (input.pressed('cancel')) { input.consume('cancel'); this.continuePick = null; audio.sfx('cancel'); return; }
+    const hit = input.mouse.pressed && (this.pickRects || []).find((r) => input.mouseIn(r.x, r.y, r.w, r.h));
+    if (input.mouse.moved) { const over = (this.pickRects || []).find((r) => input.mouseIn(r.x, r.y, r.w, r.h)); if (over && over.i !== C.sel) { C.sel = over.i; audio.sfx('select', { volume: 0.5 }); } }
+    if (hit) { input.mouse.pressed = false; if (hit.i < 0) { this.continuePick = null; return; } C.sel = hit.i; }
+    if (input.pressed('interact') || hit) {
+      input.consume('interact'); audio.sfx('confirm');
+      this.continuePick = null;
+      if (C.sel === 0) this.continueGame(); else this.toParty({ resume: true });
+    }
+  }
+
+  drawContinuePick(ctx, W, H) {
+    const C = this.continuePick, S = C.solo, Pa = C.party;
+    const rows = [
+      [t('Solo game'), [S.player && S.player.name, t('Day {n}', { n: S.day })].filter(Boolean).join(' · '), '#8fd67a'],
+      [t('Party game'), [t('Chapter {n}', { n: Pa.chapter }), (Pa.players || []).filter((n) => typeof n === 'string').slice(0, 4).join(', ')].filter(Boolean).join(' · '), '#ffd66b'],
+    ];
+    const pw = Math.min(W - 16, Math.max(220, ...rows.map(([a, b]) => Math.max(measure(a), measure(b)) + 40))), ph = 30 + rows.length * 30 + 16;
+    const px = Math.round(W / 2 - pw / 2), py = Math.round(H / 2 - ph / 2);
+    ctx.fillStyle = 'rgba(20,14,28,0.6)'; ctx.fillRect(0, 0, W, H);
+    panel(ctx, px, py, pw, ph);
+    drawText(ctx, t('Which adventure?'), W / 2, py + 9, { color: '#8a5234', align: 'center' });
+    this.pickRects = [];
+    rows.forEach(([name, sub, col], i) => {
+      const y = py + 24 + i * 30, on = C.sel === i;
+      ctx.fillStyle = on ? UI.sel : UI.paperShade; ctx.fillRect(px + 8, y, pw - 16, 26);
+      ctx.fillStyle = col; ctx.fillRect(px + 8, y, 3, 26);
+      if (on) drawText(ctx, '♥', px + 17, y + 9, { color: '#ec5f73' });
+      drawText(ctx, name, px + 28, y + 4, { color: UI.ink });
+      drawText(ctx, fitText(sub, pw - 44), px + 28, y + 15, { color: UI.inkSoft });
+      this.pickRects.push({ x: px + 8, y, w: pw - 16, h: 26, i });
+    });
+    const back = t('Back'), bw = measure(back) + 12;
+    button(ctx, Math.round(W / 2 - bw / 2), py + ph - 16, bw, 12, back, {});
+    this.pickRects.push({ x: Math.round(W / 2 - bw / 2), y: py + ph - 16, w: bw, h: 12, i: -1 });
   }
 
   // ------------------------------------------------------------------ party mode
@@ -279,6 +328,7 @@ export class Game {
     this.phone.stop();           // (Party Mode hosts its own room)
     this.party = new Party(this, options);
     this.party.enter();
+    this.recovery.ask = true;                // (leaving the tab would end the party for everyone)
     this.recovery.setActive(true);
   }
 
@@ -357,6 +407,12 @@ export class Game {
       button(ctx, x0, py + 30 + extra, bw, 14, yes, { hot: this.confirmSel === 0 });
       button(ctx, x1, py + 30 + extra, bw, 14, no, { hot: this.confirmSel === 1 });
       this.confirmRects = [{ x: x0, y: py + 30 + extra, w: bw, h: 14, i: 0 }, { x: x1, y: py + 30 + extra, w: bw, h: 14, i: 1 }];
+    }
+    if (this.continuePick) this.drawContinuePick(ctx, W, H);
+    if (this.titleMessage) {
+      this.titleMessageT = (this.titleMessageT || 0) + 1 / 60;
+      if (this.titleMessageT > 4) { this.titleMessage = null; this.titleMessageT = 0; }
+      else drawText(ctx, this.titleMessage, W / 2, Math.round(H * 0.15) + 58, { color: '#aee9bc', align: 'center', outline: '#2a1f33' });
     }
     const how = this.input.touchMode ? t('Tap to choose · best with sound on ♪') : device() === 'pad' ? t('Stick + {a} to choose · best with sound on ♪', { a: ctl('interact') }) : t('Arrows + E, or click · best with sound on ♪');
     drawText(ctx, fitText(how, W - 8), W / 2, hintY, { color: '#d9c8b0', align: 'center', shadow: '#2a1f33' });
@@ -468,6 +524,7 @@ export class Game {
     this.resetWorldForGame();
     this.world.enter(true);
     saveGame(s);
+    this.recovery.ask = false;               // (the solo game saves itself: a reload just resumes it)
     this.recovery.setActive(true);
   }
 
@@ -478,6 +535,7 @@ export class Game {
     this.mode = 'game';
     this.resetWorldForGame();
     this.world.enter(false);
+    this.recovery.ask = false;
     this.recovery.setActive(true);
   }
 

@@ -45,7 +45,7 @@ import { cleanLook, randomLook } from '../data/looks.js';
 import { NPCS } from '../data/npcs.js';
 import { newState } from '../state.js';
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, UI, emote as drawEmote, bubble, heart, fitText } from '../ui/ui.js';
+import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl } from '../ui/ui.js';
 import { Dialogue } from '../ui/dialogue.js';
 import { audio } from '../engine/audio.js';
 import { TT } from '../world/tiles.js';
@@ -138,7 +138,7 @@ export class Party {
     this.remotePlay = new RemoteHost(this);
     this.net.onJoin = (id) => this.onPadJoin(id);
     this.net.onLeave = (id) => this.onPadLeave(id);
-    this.net.onRoom = () => { this.refreshQr(); this.remotePlay.dispose(); };
+    this.net.onRoom = () => { this.refreshQr(); this.remotePlay.dispose(); this.sendInvite(); };
     this.net.onMsg = (id, d) => this.onPadMsg(id, d);
     this.players = [];
     this.byId = new Map();
@@ -265,7 +265,8 @@ export class Party {
       if (this.byId.has(id)) continue;
       const profile = this.profiles[id] || {};
       const input = local.kind === 'keys' ? new KeyInput(this.game.input.keys, local.layout) : new PadInput(local.index);
-      const p = this.addPlayer({ id, kind: local.kind, input, name: profile.name || t('Keys'), look: profile.look || randomLook() });
+      const name = (profile.named && profile.name) || (local.kind === 'keys' ? t(local.layout === 'wasd' ? 'Keys' : 'Arrows') : t('Pad {n}', { n: local.index + 1 }));
+      const p = this.addPlayer({ id, kind: local.kind, input, name, look: profile.look || randomLook() });
       if (p) p.ready = true;
     }
     this.net.start(this.options);
@@ -327,9 +328,39 @@ export class Party {
 
   async refreshQr() {
     if (!this.net.code || this.game.party !== this) return;
-    const url = this.net.joinUrl;
-    if (this.qr && this.qr.text === url) return;
-    try { const qr = await qrCanvas(url); if (this.net.joinUrl === url && this.game.party === this) { this.qr = qr; this.qrError = false; } } catch (e) { this.qr = null; this.qrError = true; }
+    const url = this.net.joinUrl, play = this.net.playUrl;
+    if (!(this.qr && this.qr.text === url)) {
+      try { const qr = await qrCanvas(url); if (this.net.joinUrl === url && this.game.party === this) { this.qr = qr; this.qrError = false; } } catch (e) { this.qr = null; this.qrError = true; }
+    }
+    if (play && !(this.qrPlay && this.qrPlay.text === play)) {
+      try { const qr = await qrCanvas(play); if (this.net.playUrl === play && this.game.party === this) this.qrPlay = qr; } catch (e) { this.qrPlay = null; }
+    }
+  }
+
+  // the invitations for a phone's Invite page (one phone, or all of them)
+  sendInvite(p = null) {
+    const n = this.net;
+    if (n.status !== 'open') return;
+    const m = { t: 'invite', home: n.playUrl, room: n.joinUrl, code: n.code, lan: !n.remote };
+    if (p) { if (p.kind === 'phone') n.send(p.id, m); } else n.broadcast(m);
+  }
+
+  // the two invitations (the host menu's Invite tab, the phones' Invite page): friends at
+  // home get the game streamed to their own screen (play.html); friends in the room scan
+  // the code with a phone. A relay on this Wi-Fi only (the desktop app, the dev server)
+  // can't reach friends at home: its link is for this network.
+  inviteItems() {
+    const n = this.net, open = n.status === 'open', home = open ? n.playUrl : '', room = open ? n.joinUrl : '';
+    const lan = !n.remote;
+    return [
+      { id: 'inv:home', kind: 'invite', label: lan && home ? 'Another screen on this Wi-Fi' : 'Friends at home', url: home,
+        sub: home ? (lan ? 'For another computer or tablet on this Wi-Fi: it shows the game with its own camera, played with a keyboard, a gamepad or the screen.' : 'Send them this link: they see the game on their own screen, with their own camera, and play with their keyboard, a gamepad or their phone.')
+          : open ? 'Playing from home needs the online version of the game (hearthlight.github.io).' : 'Opening the room…',
+        action: home ? 'Copy the link' : null },
+      { id: 'inv:room', kind: 'invite', label: 'Friends in the room', url: room, code: n.code,
+        sub: room ? 'Scan the code with a phone: it becomes their controller. No phone? E, Enter or A on a gamepad plays on this screen.' : 'Opening the room…',
+        action: room ? 'Copy the link' : null },
+    ];
   }
 
   // ------------------------------------------------------------------ players
@@ -367,6 +398,8 @@ export class Party {
       } else {
         p.connected = true; p.goneAt = 0; // a phone coming back keeps its seat (and its name)
       }
+      // (a friend at home — play.html — watches their own camera, streamed to them: drawRemote)
+      p.remote = remote;
       this.host.onJoin(p);
       this.syncPad(p);
       if (remote) this.remotePlay.start(id);
@@ -479,6 +512,8 @@ export class Party {
     audio.sfx('sparkle', { volume: 0.6 });
     this.toast(t('{name} joined!', { name: p.name }), p.color);
     p.tagT = 6;
+    // (keyboard & gamepad players: where their own menu is — talents, gear, their look…)
+    if (p.kind !== 'phone') p.say(t('My menu: {key}', { key: keyOf(p, 'm') }), 7);
     if (this.phase !== 'lobby') p.ready = true;
     if (this.combat) this.combat.equip(p);
     if (this.act) this.act.onJoin(p);
@@ -542,6 +577,7 @@ export class Party {
     this.buddies.sendList(p);
     if (this.progress) { p.progKey = ''; this.progress.sync(p); }
     this.host.tell(p);
+    this.sendInvite(p);
     if (this.host.isHost(p)) this.host.sentKey = '';
     this.net.send(p.id, { t: 'pause', v: !!this.paused, by: this.paused ? this.paused.by : '' });
     p.ctxKey = '';
@@ -689,7 +725,13 @@ export class Party {
     this.cam.snap(this.camPlayers());
   }
 
-  camPlayers() { const a = this.players.filter((p) => p.connected || this.t - p.goneAt < 8); return a.length ? a : this.players; }
+  // who the big screen frames: friends at home have their own camera (unless everyone does)
+  camPlayers() {
+    const a = this.players.filter((p) => p.connected || this.t - p.goneAt < 8), here = a.filter((p) => !p.remote);
+    return here.length ? here : a.length ? a : this.players;
+  }
+  // everyone in the world, wherever they watch from (the scenery wakes up around each of them)
+  allPlayers() { const a = this.players.filter((p) => p.connected || this.t - p.goneAt < 8); return a.length ? a : this.players; }
 
   centroid() {
     const ps = this.camPlayers();
@@ -824,10 +866,10 @@ export class Party {
     // villagers
     for (const n of this.npcs) { n.baseY = n.seatY !== undefined ? n.seatY : w.groundY(n.pos); n.update(dt, this.npcWorld); }
     // the valley around everyone
-    const focus = this.camPlayers().map((p) => p.pos);
+    const focus = this.allPlayers().map((p) => p.pos);
     if (!focus.length) focus.push(LOBBY);
     w.updateScenery(dt, focus);
-    w.critters.update(dt, w.t, this.camPlayers().map((p) => p.actor).concat(focus.length ? [] : [{ pos: LOBBY }]), s.hour);
+    w.critters.update(dt, w.t, this.allPlayers().map((p) => p.actor).concat(focus.length ? [] : [{ pos: LOBBY }]), s.hour);
     w.fx.update(dt);
     // phones: button labels, hints, and your health & special when fighting
     for (const p of this.players) {
@@ -845,7 +887,7 @@ export class Party {
       if (!this.vote && !this.dialogue.active && this.camp && this.phase !== 'lobby') ctx = this.camp.ctxFor(p, ctx) || ctx;
       // a scene is playing: everyone watches the big screen (the host may skip it)
       const scene = this.stage && this.stage.active;
-      if (scene && !this.vote) ctx = { a: this.dialogue.active ? 'Next' : null, b: null, x: null, y: this.host.isHost(p) ? 'Skip' : null, hint: 'A scene is playing — watch the big screen!' };
+      if (scene && !this.vote) ctx = { a: this.dialogue.active ? 'Next' : null, b: null, x: null, y: this.host.isHost(p) ? 'Skip' : null, hint: p.remote ? 'A scene is playing — watch your screen!' : 'A scene is playing — watch the big screen!' };
       const C = this.combat, fi = p.fighter;
       if (C && fi && !fi.down && !p.mount && !p.vehicle && !p.swimming && !this.vote && !scene && (C.pvp || C.enemies.some((e) => e.alive && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 9))) ctx = { ...ctx, y: 'Dodge' };
       if (ctx.x === undefined && (this.vote || this.dialogue.active)) ctx.x = null;
@@ -884,7 +926,28 @@ export class Party {
     this.cam.focus = this.phase !== 'lobby' && this.act && this.act.camFocus ? this.act.camFocus() : null;
     if (cp.length) this.cam.update(dt, cp);
     else this.cam.update(dt, [{ pos: LOBBY, vel: { x: 0, z: 0 } }]);
-    if (this.big) this.big.update(dt, this.cam.views, this.cam.ppu, this.t);
+    // each friend at home: a camera of their own (a scene's camera is everyone's)
+    const views = this.cam.views.slice(), C = this.cam;
+    for (const p of this.players) {
+      if (!p.remote || !p.connected || cp.includes(p)) { p.rcam = null; continue; }
+      const rc = p.rcam || (p.rcam = new SplitCam(this.r3d));
+      Object.assign(rc, { ppu: C.ppu, bounds: C.bounds, focus: C.focus, director: C.director, roomOf: C.roomOf, bossNear: C.bossNear, shake: C.shake });
+      rc.update(dt, [p], !p.rcamT);
+      p.rcamT = (p.rcamT || 0) + dt;
+      views.push(...rc.views);
+    }
+    if (this.big) this.big.update(dt, views, this.cam.ppu, this.t);
+  }
+
+  // A friend at home (play.html) sees their own camera: the world drawn again from it into
+  // `rd` (remote-host.js's canvases, the big screen's sizes), with the shared HUD, the
+  // dialogue & the scenes — not the big screen's own menus.
+  drawRemote(p, rd) {
+    if (!p.rcam || !p.rcam.views.length) return false;
+    const cam = this.cam, d = this.display;
+    this.cam = p.rcam; this.display = rd; this.remoteFor = p;
+    try { this.draw(); } finally { this.cam = cam; this.display = d; this.remoteFor = null; }
+    return true;
   }
 
   // something found at the bottom of the sea
@@ -1115,7 +1178,8 @@ export class Party {
       const pos = this.rooms ? this.rooms.mapPos(p) : p.pos;
       if (Number.isFinite(pos.x) && Number.isFinite(pos.z)) positions[p.id] = { x: pos.x, z: pos.z };
     }
-    this.writeSave('session', { savedAt: Date.now(), players: this.players.map((p) => p.name), positions, activity: this.actKind || previous.activity || 'explore' });
+    // (a lobby opened and closed again isn't a game to continue: only once something was played)
+    if (this.actKind || previous.savedAt) this.writeSave('session', { savedAt: Date.now(), players: this.players.map((p) => p.name), positions, activity: this.actKind || previous.activity || 'explore' });
     this.game.partySaveAvailable = true;
     return !this.saveError;
   }
@@ -1294,7 +1358,7 @@ export class Party {
       w.fx.draw(wctx, v);
       if (this.act) this.act.drawWorld(wctx, v);
       if (this.swim) this.swim.drawSpots(wctx, v, this.t);
-      if (this.zones && !indoor) this.zones.drawView(wctx, v, this.paused ? 0 : (this.lastDt || 1 / 60));
+      if (this.zones && !indoor) this.zones.drawView(wctx, v, this.paused || this.remoteFor ? 0 : (this.lastDt || 1 / 60));
       wctx.restore();
     }
     // falling snow / petals / leaves where the first group is
@@ -1333,16 +1397,19 @@ export class Party {
       if (this.events && this.phase !== 'lobby') this.events.drawUi(ctx);
       if (this.camp && this.phase !== 'lobby') this.camp.drawUi(ctx);
       this.drawObjective(ctx);
+      // (over the HUD: an arrow must never hide under the minimap)
+      if (this.fade < 1) for (const v of cam.views) this.drawOthers(ctx, v);
     }
     if (this.stage) this.stage.draw(ctx, d.w, d.h);
     if (this.vote) this.drawVote(ctx);
-    this.tvmenus.draw(ctx);
+    const own = !this.remoteFor;              // (the big screen's own menus stay on the big screen)
+    if (own) this.tvmenus.draw(ctx);
     this.dialogue.draw(ctx);
     this.drawToasts(ctx);
-    if (this.bigMapOpen) this.drawBigMap(ctx);
-    if (this.zoom.flashT > 0 && !this.host.menu) this.drawZoomFlash(ctx);
-    if (this.paused && !this.host.menu) this.drawPaused(ctx);
-    if (this.host.menu) this.host.drawMenu(ctx);
+    if (own && this.bigMapOpen) this.drawBigMap(ctx);
+    if (own && this.zoom.flashT > 0 && !this.host.menu) this.drawZoomFlash(ctx);
+    if (this.paused && !(own && this.host.menu)) this.drawPaused(ctx);
+    if (own && this.host.menu) this.host.drawMenu(ctx);
   }
 
   // a moment’s note when the host changes the zoom: "Far view", "Auto (…)"
@@ -1470,6 +1537,38 @@ export class Party {
     if (this.vehicles && !scene) this.vehicles.drawLabels(ctx, v, this, drawText);
   }
 
+  // Friends this view doesn't show (at home with their own camera, or far off): an arrow on
+  // its edge in their colour, pointing their way, with their name and how far.
+  drawOthers(ctx, v) {
+    if (this.phase === 'lobby' || (this.stage && (this.stage.active || this.stage.barK > 0)) || this.fade > 0.3) return;
+    const d = this.display, R = v.rect, a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h);
+    const own = !this.remoteFor ? this.cam.views : [v];
+    const mid = v.members.length ? this.toUi(v, v.members[0].pos.x, 1, v.members[0].pos.z) : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const cx = Math.max(a.x + 40, Math.min(b.x - 40, mid.x)), cy = Math.max(a.y + 40, Math.min(b.y - 40, mid.y));
+    const x0 = a.x + 12, x1 = b.x - 12, y0 = a.y + 34, y1 = b.y - 30;
+    for (const p of this.players) {
+      if (!p.connected || p.hidden || own.some((w) => w.members.includes(p))) continue;
+      const pos = this.rooms ? this.rooms.mapPos(p) : p.pos, u = this.toUi(v, pos.x, 1, pos.z);
+      if (u.x > x0 && u.x < x1 && u.y > y0 && u.y < y1) continue;           // (in sight: its own pip says where)
+      const dx = u.x - cx, dy = u.y - cy, k = Math.min(dx ? ((dx > 0 ? x1 : x0) - cx) / dx : 1e9, dy ? ((dy > 0 ? y1 : y0) - cy) / dy : 1e9);
+      const X = Math.round(cx + dx * k), Y = Math.round(cy + dy * k);
+      if (v.half) { const q = d.uiToWorld(X, Y); if (!v.owns(q.x, q.y)) continue; }
+      const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+      // the arrow: a dark rim, their colour, a light edge
+      const tri = (r, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(X + ux * r * 1.3, Y + uy * r * 1.3); ctx.lineTo(X - ux * r * 0.7 - uy * r, Y - uy * r * 0.7 + ux * r); ctx.lineTo(X - ux * r * 0.7 + uy * r, Y - uy * r * 0.7 - ux * r); ctx.closePath(); ctx.fill(); };
+      tri(8, '#241a2e'); tri(6, p.color);
+      const m = v.members[0], dist = Math.round(Math.hypot(pos.x - (m ? m.pos.x : v.cx), pos.z - (m ? m.pos.z : v.cz)));
+      const label = p.name + (dist >= 12 ? ' · ' + dist + ' m' : ''), tw = measure(label) + 6;
+      // (the name beside the arrow, on the side away from the edge)
+      const across = Math.abs(ux) > Math.abs(uy);
+      const lx0 = across ? (ux > 0 ? X - 12 - tw : X + 12) : X - tw / 2, ly0 = across ? Y - 5 : uy > 0 ? Y - 21 : Y + 11;
+      const lx = Math.round(Math.max(a.x + 2, Math.min(b.x - tw - 2, lx0))), ly = Math.round(Math.max(a.y + 2, Math.min(b.y - 12, ly0)));
+      ctx.fillStyle = 'rgba(20,14,28,0.72)'; ctx.fillRect(lx, ly, tw, 10);
+      ctx.fillStyle = p.color; ctx.fillRect(lx, ly + 9, tw, 1);
+      drawText(ctx, label, lx + 3, ly + 1, { color: '#fff7e6' });
+    }
+  }
+
   drawMapPanel(ctx, cell) {
     const d = this.display;
     const a = d.worldToUi(cell.x, cell.y), b = d.worldToUi(cell.x + cell.w, cell.y + cell.h);
@@ -1556,8 +1655,9 @@ export class Party {
     const W = this.display.w, H = this.display.h, now = this.t, tr = t;
     const cardH = 56;
     // join card on the left
-    const py = Math.max(8, this.game.partyHub.lobbyTop || 8), px = 8;
-    const pw = Math.min(170, Math.round(W * 0.34)), ph = H - cardH - 14 - py;
+    const py = 8, px = 8, card = !this.remoteFor;          // (a friend at home doesn't need the QR code)
+    const pw = card ? Math.min(170, Math.round(W * 0.34)) : -16, ph = H - cardH - 14 - py;
+    if (card) {
     panel(ctx, px, py, pw, ph);
     const net = this.net;
     // (a gamepad plugged in but nobody's: it can join; somebody on this screen: their menu)
@@ -1581,7 +1681,7 @@ export class Party {
       drawText(ctx, net.status === 'down' ? t('Reconnecting…') : t('Opening the room…'), px + pw / 2, py + 60, { color: UI.inkSoft, align: 'center' });
     } else {
       const q = this.qr;
-      const room = tipsY - py - 56;
+      const room = tipsY - py - 68;
       const m = Math.max(1, Math.floor(Math.min(pw - 20, room) / q.width));
       const qs = q.width * m, qx = px + Math.round((pw - qs) / 2), qy = py + 20;
       ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
@@ -1594,8 +1694,11 @@ export class Party {
       drawText(ctx, net.code, cx0 + lw, y, { color: '#3b2a2e', scale: 2 });
       y += 19;
       const url = net.joinUrl.replace(/^https?:\/\//, '').replace(/#.*$/, '');
-      drawText(ctx, url, px + pw / 2, y, { color: '#4f73b6', align: 'center' });
+      drawText(ctx, fitText(url, pw - 8), px + pw / 2, y, { color: '#4f73b6', align: 'center' });
       if (net.status === 'down') drawText(ctx, t('Reconnecting…'), px + pw / 2, y + 11, { color: '#a8483a', align: 'center' });
+      // (friends far away: the menu's Invite tab has their link)
+      else if (net.playUrl) drawText(ctx, fitText(t('Friends at home? {key} → Invite', { key: ctl('pause') }), pw - 8), px + pw / 2, y + 12, { color: '#3f8a4a', align: 'center' });
+    }
     }
 
     // player cards along the bottom
@@ -1633,7 +1736,7 @@ export class Party {
     const fx = pw + 16 + (W - pw - 16) / 2;
     drawText(ctx, tr('Hearthlight Party'), fx, py, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
     drawText(ctx, tr('stories, adventures & the arena · 1 to 8 players'), fx, py + 20, { color: '#f6d38f', align: 'center', outline: '#3b2a2e' });
-    wrap(tr('♛ the first phone is the host · Esc or Start: host menu'), W - pw - 28).slice(0, 2).forEach((l, i) => drawText(ctx, l, fx, py + 32 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
+    wrap(tr('♛ the first phone is the host · {key}: the menu (invitations, options…)', { key: ctl('pause') }), W - pw - 28).slice(0, 2).forEach((l, i) => drawText(ctx, l, fx, py + 32 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
     const here = this.players.filter((p) => p.connected);
     let msg;
     if (!here.length) msg = tr('Waiting for friends to join…');
@@ -1736,6 +1839,7 @@ export class Party {
       }
       if (this.buddies && this.buddies.of(p)) heart(ctx, x + bw - 7, y - 5);
       if (this.host.isHost(p)) crown(ctx, x + 3, y - 6);
+      else if (p.kind !== 'phone' && p.connected) menuCap(ctx, x + 3, y - 9, keyOf(p, 'm'), this.tvmenus.isOpen?.(p));
       x += bw + 3;
     }
   }
@@ -1784,6 +1888,15 @@ export class Party {
 }
 
 // a small ▼ over a player’s head (their colour, outlined so it reads anywhere)
+// a keyboard or gamepad player's menu key, on a tab above their badge: ☰ Tab
+function menuCap(ctx, x, y, key, open) {
+  const w = measure(key) + 13;
+  ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, w + 2, 10);
+  ctx.fillStyle = open ? '#e0a526' : '#5a3b2a'; ctx.fillRect(x, y, w, 9);
+  ctx.fillStyle = '#fff7e6'; for (const k of [2, 4, 6]) ctx.fillRect(x + 2, y + k, 5, 1);
+  drawText(ctx, key, x + 10, y + 1, { color: '#fff7e6' });
+}
+
 function playerPip(ctx, x, y, color, low, t) {
   const X = Math.round(x), Y = Math.round(y - 6 + Math.sin(t * 4 + x) * 1);
   ctx.fillStyle = '#241a2e';

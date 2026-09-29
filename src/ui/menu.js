@@ -232,6 +232,7 @@ export class Menu {
       ['Gamepad rumble', st.rumble === false ? 'Off' : 'On', 'rumble'],
       ['Pixel size', { '-1': 'Smaller', 0: 'Auto', 1: 'Bigger' }[st.zoom] || 'Auto', 'zoom'],
       ['Language', LANGS[st.lang] || 'English', 'lang'],
+      ['Saves & backups', '', 'saves'],
       ...(this.world.player ? [['Get unstuck', '', 'unstuck']] : []),
     ];
   }
@@ -261,6 +262,7 @@ export class Menu {
     else if (key === 'zoom') { st.zoom = cycle([-1, 0, 1], st.zoom); w.game.applyZoom(); }
     else if (key === 'lang') st.lang = cycle(Object.keys(LANGS), st.lang);
     else if (key === 'unstuck' && activate) { this.close(); w.unstick(); return; }
+    else if (key === 'saves') { if (activate || dir) w.game.saves.open(); return; }
     saveSettings(st);
     w.game.applySettings();
     audio.sfx('select', { volume: 0.5 });

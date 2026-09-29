@@ -20,6 +20,8 @@ const EVENING = (h) => h >= 17.5 || h < 6;
 const REACH = 2.4;            // close enough to feel the warmth (and sleep)
 const MAX = 4;                // fires burning at once (a new one puts out the oldest)
 const BURN = 360;             // seconds a fire burns
+// (a colour between two, for the marshmallow's toasting)
+const mix = (a, b, k) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - k) + parseInt(b.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
 const WET = new Set([TT.WATER, TT.CORAL, TT.LAVA, TT.SKY, TT.CREVASSE]);
 
 export class Campfires {
@@ -113,6 +115,7 @@ export class Campfires {
   // ------------------------------------------------------------------ sleeping
   sleep(p, f) {
     const a = p.actor;
+    this.stow(p);
     p.sleeping = true; p.frozen = true; a.sleeping = true; a.sitting = false; p.campSit = false;
     a.expr = 'blink';
     if (f.bed) {
@@ -174,7 +177,7 @@ export class Campfires {
     // (another activity, back to the lobby: the fires go out, the sleepers get up)
     if (!P.exploring() && !this.night) {
       for (const f of this.list) this.douse(f);
-      if (P.players.some((p) => p.sleeping || p.campSit)) for (const p of P.players) { this.wake(p); if (p.campSit) { p.campSit = false; p.actor.sitting = false; } }
+      if (P.players.some((p) => p.sleeping || p.campSit || p.mallow)) for (const p of P.players) { this.wake(p); this.stow(p); if (p.campSit) { p.campSit = false; p.actor.sitting = false; } }
     }
     // the fires: grow in, flicker, burn down, smoulder, go
     for (const f of [...this.list]) {
@@ -210,11 +213,59 @@ export class Campfires {
       p.campIdle = calm && !a.moving && !a.airborne ? (p.campIdle || 0) + dt : 0;
       if (p.campIdle > 1.2 && !p.campSit) { p.campSit = true; a.sitting = true; a.face(f.x, f.z); }
       else if (p.campSit && (a.moving || !calm)) { p.campSit = false; a.sitting = false; }
+      if (p.campSit && f && !p.carry) this.toast(p, dt); else this.stow(p);
     }
     this.fireAmb = nearFire ? Math.min(1, (this.fireAmb || 0) + dt) : Math.max(0, (this.fireAmb || 0) - dt);
     // everyone asleep (each by a fire): the night flies by
     const L = this.live();
     if (L.length && L.every((p) => p.sleeping)) { this.allT += dt; if (this.allT > 1.6) this.startNight(); } else this.allT = 0;
+  }
+
+  // Sitting by a fire: out comes a toasting stick. The marshmallow goes golden,
+  // then brown (now and then it catches fire — a puff, and it's eaten anyway),
+  // a bite, and a fresh one. Up, asleep or in a fight: the stick goes away.
+  toast(p, dt) {
+    const a = p.actor, M = a.model;
+    if (!M.setProp) return;
+    let m = p.mallow;
+    if (!m) {
+      m = p.mallow = { prev: M.propKind || null, t: Math.random() * 3, dur: 10 + Math.random() * 5, eat: 0, burn: Math.random() < 0.18 };
+      M.setProp('marshmallow');
+    }
+    if (M.propKind !== 'marshmallow') M.setProp('marshmallow');
+    const W = this.world;
+    if (m.eat > 0) {
+      m.eat -= dt;
+      m.pose = -2.3;                          // (to the mouth)
+      if (m.eat <= 0) { m.t = 0; m.dur = 10 + Math.random() * 5; m.burn = Math.random() < 0.18; m.lit = false; }
+    } else {
+      m.t += dt;
+      m.pose = -1.15 + Math.sin(this.party.t * 1.3 + (p.slot || 0)) * 0.06;
+      const k = Math.min(1, m.t / m.dur), tip = M.mallow;
+      if (m.burn && k > 0.8 && !m.lit) { m.lit = true; audio.sfx('sizzle', { volume: 0.25 }); }
+      if (tip) {
+        tip.visible = true;
+        tip.material.color.set(m.lit ? '#4a3326' : k < 0.5 ? mix('#fff6e8', '#f4d79a', k / 0.5) : mix('#f4d79a', '#b8743a', (k - 0.5) / 0.5));
+        if (m.lit && Math.random() < dt * 10) { const q = tip.getWorldPosition(this.v || (this.v = new THREE.Vector3())); W.fx.emit('sparkle', q.x, q.y + 0.1, q.z, 1, { color: Math.random() < 0.5 ? '#ffb040' : '#ff7a1a' }); }
+      }
+      if (k >= 1) {
+        m.eat = 0.9;
+        if (tip) tip.visible = false;
+        if (m.lit) { const q = a.pos; W.fx.emit('smoke', q.x, 1.1, q.z, 2); }
+        audio.sfx('bite', { volume: 0.3 });
+        if (Math.random() < 0.5 && p.setEmote) p.setEmote(m.lit ? 'sweat' : 'heart', 1.2);
+      }
+    }
+    a.armPose = m.pose;                       // (combat.js and the solo hero's hands ask for it too)
+  }
+
+  stow(p) {
+    const m = p.mallow;
+    if (!m) return;
+    p.mallow = null;
+    const M = p.actor.model;
+    if (M.propKind === 'marshmallow') M.setProp(m.prev);
+    p.actor.armPose = undefined;
   }
 
   startNight() {
@@ -297,6 +348,7 @@ export class Campfires {
   dispose() {
     for (const f of [...this.list]) this.remove(f);
     this.wakeAll();
+    for (const p of this.party.players) this.stow(p);
     if (this.night) { this.night = null; this.party.busy = Math.max(0, this.party.busy - 1); }
     this.root.parent && this.root.parent.remove(this.root);
   }

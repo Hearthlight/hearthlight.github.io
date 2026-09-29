@@ -865,6 +865,7 @@ export class CharModel {
     this.propKind = kind;
     const arm = this.arms[1];
     if (this.prop) { arm.remove(this.prop); this.prop = null; }
+    this.mallow = null;
     if (!kind) return;
     const g = new THREE.Group();
     const m = (c, e) => toon(this.r3d, { color: c, emissive: e || 0x000000, emissiveIntensity: e ? 1 : 1, key: 'prop' + c + (e || '') });
@@ -876,6 +877,17 @@ export class CharModel {
     else if (kind === 'brush') { B(1, 7, 1, m('#b07b50'), 0, -5, 2).rotation.x = -0.6; B(1.4, 2, 1.4, m('#ec5f73'), 0, -8, 4); }
     else if (kind === 'hammer') { B(1, 7, 1, m('#8e5d3e'), 0, -5, 2); B(4, 2, 2, m('#6a6571'), 0, -8.5, 2); }
     else if (kind === 'lantern') { B(1, 3, 1, m('#5a3b2a'), 0, -5, 2); B(4, 4, 4, m('#ffc070', '#ffb050'), 0, -8.5, 2); }
+    // a toasting stick by the campfire (its marshmallow browns: camp.js recolours `mallow`)
+    else if (kind === 'marshmallow') {
+      // (tilted up and out from the hand, so it reads from behind as well)
+      const piv = new THREE.Group(); piv.position.set(0, -5.5 * P, 1.8 * P); piv.rotation.set(-0.22, 0, 0.16); g.add(piv);
+      const S = (w, h, d, mat, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w * P, h * P, d * P), mat); b.position.y = y * P; b.castShadow = true; piv.add(b); return b; };
+      S(0.8, 21, 0.8, m('#c49a64'), -9.5); S(0.5, 2.5, 0.5, m('#8e5d3e'), -21);
+      const mat = this.mallowMat || (this.mallowMat = toon(this.r3d, { color: '#fff6e8' }));
+      const mm = new THREE.Mesh(new THREE.CylinderGeometry(1.9 * P, 1.9 * P, 3.4 * P, 8), mat);
+      mm.position.y = -18.5 * P; mm.castShadow = true; piv.add(mm);
+      this.mallow = mm;
+    }
     // Party Mode weapons
     else if (kind === 'pan') {
       B(1.2, 7, 1.2, m('#6b4330'), 0, -7.5, 1.5);

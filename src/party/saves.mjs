@@ -53,7 +53,7 @@ export function partySummary(storage = localStorage) {
   try {
     const saga = JSON.parse(storage.getItem('hearthlight.party.saga.v1') || 'null');
     const session = JSON.parse(storage.getItem('hearthlight.party.session.v1') || 'null');
-    return saga || session ? { chapter: saga?.ch || 1, savedAt: session?.savedAt || null, players: session?.players || [] } : null;
+    return saga || session?.players?.length ? { chapter: saga?.ch || 1, savedAt: session?.savedAt || null, players: session?.players || [] } : null;
   } catch { return null; }
 }
 export function saveEndpoint() {
