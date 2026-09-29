@@ -20,7 +20,8 @@ const screenshot = path.join(dir, 'game.png'), result = path.join(dir, 'game.jso
 // Ubuntu also needs Xvfb and cannot run Chromium's OS sandbox. These flags apply only to
 // this isolated test process, never to the packaged app's normal launch configuration.
 const headless = process.platform === 'linux' && process.env.CI === 'true';
-const args = process.env.CI === 'true'
+// (the Mac has no software GL that works on a runner: its own Metal, when the runner has any)
+const args = process.env.CI === 'true' && process.platform !== 'darwin'
   ? ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : [];
 const child = spawn(headless ? 'xvfb-run' : executable, headless ? ['-a', executable, '--no-sandbox', ...args] : args, {
   env: { ...process.env, HEARTHLIGHT_SELFTEST: screenshot }, stdio: 'inherit',
@@ -34,7 +35,10 @@ try {
   while (!fs.existsSync(result) && Date.now() < deadline && !exited) await wait(200);
   if (!fs.existsSync(result)) throw new Error('Packaged app did not produce its self-test result');
   const info = JSON.parse(fs.readFileSync(result, 'utf8'));
-  if (!info.ok) throw new Error('Packaged game failed to load');
+  // (a CI Mac without any GPU can't draw WebGL: the app, its page and its relay are still checked)
+  const noGpu = !info.ok && process.platform === 'darwin' && process.env.CI === 'true' && info.page && info.webgl === false;
+  if (noGpu) console.warn('No WebGL on this runner: the game could not render here; the packaged app, its page and its relay are checked.');
+  else if (!info.ok) throw new Error('Packaged game failed to load');
   const host = new WebSocket(`ws://127.0.0.1:${info.port}/ws?role=host`); peers.push(host);
   const room = JSON.parse((await once(host, 'message'))[0]);
   if (room.t !== 'room') throw new Error('Bundled relay did not create a room');
@@ -45,7 +49,7 @@ try {
     host.on('message', (d) => { const m = JSON.parse(d); if (m.t === 'msg' && m.d.t === 'smoke') { clearTimeout(timer); resolve(); } });
   });
   pad.send(JSON.stringify({ t: 'smoke' })); await received;
-  console.log(JSON.stringify({ gameLoaded: true, relayPassed: true, version: info.version, electron: info.electron }));
+  console.log(JSON.stringify({ gameLoaded: !!info.ok, webgl: info.webgl, relayPassed: true, version: info.version, electron: info.electron }));
 } finally {
   for (const peer of peers) peer.terminate();
   if (!exited) child.kill();

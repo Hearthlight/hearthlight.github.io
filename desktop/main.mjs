@@ -65,7 +65,10 @@ async function selftest(port) {
   const img = await win.webContents.capturePage();
   fs.writeFileSync(SELFTEST, img.toPNG());
   const ok = await win.webContents.executeJavaScript('!!(window.game && window.game.world && window.game.world.overCol)');
-  fs.writeFileSync(SELFTEST.replace(/\.png$/, '') + '.json', JSON.stringify({ port, ok, version: app.getVersion(), electron: process.versions.electron }));
+  // (the page itself, and whether this machine has WebGL at all — a CI Mac may have no GPU)
+  const page = await win.webContents.executeJavaScript('document.title === "Hearthlight" && !!document.querySelector("script[type=module]")');
+  const webgl = await win.webContents.executeJavaScript('!!document.createElement("canvas").getContext("webgl2")');
+  fs.writeFileSync(SELFTEST.replace(/\.png$/, '') + '.json', JSON.stringify({ port, ok, page, webgl, version: app.getVersion(), electron: process.versions.electron }));
   setTimeout(() => app.quit(), 20000);
 }
 
