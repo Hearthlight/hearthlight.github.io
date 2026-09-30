@@ -40,6 +40,7 @@ import { areaAt } from '../world/overworld.js';
 import { fogSeen, FOG_W, FOG_H } from '../state.js';
 import { drawText, measure, wrap } from '../engine/font.js';
 import { UI, bubble, keyCap, panel, emote, ctl, device, isFace, faceGlyph } from '../ui/ui.js';
+import { drawSpeech } from '../ui/chat.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { drawMarks, collectMarks } from '../party/mapmarks.js';
@@ -111,7 +112,8 @@ export class SoloHero {
   get label() { return this.name; }
   get look() { return this.wild.state.player.look; }
   setEmote(k, time = 1.6) { const w = this.wild.world; w.playerEmoteKind = k; w.playerEmoteT = time; }
-  say(text, time = 3) { this.speech = text; this.speechT = time; }
+  // (tr: a quick phrase, read in the screen's language — src/ui/chat.js)
+  say(text, time = 3, tr = false) { this.speech = text; this.speechT = time; this.speechTr = tr; }
 }
 
 // ------------------------------------------------------------------ the one camera view
@@ -488,7 +490,7 @@ export class Wild {
     this.t += dt;
     if (this.stage) this.stage.update(dt);
     // (fishing: E hooks the fish, nothing else in reach answers it)
-    this.me.input.off = w.busy > 0 || w.cinematic || w.menu.open || w.shop.open_ || w.dialogue.active || !!this.game.overlay || w.fishing.active;
+    this.me.input.off = w.busy > 0 || w.cinematic || w.menu.open || w.shop.open_ || w.dialogue.active || !!this.game.overlay || w.fishing.active || !!w.chatting;
     this.me.input.update();
     if (this.me.speechT > 0 && (this.me.speechT -= dt) <= 0) this.me.speech = null;
     const out = w.mapId === 'overworld';
@@ -974,7 +976,7 @@ export class Wild {
       if (this.chests) this.chests.drawPrompts(ctx, v, this.keyA);
       if (this.mounts) this.mounts.drawLabels(ctx, v);
       if (this.vehicles) this.vehicles.drawLabels(ctx, v, this);
-      if (this.me.speech) { const u = w.toUi(this.me.pos.x, 1.72 + (w.player.baseY || 0), this.me.pos.z); bubble(ctx, u.x, u.y - 6, this.me.speech); }
+      if (!w.playerEmoteKind) { const u = w.toUi(this.me.pos.x, 1.72 + (w.player.baseY || 0), this.me.pos.z); drawSpeech(ctx, this.me, u.x, u.y - 6, this.t); }
     }
     if (this.combat && !w.menu.open) this.combat.drawUi(ctx);
     if (!w.menu.open) {

@@ -22,6 +22,7 @@ const KEYMAP = {
   hero: ['KeyH'],           // the menu's Hero page (class, talents, gear, mounts)
   ult: ['KeyG'],            // your hero's ultimate, once its gauge is full
   hud: ['KeyV'],            // the HUD: full · compact · minimal
+  chat: ['KeyT'],           // a chat line: say something (src/ui/chat.js)
 };
 for (let i = 1; i <= 9; i++) KEYMAP['hot' + i] = ['Digit' + i];
 

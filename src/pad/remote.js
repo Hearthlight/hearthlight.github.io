@@ -10,12 +10,14 @@ export class RemoteGuest {
     const sound = document.getElementById('remote-sound');
     sound.onclick = () => { this.video.muted = !this.video.muted; this.video.play().catch(() => {}); sound.textContent = t(this.video.muted ? 'Enable sound' : 'Mute sound'); };
     document.getElementById('remote-fullscreen').onclick = () => document.documentElement.requestFullscreen?.().catch(() => {});
-    const label = () => { document.getElementById('remote-retry').textContent = t('Reconnect'); sound.textContent = t(this.video.muted ? 'Enable sound' : 'Mute sound'); document.getElementById('remote-fullscreen').textContent = t('Fullscreen'); document.getElementById('remote-help').textContent = t('Move: WASD / arrows · E: action · Space: jump · F: special · R: dodge · G: ultimate · Tab: menu'); };
+    const label = () => { document.getElementById('remote-retry').textContent = t('Reconnect'); sound.textContent = t(this.video.muted ? 'Enable sound' : 'Mute sound'); document.getElementById('remote-fullscreen').textContent = t('Fullscreen'); document.getElementById('remote-help').textContent = t('Move: WASD / arrows · E: action · Space: jump · F: special · R: dodge · G: ultimate · Tab: menu · T: chat'); };
     label(); onLang(label);
     window.addEventListener('keydown', (e) => {
       if (/INPUT|TEXTAREA/.test(e.target.tagName) || (e.target.tagName === 'BUTTON' && ['Space', 'Enter'].includes(e.code))) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Tab','KeyW','KeyA','KeyS','KeyD','KeyE','KeyF','KeyR','KeyG','Enter'].includes(e.code)) { e.preventDefault(); this.keys.add(e.code); }
       if (e.code === 'Tab' && !e.repeat) this.controls.menu();
+      // (T: say something — the chat sheet, its line ready to type in)
+      if (e.code === 'KeyT' && !e.repeat && state.joined && this.controls.chat) { e.preventDefault(); this.controls.chat(); }
       if (e.code === 'Enter' && !e.repeat && state.joined && state.phase === 'lobby') this.controls.ready();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));

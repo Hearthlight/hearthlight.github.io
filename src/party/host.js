@@ -12,6 +12,7 @@ import { panel, UI, fitText, ctl } from '../ui/ui.js';
 import { audio } from '../engine/audio.js';
 import { saveSettings } from '../state.js';
 import { t, getLang, setLang, LANGS } from '../i18n.js';
+import { CHAT_MODES } from '../ui/chatdata.js';
 
 export const DIFFS = {
   easy: { name: 'Cozy', hp: 0.75, dmg: 0.55, speed: 0.92 },
@@ -150,6 +151,8 @@ export class Host {
       { id: 'music', kind: 'choice', label: 'Music', value: vol('music') * 10 + '%', bar: [vol('music'), 11] },
       { id: 'sfx', kind: 'choice', label: 'Sounds', value: vol('sfx') * 10 + '%', bar: [vol('sfx'), 11] },
       { id: 'lang', kind: 'choice', label: 'Language', value: LANGS[getLang()] },
+      // (the chat: free text, the family filter, or quick phrases only — src/ui/chat.js)
+      { id: 'chat', kind: 'choice', label: 'Chat', value: t(CHAT_MODES[P.game.chat.mode]), sub: 'free text, a family filter, or quick phrases only' },
       // (files and keys want the big screen's mouse: not in the host phone's copy of the menu)
       { id: 'saves', kind: 'button', label: 'Saves & backups', sub: 'save now, export or import a file, an online backup', screen: true },
     ];
@@ -159,6 +162,11 @@ export class Host {
       action: !q.connected || q.kind !== 'phone' ? 'Remove' : this.isHost(q) ? null : 'Give the crown',
       confirm: !q.connected || q.kind !== 'phone', host: this.isHost(q), away: !q.connected,
     }));
+    // (a friend's messages hidden or shown: friends at home above all — src/ui/chat.js)
+    for (const q of P.players) {
+      const off = P.game.chat.isMuted(q.id);
+      players.push({ id: 'mute:' + q.slot, kind: 'choice', raw: true, color: q.color, label: t('{name}’s messages', { name: q.name }), value: t(off ? 'Hidden' : 'Shown') });
+    }
     const tabs = [
       { id: 'game', label: 'Game', items: game },
       { id: 'invite', label: 'Invite', items: P.inviteItems() },
@@ -218,6 +226,18 @@ export class Host {
       g.settings.lang = next;
       saveSettings(g.settings);
       setLang(next);
+      return;
+    }
+    if (id === 'chat') {
+      const order = ['free', 'filter', 'quick'], i = order.indexOf(g.chat.mode);
+      g.settings.chat = order[(i + (dir || 1) + order.length) % order.length];
+      saveSettings(g.settings);
+      P.toast(t('Chat: {mode}', { mode: t(CHAT_MODES[g.settings.chat]) }), '#8fd6e0');
+      return;
+    }
+    if (id.startsWith('mute:')) {
+      const q = P.players.find((x) => x.slot === +id.slice(5));
+      if (q) { const off = g.chat.mute(q.id); if (off) q.speech = null; P.toast(t(off ? '{name}’s messages are hidden' : '{name}’s messages are shown', { name: q.name }), q.color); }
       return;
     }
     if (id.startsWith('p:')) {

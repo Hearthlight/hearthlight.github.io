@@ -112,6 +112,8 @@ export class SoloPhone {
       case 'mount': if (W && W.mounts) W.mounts.choose(W.me, d.v); break;
       case 'pet': if (W && W.buddies) W.buddies.choose(W.me, typeof d.v === 'string' ? d.v : null); break;
       case 'cls': if (W) W.chooseClass(d.v); break;
+      // (talking: the chat sheet — solo/solochat.js)
+      case 'say': case 'quick': case 'emote': case 'typing': { const C = this.game.world && this.game.world.schat; if (C && this.game.mode === 'game') C.onMsg(d); break; }
       default: break;
     }
   }

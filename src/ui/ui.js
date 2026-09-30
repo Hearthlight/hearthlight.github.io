@@ -38,11 +38,11 @@ export function device() {
   const d = INPUT && INPUT.lastDevice;
   return d === 'gamepad' ? 'pad' : d === 'phone' ? 'phone' : d === 'touch' ? 'touch' : 'keys';
 }
-const KEYS_OF = { interact: 'KeyE', jump: 'Space', cancel: 'Escape', pause: 'Escape', menu: 'Tab', map: 'KeyM', journal: 'KeyJ', hero: 'KeyH', hotPrev: 'KeyQ', hotNext: 'KeyR', special: 'KeyF', dodge: 'KeyC', ult: 'KeyG', bike: 'KeyB', run: 'ShiftLeft', hud: 'KeyV' };
+const KEYS_OF = { chat: 'KeyT', talk: 'KeyT', interact: 'KeyE', jump: 'Space', cancel: 'Escape', pause: 'Escape', menu: 'Tab', map: 'KeyM', journal: 'KeyJ', hero: 'KeyH', hotPrev: 'KeyQ', hotNext: 'KeyR', special: 'KeyF', dodge: 'KeyC', ult: 'KeyG', bike: 'KeyB', run: 'ShiftLeft', hud: 'KeyV' };
 const PAD_OF = {
-  xbox: { interact: 'A', jump: 'B', cancel: 'B', special: 'X', dodge: 'Y', pause: 'Start', start: 'Start', menu: 'Select', map: 'Select', hotPrev: 'LB', hotNext: 'RB', ult: 'R3', bike: 'L3', run: 'RT', hud: 'LT' },
-  ps: { interact: '✕', jump: '○', cancel: '○', special: '□', dodge: '△', pause: 'Options', start: 'Options', menu: 'Create', map: 'Create', hotPrev: 'L1', hotNext: 'R1', ult: 'R3', bike: 'L3', run: 'R2', hud: 'L2' },
-  nintendo: { interact: 'B', jump: 'A', cancel: 'A', special: 'Y', dodge: 'X', pause: '+', start: '+', menu: '−', map: '−', hotPrev: 'L', hotNext: 'R', ult: 'R3', bike: 'L3', run: 'ZR', hud: 'ZL' },
+  xbox: { talk: 'LB', chat: 'LB', interact: 'A', jump: 'B', cancel: 'B', special: 'X', dodge: 'Y', pause: 'Start', start: 'Start', menu: 'Select', map: 'Select', hotPrev: 'LB', hotNext: 'RB', ult: 'R3', bike: 'L3', run: 'RT', hud: 'LT' },
+  ps: { talk: 'L1', chat: 'L1', interact: '✕', jump: '○', cancel: '○', special: '□', dodge: '△', pause: 'Options', start: 'Options', menu: 'Create', map: 'Create', hotPrev: 'L1', hotNext: 'R1', ult: 'R3', bike: 'L3', run: 'R2', hud: 'L2' },
+  nintendo: { talk: 'L', chat: 'L', interact: 'B', jump: 'A', cancel: 'A', special: 'Y', dodge: 'X', pause: '+', start: '+', menu: '−', map: '−', hotPrev: 'L', hotNext: 'R', ult: 'R3', bike: 'L3', run: 'ZR', hud: 'ZL' },
 };
 const PHONE_OF = { interact: 'A', jump: 'B', cancel: 'B', special: 'X', dodge: 'Y', ult: 'U', run: 'A' };
 // a key code as a player would read it: E, Space, Enter, ⌫…
@@ -273,8 +273,18 @@ const EMOTES = {
   sparkle: ['...#...', '...#...', '.#####.', '...#...', '...#...', '.......'],
   dots: ['......', '......', '......', '......', '#.#.#.', '......'],
   star: ['...#...', '..###..', '#######', '.#####.', '.##.##.', '.#...#.'],
+  // (what players send each other — src/ui/chat.js)
+  wave: ['.#.#.#.', '.#.#.#.', '.#####.', '######.', '.#####.', '..###..'],
+  cheer: ['#.....#', '.#.#.#.', '..###..', '...#...', '..#.#..', '.#...#.'],
+  laugh: ['.##.##.', '.......', '#######', '#.###.#', '.#...#.', '..###..'],
+  smile: ['.#...#.', '.#...#.', '.......', '#.....#', '.#...#.', '..###..'],
+  sad: ['.#...#.', '.#...#.', '.......', '..###..', '.#...#.', '#.....#'],
+  photo: ['..##...', '#######', '#..#..#', '#.#.#.#', '#..#..#', '#######'],
+  point: ['...#...', '...##..', '#######', '#######', '...##..', '...#...'],
+  sit: ['#......', '#......', '#......', '######.', '#....#.', '#....#.'],
 };
-const EMOTE_COL = { heart: '#ec5f73', exclaim: '#d9594c', question: '#4d7fc4', note: '#8a64b8', zzz: '#4d7fc4', sweat: '#7cc4e8', sparkle: '#e0a526', dots: '#3b2a2e', star: '#e0a526' };
+const EMOTE_COL = { heart: '#ec5f73', exclaim: '#d9594c', question: '#4d7fc4', note: '#8a64b8', zzz: '#4d7fc4', sweat: '#7cc4e8', sparkle: '#e0a526', dots: '#3b2a2e', star: '#e0a526',
+  wave: '#d8963a', cheer: '#ec5f73', laugh: '#d8963a', smile: '#d8963a', sad: '#4d7fc4', photo: '#5a4a68', point: '#4f955a', sit: '#8a5234' };
 
 export function emote(ctx, x, y, kind, t = 0) {
   const g = EMOTES[kind];
@@ -291,6 +301,15 @@ export function emote(ctx, x, y, kind, t = 0) {
   ctx.fillStyle = EMOTE_COL[kind];
   const gw = g[0].length;
   for (let j = 0; j < g.length; j++) for (let i = 0; i < gw; i++) if (g[j][i] === '#') ctx.fillRect(bx + Math.floor((w - gw) / 2) + i, by + 3 + j, 1, 1);
+}
+
+// just an emote's picture, s times its size, centred on (cx, cy) — the phone's chat sheet
+export function emoteGlyph(ctx, cx, cy, kind, s = 1) {
+  const g = EMOTES[kind];
+  if (!g) return;
+  const gw = g[0].length, x0 = Math.round(cx - (gw * s) / 2), y0 = Math.round(cy - (g.length * s) / 2);
+  ctx.fillStyle = EMOTE_COL[kind];
+  for (let j = 0; j < g.length; j++) for (let i = 0; i < gw; i++) if (g[j][i] === '#') ctx.fillRect(x0 + i * s, y0 + j * s, s, s);
 }
 
 export function textBlock(ctx, text, x, y, maxW, opts = {}) {

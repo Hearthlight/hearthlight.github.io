@@ -57,7 +57,7 @@ export const ONLINE = {
   "Enable sound": "Ton aktivieren",
   "Mute sound": "Ton stummschalten",
   "Fullscreen": "Vollbild",
-  "Move: WASD / arrows · E: action · Space: jump · F: special · R: dodge · G: ultimate · Tab: menu": "Bewegen: WASD / Pfeile · E: Aktion · Leertaste: Sprung · F: Spezial · R: Ausweichen · G: Ultimativ · Tab: Menü",
+  "Move: WASD / arrows · E: action · Space: jump · F: special · R: dodge · G: ultimate · Tab: menu · T: chat": "Bewegen: WASD / Pfeile · E: Aktion · Leertaste: Sprung · F: Spezial · R: Ausweichen · G: Ultimativ · Tab: Menü · T: Chat",
   "Connected · live video": "Verbunden · Live-Video",
   "Waiting for the host…": "Warte auf den Host…",
   "Video reconnecting…": "Video wird neu verbunden…",

@@ -19,6 +19,7 @@ import { dayLabel, timeLabel, HUD_MODES, HUD_NAMES } from './hud.js';
 import { drawWorldPanel, MapView } from '../party/worldmap.js';
 import { HeroTab } from '../solo/herotab.js';
 import { DIFFS } from '../party/host.js';
+import { CHAT_MODES } from './chatdata.js';
 
 const TABS = [['bag', 'Bag'], ['quests', 'Journal'], ['friends', 'Friends'], ['collection', 'Collection'], ['map', 'Map'], ['hero', 'Hero']];
 const TABS_SHORT = ['Bag', 'Tasks', 'Pals', 'Finds', 'Map', 'Hero'];
@@ -254,6 +255,7 @@ export class Menu {
       ['Controls', { pad: 'Gamepad', phone: 'Phone', touch: 'Touch screen' }[device()] || 'Keyboard', 'controls'],
       ['Play with your phone', this.world.game.phone.connected ? 'Connected' : this.world.game.phone.net ? 'Waiting' : 'Not connected', 'phone'],
       ['Gamepad rumble', st.rumble === false ? 'Off' : 'On', 'rumble'],
+      ['Chat', CHAT_MODES[st.chat] || CHAT_MODES.free, 'chat'],
       ['Pixel size', st.zoom < 0 ? 'Smaller' : st.zoom > 0 ? 'Bigger' : 'Auto', 'zoom'],
       ['Language', LANGS[st.lang] || 'English', 'lang'],
       ['Saves & backups', '', 'saves'],
@@ -283,6 +285,7 @@ export class Menu {
     else if (key === 'phone') { if (activate || dir) w.game.phone.openPanel(); return; }
     else if (key === 'controls') { if (activate || dir) w.game.openControls(); return; }
     else if (key === 'rumble') { st.rumble = st.rumble === false; if (st.rumble) w.input.rumble(0.6, 0.4, 160); }
+    else if (key === 'chat') st.chat = cycle(['free', 'filter', 'quick'], st.chat || 'free');
     else if (key === 'zoom') { st.zoom = cycle([-1, 0, 1], Math.max(-1, Math.min(1, st.zoom || 0))); w.game.applyZoom(); }
     else if (key === 'lang') st.lang = cycle(Object.keys(LANGS), st.lang);
     else if (key === 'unstuck' && activate) { this.close(); w.unstick(); return; }

@@ -155,7 +155,7 @@ export function deleteSave() {
   try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
 }
 
-export const DEFAULT_SETTINGS = { master: 0.8, music: 0.7, sfx: 0.8, ambient: 0.6, daySpeed: 1, zoom: 0, textSpeed: 1, hud: 'full', adventure: 'normal', lang: null, rumble: true };
+export const DEFAULT_SETTINGS = { master: 0.8, music: 0.7, sfx: 0.8, ambient: 0.6, daySpeed: 1, zoom: 0, textSpeed: 1, hud: 'full', adventure: 'normal', lang: null, rumble: true, chat: 'free' };
 
 export function loadSettings() {
   let st;

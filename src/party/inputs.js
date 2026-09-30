@@ -5,9 +5,10 @@
 
 import { padStyle } from '../engine/input.js';
 
-const ACTIONS = { a: ['interact', 'a'], b: ['jump', 'b'], x: ['special', 'x'], y: ['y'], u: ['ult', 'u'], m: ['menu', 'm'] };
-const NONE = { a: false, b: false, x: false, y: false, u: false, m: false };
-const NO_TAPS = { a: 0, b: 0, x: 0, y: 0, u: 0, m: 0 };
+// (t: talk — a keyboard's chat line, a gamepad's wheel of phrases: src/party/partychat.js)
+const ACTIONS = { a: ['interact', 'a'], b: ['jump', 'b'], x: ['special', 'x'], y: ['y'], u: ['ult', 'u'], m: ['menu', 'm'], t: ['talk', 't'] };
+const NONE = { a: false, b: false, x: false, y: false, u: false, m: false, t: false };
+const NO_TAPS = { a: 0, b: 0, x: 0, y: 0, u: 0, m: 0, t: 0 };
 
 class BaseInput {
   constructor(kind) {
@@ -26,7 +27,7 @@ class BaseInput {
     this.prev = this.cur;
     this.cur = new Set();
     this.edges = new Set();
-    for (const k of ['a', 'b', 'x', 'y', 'u', 'm']) {
+    for (const k of ['a', 'b', 'x', 'y', 'u', 'm', 't']) {
       const on = buttons[k] || taps[k] > 0;
       for (const a of ACTIONS[k]) {
         if (on) this.cur.add(a);
@@ -78,7 +79,7 @@ export class RemoteInput extends BaseInput {
 // The big screen's own keyboard: two layouts so two people can share it.
 export const KEY_LAYOUTS = {
   // (one keyboard player: ZQSD / WASD or the arrows, E or Enter — the solo game's keys work too)
-  wasd: { name: 'Keyboard', up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'], left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'], a: ['KeyE', 'Enter', 'NumpadEnter', 'KeyJ'], b: ['Space', 'KeyK'], x: ['KeyF', 'KeyQ', 'KeyL'], y: ['KeyR', 'KeyC', 'KeyU'], u: ['KeyG'], m: ['Tab', 'KeyT'], run: ['ShiftLeft', 'ShiftRight'], join: ['KeyE', 'Enter', 'NumpadEnter', 'Space'] },
+  wasd: { name: 'Keyboard', up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'], left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'], a: ['KeyE', 'Enter', 'NumpadEnter', 'KeyJ'], b: ['Space', 'KeyK'], x: ['KeyF', 'KeyQ', 'KeyL'], y: ['KeyR', 'KeyC', 'KeyU'], u: ['KeyG'], m: ['Tab'], t: ['KeyT'], run: ['ShiftLeft', 'ShiftRight'], join: ['KeyE', 'Enter', 'NumpadEnter', 'Space'] },
 };
 
 export class KeyInput extends BaseInput {
@@ -97,7 +98,7 @@ export class KeyInput extends BaseInput {
     if (on(L.up)) y -= 1;
     if (on(L.down)) y += 1;
     const l = Math.hypot(x, y) || 1;
-    const btn = { a: L.a.some((c) => k.has(c)), b: L.b.some((c) => k.has(c)), x: L.x.some((c) => k.has(c)), y: L.y.some((c) => k.has(c)), u: L.u.some((c) => k.has(c)), m: L.m.some((c) => k.has(c)) };
+    const btn = { a: L.a.some((c) => k.has(c)), b: L.b.some((c) => k.has(c)), x: L.x.some((c) => k.has(c)), y: L.y.some((c) => k.has(c)), u: L.u.some((c) => k.has(c)), m: L.m.some((c) => k.has(c)), t: L.t.some((c) => k.has(c)) };
     this.commit(btn, NO_TAPS, { x: x / l, y: y / l }, L.run.some((c) => k.has(c)));
   }
 }
@@ -119,7 +120,7 @@ export class PadInput extends BaseInput {
     if (b(14)) x = -1; if (b(15)) x = 1; if (b(12)) y = -1; if (b(13)) y = 1;
     const l = Math.hypot(x, y);
     if (l > 1) { x /= l; y /= l; }
-    this.commit({ a: b(0), b: b(1), x: b(2), y: b(3), u: b(11), m: b(8) }, NO_TAPS, { x, y }, l > 0.92 || b(7) || b(6));
+    this.commit({ a: b(0), b: b(1), x: b(2), y: b(3), u: b(11), m: b(8), t: b(4) }, NO_TAPS, { x, y }, l > 0.92 || b(7) || b(6));
   }
 }
 

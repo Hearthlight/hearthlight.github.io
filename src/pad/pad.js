@@ -3,7 +3,9 @@
 // with the game's own pixel font & paper panels on an integer-scaled canvas.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, button, UI, fitText, splitTwo } from '../ui/ui.js';
+import { panel, button, UI, fitText, splitTwo, emoteGlyph } from '../ui/ui.js';
+import { QUICK, QUICK_PAGES, QUICK_BY, EMOTES, EMOTE_BY, WHY, emojiOnly } from '../ui/chatdata.js';
+import { MAX_LEN, clean } from '../party/chatfilter.mjs';
 import { LOOK_GROUPS, TREASURE_HATS, randomLook, cleanLook } from '../data/looks.js';
 import { CLASSES, CLASS_ORDER } from '../combat/classes.js';
 import { drawClassIcon, drawGearIcon, drawMountIcon, drawPetIcon } from '../combat/icons.js';
@@ -22,6 +24,11 @@ const cv = document.getElementById('pad');
 const ctx = cv.getContext('2d');
 const codeIn = document.getElementById('code');
 const nameIn = document.getElementById('name');
+// (the chat's line: the phone's own keyboard types into it — the sheet, drawChat)
+const chatIn = document.createElement('input');
+Object.assign(chatIn, { className: 'field', maxLength: MAX_LEN, autocomplete: 'off', enterKeyHint: 'send', spellcheck: true });
+chatIn.style.letterSpacing = '0';
+document.body.appendChild(chatIn);
 
 // ------------------------------------------------------------------ storage
 const store = {
@@ -58,6 +65,10 @@ const S = {
   ctx: { a: null, b: null, x: null, hint: '' },
   score: null,
   choice: null,
+  chat: [],              // the party's last lines: { n, c, text | q | e }
+  chatTab: 0,            // the sheet's page: 0–2 phrases · 3 emotes · 4 the log
+  chatNote: null,        // why a message didn't go ({ text, until })
+  said: store.get('said', []),   // what you typed lately (tap to say it again)
   message: null,
   error: '',
   hostGone: false,
@@ -75,6 +86,7 @@ const remote = document.getElementById('remote-video') ? new RemoteGuest(S, send
   retry: () => { S.kicked = false; S.error = ''; if (ws?.readyState === 1) hi(); else connect(); },
   menu: () => { S.menu = !S.menu; },
   ready: () => { S.ready = !S.ready; S.view = S.ready ? 'pad' : 'look'; send({ t: 'ready', v: S.ready }); },
+  chat: () => { openChat(); setTimeout(() => { try { chatIn.focus(); } catch (e) { /* gone */ } }, 30); },
 }) : null;
 
 // ------------------------------------------------------------------ network
@@ -174,6 +186,10 @@ function onMessage(m) {
     case 'pets': S.pets = { list: Array.isArray(m.list) ? m.list : [], active: m.active || null }; break;
     case 'prog': S.prog = m; break;
     case 'lobby': S.lobby = { ready: m.ready || 0, total: m.total || 0, host: m.host || '' }; break;
+    // (the chat: every line said, and why one of ours didn't go)
+    case 'chat': if (m.l && typeof m.l === 'object') { S.chat.push(m.l); if (S.chat.length > 50) S.chat.splice(0, S.chat.length - 50); if (S.menu !== 'chat' && !(S.me && m.l.n === S.me.name)) S.chatNew = true; } break;
+    case 'chatLog': S.chat = Array.isArray(m.lines) ? m.lines.filter((l) => l && typeof l === 'object').slice(-50) : []; break;
+    case 'chatNo': if (WHY[m.why]) { S.chatNote = { text: t(WHY[m.why]), until: S.t + 3 }; buzz([20, 40, 20]); } break;
     case 'wmapBase': PM.onBase(m); break;
     case 'wmap': PM.onUpdate(m); break;
     case 'pause': S.paused = m.v ? { by: m.by || '' } : null; break;
@@ -228,6 +244,9 @@ onLang(() => { nameIn.placeholder = t('Your name'); });
 codeIn.addEventListener('input', () => { S.code = codeIn.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); if (codeIn.value !== S.code) codeIn.value = S.code; S.error = ''; });
 nameIn.addEventListener('input', () => { S.name = nameIn.value.slice(0, 12); S.error = ''; });
 for (const el of [codeIn, nameIn]) el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { el.blur(); join(); } });
+chatIn.placeholder = t('Say something…');
+onLang(() => { chatIn.placeholder = t('Say something…'); });
+chatIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sayTyped(); } else if (e.key === 'Escape') { e.preventDefault(); S.menu = false; closeChat(); } });
 
 // a two-line button: what, and underneath what it means
 function choiceBtn(x, y, w, h, label, sub, id, fn, color) {
@@ -716,9 +735,10 @@ function drawSolo() {
   const land = W > H, c = S.ctx, mode = c.mode || 'play';
   // (the big screen's pause menu: resume, save, settings, back to the title)
   const pausable = mode === 'play' || mode === 'wait';
-  header(null, pausable ? W - 50 : W - 28);
+  header(null, pausable ? W - 72 : W - 50);
   iconBtn(W - 24, 1, 20, 18, 'menu', 'menu', () => { S.menu = S.menu ? false : 'main'; }, { color: '#6a5a7a', badge: S.prog && S.prog.points > 0 ? '•' : '' });
   if (pausable) iconBtn(W - 46, 1, 20, 18, 'pause', 'pause', () => soloAct('pause'), { color: '#4a6a8a' });
+  iconBtn(pausable ? W - 68 : W - 46, 1, 20, 18, 'chat', 'chats', openChat, { color: '#3f8a9a' });
   const top = 24;
   let y = top;
   // what's going on: your portrait, health and the game's hint
@@ -776,6 +796,7 @@ function drawSolo() {
   else if (S.menu === 'talents') drawTalents();
   else if (S.menu === 'gear') drawGear();
   else if (S.menu === 'map') drawMapScreen();
+  else if (S.menu === 'chat') drawChat();
 }
 
 function drawPad() {
@@ -788,7 +809,7 @@ function drawPad() {
   let right = W - 3;
   const slot = (w) => { right -= w; const at = right; right -= gap; return at; };
   const menuX = slot(lobby ? styleW : bw), hostX = S.host ? slot(bw) : 0;
-  const mapX = !lobby ? slot(bw) : 0, invX = lobby ? slot(bw) : 0, camp = !lobby && S.ctx.camp, campX = camp ? slot(bw) : 0;
+  const mapX = !lobby ? slot(bw) : 0, invX = lobby ? slot(bw) : 0, camp = !lobby && S.ctx.camp, campX = camp ? slot(bw) : 0, chatX = slot(bw);
   background();
   header(null, right + gap, HB);
   if (lobby) iconBtn(menuX, by, styleW, bh, 'shirt', 'look', () => { S.view = 'look'; S.ready = false; send({ t: 'ready', v: false }); }, { color: '#6a4a88', label: t('Style') });
@@ -797,6 +818,7 @@ function drawPad() {
   if (!lobby) iconBtn(mapX, by, bw, bh, 'map', 'mapp', openMap, { color: '#4a7ab8' });
   if (lobby) iconBtn(invX, by, bw, bh, 'invite', 'invp', openInvite, { color: '#4f955a' });
   if (camp) iconBtn(campX, by, bw, bh, 'campfire', 'campp', () => { send({ t: 'camp' }); buzz(15); }, { color: '#b8502a' });
+  iconBtn(chatX, by, bw, bh, 'chat', 'chatp', openChat, { color: '#3f8a9a', badge: S.chatNew ? '•' : '' });
   // hint / score strip (in the lobby, the host starts the party)
   const L = S.lobby, allReady = !!(L && L.total && L.ready >= L.total);
   const hint = !lobby ? S.ctx.hint || ''
@@ -868,6 +890,96 @@ function drawPad() {
   else if (S.menu === 'host') drawHostMenu();
   else if (S.menu === 'map') drawMapScreen();
   else if (S.menu === 'invite') drawInvite();
+  else if (S.menu === 'chat') drawChat();
+}
+
+// ------------------------------------------------------------------ the chat (every mode)
+// A speech-bubble button opens this sheet: a line typed on the phone's own keyboard (80
+// characters), the quick phrases (twelve a page, three pages: each screen reads them in its own
+// language), the emotes, and the log with what you said lately. While it's open a « … » floats
+// over your hero; sending closes it. (src/ui/chat.js on the big screen: the same rules.)
+function openChat() { S.menu = 'chat'; S.chatNew = false; if (!S.chatOpen) { S.chatOpen = true; send({ t: 'typing', on: 1 }); } buzz(8); }
+function closeChat() {
+  if (S.chatOpen) { S.chatOpen = false; send({ t: 'typing', on: 0 }); try { chatIn.blur(); } catch (e) { /* gone */ } }
+  placeField(chatIn, null);
+}
+function sayTyped() {
+  const text = clean(chatIn.value);
+  if (!text) return;
+  send({ t: 'say', text });
+  if (!emojiOnly(text)) { S.said = [text, ...S.said.filter((x) => x !== text)].slice(0, 4); store.set('said', S.said); }
+  chatIn.value = '';
+  S.menu = false; closeChat(); buzz(10);
+}
+function sayQuick(id) { send({ t: 'quick', id }); S.menu = false; closeChat(); buzz(10); }
+function sayEmote(e) { send({ t: 'emote', e }); S.menu = false; closeChat(); buzz([8, 30, 8]); }
+function chatLineText(l) { return l.q ? (QUICK_BY[l.q] ? t(QUICK_BY[l.q].text) : '') : l.e ? '* ' + (EMOTE_BY[l.e] ? t(EMOTE_BY[l.e].label) : '') + ' *' : String(l.text || ''); }
+
+function drawChat() {
+  ctx.fillStyle = 'rgba(15,10,22,0.7)'; ctx.fillRect(0, 0, W, H);
+  regions.push({ kind: 'tap', id: 'scrim', x: 0, y: 0, w: W, h: H, fn: () => {} });
+  const land = W > H, px = 4, py = 4, pw = W - 8, ph = H - 8;
+  panel(ctx, px, py, pw, ph);
+  tapArea('chatpanel', px, py, pw, ph, () => {});
+  drawText(ctx, t('Chat'), px + 10, py + 8, { color: INK });
+  iconBtn(px + pw - 24, py + 4, 18, 16, 'close', 'close', () => { S.menu = false; closeChat(); }, { color: '#a8483a' });
+  // your line & Send
+  const fy = py + 24, fh = 18, sw = Math.max(40, measure(t('Send')) + 14);
+  placeField(chatIn, { x: px + 8, y: fy, w: pw - 16 - sw - 4, h: fh });
+  pill(px + pw - 8 - sw, fy + 2, sw, 14, t('Send'), 'csend', sayTyped, { color: '#4f955a' });
+  let y = fy + fh + 4;
+  if (S.chatNote && S.t < S.chatNote.until) { drawText(ctx, fitText(S.chatNote.text, pw - 16), px + pw / 2, y, { color: '#c8454f', align: 'center' }); y += 11; }
+  // the pages: three of phrases, the emotes, the log (on a narrow phone, two rows of tabs)
+  const tabs = [...QUICK_PAGES.map((q) => t(q)), t('Emotes'), t('Log')], wide = !land && pw < 300 ? [3, 2] : [5];
+  let ti = 0;
+  for (const n of wide) {
+    const tw = Math.floor((pw - 16 - (n - 1) * 3) / n);
+    for (let k = 0; k < n; k++, ti++) { const i = ti; pill(px + 8 + k * (tw + 3), y, tw, 14, fitText(tabs[i], tw - 4), 'ctab' + i, () => { S.chatTab = i; S.chatScroll = 0; }, { color: S.chatTab === i ? '#e0a526' : '#8e5d3e', hot: S.chatTab === i }); }
+    y += 18;
+  }
+  y += 2;
+  const top = y, bottom = py + ph - 8, room = bottom - top;
+  if (S.chatTab < 3) {
+    const list = QUICK.filter((q) => q.page === S.chatTab), cols = land ? 3 : 2, rows = Math.ceil(list.length / cols);
+    const cw = Math.floor((pw - 16 - (cols - 1) * 4) / cols), rh = Math.max(16, Math.min(34, Math.floor((room + 4) / rows) - 4));
+    list.forEach((q, i) => {
+      const x = px + 8 + (i % cols) * (cw + 4), yy = top + Math.floor(i / cols) * (rh + 4), text = t(q.text);
+      // (a long phrase on two lines when the button is tall enough)
+      const two = rh >= 24 && measure(text) > cw - 8 ? wrap(text, cw - 8).slice(0, 2) : null;
+      pill(x, yy, cw, rh, two ? '' : fitText(text, cw - 8), 'cq' + q.id, () => sayQuick(q.id), { color: ['#5a7ab8', '#4f8a5a', '#9a6a3a'][S.chatTab] });
+      if (two) two.forEach((l, k) => drawText(ctx, fitText(l, cw - 8), x + cw / 2, yy + Math.round(rh / 2) - 9 + k * 10 + (S.pressing === 'cq' + q.id ? 1 : 0), { color: '#fff7e6', align: 'center' }));
+    });
+  } else if (S.chatTab === 3) {
+    const cols = land ? 6 : 4, rows = Math.ceil(EMOTES.length / cols);
+    const cw = Math.floor((pw - 16) / cols), rh = Math.max(34, Math.min(58, Math.floor(room / rows)));
+    EMOTES.forEach((m, i) => {
+      const x = px + 8 + (i % cols) * cw, yy = top + Math.floor(i / cols) * rh, down = S.pressing === 'ce' + m.e;
+      ctx.fillStyle = down ? '#e8d6b4' : '#f3e3c3'; ctx.fillRect(x + 2, yy, cw - 4, rh - 4);
+      emoteGlyph(ctx, x + cw / 2, yy + Math.round((rh - 16) / 2), m.icon, rh >= 44 ? 3 : 2);
+      drawText(ctx, fitText(t(m.label), cw - 6), x + cw / 2, yy + rh - 15, { color: INK, align: 'center' });
+      tapArea('ce' + m.e, x + 2, yy, cw - 4, rh - 4, () => sayEmote(m.e));
+    });
+  } else {
+    // what you said lately (tap: again), then the log, newest at the bottom
+    let yy = top;
+    if (S.said.length) {
+      drawText(ctx, t('Say again:'), px + 10, yy + 1, { color: '#8a5234' });
+      yy += 11;
+      for (const text of S.said.slice(0, 3)) { pill(px + 8, yy, pw - 16, 14, fitText(text, pw - 24), 'cs' + text, () => { chatIn.value = text; sayTyped(); }, { color: '#8e7a9a' }); yy += 17; }
+      yy += 3;
+    }
+    const rows = [];
+    for (const l of S.chat) {
+      const name = String(l.n || '') + ': ', nw = measure(name);
+      wrap(chatLineText(l), Math.max(40, pw - 20 - nw)).forEach((line, k) => rows.push({ name: k ? '' : name, c: l.c, nw, line }));
+    }
+    const fit = Math.max(0, Math.floor((bottom - yy) / 10)), shown = rows.slice(-fit);
+    if (!rows.length) drawText(ctx, t('Nobody has said anything yet.'), px + pw / 2, yy + 8, { color: '#8a7a6a', align: 'center' });
+    shown.forEach((r, i) => {
+      if (r.name) drawText(ctx, r.name, px + 10, yy + i * 10, { color: typeof r.c === 'string' && /^#[0-9a-f]{3,8}$/i.test(r.c) ? shade(r.c, -0.25) : INK });
+      drawText(ctx, r.line, px + 10 + r.nw, yy + i * 10, { color: INK });
+    });
+  }
 }
 
 // ------------------------------------------------------------------ the world map (on the phone)
@@ -1633,6 +1745,7 @@ function drawScreen() {
     else drawJoin();
   } else {
     placeField(codeIn, null); placeField(nameIn, null);
+    if (S.menu !== 'chat') closeChat();
     if (!S.me) drawWaiting(S.hostGone ? 'Waiting for the big screen' : 'Joining');
     else if (S.screen === 'choice') drawChoice();
     else if (S.screen === 'tame' && S.tame) drawTame();

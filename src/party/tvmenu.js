@@ -33,7 +33,7 @@ const NO_STICK = (input, block = []) => ({
 
 // the button a player presses for A / B / X / Y / U / their menu, on their own device
 export function keyOf(p, k) {
-  if (p.kind === 'gamepad') return padName({ a: 'interact', b: 'jump', x: 'special', y: 'dodge', u: 'ult', m: 'map' }[k] || 'interact', p.input.style || 'xbox');
+  if (p.kind === 'gamepad') return padName({ a: 'interact', b: 'jump', x: 'special', y: 'dodge', u: 'ult', m: 'map', t: 'talk' }[k] || 'interact', p.input.style || 'xbox');
   if (p.kind === 'keys') { const L = KEY_LAYOUTS[p.input.layoutId], c = L && L[k] && L[k][0]; return c ? keyLabel(c) : k.toUpperCase(); }
   return k.toUpperCase();
 }

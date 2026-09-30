@@ -111,6 +111,18 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   `ctxFor`): phones get it translated, keyboard & gamepad players as chips under their hero
   (`updateChips`: only non-everyday labels, shown when new or when standing still, gone once
   pressed) — a new action needs only its `ctxFor` label.
+- **Talking** (every mode): `game.chat` (`src/ui/chat.js`; its data — 36 quick
+  phrases, 12 emotes, emoji → emotes — in `chatdata.js`, light enough for the phone; its rules in
+  `src/party/chatfilter.mjs`, pure, shared with a server: links/e-mails/numbers refused,
+  rude words hidden with the family filter, 1 message per 1.5 s, repeats dropped):
+  `chat.post(speaker, { text } | { q: id } | { e })` → '' or why not. A speaker's
+  `say(text, t, tr)` — `tr`: a quick phrase, read in each screen's language at draw time
+  (`drawSpeech`, `drawBubbles`: bubbles & emotes stacked). Party: `party/partychat.js` (phones send
+  `say`/`quick`/`emote`/`typing`; a keyboard's T opens its chat line — T is no longer the menu, Tab
+  is; a gamepad holds LB for the wheel, X writes on the on-screen keys; the host menu has the chat
+  mode and each player's mute). Solo: `solo/solochat.js` (T, LB held, the phone; the folk answer a
+  « Hello! »). The phone: its chat sheet (`drawChat` in pad.js). Remote play: T. Test:
+  `(await import('/tools/chattest.js')).start('party', 4)` or `start('solo')`, poll `window.__ct`.
 - **Text**: every visible string goes through `t('English text', vars)` (or `tn` for plurals);
   the English text is the key. Five languages: French in `src/lang/fr/*.js` (new content → a new
   file, registered in `src/lang/fr/index.js`), following `tools/i18n-glossary.md`: tutoiement,
