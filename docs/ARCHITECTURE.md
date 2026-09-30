@@ -44,6 +44,11 @@ relay.
 portraits, builds the valley (a progress line on the boot screen), then shows the title. A reload
 in the middle of a game or a party picks it up again (`session.mjs`).
 
+The title has two buttons. **Play** asks what to play (`game.experiences`: the story, and any other
+way to play a mode registers), then who plays — solo, or together (Party Mode) — and, for the story
+alone with a saved game, whether to continue it or start anew. **Settings** has two tabs: the
+settings themselves and the controls (keyboard, gamepad, phone).
+
 `frame(dt)` runs on every animation frame (`dt` capped at 50 ms): input, then the current mode's
 update — `title`, `creator`, `game` (the solo story) or `party` — then drawing. For tests,
 `game.debug.step(n, dt)` advances frames by hand and `game.debug.shot()` saves a screenshot.

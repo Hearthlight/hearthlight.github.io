@@ -1,11 +1,10 @@
-// The Controls screen (the title's "Controls", and the menu's Settings): the
-// three ways to play side by side — the keyboard, a gamepad, a phone — each
-// with what's what on it, and which one is in your hands right now. Nothing to
-// switch: the game follows whichever you pick up (the prompts too). A on the
-// phone's card opens its code; on the gamepad's, a little rumble to say hello.
+// The Controls (a tab of the Settings): the three ways to play side by side — the keyboard, a
+// gamepad, a phone — each with what's what on it, and which one is in your hands right now.
+// Nothing to switch: the game follows whichever you pick up (the prompts too). A on the phone's
+// card opens its code; on the gamepad's, a little rumble to say hello.
 
 import { drawText, measure, wrap } from '../engine/font.js';
-import { panel, button, UI, fitText, keyCap, moveKeys, device, padName, isFace, faceGlyph, ctl, closeButton } from './ui.js';
+import { button, UI, fitText, keyCap, moveKeys, device, padName, isFace, faceGlyph, ctl } from './ui.js';
 import { padLabel } from '../engine/input.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
@@ -15,23 +14,15 @@ const CARDS = ['keys', 'pad', 'phone'];
 export class ControlsPanel {
   constructor(game) {
     this.game = game;
-    this.open = false;
     this.sel = 0;
     this.t = 0;
     this.hello = 0;
   }
 
-  show() {
-    this.open = true;
+  // (the tab shown: the card of the device in hand first)
+  reset() {
     this.sel = Math.max(0, CARDS.indexOf(device() === 'touch' ? 'keys' : device()));
     this.t = 0;
-    audio.sfx('open');
-  }
-
-  close() {
-    this.open = false;
-    this.game.input.consume();
-    audio.sfx('close');
   }
 
   // the gamepad plugged in, if any (its name as the browser tells it)
@@ -41,13 +32,10 @@ export class ControlsPanel {
     return p ? padLabel(p.id) : null;
   }
 
-  update(dt, input) {
+  // ← → a card, A its action (the mouse points and clicks); the Settings page closes it
+  updateCards(dt, input) {
     this.t += dt;
     if (this.hello > 0) this.hello -= dt;
-    if (input.pressed('cancel') || input.pressed('menu') || input.pressed('pause')) { this.close(); return; }
-    // (its Close button, or a click or tap outside)
-    const C = this.closeR, P = this.panelR, m = input.mouse;
-    if (m.pressed && ((C && input.mouseIn(C.x, C.y, C.w, C.h)) || (P && !input.mouseIn(P.x, P.y, P.w, P.h)))) { m.pressed = false; this.close(); return; }
     if (input.repeat('left')) { this.sel = (this.sel + 2) % 3; audio.sfx('select', { volume: 0.4 }); }
     if (input.repeat('right')) { this.sel = (this.sel + 1) % 3; audio.sfx('select', { volume: 0.4 }); }
     for (const r of this.rects || []) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
@@ -58,8 +46,7 @@ export class ControlsPanel {
   }
 
   go(what) {
-    if (what === 'done') { this.close(); return; }
-    if (what === 'phone') { this.open = false; this.game.phone.openPanel(); return; }
+    if (what === 'phone') { this.game.phone.openPanel(); return; }
     if (what === 'rumble') {
       if (!this.pad()) { audio.sfx('cancel', { volume: 0.5 }); return; }
       this.game.input.rumble(0.7, 0.5, 260);
@@ -68,18 +55,13 @@ export class ControlsPanel {
     }
   }
 
-  draw(ctx) {
-    const d = this.game.display, W = d.w, H = d.h, now = device();
-    ctx.fillStyle = 'rgba(20,14,28,0.72)';
-    ctx.fillRect(0, 0, W, H);
-    const pw = Math.min(W - 12, 468), ph = Math.min(H - 12, 256);
-    const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
-    panel(ctx, px, py, pw, ph);
-    drawText(ctx, t('Controls'), px + pw / 2, py + 7, { color: '#8a5234', align: 'center' });
-    const sub = wrap(t('Play with whichever you like: the game follows the one in your hands.'), pw - 130).slice(0, 2);   // (clear of the Close button)
-    sub.forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 18 + i * 9, { color: UI.inkSoft, align: 'center' }));
+  // the cards inside a page (x, y, w, h: the room under its tabs)
+  drawCards(ctx, px, py, pw, ph) {
+    const now = device();
+    const sub = wrap(t('Play with whichever you like: the game follows the one in your hands.'), pw - 24).slice(0, 2);
+    sub.forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 8 + i * 9, { color: UI.inkSoft, align: 'center' }));
     const pad = this.pad(), phone = this.game.phone;
-    const cy = py + 24 + sub.length * 9, gap = 6, cw = Math.floor((pw - 20 - gap * 2) / 3), ch = py + ph - 24 - cy;
+    const cy = py + 14 + sub.length * 9, gap = 6, cw = Math.floor((pw - 20 - gap * 2) / 3), ch = py + ph - 20 - cy;
     this.rects = [];
     CARDS.forEach((kind, i) => {
       const cx = px + 10 + i * (cw + gap), on = this.sel === i, inUse = kind === now;
@@ -98,7 +80,9 @@ export class ControlsPanel {
       if (inUse) { const tx = t('In use'), tw = measure(tx) + 6; ctx.fillStyle = '#4f955a'; ctx.fillRect(cx + cw - tw - 4, cy - 5, tw, 10); drawText(ctx, tx, cx + cw - tw / 2 - 4, cy - 4, { color: '#fff7e6', align: 'center' }); }
       // what's what
       const rows = this.rows(kind);
-      const rh = Math.max(10, Math.min(13, Math.floor((ch - 58) / rows.length)));
+      // (the keyboard's card ends with a note, the others with a button: the rows share what's left)
+      const note = kind === 'keys' ? wrap(t('Keys follow your keyboard’s layout (AZERTY and QWERTZ too).'), cw - 12) : null;
+      const rh = Math.max(10, Math.min(13, Math.floor((ch - (note ? 41 + note.length * 9 : 58)) / rows.length)));
       ctx.fillStyle = on ? '#efd9a0' : '#e6d2ae'; ctx.fillRect(cx + 4, cy + 33, cw - 8, 1);
       rows.forEach(([label, key], j) => {
         const y = cy + 37 + j * rh;
@@ -111,21 +95,15 @@ export class ControlsPanel {
         const bw = cw - 12, by = cy + ch - 19;
         button(ctx, cx + 6, by, bw, 14, fitText(act, bw - 6), { hot: on, disabled: kind === 'pad' && !pad });
         this.rects.push({ x: cx + 6, y: by, w: bw, h: 14, i, go: kind === 'phone' ? 'phone' : 'rumble' });
-      } else wrap(t('Keys follow your keyboard’s layout (AZERTY and QWERTZ too).'), cw - 12).slice(0, 2).forEach((l, j) => drawText(ctx, l, cx + 6, cy + ch - 21 + j * 9, { color: '#b8a080' }));
+      } else if (cy + 37 + rows.length * rh + note.length * 9 <= cy + ch - 3) note.forEach((l, j) => drawText(ctx, l, cx + 6, cy + ch - 3 - (note.length - j) * 9, { color: '#b8a080' }));
     });
-    // the way out
-    const hint = now === 'pad' || now === 'phone' ? t('{a} choose · {b} close', { a: ctl('interact'), b: ctl('cancel') })
-      : now === 'touch' ? t('Tap Close, or outside, to go back') : t('E choose · Esc close');
-    drawText(ctx, fitText(hint, pw - 20), px + pw / 2, py + ph - 14, { color: UI.inkSoft, align: 'center' });
-    this.panelR = { x: px, y: py, w: pw, h: ph };
-    this.closeR = closeButton(ctx, px + pw - 6, py + 5);
   }
 
   // the lines of a card: [what, which]
   rows(kind) {
     if (kind === 'keys') return [
       [t('Walk'), moveKeys()], [t('Run'), 'Shift'], [t('Talk & use'), keyCap('KeyE')], [t('Jump'), t('Space')], [t('Special move'), keyCap('KeyF')],
-      [t('Dodge'), keyCap('KeyC')], [t('Ultimate'), keyCap('KeyG')], [t('Pause'), 'Esc'], [t('Bag & journal'), 'Tab'], [t('Map'), keyCap('KeyM')], [t('Hotbar'), keyCap('KeyQ') + ' ' + keyCap('KeyR')], [t('Display'), keyCap('KeyV')], [t('Zoom'), t('Wheel')],
+      [t('Dodge'), keyCap('KeyC')], [t('Ultimate'), keyCap('KeyG')], [t('Pause'), 'Esc'], [t('Bag & journal'), 'Tab'], [t('Map'), ctl('map', 'keys')], [t('Hotbar'), keyCap('KeyQ') + ' ' + keyCap('KeyR')], [t('Display'), keyCap('KeyV')], [t('Zoom'), t('Wheel')],
     ];
     if (kind === 'pad') return [
       [t('Walk'), t('Stick')], [t('Run'), padName('run')], [t('Talk & use'), padName('interact')], [t('Jump'), padName('jump')], [t('Special move'), padName('special')],

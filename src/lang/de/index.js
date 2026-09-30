@@ -43,8 +43,9 @@ import { CLASSES9_DE } from './classes9.js';
 import { MULTI10_DE } from './multi10.js';
 import { CHAT_DE } from './chat.js';
 import { GUIDE_DE } from './guide.js';
+import { PLAY_DE } from './play.js';
 
-export const DE = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_DE, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_DE, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_DE, ...WORLD7, ...CH2_DE, ...CH3_DE, ...CH4_DE, ...CH5_DE, ...CH6_DE, ...CH7_DE, ...CH8_DE, ...CH9_DE, ...CH10_DE, ...WORLD13_DE, ...CONTROLS_DE, ...RELEASE9_DE, ...CLASSES9_DE, ...MULTI10_DE, ...CHAT_DE, ...GUIDE_DE };
+export const DE = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_DE, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_DE, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_DE, ...WORLD7, ...CH2_DE, ...CH3_DE, ...CH4_DE, ...CH5_DE, ...CH6_DE, ...CH7_DE, ...CH8_DE, ...CH9_DE, ...CH10_DE, ...WORLD13_DE, ...CONTROLS_DE, ...RELEASE9_DE, ...CLASSES9_DE, ...MULTI10_DE, ...CHAT_DE, ...GUIDE_DE, ...PLAY_DE };
 
 // lines said to the whole party (ihr): looked up first in Party Mode
 export const DE_GROUP = {};

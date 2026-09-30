@@ -10,7 +10,7 @@ export const CONTROLS_FR = {
   'Phone': 'Téléphone',
   'Touch screen': 'Écran tactile',
   'Always ready': 'Toujours prêt',
-  'Plug one in, press a button': 'Branche-la, appuie sur un bouton',
+  'Plug one in, press a button': 'Branche-la, presse un bouton',
   'Connected ♥': 'Connecté ♥',
   'Scan a code to join': 'Scanne un code pour jouer',
   'In use': 'En main',

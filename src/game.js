@@ -11,7 +11,7 @@ import { Portraits } from './render/portrait.js';
 import { World } from './scenes/world.js';
 import { Dialogue } from './ui/dialogue.js';
 import { Creator } from './ui/creator.js';
-import { panel, button, UI, fitText, bindInput, ctl, device, closeButton } from './ui/ui.js';
+import { panel, button, UI, fitText, bindInput, ctl, device, closeButton, tc } from './ui/ui.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
 import { newState, loadGame, saveGame, hasSave, loadSettings, saveSettings, hearts } from './state.js';
@@ -49,7 +49,14 @@ export class Game {
     this.t = 0;
     this.overlay = null;
     this.phone = new SoloPhone(this);       // a phone as the solo game's controller (Settings)
-    this.controls = new ControlsPanel(this); // keyboard · gamepad · phone, side by side (the title, Settings)
+    this.controls = new ControlsPanel(this); // keyboard · gamepad · phone, side by side (Settings' Controls tab)
+    // what « Play » offers: the story, and any other way to play a mode adds (`{ id, name(), sub(),
+    // solo(), multi() }` — the words as functions: the language may change meanwhile)
+    this.experiences = [{
+      id: 'story', name: () => t('Marigold Cove’s adventure'), sub: () => t('A cozy life in the valley, and a story in ten chapters'),
+      solo: () => this.toCreator(), multi: () => this.toParty({}),
+    }];
+    this.play = null;                        // the Play screen's steps, while it's open
     this.debug = this.makeDebug();
     this.chat = new Chat(this);              // (bubbles, quick phrases & emotes — every mode: src/ui/chat.js)
     this.input.onFirstGesture = () => { audio.unlock(); this.applySettings(); };
@@ -126,7 +133,6 @@ export class Game {
       this.input.keys.clear(); this.input.consume(); this.saves.update(); this.draw(); return;
     }
     if (this.phone.panelOpen) this.phone.updatePanel(dt, this.input);
-    else if (this.controls.open) this.controls.update(dt, this.input);
     else if (this.mode === 'title') this.updateTitle(dt);
     else if (this.mode === 'creator') this.updateCreator(dt);
     else if (this.mode === 'game') this.updateGame(dt);
@@ -137,7 +143,7 @@ export class Game {
 
   draw() {
     if (this.projectLinks) {
-      const hidden = this.mode !== 'title' || this.world.menu.open || this.controls.open || this.phone.panelOpen || this.confirmNew || !!this.continuePick || this.saves.isOpen;
+      const hidden = this.mode !== 'title' || this.world.menu.open || this.phone.panelOpen || this.confirmNew || !!this.play || this.saves.isOpen;
       if (this.projectLinks.hidden !== hidden) this.projectLinks.hidden = hidden;
     }
     if (this.mode === 'title') this.drawTitle();
@@ -146,13 +152,13 @@ export class Game {
       this.world.draw();
       if (this.overlay) this.overlay.draw(this.display.ctx);
     } else if (this.mode === 'party') this.party.draw();
-    if (this.controls.open) this.controls.draw(this.display.ctx);
     if (this.phone.panelOpen) this.phone.drawPanel(this.display.ctx);
     this.drawPadNote(this.display.ctx);
     if (this.mode === 'party') this.party.remotePlay.capture();
   }
 
-  openControls() { if (this.world.menu.open && this.mode === 'title') this.world.menu.close(); this.controls.show(); }
+  // (the Controls: a tab of the Settings)
+  openControls() { this.world.menu.show('settings'); this.world.menu.setTab = 'controls'; }
 
   // a gamepad plugged in (or out): a word at the top of the screen for a few seconds
   drawPadNote(ctx) {
@@ -213,7 +219,7 @@ export class Game {
     this.titleSel = 0;
     this.titleT = 0;
     this.confirmNew = false;
-    this.continuePick = null;
+    this.play = null;
     this.state = newState({ name: 'Sprout', look: {} });
     this.state.hour = 19.3;
     for (const m of Object.values(w.maps)) m.root.visible = false;
@@ -235,20 +241,12 @@ export class Game {
     this.lighting.lampMats = w.overLampMats || (w.overLampMats = collectLamp(w.over.root));
     this.lighting.indoor = null;
     this.hasSave = hasSave();
-    this.partySaveAvailable = !!partySummary();
     audio.playMusic('title', { fade: 2 });
     audio.setAmbient({ birds: 0, crickets: 0.4, waves: 0.6, rain: 0, wind: 0.2, fire: 0, night: 0.3 });
   }
 
-  titleItems() {
-    const items = [];
-    if (this.hasSave || this.partySaveAvailable) items.push(['Continue', 'continue']);
-    items.push(['New Game', 'new']);
-    items.push(['Party Mode ♥ 1–8', 'party']);
-    items.push(['Controls', 'controls']);
-    items.push(['Settings', 'settings']);
-    return items;
-  }
+  // (« Play » the game, not an instrument: its own word — `Play [title]`)
+  titleItems() { return [[tc('Play', 'title'), 'play'], [t('Settings'), 'settings']]; }
 
   updateTitle(dt) {
     const input = this.input, w = this.world;
@@ -263,19 +261,19 @@ export class Game {
     if (Math.random() < dt * 3) for (const c of w.over.chimneys) if (Math.random() < 0.3) w.fx.emit('smoke', c.x, c.y, c.z, 1);
     if (w.menu.open) { w.menu.update(dt, input); return; }
     const items = this.titleItems();
-    if (this.continuePick) { this.updateContinuePick(input); return; }
     if (this.confirmNew) {
       if (input.pressed('left') || input.pressed('right')) { this.confirmSel = 1 - this.confirmSel; audio.sfx('select'); }
-      if (input.pressed('cancel')) { this.confirmNew = false; return; }
+      if (input.pressed('cancel')) { input.consume('cancel'); this.confirmNew = false; return; }
       const clicked = input.mouse.pressed && this.confirmRects?.find((r) => input.mouseIn(r.x, r.y, r.w, r.h));
       if (clicked) { this.confirmSel = clicked.i; input.mouse.pressed = false; }
       if (input.pressed('interact') || clicked) {
         input.consume('interact');
-        if (this.confirmSel === 0) { this.confirmNew = false; this.toCreator(); }
+        if (this.confirmSel === 0) { this.confirmNew = false; this.play = null; this.toCreator(); }
         else this.confirmNew = false;
       }
       return;
     }
+    if (this.play) { this.updatePlay(input); return; }
     if (input.repeat('up')) { this.titleSel = (this.titleSel + items.length - 1) % items.length; audio.sfx('select'); }
     if (input.repeat('down')) { this.titleSel = (this.titleSel + 1) % items.length; audio.sfx('select'); }
     if (this.titleRects) for (const r of this.titleRects) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
@@ -288,59 +286,97 @@ export class Game {
   titleActivate(what) {
     audio.unlock();
     audio.sfx('confirm');
-    if (what === 'continue') this.continueWhich();
-    else if (what === 'new') { if (this.hasSave) { this.confirmNew = true; this.confirmSel = 1; } else this.toCreator(); }
+    if (what === 'play') this.openPlay();
     else if (what === 'settings') this.world.menu.show('settings');
-    else if (what === 'controls') this.openControls();
-    else if (what === 'party') this.toParty({});
   }
 
-  // Continue: straight back in when there's one saved game; the solo cove or the party's
-  // adventure to choose from when there are both
-  continueWhich() {
-    const solo = this.hasSave ? loadGame() : null, party = partySummary();
-    if (solo && party) { this.continuePick = { sel: 0, solo, party }; return; }
-    if (solo) this.continueGame(); else if (party) this.toParty({ resume: true }); else this.toCreator();
+  // ---- Play: what (the story, or another way a mode adds), who (alone, or together: phones,
+  // gamepads, the keyboard, friends at home), and for the story alone with a saved cove, back to
+  // it or a new one. The last choices come back preselected: Play, then A, A, A is where you were.
+  openPlay() {
+    const last = this.settings.lastPlay || {}, many = this.experiences.length > 1;
+    const exp = this.experiences.find((e) => e.id === last.exp) || this.experiences[0];
+    this.play = { step: many ? 'what' : 'who', exp, sel: many ? this.experiences.indexOf(exp) : last.who === 'multi' ? 1 : 0, t: 0 };
   }
-
-  updateContinuePick(input) {
-    const C = this.continuePick;
-    if (input.repeat('up') || input.repeat('down')) { C.sel = 1 - C.sel; audio.sfx('select'); }
-    if (input.pressed('cancel')) { input.consume('cancel'); this.continuePick = null; audio.sfx('cancel'); return; }
-    const hit = input.mouse.pressed && (this.pickRects || []).find((r) => input.mouseIn(r.x, r.y, r.w, r.h));
-    if (input.mouse.moved) { const over = (this.pickRects || []).find((r) => input.mouseIn(r.x, r.y, r.w, r.h)); if (over && over.i !== C.sel) { C.sel = over.i; audio.sfx('select', { volume: 0.5 }); } }
-    if (hit) { input.mouse.pressed = false; if (hit.i < 0) { this.continuePick = null; return; } C.sel = hit.i; }
-    if (input.pressed('interact') || hit) {
-      input.consume('interact'); audio.sfx('confirm');
-      this.continuePick = null;
-      if (C.sel === 0) this.continueGame(); else this.toParty({ resume: true });
+  playRows() {
+    const P = this.play, last = this.settings.lastPlay || {};
+    if (P.step === 'what') return this.experiences.map((e) => ({ name: e.name(), sub: e.sub(), go: () => { P.exp = e; P.step = 'who'; P.sel = last.who === 'multi' ? 1 : 0; } }));
+    if (P.step === 'who') {
+      // (the story's saved games, said under each way: where you'll be back)
+      const story = P.exp.id === 'story', solo = story && this.hasSave ? loadGame() : null, party = story ? partySummary() : null;
+      return [
+        { name: t('Solo'), sub: solo ? [solo.player && solo.player.name, t('Day {n}', { n: solo.day })].filter(Boolean).join(' · ') : P.exp.soloSub ? P.exp.soloSub() : t('Just you — the keyboard, a gamepad or your phone'), go: () => this.playGo('solo') },
+        { name: t('Together'), sub: party ? [t('Chapter {n}', { n: party.chapter }), (party.players || []).filter((n) => typeof n === 'string').slice(0, 3).join(', ')].filter(Boolean).join(' · ') : P.exp.multiSub ? P.exp.multiSub() : t('1 to 8 players: phones, gamepads, the keyboard — friends at home too'), go: () => this.playGo('multi') },
+      ];
     }
-  }
-
-  drawContinuePick(ctx, W, H) {
-    const C = this.continuePick, S = C.solo, Pa = C.party;
-    const rows = [
-      [t('Solo game'), [S.player && S.player.name, t('Day {n}', { n: S.day })].filter(Boolean).join(' · '), '#8fd67a'],
-      [t('Party game'), [t('Chapter {n}', { n: Pa.chapter }), (Pa.players || []).filter((n) => typeof n === 'string').slice(0, 4).join(', ')].filter(Boolean).join(' · '), '#ffd66b'],
+    const S = P.save;
+    return [
+      { name: t('Continue'), sub: [S.player && S.player.name, t('Day {n}', { n: S.day })].filter(Boolean).join(' · '), go: () => { this.play = null; this.continueGame(); } },
+      { name: t('New Game'), sub: t('A new life in the cove, from the very start'), go: () => { this.confirmNew = true; this.confirmSel = 1; } },
     ];
-    const pw = Math.min(W - 16, Math.max(220, ...rows.map(([a, b]) => Math.max(measure(a), measure(b)) + 40))), ph = 30 + rows.length * 30 + 16;
-    const px = Math.round(W / 2 - pw / 2), py = Math.round(H / 2 - ph / 2);
-    ctx.fillStyle = 'rgba(20,14,28,0.6)'; ctx.fillRect(0, 0, W, H);
+  }
+  playGo(who) {
+    const P = this.play;
+    this.settings.lastPlay = { exp: P.exp.id, who };
+    saveSettings(this.settings);
+    if (who === 'solo' && P.exp.id === 'story' && this.hasSave) { P.save = loadGame(); P.step = 'save'; P.sel = 0; audio.sfx('page'); return; }
+    this.play = null;
+    if (who === 'multi') P.exp.multi(); else P.exp.solo();
+  }
+  // (back: a step back, or out of Play from its first)
+  playBack() {
+    const P = this.play, many = this.experiences.length > 1;
+    audio.sfx('cancel');
+    if (P.step === 'save') { P.step = 'who'; P.sel = 0; return; }
+    if (P.step === 'who' && many) { P.step = 'what'; P.sel = Math.max(0, this.experiences.indexOf(P.exp)); return; }
+    this.play = null;
+  }
+  updatePlay(input) {
+    const P = this.play, rows = this.playRows();
+    P.t += 1 / 60;
+    if (input.pressed('cancel') || input.mouse.rpressed) { input.consume('cancel'); this.playBack(); return; }
+    if (input.repeat('up') || input.repeat('left')) { P.sel = (P.sel + rows.length - 1) % rows.length; audio.sfx('select'); }
+    if (input.repeat('down') || input.repeat('right')) { P.sel = (P.sel + 1) % rows.length; audio.sfx('select'); }
+    for (const r of this.playRects || []) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
+      if (input.mouse.moved && r.i >= 0 && P.sel !== r.i) { P.sel = r.i; audio.sfx('select', { volume: 0.5 }); }
+      if (input.mouse.pressed) {
+        input.mouse.pressed = false;
+        if (r.i < 0) { this.playBack(); return; }
+        P.sel = r.i; audio.sfx('confirm'); rows[r.i].go(); return;
+      }
+    }
+    if (input.pressed('interact')) { input.consume('interact'); audio.sfx('confirm'); rows[P.sel].go(); }
+  }
+  // the step's choices on a paper card under the logo: a heading, a row each (its name, a line of
+  // what it is), and Back
+  drawPlay(ctx, W, top, bottom) {
+    const P = this.play, rows = this.playRows(), touch = this.input.touchMode;
+    const head = P.step === 'what' ? t('What would you like to play?') : P.step === 'who' ? P.exp.name() : t('Your cove');
+    const back = t('Back'), bw = measure(back) + 14;
+    // (a card no wider than it needs, nor than a comfortable line; each row's line of what it is
+    // wraps to two when it must)
+    const pw = Math.min(W - 16, Math.max(220, Math.min(290, Math.max(measure(head) + 40, ...rows.map((r) => Math.max(measure(r.name), measure(r.sub)) + 44)))));
+    const lines = rows.map((r) => wrap(r.sub, pw - 44).slice(0, 2)), pad = touch ? 8 : 6;
+    const hs = lines.map((l) => 12 + l.length * 9 + pad), ph = 24 + hs.reduce((a, h) => a + h + 4, 0) + 18;
+    const px = Math.round(W / 2 - pw / 2), py = Math.round(Math.max(top, Math.min(bottom - ph, (top + bottom) / 2 - ph / 2)));
     panel(ctx, px, py, pw, ph);
-    drawText(ctx, t('Which adventure?'), W / 2, py + 9, { color: '#8a5234', align: 'center' });
-    this.pickRects = [];
-    rows.forEach(([name, sub, col], i) => {
-      const y = py + 24 + i * 30, on = C.sel === i;
-      ctx.fillStyle = on ? UI.sel : UI.paperShade; ctx.fillRect(px + 8, y, pw - 16, 26);
-      ctx.fillStyle = col; ctx.fillRect(px + 8, y, 3, 26);
-      if (on) drawText(ctx, '♥', px + 17, y + 9, { color: '#ec5f73' });
-      drawText(ctx, name, px + 28, y + 4, { color: UI.ink });
-      drawText(ctx, fitText(sub, pw - 44), px + 28, y + 15, { color: UI.inkSoft });
-      this.pickRects.push({ x: px + 8, y, w: pw - 16, h: 26, i });
+    drawText(ctx, fitText(head, pw - 16), W / 2, py + 8, { color: '#8a5234', align: 'center' });
+    this.playRects = [];
+    let y = py + 22;
+    rows.forEach((r, i) => {
+      const on = P.sel === i, h = hs[i];
+      ctx.fillStyle = on ? UI.sel : UI.paperShade; ctx.fillRect(px + 8, y, pw - 16, h);
+      ctx.fillStyle = ['#8fd67a', '#ffd66b', '#9fdcff', '#f59ac8'][i % 4]; ctx.fillRect(px + 8, y, 3, h);
+      if (on) drawText(ctx, '♥', px + 17, y + Math.round(h / 2) - 4, { color: '#ec5f73' });
+      const ty = y + Math.round((h - 12 - lines[i].length * 9) / 2);
+      drawText(ctx, fitText(r.name, pw - 44), px + 28, ty, { color: UI.ink });
+      lines[i].forEach((l, k) => drawText(ctx, l, px + 28, ty + 11 + k * 9, { color: UI.inkSoft }));
+      this.playRects.push({ x: px + 8, y, w: pw - 16, h, i });
+      y += h + 4;
     });
-    const back = t('Back'), bw = measure(back) + 12;
-    button(ctx, Math.round(W / 2 - bw / 2), py + ph - 16, bw, 12, back, {});
-    this.pickRects.push({ x: Math.round(W / 2 - bw / 2), y: py + ph - 16, w: bw, h: 12, i: -1 });
+    const bx = Math.round(W / 2 - bw / 2), by = py + ph - 17;
+    button(ctx, bx, by, bw, 13, back, {});
+    this.playRects.push({ x: bx, y: by, w: bw, h: 13, i: -1 });
   }
 
   // ------------------------------------------------------------------ party mode
@@ -398,7 +434,7 @@ export class Game {
     drawText(ctx, t('~ a cozy little life in Marigold Cove ~'), W / 2, ly + scale * 9 + 8, { color: '#f6d38f', align: 'center', shadow: '#2a1f33' });
     if (w.menu.open) { w.menu.draw(ctx); return; }
     // menu
-    const items = this.titleItems().map(([label, key]) => [t(label), key]);
+    const items = this.titleItems();
     // (a finger wants taller rows)
     const rh = this.input.touchMode ? 21 : 16;
     const mw = Math.max(130, ...items.map(([label]) => measure(label) + 44)), mh = items.length * rh + 10;
@@ -407,11 +443,15 @@ export class Game {
       ? this.projectLinks.getBoundingClientRect().top * H / window.innerHeight : H;
     const hintY = Math.floor(footerTop - 17);
     const mx = Math.round(W / 2 - mw / 2), my = Math.round(Math.min(H * 0.6, hintY - mh - 12));
-    ctx.fillStyle = 'rgba(30,20,40,0.55)';
-    ctx.fillRect(mx, my, mw, mh);
-    ctx.fillStyle = 'rgba(255,240,200,0.2)';
-    ctx.fillRect(mx, my, mw, 1);
     this.titleRects = [];
+    // (Play open: its card in the menu's place)
+    if (this.play) { this.drawPlay(ctx, W, ly + scale * 9 + 24, hintY - 6); items.length = 0; }
+    else {
+      ctx.fillStyle = 'rgba(30,20,40,0.55)';
+      ctx.fillRect(mx, my, mw, mh);
+      ctx.fillStyle = 'rgba(255,240,200,0.2)';
+      ctx.fillRect(mx, my, mw, 1);
+    }
     items.forEach(([label], i) => {
       const y = my + 6 + i * rh + Math.floor((rh - 16) / 2);
       const on = i === this.titleSel;
@@ -433,7 +473,6 @@ export class Game {
       button(ctx, x1, py + 30 + extra, bw, 14, no, { hot: this.confirmSel === 1 });
       this.confirmRects = [{ x: x0, y: py + 30 + extra, w: bw, h: 14, i: 0 }, { x: x1, y: py + 30 + extra, w: bw, h: 14, i: 1 }];
     }
-    if (this.continuePick) this.drawContinuePick(ctx, W, H);
     if (this.titleMessage) {
       this.titleMessageT = (this.titleMessageT || 0) + 1 / 60;
       if (this.titleMessageT > 4) { this.titleMessage = null; this.titleMessageT = 0; }
