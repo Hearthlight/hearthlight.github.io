@@ -81,7 +81,7 @@ export class ControlsPanel {
       // what's what
       const rows = this.rows(kind);
       // (the keyboard's card ends with a note, the others with a button: the rows share what's left)
-      const note = kind === 'keys' ? wrap(t('Keys follow your keyboard’s layout (AZERTY and QWERTZ too).'), cw - 12) : null;
+      const note = kind === 'keys' ? wrap(t('Keys follow your keyboard (AZERTY, QWERTZ…).'), cw - 12) : null;
       const rh = Math.max(10, Math.min(13, Math.floor((ch - (note ? 41 + note.length * 9 : 58)) / rows.length)));
       ctx.fillStyle = on ? '#efd9a0' : '#e6d2ae'; ctx.fillRect(cx + 4, cy + 33, cw - 8, 1);
       rows.forEach(([label, key], j) => {
@@ -102,16 +102,16 @@ export class ControlsPanel {
   // the lines of a card: [what, which]
   rows(kind) {
     if (kind === 'keys') return [
-      [t('Walk'), moveKeys()], [t('Run'), 'Shift'], [t('Talk & use'), keyCap('KeyE')], [t('Jump'), t('Space')], [t('Special move'), keyCap('KeyF')],
+      [t('Walk'), moveKeys()], [t('Run'), 'Shift'], [t('Talk & use'), keyCap('KeyE')], [t('Chat'), keyCap('KeyT')], [t('Jump'), t('Space')], [t('Special move'), keyCap('KeyF')],
       [t('Dodge'), keyCap('KeyC')], [t('Ultimate'), keyCap('KeyG')], [t('Pause'), 'Esc'], [t('Bag & journal'), 'Tab'], [t('Map'), ctl('map', 'keys')], [t('Hotbar'), keyCap('KeyQ') + ' ' + keyCap('KeyR')], [t('Display'), keyCap('KeyV')], [t('Zoom'), t('Wheel')],
     ];
     if (kind === 'pad') return [
-      [t('Walk'), t('Stick')], [t('Run'), padName('run')], [t('Talk & use'), padName('interact')], [t('Jump'), padName('jump')], [t('Special move'), padName('special')],
+      [t('Walk'), t('Stick')], [t('Run'), padName('run')], [t('Talk & use'), padName('interact')], [t('Chat (hold)'), padName('talk')], [t('Jump'), padName('jump')], [t('Special move'), padName('special')],
       [t('Dodge'), padName('dodge')], [t('Ultimate'), padName('ult')], [t('Pause'), padName('pause')], [t('Bag, journal & map'), padName('menu')], [t('Hotbar'), padName('hotPrev') + ' ' + padName('hotNext')], [t('Display'), padName('hud')],
     ];
     return [
       [t('Walk'), t('Stick')], [t('Run'), t('Push far')], [t('Talk & use'), 'A'], [t('Jump'), 'B'], [t('Special move'), 'X'],
-      [t('Dodge'), 'Y'], [t('Ultimate'), 'U'], [t('Pause'), '⏸'], [t('Menus'), t('On the phone')],
+      [t('Dodge'), 'Y'], [t('Ultimate'), 'U'], [t('Pause'), '⏸'], [t('Chat'), t('On the phone')], [t('Menus'), t('On the phone')],
     ];
   }
 

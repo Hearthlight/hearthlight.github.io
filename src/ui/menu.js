@@ -269,7 +269,7 @@ export class Menu {
       ['Adventure difficulty', (DIFFS[st.adventure] || DIFFS.normal).name, 'adventure'],
       ['Play with your phone', this.world.game.phone.connected ? 'Connected' : this.world.game.phone.net ? 'Waiting' : 'Not connected', 'phone'],
       ['Gamepad rumble', st.rumble === false ? 'Off' : 'On', 'rumble'],
-      ['Chat', CHAT_MODES[st.chat] || CHAT_MODES.free, 'chat'],
+      ['Chat', CHAT_MODES[st.chat] || CHAT_MODES.free, 'chat', 'setting'],   // (« Chat [setting] »: Party's « Chat » is a verb)
       ['Pixel size', st.zoom < 0 ? 'Smaller' : st.zoom > 0 ? 'Bigger' : 'Auto', 'zoom'],
       ['Language', LANGS[st.lang] || 'English', 'lang'],
       ['Saves & backups', '', 'saves'],
@@ -817,11 +817,11 @@ export class Menu {
     this.rowRects = []; this.sliderRects = [];
     // (rows squeeze a little when there are many)
     const rh = Math.max(12, Math.min(17, Math.floor((ph - (bare ? 32 : 46)) / rows.length)));
-    rows.forEach(([label, val, key], i) => {
+    rows.forEach(([label, val, key, where], i) => {
       const y = top + i * rh;
       const on = i === this.sel;
       if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 3, pw - 16, rh - 2); }
-      drawText(ctx, t(label), px + 16, y + 1, { color: UI.ink });
+      drawText(ctx, where ? tc(label, where) : t(label), px + 16, y + 1, { color: UI.ink });
       if (val !== '') {
         const isVol = /%$/.test(val);
         if (isVol) {
