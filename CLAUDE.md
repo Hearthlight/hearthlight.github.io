@@ -121,6 +121,11 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   brief (`tools/i18n/brief-xx.md`). A new string → all four languages. Lines said to the whole
   party go in a chapter file's `__group` (vous · ustedes · ihr · voi). Dictionaries load on demand
   (`loadLang`). The dialogue box translates `say()` texts itself — don't double-translate.
+- **The title** has two buttons, Play and Settings. Play asks what (`game.experiences`: the story,
+  and any other way to play a mode adds — `{ id, name(), sub(), solo(), multi() }`, the words as
+  functions; with only one, the step is skipped), then who (solo, or together: Party Mode), then,
+  for the story alone with a save, continue or a new game; the last choices come back preselected
+  (`settings.lastPlay`). The Controls are the Settings' second tab (`game.openControls()` opens it).
 - **Solo & Party share their systems**: the solo game runs Party Mode's systems (zones, swim,
   vehicles, mounts, combat, camps, lairs, progress, travel, secrets, races, events, the Festival
   Ring) through `src/solo/wild.js`, a "party of one" implementing the party API they use
@@ -134,8 +139,9 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
 ```
 src/engine/   display (two integer-scaled canvases), input (keys, mouse, touch, gamepads: an
               analog stick, rumble, the pad's family), font, colour, audio (synth engine)
-src/ui/       hud, menu, dialogue, shop, creator, ui (panels, `ctl`, key hints); controls.js (the
-              Controls screen: keyboard · gamepad · phone), osk.js (on-screen keyboard for names)
+src/ui/       hud, menu (the pause page, the Settings page — two tabs: settings · controls —, the
+              book), dialogue, shop, creator, ui (panels, `ctl`, key hints); controls.js (the Settings'
+              Controls tab: keyboard · gamepad · phone), osk.js (on-screen keyboard for names)
 src/render/   r3d (low-res toon renderer, oblique ortho camera, post pass, split views: the
               world's matrices once a frame), cull.js (split views: each hides what it can't see
               nor shadow), lighting (time of day, lamp pool), portraits, wind.js (`windy(mat)`:

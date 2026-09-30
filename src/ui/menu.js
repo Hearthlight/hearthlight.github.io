@@ -1,5 +1,6 @@
-// The menus: the pause page (Esc · Start: resume, save, settings, controls, back to the title),
-// the Settings page, and the tabbed book (Tab · Select): Bag, Journal, Friends, Collection, Map, Hero.
+// The menus: the pause page (Esc · Start: resume, save, settings, back to the title), the
+// Settings page (two tabs: the settings, the controls), and the tabbed book (Tab · Select): Bag,
+// Journal, Friends, Collection, Map, Hero.
 
 import { drawText, measure, wrap } from '../engine/font.js';
 import { LANGS, t, tn, num } from '../i18n.js';
@@ -22,7 +23,9 @@ import { DIFFS } from '../party/host.js';
 
 const TABS = [['bag', 'Bag'], ['quests', 'Journal'], ['friends', 'Friends'], ['collection', 'Collection'], ['map', 'Map'], ['hero', 'Hero']];
 const TABS_SHORT = ['Bag', 'Tasks', 'Pals', 'Finds', 'Map', 'Hero'];
-const PAUSE = [['Resume', 'resume'], ['Save game', 'save'], ['Settings', 'settings'], ['Controls', 'controls'], ['Back to title', 'title']];
+const PAUSE = [['Resume', 'resume'], ['Save game', 'save'], ['Settings', 'settings'], ['Back to title', 'title']];
+// the Settings page's tabs: its rows, and the Controls (ui/controls.js)
+const SET_TABS = [['general', 'Settings'], ['controls', 'Controls']];
 // (the hero seems stuck — entities/stuck.js: the way out comes first)
 const UNSTUCK_ROW = ['Get unstuck', 'unstuck'];
 const CATS = { tool: 'Tool', seed: 'Seeds', crop: 'Crop', forage: 'Forage', fish: 'Fish', junk: 'Junk', food: 'Food', key: 'Special', furniture: 'Furniture', decor: 'Decor', material: 'Material', critter: 'Critter' };
@@ -50,6 +53,7 @@ export class Menu {
     this.open = true;
     this.page = tab === 'pause' || tab === 'settings' ? tab : null;
     this.from = null; this.confirm = null;
+    this.setTab = 'general';
     if (!this.page) this.tab = Math.max(0, TABS.findIndex((t) => t[0] === tab));
     this.sel = 0; this.held = -1;
     this.mapView = null;            // (the map opens on the valley, or the world when you're out in it)
@@ -161,8 +165,7 @@ export class Menu {
     if (k === 'resume') this.close();
     else if (k === 'unstuck') { this.close(); w.unstick(); if (w.stuckWatch) w.stuckWatch.reset(); w.stuckOffer = false; }
     else if (k === 'save') { const ok = w.save('manual'); this.savedFlash = ok ? this.t : -this.t; audio.sfx(ok ? 'confirm' : 'error'); }
-    else if (k === 'settings') { this.page = 'settings'; this.from = 'pause'; this.sel = 0; audio.sfx('page'); }
-    else if (k === 'controls') { audio.sfx('page'); w.game.openControls(); }
+    else if (k === 'settings') { this.page = 'settings'; this.from = 'pause'; this.setTab = 'general'; this.sel = 0; audio.sfx('page'); }
     else if (k === 'title') { this.confirm = { sel: 0 }; audio.sfx('select'); }
   }
 
@@ -184,6 +187,16 @@ export class Menu {
       this.close();
       return;
     }
+    const tabs = this.setTabRects || [], G = this.world.game;
+    const hit = input.mouse.pressed && tabs.find((r) => input.mouseIn(r.x, r.y, r.w, r.h));
+    const dir = input.pressed('hotPrev') ? -1 : input.pressed('hotNext') ? 1 : 0;
+    if (hit || dir) {
+      if (hit) input.mouse.pressed = false;
+      const i = SET_TABS.findIndex((q) => q[0] === this.setTab), next = hit ? hit.id : SET_TABS[(i + dir + SET_TABS.length) % SET_TABS.length][0];
+      if (next !== this.setTab) { this.setTab = next; this.sel = 0; if (next === 'controls') G.controls.reset(); audio.sfx('page'); }
+      return;
+    }
+    if (this.setTab === 'controls') { G.controls.updateCards(1 / 60, input); return; }
     if (this.dragSliders(input)) return;
     this.updateSettings(input);
     for (const r of this.rowRects || []) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
@@ -251,7 +264,6 @@ export class Menu {
       ['Text speed', { 0.6: 'Slow', 1: 'Normal', 1.8: 'Fast' }[st.textSpeed] || 'Normal', 'textSpeed'],
       ['Display', HUD_NAMES[w.hud.mode()], 'hud'],
       ['Adventure difficulty', (DIFFS[st.adventure] || DIFFS.normal).name, 'adventure'],
-      ['Controls', { pad: 'Gamepad', phone: 'Phone', touch: 'Touch screen' }[device()] || 'Keyboard', 'controls'],
       ['Play with your phone', this.world.game.phone.connected ? 'Connected' : this.world.game.phone.net ? 'Waiting' : 'Not connected', 'phone'],
       ['Gamepad rumble', st.rumble === false ? 'Off' : 'On', 'rumble'],
       ['Pixel size', st.zoom < 0 ? 'Smaller' : st.zoom > 0 ? 'Bigger' : 'Auto', 'zoom'],
@@ -281,7 +293,6 @@ export class Menu {
     else if (key === 'hud') { st.hud = cycle(HUD_MODES, w.hud.mode()); }
     else if (key === 'adventure') st.adventure = cycle(Object.keys(DIFFS), st.adventure || 'normal');
     else if (key === 'phone') { if (activate || dir) w.game.phone.openPanel(); return; }
-    else if (key === 'controls') { if (activate || dir) w.game.openControls(); return; }
     else if (key === 'rumble') { st.rumble = st.rumble === false; if (st.rumble) w.input.rumble(0.6, 0.4, 160); }
     else if (key === 'zoom') { st.zoom = cycle([-1, 0, 1], Math.max(-1, Math.min(1, st.zoom || 0))); w.game.applyZoom(); }
     else if (key === 'lang') st.lang = cycle(Object.keys(LANGS), st.lang);
@@ -311,17 +322,27 @@ export class Menu {
     const pw = Math.min(W - 12, 360), ph = Math.min(H - 16, 250);
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2) + 6;
     if (this.page === 'settings') {
-      // a page of its own: a title tab instead of the book's, and its close button
-      const name = t('Settings'), tw = measure(name) + 16;
-      ctx.fillStyle = UI.paper; ctx.fillRect(px + 6, py - 12, tw, 14);
-      ctx.fillStyle = UI.dark; ctx.fillRect(px + 6, py - 13, tw, 1); ctx.fillRect(px + 5, py - 12, 1, 12); ctx.fillRect(px + 6 + tw, py - 12, 1, 12);
-      drawText(ctx, name, px + 6 + tw / 2, py - 9, { color: '#8a5234', align: 'center' });
-      panel(ctx, px, py, pw, ph);
-      this.drawClose(ctx, px + pw - 14, py - 12);
+      // a page of its own, two tabs above it — the settings, the controls — and its close button
+      const qw = Math.min(W - 12, 420), qx = Math.round((W - qw) / 2);
+      this.setTabRects = [];
+      let tx = qx + 6;
+      for (const [id, label] of SET_TABS) {
+        const name = t(label), tw = measure(name) + 16, on = id === this.setTab;
+        ctx.fillStyle = on ? UI.paper : '#c9a77c'; ctx.fillRect(tx, py - 12, tw, 14);
+        ctx.fillStyle = UI.dark; ctx.fillRect(tx, py - 13, tw, 1); ctx.fillRect(tx - 1, py - 12, 1, 12); ctx.fillRect(tx + tw, py - 12, 1, 12);
+        drawText(ctx, name, tx + tw / 2, py - 9, { color: on ? '#8a5234' : '#5a3b2a', align: 'center' });
+        this.setTabRects.push({ x: tx, y: py - 13, w: tw, h: 14, id });
+        tx += tw + 3;
+      }
+      panel(ctx, qx, py, qw, ph);
+      this.drawClose(ctx, qx + qw - 14, py - 12);
       this.rowRects = null;
-      this.drawSettings(ctx, px, py, pw, ph, true);
+      if (this.setTab === 'controls') w.game.controls.drawCards(ctx, qx, py, qw, ph);
+      else this.drawSettings(ctx, qx, py, qw, ph, true);
+      // (Q / R or LB / RB: the other tab)
+      const tabs = t('{prev}/{next} tabs', { prev: device() === 'pad' ? ctl('hotPrev') : keyCap('KeyQ'), next: device() === 'pad' ? ctl('hotNext') : keyCap('KeyR') });
       const back = this.from === 'pause' ? t('{b} back', { b: ctl('cancel') }) : t('{b} close', { b: ctl('cancel') });
-      if (!w.input.touchMode) drawText(ctx, back, px + pw - 8, py + ph - 12, { color: '#b8a080', align: 'right' });
+      if (!w.input.touchMode) drawText(ctx, device() === 'phone' ? back : tabs + ' · ' + back, qx + qw - 8, py + ph - 12, { color: '#b8a080', align: 'right' });
       return;
     }
     // tabs
