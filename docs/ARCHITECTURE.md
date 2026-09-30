@@ -91,6 +91,18 @@ Coordinates: 1 unit = 1 tile = 16 texels; x runs east, z south.
   `ctxFor`): phones show it as labels, keyboard and gamepad players as chips under their hero. A
   hint never names a key: `ctl('interact')` names it on the device in hand.
 
+## Talking and finding the way
+
+- **Talking** (`ui/chat.js`, `party/partychat.js`, `solo/solochat.js`, `party/chatfilter.mjs`):
+  bubbles over the heads, quick phrases sent as ids and read in each screen's own language,
+  emotes, the chat log — from a phone's chat sheet, a keyboard's T line, a gamepad's wheel. The
+  rules travel with it: links and numbers refused, a family filter, « quick phrases only », mutes,
+  rate limits.
+- **The way to a place** (`party/guide.js`, `world/big/route.js`): a place picked on a map — the
+  big screen's (M), a player's own menu's, a phone's, the solo menu's world map — and an arrow at
+  the hero's feet, dots along the next bends and a flag lead there. The way is a weighted A* over
+  the big map's tiles, paths and roads first, run a slice a frame.
+
 ## The story
 
 - `saga/`: the ten-chapter story engine — chapters (`saga/chapters/`), quests and their steps,
@@ -138,7 +150,8 @@ In the browser console, with `?debug=1`:
 - `tools/worldboss.js`, `tools/balance.js`, `tools/perf.js`, `tools/grandmatest.js` — bosses,
   balance, frame times;
 - `tools/fakepad.js`, `tools/padparty.js` — fake gamepads and a Party played with them;
-- `tools/langshots.js` — screens in a language.
+- `tools/langshots.js` — screens in a language;
+- `tools/chattest.js`, `tools/guidetest.js` — talking and the guide, on every device.
 
 On the command line: `node tools/i18n-scan.mjs`, `node tools/i18n-check.mjs <code>`,
 `node tools/bigmap.mjs` (the big world's layout as a picture), and `npm test` in `server/`.
