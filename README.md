@@ -124,7 +124,7 @@ cd hearthlight.github.io
 ```
 
 Alternatively, choose **Code → Download ZIP** on GitHub, extract it, and open a terminal in the
-extracted folder. While the repository is private, access to it is required for either method.
+extracted folder.
 
 ### Play in your browser
 
@@ -531,28 +531,38 @@ own hits.
 
 ## Project layout
 
+How the pieces fit together — the game loop, drawing, the world, solo and Party Mode, the story,
+the relays — is explained in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
 ```
+index.html  the game          pad.html  the phone controller          play.html  remote play
+config.js   where the web version finds its relay (left empty: the server the page came from)
 src/
-  engine/   display, input, bitmap font, colour & audio engine
-  render/   Three.js renderer, lighting, portraits
+  main.js, game.js   the game object and its loop
+  engine/   display (two canvases), input (keys, mouse, touch, gamepads), pixel font, colour,
+            audio (a small synthesiser)
+  render/   the Three.js renderer, lighting, wind, portraits, split-view culling
   art/      procedural painters (terrain, surfaces, icons, palette)
-  models/   buildings, nature, props, furniture, characters & pets
-  world/    map layout, interiors, collision & pathfinding (big/: the Party Mode world —
-            generation, workers, chunk streaming, collision, world map)
-  scenes/   the main gameplay scene
-  solo/     the solo game's wild lands (a "party of one" running Party Mode's systems), the
-            Hero page, the wanderers, the phone as the solo controller
-  systems/  farming, fishing, foraging, critters, town projects, effects
-  story/    quests, dialogue lines & story scripts
-  ui/       HUD, dialogue box, menus, shops, creator
-  party/    Party Mode: phone relay client, inputs, host menu, split-screen camera & zoom,
-            story & mini-games, exploration, the Festival Ring, zones & weather, swimming,
-            vehicles, mounts, gloom camps, lairs, talents & gear, waystones, secrets, races,
-            world events, buddies
-  combat/   heroes, gloom creatures, blessings and the fighting itself (v3/: statuses,
-            bestiary, bosses, talents, gear)
-  lang/     translations (French), used through src/i18n.js
-  pad/      the phone controller page (pad.html)
-tools/      dev server (static files, screenshots, party relay), map dump, party test bots,
-            translation scanner & glossary
+  models/   buildings, nature, props, furniture, boats, voxel characters & pets
+  world/    the valley (map, 3D scene, interiors, collision); big/: the big world —
+            generation, chunk streaming, painters in workers, collision, world map
+  scenes/   the solo game's scene
+  systems/  farming, fishing, foraging, critters, weather, town projects, effects
+  solo/     the wild lands in solo (a "party of one" running Party Mode's systems), the Hero
+            page, the wanderers, the phone as the solo controller
+  party/    Party Mode: players & lobby, relay client, inputs, host & big-screen menus,
+            split-screen camera, activities, and the systems shared with the solo game
+  saga/     the ten-chapter story engine: chapters, quests, cutscenes, dungeons, mini-games
+  story/    the valley's quests, lines & letters
+  combat/   heroes, gloom creatures, bosses, blessings, statuses
+  data/     items, villagers, looks
+  entities/ the actors
+  ui/       HUD, dialogue, menus, shops, creator, controls, on-screen keyboard
+  pad/      the phone controller and remote play (pad.html, play.html)
+  lang/     translations (fr, es, de, it), keyed by the English text
+server/     the Node relay for hosted play (see server/README.md)
+desktop/    the Electron app, with the relay built in (see desktop/README.md)
+tools/      dev server, test bots, story & balance runs, translation tools
+docs/       how it works, online play, feature plans, screenshots
+vendor/     Three.js and the QR code library
 ```
