@@ -59,6 +59,8 @@ export class WorldMap {
     this.veil.width = m.W; this.veil.height = m.H;
     this.vctx = this.veil.getContext('2d');
     this.load();
+    // (a map handed out whole has no fog)
+    if (m.fog === false) this.fog.fill(1);
     this.paintVeil();
   }
 

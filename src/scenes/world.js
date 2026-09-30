@@ -31,6 +31,8 @@ import { audio } from '../engine/audio.js';
 import { clamp, lerp, wait as sleepMs } from '../engine/util.js';
 import { t, tn, num } from '../i18n.js';
 import { Wild } from '../solo/wild.js';
+import { SoloChat } from '../solo/solochat.js';
+import { drawSpeech } from '../ui/chat.js';
 import { SEE } from '../render/seethrough.js';
 import { chimneySmoke } from '../models/buildings.js';
 import { windFor } from '../render/wind.js';
@@ -1639,7 +1641,10 @@ export class World {
 
     const uiOpen = this.menu.open || this.shop.open_ || this.dialogue.active || this.game.overlay;
     this.input.touchUi = !!(uiOpen || this.busy > 0 || this.cinematic);
-    const frozen = uiOpen || this.busy > 0 || this.cinematic || this.fishing.active;
+    // (the chat: T's line or a gamepad's wheel holds the hero while it's open — solo/solochat.js)
+    const chat = this.schat || (this.schat = new SoloChat(this));
+    this.chatting = chat.update(dt, input, !!(uiOpen || this.busy > 0 || this.cinematic || this.fishing.active));
+    const frozen = uiOpen || this.busy > 0 || this.cinematic || this.fishing.active || this.chatting;
     // clock runs unless a menu/dialogue/cutscene holds it
     if (!uiOpen && this.busy === 0 && !this.cinematic) this.advanceTime(dt);
 
@@ -1648,7 +1653,7 @@ export class World {
     if (this.menu.open) this.menu.update(dt, input);
     else if (this.shop.open_) this.shop.update(dt, input);
     else if (this.dialogue.active) this.dialogue.update(dt, input);
-    else if (!this.busy && !this.cinematic && !this.game.overlay) this.handleInput(dt);
+    else if (!this.busy && !this.cinematic && !this.game.overlay && !this.chatting) this.handleInput(dt);
     if (this.wild) this.wild.update(dt);
     this.autosave(dt);
 
@@ -2070,6 +2075,7 @@ export class World {
     ctx.clearRect(0, 0, d.w, d.h);
     if (this.fadeA < 1) this.drawWorldUi(ctx);
     if (this.wild && this.fadeA < 1) this.wild.drawUi(ctx);
+    if (this.schat && this.fadeA < 1) this.schat.draw(ctx);
     const stage = this.wild && this.wild.stage;
     if (!this.cinematic && this.fadeA < 0.99) this.hud.draw(ctx);
     else if ((this.sail || (stage && stage.active)) && this.fadeA < 0.99) this.hud.drawBanner(ctx);
@@ -2118,6 +2124,10 @@ export class World {
     if (this.playerEmoteKind) {
       const u = this.toUi(this.player.pos.x, 1.65 + (this.player.baseY || 0), this.player.pos.z);
       drawEmote(ctx, u.x, u.y, this.playerEmoteKind, this.t);
+    } else if (this.wild && this.mapId !== 'overworld' && !this.dialogue.active) {
+      // (indoors, what the hero says: out in the world the wild lands draw it — wild.drawUi)
+      const u = this.toUi(this.player.pos.x, 1.72 + (this.player.baseY || 0), this.player.pos.z);
+      drawSpeech(ctx, this.wild.me, u.x, u.y - 6, this.t);
     }
     // quest arrow at the screen edge when the target is off-screen
     const tgt = this.questTarget();

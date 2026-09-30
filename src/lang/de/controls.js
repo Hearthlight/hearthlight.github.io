@@ -15,7 +15,7 @@ export const CONTROLS_DE = {
   'Show the code': 'Code zeigen',
   'Brrr! Hello!': 'Brrr! Hallo!',
   'Test the rumble': 'Vibration testen',
-  'Keys follow your keyboard’s layout (AZERTY and QWERTZ too).': 'Tasten folgen deinem Layout (auch QWERTZ und AZERTY).',
+  'Keys follow your keyboard (AZERTY, QWERTZ…).': 'Tasten folgen deiner Tastatur (QWERTZ, AZERTY…).',
   '{a} choose · {b} close': '{a} wählen · {b} schließen',
   'E choose · Esc close': 'E wählen · Esc schließen',
   'Walk': 'Gehen',

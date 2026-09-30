@@ -29,6 +29,7 @@ import { Travel } from './travel.js';
 import { Secrets } from './secrets.js';
 import { Races } from './races.js';
 import { drawWorldMap, drawWorldPanel, mapImage, mapBase, mapUpdate, MapView, mapRegion } from './worldmap.js';
+import { Guides } from './guide.js';
 import { Events } from './events.js';
 import { Campfires } from './camp.js';
 import { Rooms } from './rooms.js';
@@ -56,6 +57,8 @@ import { Stage } from '../saga/stage.js';
 import { CHAPTERS as SAGA_CHAPTERS } from '../saga/chapters/index.js';
 import { ViewCull } from '../render/cull.js';
 import { StuckWatch, nearWater } from '../entities/stuck.js';
+import { PartyChat } from './partychat.js';
+import { drawSpeech, drawBubbles } from '../ui/chat.js';
 
 export const PARTY_COLORS = [
   { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
@@ -126,7 +129,8 @@ export class PartyPlayer {
   get vel() { return this.actor.vel || { x: 0, z: 0 }; }
   get label() { return this.name; }
   setEmote(k, t = 1.6) { this.emote = k; this.emoteT = t; }
-  say(text, t = 3) { this.speech = text; this.speechT = t; }
+  // (tr: a quick phrase — each screen reads it in its own language: src/ui/chat.js)
+  say(text, t = 3, tr = false) { this.speech = text; this.speechT = t; this.speechTr = tr; }
 }
 
 export class Party {
@@ -156,6 +160,7 @@ export class Party {
     };
     this.zoom = new Zoom(this);
     this.mapView = new MapView();          // the big screen’s world map: zoomed in, or the whole world
+    this.guides = new Guides(this);        // a place chosen on a map, and an arrow that shows the way there
     this.host = new Host(this);
     this.tvmenus = new TvMenus(this);      // their own menu on the big screen, for players without a phone
     this.paused = null;           // { by } while the host has paused the game
@@ -178,6 +183,7 @@ export class Party {
       mouse: game.input.mouse,
       mouseIn: (...r) => game.input.mouseIn(...r),
     };
+    this.pchat = new PartyChat(this);      // (bubbles, quick phrases & emotes from every device: partychat.js)
   }
 
   get world() { return this.game.world; }
@@ -292,6 +298,7 @@ export class Party {
     this.net.broadcast({ t: 'screen', s: 'message', title: t('Party over'), text: t('The big screen closed the party. Thanks for playing!') });
     this.net.broadcast({ t: 'phase', p: 'adventure' });
     this.net.stop();
+    this.pchat.dispose();
     for (const p of this.players) { this.r3d.scene.remove(p.actor.model.root); this.world.over.root.remove(p.ring); }
     for (const n of this.npcs) this.r3d.scene.remove(n.model.root);
     if (this.act) this.act.dispose();
@@ -426,9 +433,13 @@ export class Party {
       case 'pet': this.buddies.choose(p, typeof d.v === 'string' ? d.v : null); break;
       case 'cls': if (CLASSES[d.v]) { p.cls = d.v; this.saveProfile(p); if (this.combat) this.combat.setClass(p, d.v); this.world.fx.emit('sparkle', p.pos.x, 1.2, p.pos.z, 8, { color: CLASSES[d.v].color }); } break;
       case 'bye': this.removePlayer(p); break;
+      // (talking: a bubble, a quick phrase, an emote, the « … » while a phone types — partychat.js)
+      case 'say': case 'quick': case 'emote': case 'typing': this.pchat.onMsg(p, d); break;
       // the host starts the party from the lobby (nobody else does — not even "everyone’s ready")
       case 'start': if (this.phase === 'lobby' && this.host.isHost(p) && !this.vote && !this.choosing) this.chooseActivity(); break;
       case 'unstuck': this.unstick(p); break;
+      // (a place chosen on the phone's map: the way there — or « stop » on the place you're heading for)
+      case 'goto': this.guides.fromPhone(p, d); break;
       case 'camp': if (this.camp && this.phase !== 'lobby') this.camp.build(p); break;
       // the world map on the phone (its own screen: nobody else’s view changes)
       case 'mapReq': {
@@ -530,6 +541,7 @@ export class Party {
     this.r3d.scene.remove(p.actor.model.root);
     this.world.over.root.remove(p.ring);
     this.tvmenus.close(p, true); this.tvmenus.tabs.delete(p);
+    this.pchat.close(p);
     this.players = this.players.filter((q) => q !== p);
     this.byId.delete(p.id);
     this.host.onLeave(p);
@@ -585,6 +597,7 @@ export class Party {
     p.portraitDue = 0.05;
     if (this.act) this.act.syncPad(p);
     if (this.vote) this.sendVote(p);
+    this.pchat.syncPad(p);
   }
 
   // What a player's buttons do here and now, in English: A, B, X & Y (null: nothing; X left
@@ -829,26 +842,30 @@ export class Party {
     const g = this.game, w = this.world, s = this.state;
     this.t += dt;
     // (a player in their big-screen menu: the menu reads their buttons, their hero feels none)
-    for (const p of this.players) (this.tvmenus.realOf(p) || p.input).update(dt);
+    for (const p of this.players) (this.tvmenus.realOf(p) || this.pchat.realOf(p) || this.guides.realOf(p) || p.input).update(dt);
     this.host.update(dt);
     if (g.party !== this) return;          // the host ended the party
     this.tvmenus.update(dt);
+    this.pchat.update(dt);
     // (French says « vous » to a party, « tu » to a lone player)
     let n = 0;
     for (const p of this.players) if (p.connected) n++;
     setAudience(n > 1 ? 'group' : 'one');
-    // M on the big screen’s keyboard shows the world map
-    const mKey = g.input.keys.has('KeyM');
+    // M on the big screen’s keyboard shows the world map (M wherever the keyboard prints it: an AZERTY's
+    // is where QWERTY has ;) — so does a click on the corner's map
+    const mKey = g.input.keys.has('KeyM') || g.input.keys.has('Semicolon');
     if (mKey && !this.prevM && !this.host.menu) this.bigMapOpen = !this.bigMapOpen;
-    // (the map open: its Close button, Esc / Start / B on the big screen, or a local player's B, closes it)
+    else if (!this.bigMapOpen && !this.host.menu && this.phase !== 'lobby' && this.guides.iconClicked()) this.bigMapOpen = true;
+    // (the map open: its Close button, Esc / Start on the big screen, or a local player's B, closes it — guide.js)
     if (this.bigMapOpen && !this.host.menu) {
-      const C = this.mapCloseR, gi = g.input, byB = this.players.find((p) => p.kind !== 'phone' && p.connected && p.input.pressed('b'));
-      if (gi.pressed('cancel') || gi.pressed('pause') || byB || (gi.mouse.pressed && C && gi.mouseIn(C.x, C.y, C.w, C.h))) {
+      const C = this.mapCloseR, gi = g.input;
+      if (gi.pressed('cancel') || gi.pressed('pause') || (gi.mouse.pressed && C && gi.mouseIn(C.x, C.y, C.w, C.h))) {
         this.bigMapOpen = false; gi.mouse.pressed = false; gi.consume();
-        if (byB) byB.input.edges.delete('b');
       }
     }
     this.prevM = mKey;
+    // (the map open: the heroes here wait, their sticks choose a place — the mouse too)
+    this.guides.mapInput(dt);
     // (the lobby's join card: its link copied in one click)
     const CR = this.copyR;
     if (CR && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(CR.x, CR.y, CR.w, CR.h)) {
@@ -912,6 +929,7 @@ export class Party {
     const sdt = this.combat && this.combat.hitstop > 0 ? 0 : dt;
     if (this.combat) this.combat.preActors(sdt);
     if (this.vehicles && !frozenAll) this.vehicles.update(sdt);
+    if (this.phase !== 'lobby') this.guides.update(dt);
     for (const p of this.players) {
       const a = p.actor;
       // (the act can hold one still: a blessing picked on the big screen — its stick moves the cursor)
@@ -1479,6 +1497,7 @@ export class Party {
       for (const v of cam.views) {
         ctx.save(); this.clipPath(ctx, v, true);
         // (the chips first: a friend's marker, a word or a boat's key stays readable over them)
+        this.guides.drawView(ctx, v);
         this.drawChips(ctx, v);
         this.drawLabels(ctx, v);
         if (this.combat) this.combat.drawLabels(ctx, v);
@@ -1507,6 +1526,9 @@ export class Party {
       // (over the HUD: an arrow must never hide under the minimap)
       if (this.fade < 1) for (const v of cam.views) this.drawOthers(ctx, v);
     }
+    // (the chat: the corner log, and each keyboard's line or gamepad's wheel in its player's view)
+    if (!scene && this.phase !== 'lobby' && !this.remoteFor) this.pchat.drawLog(ctx, d.w, d.h);
+    if (!this.remoteFor) this.pchat.draw(ctx);
     if (this.stage) this.stage.draw(ctx, d.w, d.h);
     if (this.vote) this.drawVote(ctx);
     const own = !this.remoteFor;              // (the big screen's own menus stay on the big screen)
@@ -1605,14 +1627,14 @@ export class Party {
     // Above each head: just a little arrow in the player’s colour (it blinks
     // red when health runs low). Names only show for a few seconds — when
     // someone joins, respawns, levels up or waves — so a crowd stays readable.
-    const tags = [];
+    const tags = [], speech = [];
     for (const p of this.players) {
       if (p.hidden) continue;
       const a = p.actor;
       const u = this.toUi(v, p.pos.x, 1.72 + (a.baseY || 0) + a.jumpY, p.pos.z);
       const f = p.fighter;
       const low = !!(f && !f.down && f.hp < f.maxHp * 0.3);
-      if (!(p.tagT > 0) && p.connected) { playerPip(ctx, u.x, u.y - 1, p.color, low, now); if (p.emote) drawEmote(ctx, u.x, u.y - 9, p.emote, now); else if (p.speech) bubble(ctx, u.x, u.y - 6, p.speech); continue; }
+      if (!(p.tagT > 0) && p.connected) { playerPip(ctx, u.x, u.y - 1, p.color, low, now); if (p.emote) speech.push({ x: u.x, y: u.y - 9, icon: p.emote }); else drawSpeech(ctx, p, u.x, u.y - 6, now, speech); continue; }
       tags.push({ p, x: u.x, y: u.y - 4, w: measure(p.name) + 6, ay: u.y, a: p.connected ? Math.min(1, p.tagT * 2.5) : 1 });
     }
     tags.sort((a, b) => b.y - a.y);
@@ -1629,9 +1651,11 @@ export class Party {
       ctx.globalAlpha = g.a;
       nameTag(ctx, g.x, g.y, p.name, p.color, !p.connected);
       ctx.globalAlpha = 1;
-      if (p.emote) drawEmote(ctx, g.x, g.y - 10, p.emote, now);
-      else if (p.speech) bubble(ctx, g.x, g.y - 11, p.speech);
+      if (p.emote) speech.push({ x: g.x, y: g.y - 10, icon: p.emote });
+      else drawSpeech(ctx, p, g.x, g.y - 11, now, speech);
     }
+    // (what the players say & show: bubbles and emotes side by side, nudged apart — src/ui/chat.js)
+    drawBubbles(ctx, speech, 120, now);
     // villagers’ words go on top of the crowd’s name tags
     for (const b of said) bubble(ctx, b.x, b.y, b.text, { wrapW: 150 });
     // (a hero who seems stuck: how to get out, over their head)
@@ -1762,9 +1786,10 @@ export class Party {
     const W = this.display.w, H = this.display.h;
     ctx.fillStyle = 'rgba(20,14,28,0.82)'; ctx.fillRect(0, 0, W, H);
     const R = mapRegion(this);
-    drawText(ctx, t(R.id === 'dawn' ? 'The Dawnlands' : 'The Hearthlands'), W / 2, 6, { color: '#fff3c4', align: 'center', outline: '#241a2e' });
+    drawText(ctx, R.title || t(R.id === 'dawn' ? 'The Dawnlands' : 'The Hearthlands'), W / 2, 6, { color: '#fff3c4', align: 'center', outline: '#241a2e' });
     this.mapView.hint = t('Wheel or + / - to zoom · drag to move');
-    drawWorldPanel(this, ctx, 0, 14, W, H - 14, { counts: true, view: this.mapView });
+    const r = drawWorldPanel(this, ctx, 0, 14, W, H - 14, { counts: true, view: this.mapView });
+    this.guides.drawBigMap(ctx, r);
     this.mapCloseR = closeButton(ctx, W - 4, 1);
   }
 

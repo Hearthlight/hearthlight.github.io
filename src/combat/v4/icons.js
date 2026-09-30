@@ -139,6 +139,8 @@ const GLYPHS = {
   play: (g, c) => { poly(g, [[4, 2.5], [13.5, 8], [4, 13.5]], c.m); },
   screen: (g, c) => { box(g, 1, 2, 14, 10, c.d); box(g, 2, 3, 12, 8, c.m); box(g, 3, 4, 4, 3, c.l); box(g, 10, 4, 3, 2, c.l); box(g, 6, 12, 4, 1.5, c.d); box(g, 4, 13.5, 8, 1.5, c.d); },
   plus: (g, c) => { box(g, 6.4, 2.2, 3.2, 11.6, c.m); box(g, 2.2, 6.4, 11.6, 3.2, c.m); },
+  // (the chat's speech bubble)
+  chat: (g, c) => { poly(g, [[1.5, 2.5], [14.5, 2.5], [14.5, 11], [7.5, 11], [3.5, 14.5], [4.5, 11], [1.5, 11]], c.m); box(g, 4.2, 6, 1.8, 1.8, c.d); box(g, 7.1, 6, 1.8, 1.8, c.d); box(g, 10, 6, 1.8, 1.8, c.d); },
   minus: (g, c) => { box(g, 2.2, 6.4, 11.6, 3.2, c.m); },
 };
 export const GLYPH_IDS = Object.keys(GLYPHS);
@@ -180,6 +182,7 @@ const COL = {
   rake: ['#a8a4b0', '#e8e8f0', '#6b4330'], puffer: ['#e0c050', '#fff3a6', '#8a5a36'], ladle: ['#c8c4d0', '#ffffff', '#4a4652'],
   spatula: ['#a8a4b0', '#e8e8f0', '#4a4652'], pepper: ['#8a5a36', '#e8c890', '#3b2a22'], rivet: ['#8a8492', '#e0e0ea', '#3b3844'],
   toolbox: ['#c8454f', '#ffd66b', '#6a2a2a'], play: ['#fff7ee', '#ffffff', '#5a4a60'], screen: ['#5a8ad0', '#fff3c4', '#2a2433'], plus: ['#fff7ee', '#ffffff', '#5a4a60'], minus: ['#fff7ee', '#ffffff', '#5a4a60'],
+  chat: ['#fff7ee', '#ffffff', '#3f6a7a'],
 };
 
 // ------------------------------------------------------------------ painting

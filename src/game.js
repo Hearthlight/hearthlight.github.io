@@ -29,6 +29,7 @@ import { setLang, loadLang, t, tn, num } from './i18n.js';
 import { SoloPhone } from './solo/phone.js';
 import { ControlsPanel } from './ui/controls.js';
 import { CLASSES } from './combat/classes.js';
+import { Chat } from './ui/chat.js';
 
 const MUTE = typeof location !== 'undefined' && /[?&]mute=1\b/.test(location.search);
 
@@ -57,6 +58,7 @@ export class Game {
     }];
     this.play = null;                        // the Play screen's steps, while it's open
     this.debug = this.makeDebug();
+    this.chat = new Chat(this);              // (bubbles, quick phrases & emotes — every mode: src/ui/chat.js)
     this.input.onFirstGesture = () => { audio.unlock(); this.applySettings(); };
     this.input.onGesture = () => audio.unlock();
   }

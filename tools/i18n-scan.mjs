@@ -62,6 +62,8 @@ for (const file of walk(path.join(root, 'src'))) {
   const calls = [
     ...(PROPS.some((p) => rel.startsWith(p)) ? [new RegExp(String.raw`\b(?:label|sub|name|desc|title|hint|action|unit|text|a|b|x|y|the|role|kit|ready)\s*:\s*(?:${LIT})`, 'g')] : []),
     new RegExp(String.raw`\bt\(\s*(?:${LIT})`, 'g'),
+    // (a choice between two texts: t(on ? 'Shown' : 'Hidden'), t(a ? 'x' : b ? 'y' : 'z'))
+    new RegExp(String.raw`\bt\(\s*[\w.!\s=<>&|]*?\?\s*(?:${LIT})\s*:\s*(?:(?:${LIT})|[\w.!\s=<>&|]*?\?\s*(?:${LIT})\s*:\s*(?:${LIT}))`, 'g'),
     new RegExp(String.raw`\btn\(\s*(?:${LIT})\s*,\s*(?:${LIT})`, 'g'),
     new RegExp(String.raw`\b(?:say|showLetter|toast|showBanner)\(\s*(?:[^,()'"\x60]+|'[^']*'|"[^"]*"|null)\s*,\s*(?:${LIT})`, 'g'),
     new RegExp(String.raw`\b(?:toast|showBanner)\(\s*(?:${LIT})`, 'g'),

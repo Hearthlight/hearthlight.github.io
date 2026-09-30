@@ -7,9 +7,9 @@
 import { t } from '../i18n.js';
 
 // drawn in this order (the important ones end up on top)
-export const MARK_ORDER = ['star', 'nest', 'race', 'secret', 'camp', 'arena', 'roost', 'stone', 'rare', 'lair', 'invasion', 'hill', 'target'];
+export const MARK_ORDER = ['star', 'nest', 'trail', 'view', 'stop', 'race', 'secret', 'camp', 'arena', 'roost', 'hub', 'gate', 'stone', 'rare', 'lair', 'invasion', 'hill', 'target'];
 // zoomed far out, the phone only shows these
-export const MARK_MAJOR = new Set(['stone', 'lair', 'invasion', 'hill', 'target', 'arena', 'roost']);
+export const MARK_MAJOR = new Set(['stone', 'lair', 'invasion', 'hill', 'target', 'arena', 'roost', 'hub', 'gate']);
 
 // a waystone: glowing blue once attuned
 export function stoneIcon(ctx, x, y, attuned = true) {
@@ -43,6 +43,17 @@ export function lairIcon(ctx, x, y, beaten = false) {
   if (beaten) { ctx.fillStyle = '#ffd66b'; ctx.fillRect(x - 3, y - 1, 7, 3); ctx.fillRect(x - 3, y - 3, 1, 2); ctx.fillRect(x, y - 3, 1, 2); ctx.fillRect(x + 3, y - 3, 1, 2); }
   else { ctx.fillStyle = '#ff6b7b'; ctx.fillRect(x - 3, y - 3, 7, 4); ctx.fillRect(x - 2, y + 1, 5, 2); ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 2, y - 2, 2, 2); ctx.fillRect(x + 1, y - 2, 2, 2); }
 }
+// a little flag in a colour, its foot at (x, y)
+export function drawFlag(ctx, x, y, color, time = 0) {
+  x = Math.round(x); y = Math.round(y);
+  const wave = Math.floor(time * 3) % 2;
+  ctx.fillStyle = 'rgba(20,14,28,0.35)'; ctx.fillRect(x - 3, y, 7, 2);
+  ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 12, 3, 13); ctx.fillRect(x + 1, y - 13, 7, 6);
+  ctx.fillStyle = '#e8dcc8'; ctx.fillRect(x, y - 11, 1, 11);
+  ctx.fillStyle = color; ctx.fillRect(x + 1, y - 12, 6 - wave, 4); ctx.fillRect(x + 1, y - 8, 5 + wave, 0 + wave);
+  ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(x + 1, y - 12, 5 - wave, 1);
+}
+
 const dot = (ctx, x, y, r, c) => { ctx.fillStyle = c; ctx.fillRect(x - r, y - r, r * 2 + 1, r * 2 + 1); };
 // (World v7) a Pelican Post roost: a little envelope, sealed in gold once found
 export function roostIcon(ctx, x, y, found = true) {
@@ -52,9 +63,42 @@ export function roostIcon(ctx, x, y, found = true) {
   ctx.fillStyle = found ? '#e0a526' : '#6a6670'; ctx.fillRect(x - 1, y, 3, 2);
 }
 
+// (an act's own places' marks: a centre, a lodge or a camp; a stop; a viewpoint; a sight along a
+// trail; an entrance)
+function placeIcon(ctx, k, x, y) {
+  const px = (c, a, b, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x + a, y + b, w, h); };
+  switch (k) {
+    case 'hub':      // a little house: a red roof over cream walls
+      px('#241a2e', -4, -2, 9, 7); px('#241a2e', -3, -3, 7, 1); px('#241a2e', -2, -4, 5, 1); px('#241a2e', -1, -5, 3, 1);
+      px('#b8583a', -3, -2, 7, 1); px('#b8583a', -2, -3, 5, 1); px('#c8683a', -1, -4, 3, 1);
+      px('#f2e6c8', -3, -1, 7, 5); px('#6a4a3a', 0, 1, 1, 3); px('#8fc4e8', -2, 0, 1, 1); px('#8fc4e8', 2, 0, 1, 1);
+      break;
+    case 'stop':     // a bus stop: a green sign with a white bus
+      px('#241a2e', -4, -4, 9, 8); px('#241a2e', 0, 4, 1, 2);
+      px('#3f8f5a', -3, -3, 7, 6); px('#fbf6ec', -2, -2, 5, 3); px('#3f8f5a', -1, -2, 1, 1); px('#3f8f5a', 1, -2, 1, 1); px('#241a2e', -2, 1, 1, 1); px('#241a2e', 2, 1, 1, 1);
+      break;
+    case 'view':     // a viewpoint: binoculars
+      px('#241a2e', -4, -3, 9, 6); px('#241a2e', -3, -4, 2, 1); px('#241a2e', 2, -4, 2, 1);
+      px('#5a6a8a', -3, -2, 3, 4); px('#5a6a8a', 1, -2, 3, 4); px('#5a6a8a', 0, -1, 1, 1);
+      px('#bfe0f6', -2, 0, 1, 1); px('#bfe0f6', 2, 0, 1, 1);
+      break;
+    case 'trail':    // a sight along a trail: a little peak with a white top
+      px('#241a2e', -4, 1, 9, 3); px('#241a2e', -3, -1, 7, 2); px('#241a2e', -2, -3, 5, 2); px('#241a2e', -1, -4, 3, 1);
+      px('#d8783a', -3, 1, 7, 2); px('#d8783a', -2, -1, 5, 2); px('#e8a060', -1, -3, 3, 2); px('#fbf6ec', 0, -3, 1, 1);
+      break;
+    case 'gate':     // an entrance: two posts under a beam
+      px('#241a2e', -5, -4, 11, 3); px('#241a2e', -4, -2, 3, 6); px('#241a2e', 2, -2, 3, 6);
+      px('#9a6a42', -4, -3, 9, 1); px('#7a4e30', -3, -1, 1, 4); px('#7a4e30', 3, -1, 1, 4);
+      break;
+    default: return false;
+  }
+  return true;
+}
+
 export function drawMark(ctx, m, x, y, time = 0) {
   x = Math.round(x); y = Math.round(y);
   const blink = Math.floor(time * 3) % 2;
+  if (placeIcon(ctx, m.k, x, y)) return;
   switch (m.k) {
     case 'stone': stoneIcon(ctx, x, y, !!m.on); break;
     case 'roost': roostIcon(ctx, x, y, !!m.on); break;
