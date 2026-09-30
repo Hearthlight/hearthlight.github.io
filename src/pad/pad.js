@@ -1004,6 +1004,9 @@ function drawMapScreen() {
     PM.draw(ctx, B, S.t);
     regions.push({ kind: 'map', id: 'map', x: B.x, y: B.y, w: B.w, h: B.h });
     if (PM.legend && PM.legendBox) { const L = PM.legendBox; tapArea('mapkeybox', L.x, L.y, L.w, L.h, () => { PM.legend = false; }); }
+    // (a place's « go there »: the way there, an arrow at your hero's feet — or « stop »)
+    const G = PM.goBox;
+    if (G) tapArea('mapgo', G.x, G.y, G.w, G.h, () => { send({ t: 'goto', x: G.h0.wx, z: G.h0.wz, stop: G.stop ? 1 : 0 }); PM.tip = null; buzz(G.stop ? 10 : [12, 30, 12]); });
   } else {
     ctx.fillStyle = '#241a30'; ctx.fillRect(B.x, B.y, B.w, B.h);
     drawText(ctx, t('Unfolding the map…'), W / 2, B.y + B.h / 2 - 4, { color: '#e8dcf2', align: 'center' });

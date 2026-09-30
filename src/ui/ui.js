@@ -12,8 +12,8 @@ export function tc(s, where) {
 
 // Key caps as printed on the player's keyboard. Bindings are physical keys
 // (KeyW = where QWERTY has W), so AZERTY players move with Z/Q/S/D.
-const CAPS_QWERTY = { KeyW: 'W', KeyA: 'A', KeyS: 'S', KeyD: 'D', KeyQ: 'Q', KeyR: 'R', KeyE: 'E', KeyM: 'M', KeyJ: 'J', KeyB: 'B', KeyX: 'X' };
-const CAPS_AZERTY = { ...CAPS_QWERTY, KeyW: 'Z', KeyA: 'Q', KeyQ: 'A', KeyM: ',' };
+const CAPS_QWERTY = { KeyW: 'W', KeyA: 'A', KeyS: 'S', KeyD: 'D', KeyQ: 'Q', KeyR: 'R', KeyE: 'E', KeyM: 'M', KeyJ: 'J', KeyB: 'B', KeyX: 'X', Semicolon: ';' };
+const CAPS_AZERTY = { ...CAPS_QWERTY, KeyW: 'Z', KeyA: 'Q', KeyQ: 'A', KeyM: ',', Semicolon: 'M' };
 const CAPS_QWERTZ = { ...CAPS_QWERTY, KeyY: 'Z', KeyZ: 'Y' };
 let layoutMap = null;
 try {
@@ -57,8 +57,10 @@ export function ctl(action, dev = device()) {
   if (dev === 'pad') return padName(action) || '?';
   if (dev === 'phone' && PHONE_OF[action]) return PHONE_OF[action];
   if (dev === 'phone') return t('Menu');
-  const code = KEYS_OF[action];
+  let code = KEYS_OF[action];
   if (!code) return '?';
+  // (the map's M wherever the keyboard prints it: an AZERTY's sits where QWERTY has ; — both open it)
+  if (action === 'map' && keyCap(code) !== 'M' && keyCap('Semicolon') === 'M') code = 'Semicolon';
   return code === 'Space' ? t('Space') : code === 'Escape' ? 'Esc' : code === 'Tab' ? 'Tab' : code === 'ShiftLeft' ? 'Shift' : keyCap(code);
 }
 

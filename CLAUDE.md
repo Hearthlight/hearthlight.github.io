@@ -38,6 +38,10 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   (a steppe camp; `game.world.wild` is the `Wild`, `.combat`, `.encounters`, `.travel`…).
 - A phone in solo: `game.phone.start()`, then open `/pad.html#CODE` in another tab; the pad
   records drawing errors in `pad.S.drawError` (its loop never stops on one).
+- The guide (a place picked on a map — M on the big screen, a player's own menu, a phone, the solo
+  menu's world map — and an arrow at the hero's feet showing the way there):
+  `(await import('/tools/guidetest.js')).start('party')` or `start('solo')`, poll `window.__gt`;
+  by hand: `P.guides.set(p, P.guides.places()[i])`.
 - Gamepads (the pane has none): `const F = await import('/tools/fakepad.js'); F.install(2,
   ['xbox', 'ps'])` fakes `navigator.getGamepads()` (families xbox / ps / nintendo);
   `F.press(i, 'a')`, `F.set(i, 'select', true)`, `F.stick(i, x, y)`; rumbles land in
@@ -86,6 +90,11 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
 - Props, buildings and valley animals merge their still parts into one mesh per material
   (`bakeMeshes` / `bakeTree` in `models/geom.js`): a part you animate, recolour or look up later
   must carry `userData.keep` (or `flag` / `swing`), or it vanishes into the merged mesh.
+- A click in a test: `game.input._click = true` (the input turns it into `mouse.pressed` at the
+  frame's start — setting `mouse.pressed` itself is wiped). Esc with no map or menu open opens the
+  host's menu, and M does nothing while it's open.
+- An AZERTY keyboard's M is the code `Semicolon` (`KeyM` prints « , »): both open the maps, and
+  `ctl('map')` names the one that prints M.
 - README shots: `resize_window` 960×540, English (`game.settings.lang = 'en'` + `setLang('en')`),
   then `sagarun`/`worldboss` marks with `clean: 1` (the line typed out, old toasts cleared).
   Party shots come out 1280×720, solo 960×540. Reset the viewport (`preset: 'desktop'`) after.
@@ -169,6 +178,9 @@ src/systems/  fx (particles), perches.js (birds landing on ridges, posts, lamps)
 src/solo/     wild.js (the wild lands in solo: a party of one), herotab.js (menu's Hero page),
               wanderers.js (Rook, Sigrid, Moss, Kai), phone.js (a phone as the solo controller)
 src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (split-screen),
+              guide.js (a place picked on a map — the big screen's, a player's menu's, a phone's,
+              the solo menu's — and the way there: the arrow at the hero's feet, the dots, the flag;
+              `MapPick`; the way from world/big/route.js),
               inputs.js, remote-host.js (friends at home: their own camera, streamed over
               WebRTC), hub.js (Settings' Saves & backups page), tvmenu.js (a gamepad / keyboard
               player's own menu on the big screen:
@@ -269,7 +281,9 @@ bigger drops/rock are cliffs (`map.block`), paths are stairs, rivers fall where 
 steps; mountains = `mountain()` terraces + a `CRAG` core + 3D `peak` POIs. Render the layout
 with `node tools/bigmap.mjs screenshots/bigmap.png`. New tile types live in `world/tiles.js`
 (`HIGH` plateaus get cliff faces, `LIQUID` get the animated overlay). Rooms are built off-map
-at x ≥ 2000, dungeons at x ≥ 3000.
+at x ≥ 2000, dungeons at x ≥ 3000. A long way across the map: `route.js` (a weighted A* a slice a
+frame, paths & roads cheap) — the guide's (`party/guide.js`). A map may say what its maps show
+(`region`, `title`, `fog: false`, `lands: false`, `places`, `legend`).
 
 ## Plans & progress logs (read the latest first after a context reset)
 

@@ -44,6 +44,7 @@ import { drawSpeech } from '../ui/chat.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { drawMarks, collectMarks } from '../party/mapmarks.js';
+import { Guides } from '../party/guide.js';
 import { Stage } from '../saga/stage.js';
 import { Saga } from '../saga/saga.js';
 
@@ -220,6 +221,7 @@ export class Wild {
     this.swim.spots = this.big.map.dives.map((d, i) => ({ ...d, i, taken: taken.includes(i) }));
     this.swim.onFind = (p, spot) => (spot.pick ? spot.pick(p) : this.onDiveFind(p, spot));     // (a saga's spot picks itself)
     this.vehicles = new Vehicles(this);
+    this.guides = new Guides(this);       // a place picked on the world map, an arrow that shows the way
     this.mounts = new Mounts(this);
     this.dinos = new DinoLife(this);
     this.buddies = new Buddies(this);
@@ -508,6 +510,7 @@ export class Wild {
       else this.doorPush = 0;
     }
     if (out) this.vehicles.update(dt);
+    if (out) this.guides.update(dt);
     // gloom close by: you hop off your bicycle, weapon in hand
     if (out && w.player.riding && !this.me.input.off && this.gloomNear(5)) { w.toggleBike(); this.toast(t('You hop off your bicycle!')); }
     const C = this.combat;
@@ -969,6 +972,7 @@ export class Wild {
     this.drawFolk(ctx, v, quiet);
     if (!quiet && this.saga) this.saga.drawLabels(ctx, v);
     if (!quiet && this.dungeons) this.dungeons.drawLabels(ctx, v);
+    if (!quiet && this.guides) this.guides.drawView(ctx, v);
     if (!quiet) {
       if (this.races) this.races.drawLabels(ctx, v);
       // an arrow to the next race flag (or the attacked waystone)

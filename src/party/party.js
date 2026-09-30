@@ -29,6 +29,7 @@ import { Travel } from './travel.js';
 import { Secrets } from './secrets.js';
 import { Races } from './races.js';
 import { drawWorldMap, drawWorldPanel, mapImage, mapBase, mapUpdate, MapView, mapRegion } from './worldmap.js';
+import { Guides } from './guide.js';
 import { Events } from './events.js';
 import { Campfires } from './camp.js';
 import { Rooms } from './rooms.js';
@@ -159,6 +160,7 @@ export class Party {
     };
     this.zoom = new Zoom(this);
     this.mapView = new MapView();          // the big screen’s world map: zoomed in, or the whole world
+    this.guides = new Guides(this);        // a place chosen on a map, and an arrow that shows the way there
     this.host = new Host(this);
     this.tvmenus = new TvMenus(this);      // their own menu on the big screen, for players without a phone
     this.paused = null;           // { by } while the host has paused the game
@@ -436,6 +438,8 @@ export class Party {
       // the host starts the party from the lobby (nobody else does — not even "everyone’s ready")
       case 'start': if (this.phase === 'lobby' && this.host.isHost(p) && !this.vote && !this.choosing) this.chooseActivity(); break;
       case 'unstuck': this.unstick(p); break;
+      // (a place chosen on the phone's map: the way there — or « stop » on the place you're heading for)
+      case 'goto': this.guides.fromPhone(p, d); break;
       case 'camp': if (this.camp && this.phase !== 'lobby') this.camp.build(p); break;
       // the world map on the phone (its own screen: nobody else’s view changes)
       case 'mapReq': {
@@ -838,7 +842,7 @@ export class Party {
     const g = this.game, w = this.world, s = this.state;
     this.t += dt;
     // (a player in their big-screen menu: the menu reads their buttons, their hero feels none)
-    for (const p of this.players) (this.tvmenus.realOf(p) || this.pchat.realOf(p) || p.input).update(dt);
+    for (const p of this.players) (this.tvmenus.realOf(p) || this.pchat.realOf(p) || this.guides.realOf(p) || p.input).update(dt);
     this.host.update(dt);
     if (g.party !== this) return;          // the host ended the party
     this.tvmenus.update(dt);
@@ -847,18 +851,21 @@ export class Party {
     let n = 0;
     for (const p of this.players) if (p.connected) n++;
     setAudience(n > 1 ? 'group' : 'one');
-    // M on the big screen’s keyboard shows the world map
-    const mKey = g.input.keys.has('KeyM');
+    // M on the big screen’s keyboard shows the world map (M wherever the keyboard prints it: an AZERTY's
+    // is where QWERTY has ;) — so does a click on the corner's map
+    const mKey = g.input.keys.has('KeyM') || g.input.keys.has('Semicolon');
     if (mKey && !this.prevM && !this.host.menu) this.bigMapOpen = !this.bigMapOpen;
-    // (the map open: its Close button, Esc / Start / B on the big screen, or a local player's B, closes it)
+    else if (!this.bigMapOpen && !this.host.menu && this.phase !== 'lobby' && this.guides.iconClicked()) this.bigMapOpen = true;
+    // (the map open: its Close button, Esc / Start on the big screen, or a local player's B, closes it — guide.js)
     if (this.bigMapOpen && !this.host.menu) {
-      const C = this.mapCloseR, gi = g.input, byB = this.players.find((p) => p.kind !== 'phone' && p.connected && p.input.pressed('b'));
-      if (gi.pressed('cancel') || gi.pressed('pause') || byB || (gi.mouse.pressed && C && gi.mouseIn(C.x, C.y, C.w, C.h))) {
+      const C = this.mapCloseR, gi = g.input;
+      if (gi.pressed('cancel') || gi.pressed('pause') || (gi.mouse.pressed && C && gi.mouseIn(C.x, C.y, C.w, C.h))) {
         this.bigMapOpen = false; gi.mouse.pressed = false; gi.consume();
-        if (byB) byB.input.edges.delete('b');
       }
     }
     this.prevM = mKey;
+    // (the map open: the heroes here wait, their sticks choose a place — the mouse too)
+    this.guides.mapInput(dt);
     // (the lobby's join card: its link copied in one click)
     const CR = this.copyR;
     if (CR && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(CR.x, CR.y, CR.w, CR.h)) {
@@ -922,6 +929,7 @@ export class Party {
     const sdt = this.combat && this.combat.hitstop > 0 ? 0 : dt;
     if (this.combat) this.combat.preActors(sdt);
     if (this.vehicles && !frozenAll) this.vehicles.update(sdt);
+    if (this.phase !== 'lobby') this.guides.update(dt);
     for (const p of this.players) {
       const a = p.actor;
       // (the act can hold one still: a blessing picked on the big screen — its stick moves the cursor)
@@ -1490,6 +1498,7 @@ export class Party {
       for (const v of cam.views) {
         ctx.save(); this.clipPath(ctx, v, true);
         // (the chips first: a friend's marker, a word or a boat's key stays readable over them)
+        this.guides.drawView(ctx, v);
         this.drawChips(ctx, v);
         this.drawLabels(ctx, v);
         if (this.combat) this.combat.drawLabels(ctx, v);
@@ -1778,9 +1787,10 @@ export class Party {
     const W = this.display.w, H = this.display.h;
     ctx.fillStyle = 'rgba(20,14,28,0.82)'; ctx.fillRect(0, 0, W, H);
     const R = mapRegion(this);
-    drawText(ctx, t(R.id === 'dawn' ? 'The Dawnlands' : 'The Hearthlands'), W / 2, 6, { color: '#fff3c4', align: 'center', outline: '#241a2e' });
+    drawText(ctx, R.title || t(R.id === 'dawn' ? 'The Dawnlands' : 'The Hearthlands'), W / 2, 6, { color: '#fff3c4', align: 'center', outline: '#241a2e' });
     this.mapView.hint = t('Wheel or + / - to zoom · drag to move');
-    drawWorldPanel(this, ctx, 0, 14, W, H - 14, { counts: true, view: this.mapView });
+    const r = drawWorldPanel(this, ctx, 0, 14, W, H - 14, { counts: true, view: this.mapView });
+    this.guides.drawBigMap(ctx, r);
     this.mapCloseR = closeButton(ctx, W - 4, 1);
   }
 

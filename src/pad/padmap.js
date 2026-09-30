@@ -7,7 +7,7 @@
 
 import { drawText, measure } from '../engine/font.js';
 import { panel, UI, fitText } from '../ui/ui.js';
-import { drawMark, MARK_MAJOR } from '../party/mapmarks.js';
+import { drawMark, drawFlag, MARK_MAJOR } from '../party/mapmarks.js';
 import { paintVeilData, fogFromBits, FOG } from '../world/big/minimap.js';
 import { t } from '../i18n.js';
 
@@ -45,7 +45,9 @@ export class PadMap {
   }
   ready() { return !!(this.base && this.d && this.veil); }
   me() { const p = this.d && this.d.p.find((q) => q[4]); return p ? { x: p[0], z: p[1] } : null; }
-  here() { const z = this.d && this.d.z.find((q) => q[4]); return z ? z[0] : ''; }
+  here() { const z = this.d && this.d.z.find((q) => q[4]); return (this.d && this.d.ti) || (z ? z[0] : ''); }
+  // (where you're heading: that place's spot — its tip offers « stop » then)
+  heading(x, z) { const D = this.d && this.d.dest; return !!D && Math.hypot(D[0] - x, D[1] - z) < 1.6; }
 
   // ---- the view: the world point in the box's middle, k pixels a tile
   fitK(B) { const R = this.R; return Math.min(B.w / (R ? R[2] : this.W), B.h / (R ? R[3] : this.H)); }
@@ -97,6 +99,7 @@ export class PadMap {
       this.clamp(B);
     }
     if (this.tip && this.tip.until < performance.now()) this.tip = null;
+    this.goBox = null;
   }
 
   // ---- fingers (UI pixels, times in ms)
@@ -141,7 +144,8 @@ export class PadMap {
     }
     if (cancel) return;
     if (!q.moved && now - q.t0 < 400) {
-      // a tap: what's there — or, the second of a double-tap, zoom in right there
+      // a tap: what's there — or, the second of a double-tap, zoom in right there (a tap on the tip's
+      // « go there » is pad.js's)
       const dbl = this.lastTap && now - this.lastTap.t < 330 && Math.hypot(p.x - this.lastTap.x, p.y - this.lastTap.y) < 14;
       this.lastTap = dbl ? null : { t: now, x: p.x, y: p.y };
       if (dbl) { this.tip = null; this.step(B, 1, p.x, p.y); } else this.pick(p.x, p.y);
@@ -157,7 +161,8 @@ export class PadMap {
   pick(px, py) {
     let best = null, bd = 11;
     for (const h of this.hits) { const d = Math.hypot(h.x - px, h.y - py); if (d < bd) { bd = d; best = h; } }
-    this.tip = best ? { h: best, until: performance.now() + 3500 } : null;
+    // (a place you may go to: its tip stays while you decide)
+    this.tip = best ? { h: best, until: performance.now() + (best.g ? 9000 : 3500) } : null;
   }
 
   // ---- drawing
@@ -194,6 +199,7 @@ export class PadMap {
     }
     else { big = this.placeMarks(B, room, true); names = this.placeNames(B, room, wr); }
     const small = this.placeMarks(B, room.concat(names.map((n) => n.r)), false);
+    this.drawWay(ctx, B, time);
     for (const it of [...small, ...big]) this.drawMarkAt(ctx, it, time);
     this.drawPlayers(ctx, B, time, [], false);
     this.drawNames(ctx, names);
@@ -212,7 +218,7 @@ export class PadMap {
     const k = this.view.k, keep = [], list = this.d.m;
     if (!major && k < 0.45) return keep;
     for (let i = list.length - 1; i >= 0; i--) {              // (the important ones claim their spot first)
-      const [kind, x, z, on, name, st, a] = list[i];
+      const [kind, x, z, on, name, st, a, g] = list[i];
       if (MARK_MAJOR.has(kind) !== major) continue;
       if (urgent !== null && URGENT.has(kind) !== urgent) continue;
       const q = this.toScreen(B, x, z);
@@ -220,13 +226,34 @@ export class PadMap {
       const r = { x0: q.x - 5, y0: q.y - 5, x1: q.x + 5, y1: q.y + 5 };
       if ((!major || yieldToo) && k < 1.5 && room.some((o) => hitR(o, r))) continue;
       room.push(r);
-      keep.unshift({ m: { k: kind, on, a }, q, name, st, x, z });
+      keep.unshift({ m: { k: kind, on, a }, q, name, st, x, z, g });
     }
     return keep;
   }
   drawMarkAt(ctx, it, time) {
     drawMark(ctx, it.m, it.q.x, it.q.y, time);
-    this.hits.push({ x: it.q.x, y: it.q.y, wx: it.x, wz: it.z, name: it.name, st: it.st });
+    this.hits.push({ x: it.q.x, y: it.q.y, wx: it.x, wz: it.z, name: it.name, st: it.st, g: it.g });
+  }
+
+  // the way to where you're heading: dots in your colour, and a flag at the place (party/guide.js)
+  drawWay(ctx, B, time) {
+    const D = this.d.dest, rt = this.d.rt;
+    if (!D) return;
+    if (rt && rt.length > 3) {
+      let last = null, acc = 0;
+      for (let k = 0; k < rt.length; k += 2) {
+        const q = this.toScreen(B, rt[k], rt[k + 1]);
+        if (last) acc += Math.hypot(q.x - last.x, q.y - last.y);
+        if (!last || acc >= 4) {
+          ctx.fillStyle = '#241a2e'; ctx.fillRect(Math.round(q.x) - 1, Math.round(q.y) - 1, 3, 3);
+          ctx.fillStyle = D[3] || '#fff3c4'; ctx.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
+          acc = 0;
+        }
+        last = q;
+      }
+    }
+    const q = this.toScreen(B, D[0], D[1]);
+    drawFlag(ctx, q.x, q.y + 1, D[3] || '#fff3c4', time);
   }
 
   // friends as dots in their colours; you bigger, with a ring that breathes — and an
@@ -294,33 +321,42 @@ export class PadMap {
     }
   }
 
-  // what you tapped: a little paper label (it follows the map as you move it)
+  // what you tapped: a little paper label (it follows the map as you move it) — a place you may
+  // go to has a button under its name: « go there », or « stop » where you're already heading
   drawTip(ctx, B) {
     const h = this.tip.h, q = this.toScreen(B, h.wx, h.wz);
     const lines = [h.name, h.st].filter(Boolean).map((l) => fitText(l, B.w - 20));
     if (!lines.length) return;
-    const w = Math.max(...lines.map((l) => measure(l))) + 10, hh = lines.length * 10 + 5;
+    const stop = h.g && this.heading(h.wx, h.wz), go = h.g ? (stop ? t('Stop guiding') : t('Go there')) : '';
+    const w = Math.max(...lines.map((l) => measure(l)), go ? measure(go) + 16 : 0) + 10, hh = lines.length * 10 + 5 + (go ? 18 : 0);
     const x = Math.round(Math.max(B.x + 2, Math.min(B.x + B.w - w - 2, q.x - w / 2)));
     let y = Math.round(q.y - 9 - hh);
     if (y < B.y + 2) y = Math.round(q.y + 9);
     ctx.fillStyle = '#3b2a22'; ctx.fillRect(x - 1, y - 1, w + 2, hh + 2);
     ctx.fillStyle = '#fff8ea'; ctx.fillRect(x, y, w, hh);
     lines.forEach((l, i) => drawText(ctx, l, x + 5, y + 3 + i * 10, { color: i ? UI.inkSoft : UI.ink }));
+    if (!go) return;
+    const by = y + hh - 17, bw = w - 8;
+    ctx.fillStyle = '#3b2a22'; ctx.fillRect(x + 4, by, bw, 14);
+    ctx.fillStyle = stop ? '#a8483a' : '#4f955a'; ctx.fillRect(x + 5, by + 1, bw - 2, 11);
+    drawText(ctx, go, x + 4 + bw / 2, by + 3, { color: '#fff7e6', align: 'center' });
+    this.goBox = { x: x + 2, y: by - 2, w: bw + 4, h: 18, h0: h, stop };
   }
 
   // the legend, over the bottom of the map (or in the room under the whole world):
   // what each mark is and how much is done
   drawLegend(ctx, B, under = 0) {
-    const keys = this.d.k, [found, total, pct] = this.d.s;
-    const pw = Math.min(B.w - 12, 190), ph = 26 + keys.length * 12;
+    const keys = this.d.k, stats = this.d.s, top = stats ? 22 : 10;
+    const pw = Math.min(B.w - 12, 190), ph = top + 4 + keys.length * 12;
     const px = Math.round(B.x + (B.w - pw) / 2), py = Math.round(under ? B.y + B.h - under + Math.max(6, (under - ph) / 2) : B.y + B.h - ph - 6);
     panel(ctx, px, py, pw, ph);
-    drawText(ctx, fitText(t('{n}/{total} lands · {p}% explored', { n: found, total, p: pct }), pw - 16), px + pw / 2, py + 8, { color: UI.ink, align: 'center' });
+    // (a map without lands to find has no count)
+    if (stats) drawText(ctx, fitText(t('{n}/{total} lands · {p}% explored', { n: stats[0], total: stats[1], p: stats[2] }), pw - 16), px + pw / 2, py + 8, { color: UI.ink, align: 'center' });
     keys.forEach(([kind, name, n, tot], i) => {
-      const y = py + 22 + i * 12;
+      const y = py + top + i * 12;
       drawMark(ctx, { k: kind, on: kind === 'stone' }, px + 14, y + 4, 0);
-      drawText(ctx, fitText(name, pw - 70), px + 24, y, { color: UI.ink });
-      drawText(ctx, `${n}/${tot}`, px + pw - 10, y, { color: n >= tot ? '#4f955a' : '#b8862a', align: 'right' });
+      drawText(ctx, fitText(name, pw - (tot ? 70 : 34)), px + 24, y, { color: UI.ink });
+      if (tot) drawText(ctx, `${n}/${tot}`, px + pw - 10, y, { color: n >= tot ? '#4f955a' : '#b8862a', align: 'right' });
     });
     this.legendBox = { x: px, y: py, w: pw, h: ph };
   }

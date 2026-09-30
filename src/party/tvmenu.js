@@ -11,6 +11,7 @@
 import { drawText, measure, wrap } from '../engine/font.js';
 import { panel, UI, fitText, keyLabel, padName, isFace, faceGlyph, moveKeys, closeButton } from '../ui/ui.js';
 import { drawWorldPanel, MapView } from './worldmap.js';
+import { MapPick } from './guide.js';
 import { LOOK_GROUPS, TREASURE_HATS } from '../data/looks.js';
 import { HeroTab } from '../solo/herotab.js';
 import { Osk } from '../ui/osk.js';
@@ -124,20 +125,30 @@ class TvHero extends HeroTab {
       super.update(dt, NO_STICK(input));
       return;
     }
+    if (this.page !== 'map') this.mapOpen = -1;
     if (this.page === 'map') {
-      const V = this.mapView, s = (90 * dt) / Math.max(1, V.k), F = V.frame, m = input.mouse;
-      if (V.k) { if (input.down('left')) V.cx -= s; if (input.down('right')) V.cx += s; if (input.down('up')) V.cz -= s; if (input.down('down')) V.cz += s; }
-      if (input.pressed('interact')) { input.consume('interact'); if (!V.step(1, null, null, this.p.pos)) V.reset(); audio.sfx('select', { volume: 0.5 }); }
-      // the mouse: the wheel zooms where it points, a drag moves the map, a click comes closer there
-      // (from the closest: the whole map again)
-      if (F && (V.drag || input.mouseIn(F.x, F.y, F.w, F.h))) {
-        const held = !!V.drag, click = m.pressed;
-        if (!V.mouse(input, this.p.pos) && !V.drag && (held || click) && input.mouseIn(F.x, F.y, F.w, F.h)) {
-          if (!V.step(1, m.x, m.y, this.p.pos)) V.reset();
-          audio.sfx('select', { volume: 0.5 });
-        }
+      // the places on it (party/guide.js): the stick hops from one to the next, A goes there (the
+      // menu closes: off you go), X / Y zoom; the mouse's wheel zooms, a drag moves it, a click on a
+      // place goes there
+      const V = this.mapView, F = V.frame, m = input.mouse, G = this.P.guides, K = this.pick || (this.pick = new MapPick(G, () => this.mapView));
+      // (each time the page comes up: the place you're heading for — or the nearest — chosen, close round you)
+      if (this.mapOpen !== this.opens) {
+        this.mapOpen = this.opens;
+        K.open(this.p);
+        const big = this.P.big && this.P.big.map;
+        if (big && big.region) { V.k = 2; V.cx = this.p.pos.x; V.cz = this.p.pos.z; }
       }
-      super.update(dt, NO_STICK(input, ['interact']));
+      for (const [d, dx, dy] of [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]) if (input.repeat(d)) K.hop(dx, dy);
+      const go = (pl) => { G.set(this.p, pl); this.P.tvmenus.close(this.p); };
+      if (input.pressed('interact')) { input.consume('interact'); const pl = K.current(); if (pl) { go(pl); return; } }
+      if (input.pressed('special')) { V.step(1, null, null, this.p.pos); K.follow(); audio.sfx('select', { volume: 0.4 }); }
+      if (input.pressed('dodge')) { V.step(-1); audio.sfx('select', { volume: 0.4 }); }
+      if (F && (V.drag || input.mouseIn(F.x, F.y, F.w, F.h))) {
+        K.point(m.x, m.y);
+        if (m.pressed && K.hover && !V.drag) { m.pressed = false; go(K.hover.pl); return; }
+        V.mouse(input, this.p.pos);
+      } else K.hover = null;
+      super.update(dt, NO_STICK(input, ['interact', 'special', 'dodge']));
       return;
     }
     if (this.page === 'quests') {
@@ -228,6 +239,7 @@ class TvHero extends HeroTab {
     ctx.fillStyle = '#2a1d34'; ctx.fillRect(A.x - 2, A.y - 2, A.w + 4, A.h + 4);
     V.hint = '';
     const r = drawWorldPanel(P, ctx, A.x, A.y + 12, A.w, A.h - 12, { counts: true, view: V });
+    if (this.pick) { this.pick.layout(r); this.pick.draw(ctx); }
     // you: a ring in your colour
     if (r && r.M && this.p.pos) {
       const q = r.M(this.p.pos.x, this.p.pos.z), bl = Math.floor(this.t * 3) % 2;
@@ -237,9 +249,8 @@ class TvHero extends HeroTab {
       }
     }
     // (the keyboard's player has the arrows — and the mouse)
-    const a = keyOf(this.p, 'a'), keys = this.p.kind === 'keys';
-    const how = V.k ? (keys ? t('{a}: closer / the whole map · arrows or a drag: move', { a }) : t('{a}: closer / the whole map · the stick moves it', { a }))
-      : keys ? t('{a}, a click or the wheel: zoom in', { a }) : t('{a}: zoom in', { a });
+    const a = keyOf(this.p, 'a'), x = keyOf(this.p, 'x'), y = keyOf(this.p, 'y'), cur = this.pick && this.pick.current();
+    const how = t(cur && this.p.guide && this.p.guide.id === cur.id ? '{a}: stop guiding · {x} / {y}: zoom' : '{a}: go there · {x} / {y}: zoom', { a, x, y });
     drawText(ctx, fitText(how, A.w), A.x, A.y, { color: '#f6d38f' });
     this.item('map', A.x, A.y + 12, A.w, A.h - 12, () => {});
     this.home = 'map';
@@ -378,6 +389,7 @@ export class TvMenus {
     let tab = this.tabs.get(p);
     if (!tab) { tab = new TvHero(P, p); this.tabs.set(p, tab); }
     tab.syncPages();
+    tab.opens = (tab.opens || 0) + 1;
     // (a talent point waiting: straight to the talents — seemingly stuck: straight to « Get unstuck »)
     if (p.fighter && tab.points() > 0) tab.page = 'talents';
     if (p.stuckOffer && P.phase !== 'lobby') tab.page = 'you';

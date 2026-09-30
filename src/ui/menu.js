@@ -17,6 +17,7 @@ import { SPECIES, SPECIES_ORDER } from '../systems/critters.js';
 import { audio } from '../engine/audio.js';
 import { dayLabel, timeLabel, HUD_MODES, HUD_NAMES } from './hud.js';
 import { drawWorldPanel, MapView } from '../party/worldmap.js';
+import { MapPick } from '../party/guide.js';
 import { HeroTab } from '../solo/herotab.js';
 import { DIFFS } from '../party/host.js';
 import { CHAT_MODES } from './chatdata.js';
@@ -55,6 +56,7 @@ export class Menu {
     this.sel = 0; this.held = -1;
     this.mapView = null;            // (the map opens on the valley, or the world when you're out in it)
     this.worldView = new MapView(); // (the world map zoomed in: the wheel, F / C, a drag)
+    this.pick = null;               // (a place picked on the world map: the arrows, a click — party/guide.js)
     if (tab === 'hero') this.hero.show();
     audio.sfx('open');
     audio.muffle(true);
@@ -105,7 +107,7 @@ export class Menu {
       this.collView = (this.collView || 'items') === 'items' ? 'critters' : 'items';
       audio.sfx('page');
     }
-    else if (key === 'map' && this.mapViewNow() === 'world' && w.wild && w.wild.big && this.worldZoom(dt, input)) { /* the world map moved */ }
+    else if (key === 'map' && this.mapViewNow() === 'world' && w.wild && w.wild.big && (this.worldPick(input) || this.worldZoom(dt, input))) { /* a place picked, or the world map moved */ }
     else if (key === 'map' && (input.pressed('interact') || (input.mouse.pressed && this.mapRect && input.mouseIn(...this.mapRect) && this.mapViewNow() !== 'world'))) {
       input.consume('interact');
       // the valley, a closer look around you, and (once the wild lands are open) the whole world
@@ -624,14 +626,30 @@ export class Menu {
     this.drawFooter(ctx, t('Get close to wild animals to log them — some only come out at night.'), px, py, pw, ph);
   }
 
+  // the world map's places (party/guide.js): the arrows (the stick) pick one and hop to the next, E (A)
+  // goes there — an arrow at your feet shows the way; a click on one goes there too. Nothing picked,
+  // E still turns to the valley's map
+  worldPick(input) {
+    const W = this.world.wild, G = W && W.guides, K = this.pick;
+    if (!G || !K) return false;
+    let used = false;
+    for (const [d, dx, dy] of [['left', -1, 0], ['right', 1, 0], ['up', 0, -1], ['down', 0, 1]]) if (input.repeat(d)) { if (!K.sel) K.open(W.me); else K.hop(dx, dy); used = true; }
+    const m = input.mouse, F = this.worldView.frame;
+    if (F && input.mouseIn(F.x, F.y, F.w, F.h)) K.point(m.x, m.y); else K.hover = null;
+    const pl = m.pressed && K.hover ? K.hover.pl : input.pressed('interact') && K.sel ? K.current() : null;
+    if (pl) { input.consume('interact'); m.pressed = false; G.set(W.me, pl); this.close(); return true; }
+    return used;
+  }
+
   // the world map: the wheel zooms where you point, a drag moves it, F / C (a gamepad's
-  // X / Y) zoom around you, the arrows move it once zoomed in; true when it used the input
+  // X / Y) zoom around you, the arrows move it once zoomed in (with no places on it to pick);
+  // true when it used the input
   worldZoom(dt, input) {
     const V = this.worldView, home = this.world.player.pos;
     let used = V.mouse(input, home);
     if (input.pressed('special')) { V.step(1, null, null, V.k ? null : home); used = true; audio.sfx('select', { volume: 0.4 }); }
     if (input.pressed('dodge')) { V.step(-1); used = true; audio.sfx('select', { volume: 0.4 }); }
-    if (V.k) {
+    if (V.k && !(this.pick && this.pick.spots.length)) {
       const s = (80 * dt) / V.k;
       if (input.down('left')) { V.cx -= s; used = true; }
       if (input.down('right')) { V.cx += s; used = true; }
@@ -754,8 +772,13 @@ export class Menu {
     ctx.fillStyle = '#2a1d34'; ctx.fillRect(box.x, box.y - 4, box.w, box.h + 8);
     const r = drawWorldPanel(P, ctx, box.x, box.y + 8, box.w, box.h - 8, { counts: true, view: this.worldView });
     if (r) this.mapRect = [r.mx, r.my, r.mw, r.mh];
-    const z = { a: ctl('interact'), z: ctl('special') + ' ' + ctl('dodge') };
-    const hint = device() === 'pad' ? t('{a}: the valley · {z}: zoom · the stick moves it', z) : w.input.touchMode ? t('Tap: the valley') : t('{a}: the valley · wheel or {z}: zoom', z);
+    // (its places: one picked, its name; the way you're heading)
+    const K = P.guides ? this.pick || (this.pick = new MapPick(P.guides, () => this.worldView)) : null;
+    if (K && r) { K.layout(r); K.draw(ctx); }
+    const z = { a: ctl('interact'), z: ctl('special') + ' ' + ctl('dodge') }, picked = !!(K && K.current());
+    const hint = device() === 'pad' ? t(picked ? '{a}: go there · the stick: another place · {z}: zoom' : '{a}: the valley · {z}: zoom · the stick picks a place', z)
+      : w.input.touchMode ? t('Tap a place to go there')
+        : t(picked ? '{a}: go there · arrows: another place · wheel or {z}: zoom' : '{a}: the valley · arrows: a place · wheel or {z}: zoom', z);
     drawText(ctx, hint, px + pw - 12, py + ph - 26, { color: '#b8a080', align: 'right' });
   }
 
