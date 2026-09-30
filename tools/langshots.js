@@ -15,6 +15,7 @@ export async function run(lang = 'de', { party = true, scale = 1, prefix = 'lang
   D.pause(true);
   // the title, the creator's tabs
   g.toTitle(); await D.step(40); await shot('title'); out.push('title');
+  g.openPlay(); await D.step(20); await shot('play'); g.play = null;
   g.toCreator(); await D.step(10);
   for (let i = 0; i < g.creator.tabs.length; i++) { g.creator.setTab(i); await D.step(6); await shot('creator' + i); }
   // the solo game: the HUD in the wild, the pause menu & settings, the book's pages, a shop, a line
@@ -28,10 +29,10 @@ export async function run(lang = 'de', { party = true, scale = 1, prefix = 'lang
   for (const page of ['pause', 'settings', 'bag', 'quests', 'friends', 'collection', 'map', 'hero']) {
     W.menu.show(page); await D.step(8); await shot('menu-' + page); W.menu.close ? W.menu.close() : (W.menu.open = false); await D.step(2);
   }
+  g.openControls(); await D.step(8); await shot('menu-controls'); W.menu.close ? W.menu.close() : (W.menu.open = false); await D.step(2);
   W.openShop('market', null); await D.step(8); await shot('shop'); if (W.shop.close) W.shop.close(); await D.step(4);
   W.say('Hollis', 'Lovely afternoon for it. Whatever “it” is. I’ll put the kettle on.');
   await D.step(90); await shot('dialogue'); await D.skip(10);
-  g.controls && g.controls.open && (g.controls.open(), await D.step(6), await shot('controls'), g.controls.close && g.controls.close());
   out.push('solo');
   if (party) {
     // Party: the lobby with four phones, the host's menu is on the phone (see padshots), the TV menu

@@ -323,7 +323,7 @@ export class Menu {
     const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2) + 6;
     if (this.page === 'settings') {
       // a page of its own, two tabs above it — the settings, the controls — and its close button
-      const qw = Math.min(W - 12, 420), qx = Math.round((W - qw) / 2);
+      const qw = Math.min(W - 12, 468), qx = Math.round((W - qw) / 2);
       this.setTabRects = [];
       let tx = qx + 6;
       for (const [id, label] of SET_TABS) {

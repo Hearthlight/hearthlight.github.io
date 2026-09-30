@@ -22,7 +22,7 @@ export const RELEASE9_DE = {
   'Esc pause · Tab bag · J journal · {map} map · right-click or {f} picks up placed furniture': 'Esc Pause · Tab Tasche · J Tagebuch · {map} Karte · Rechtsklick oder {f} hebt Möbel wieder auf',
   'Pause': 'Pause',
   'Bag & journal': 'Tasche & Tagebuch',
-  'Bag, journal & map': 'Tasche, Tagebuch & Karte',
+  'Bag, journal & map': 'Tasche, Karte & Co.',
   'Paused — the stick picks, A chooses': 'Pausiert – Stick wählt aus, A bestätigt',
   'The stick picks, ← → changes': 'Stick wählt aus, ← → wechselt',
   // the HUD's displays

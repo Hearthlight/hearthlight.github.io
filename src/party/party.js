@@ -1266,7 +1266,6 @@ export class Party {
     }
     // (a lobby opened and closed again isn't a game to continue: only once something was played)
     if (this.actKind || previous.savedAt) this.writeSave('session', { savedAt: Date.now(), players: this.players.map((p) => p.name), positions, activity: this.actKind || previous.activity || 'explore' });
-    this.game.partySaveAvailable = true;
     return !this.saveError;
   }
 
