@@ -2,9 +2,9 @@
 
 A cozy 2.5D pixel-art life game (solo story mode whose valley opens onto the wild lands + a
 local **Party Mode** for 1–8 players with phones as controllers; a phone can drive the solo game
-too). Plain ES modules, **no build step**, Three.js 0.170 from the
-jsDelivr CDN (import map in `index.html`). Everything is procedural: every texture, model and
-sound is made in code — never add image or audio files.
+too). Plain ES modules, **no build step**, Three.js 0.170 from `vendor/` (import map in
+`index.html`). Everything is procedural: every texture, model and sound is made in code — never
+add image or audio files. How the pieces fit together: `docs/ARCHITECTURE.md`.
 
 The user writes in French or English, expects a very high bar (score each area /10, iterate
 to 9+), judges from in-game screenshots, and wants finished work committed & pushed to
