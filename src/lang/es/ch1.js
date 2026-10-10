@@ -107,7 +107,7 @@ export const CH1_ES = {
   'the boss of the Glimmer Grotto': 'el jefe de la Gruta del Destello',
   'The Duchess will hear about this!{p} …Please don’t tell her.': '¡La Duquesa se enterará de esto!{p} …Por favor, no se lo digas.',
   'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'La {key}última brasa{/} sale rodando de los restos y se cuela bajo la puerta del fondo. ¡Tras ella!',
-  'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'La brasa salta dentro del farol: ¡{key}tres llamitas{/}! Ahora llévalo al {key}Viejo Destello{/}.',
+  'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Las tres brasas se funden en {key}una sola llama{/}: ¡el farol ha despertado! Llévalo al {key}Viejo Destello{/}.',
   // (their shouts in the fight: src/combat/v7/troupe.js)
   'Hey!': '¡Oye!',
   'How rude!': '¡Qué grosería!',
@@ -137,7 +137,7 @@ export const CH1_ES = {
   'Go on: hold the lantern up high!': 'Vamos: ¡levanta bien alto el farol!',
   'Old Glimmer shines again': 'El Viejo Destello vuelve a brillar',
   'The Murk rolls back from Deep Whisperwood and the Windy Heights': 'La Bruma Malva se retira de Bosquesusurro Profundo y de las Cumbres Ventosas',
-  'Lamps come back on all over the cove.{p} And a very old mayor drops his tea.': 'Por toda la caleta, las lámparas vuelven a encenderse.{p} Y a un alcalde muy mayor se le cae el té.',
+  'Lamps come back on all over the cove.{p} And Mayor Hollis drops his tea.': 'Por toda la caleta, las lámparas vuelven a encenderse.{p} Y al alcalde Hollis se le cae el té.',
   // (Perkins and Nana June’s letter)
   'PELICAN POST!{p} Perkins, postmaster. I have a letter for you!': '¡CORREO PELÍCANO!{p} Perkins, jefe de correos. ¡Tengo una carta para ti!',
   'From a Mrs June. Posted…{p} ooh. Seven weeks ago.': 'De una tal señora June. Enviada…{p} uy. Hace siete semanas.',
@@ -202,7 +202,7 @@ export const CH1_ES = {
     'And YOU are our volunteers! This won’t hurt!{p} Much!': '¡Y USTEDES serán nuestros voluntarios! ¡Esto no va a doler!{p} ¡Mucho!',
     'The Duchess will hear about this!{p} …Please don’t tell her.': '¡La Duquesa se enterará de esto!{p} …Por favor, no se lo digan.',
     'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'La {key}última brasa{/} sale rodando de los restos y se cuela bajo la puerta del fondo. ¡Tras ella!',
-    'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'La brasa salta dentro del farol: ¡{key}tres llamitas{/}! Ahora llévenlo al {key}Viejo Destello{/}.',
+    'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Las tres brasas se funden en {key}una sola llama{/}: ¡el farol ha despertado! Llévenlo al {key}Viejo Destello{/}.',
     'The lantern holds its three embers. Carry it to {key}Old Glimmer{/} to light the lighthouse again and push back the Murk.': 'El farol ya tiene sus tres brasas. Llévenlo al {key}Viejo Destello{/} para volver a encender el faro y hacer retroceder la Bruma Malva.',
     'Carry the lantern to {key}Old Glimmer{/}, the lighthouse east of the village': 'Lleven el farol al {key}Viejo Destello{/}, el faro al este del pueblo',
     'Wait for the post at the foot of {key}Old Glimmer{/}': 'Esperen el correo al pie del {key}Viejo Destello{/}',

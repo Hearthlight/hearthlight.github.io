@@ -100,7 +100,7 @@ export const CH7_DE = {
   'When he lands, step on {key}the plate{/} that points at him: the Dawn Mirror will light him up.': 'Wenn er landet, tritt auf {key}die Platte{/}, die auf ihn zeigt: Der Morgenrotspiegel strahlt ihn dann an.',
   'The gloom burns off in violet smoke. A paper dragon is left, red and gold again, lying very still.': 'Die Trübsal verpufft in violettem Rauch. Zurück bleibt ein Papierdrache, wieder rot und gold, und liegt ganz still.',
   'Then one eye opens, and the tail thumps twice: Old Lucky purrs.': 'Dann öffnet sich ein Auge, und der Schwanz klopft zweimal aufs Dach: Der alte Glückspilz schnurrt.',
-  'The Dawn Hearth burns again: a {key}fifth flame{/} lights up in the lantern.': 'Das Herdfeuer des Morgenrots brennt wieder: Eine {key}fünfte Flamme{/} leuchtet in der Laterne auf.',
+  'The Dawn Hearth burns again: a {key}sixth flame{/} lights up in the lantern.': 'Das Herdfeuer des Morgenrots brennt wieder: Eine {key}sechste Flamme{/} leuchtet in der Laterne auf.',
   'And over the Jade Terraces, for the first time in a month, the sun comes up.': 'Und über den Jadeterrassen geht zum ersten Mal seit einem Monat die Sonne auf.',
   'Old Lucky, hardly singed! We shall mend his whiskers.': 'Der alte Glückspilz, kaum angesengt! Die Schnurrhaare flicken wir ihm.',
   'An old proverb says: « After the longest night, breakfast. »{p} It is on our kitchen wall.': 'Ein altes Sprichwort sagt: »Nach der längsten Nacht kommt das Frühstück.«{p} Es steht an unserer Küchenwand.',
@@ -117,12 +117,12 @@ export const CH7_DE = {
   'At the end of the pier, three mimes sit and watch the lanterns go up. Nobody invited them.': 'Am Ende des Stegs sitzen drei Pantomimen und sehen den Laternen nach. Niemand hat sie eingeladen.',
   'The Gloomstage flew north-east, to {key}Elderbough{/} and its Great Tree. The Duchess wants the tree’s heart for her finale.': 'Die Trübsalbühne ist nach Nordosten geflogen, nach {key}Urgeäst{/} mit seinem Großen Baum. Die Herzogin will das Herz des Baums für ihr Finale.',
   'Then that’s where we’re going. After the festival!': 'Dann geht’s dahin. Nach dem Fest!',
-  'June’s lantern has five flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!': 'In Junes Laterne brennen jetzt fünf Flammen. Sie wäre…{p} Hmpf. Rauch im Auge. Geht tanzen!',
+  'June’s lantern has six flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!': 'In Junes Laterne brennen jetzt sechs Flammen. Sie wäre…{p} Hmpf. Rauch im Auge. Geht tanzen!',
   'The Lantern Festival': 'Das Laternenfest',
-  'Five flames in the lantern': 'Fünf Flammen in der Laterne',
+  'Six flames in the lantern': 'Sechs Flammen in der Laterne',
 
   // ---- the chapter’s recap
-  'The Duchess fled across the Wide Sea with the stolen flames, and we have just crossed after her. In the Dawnlands, the sun has not risen for a month. Find their {key}Great Hearth{/} and relight it.': 'Die Herzogin ist mit den gestohlenen Flammen über das Weite Meer geflohen, und wir sind ihr gerade nachgeflogen. Hier in den Morgenlanden ist seit einem Monat die Sonne nicht mehr aufgegangen. Jetzt heißt es: ihr {key}Großes Herdfeuer{/} finden und neu entzünden.',
+  'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.': 'Die Herzogin ist mit allen gestohlenen Flammen nach Osten übers Weite Meer geflohen. Flieg ihr nach, an Bord von Kapitänin Wendys Teetasse. In den Morgenlanden ist seit einem Monat die Sonne nicht mehr aufgegangen: Finde ihr {key}Großes Herdfeuer{/} und entzünde es neu.',
 
   // ---- quests
   'The Crossing': 'Die Überfahrt',
@@ -192,7 +192,7 @@ export const CH7_DE = {
   'Some nights, the fog comes back and blows my lamps out.': 'In manchen Nächten kommt der Nebel zurück und bläst meine Lampen aus.',
   'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.': 'Pass auf die Motten auf und zünde {key}alle sieben Lampen{/} an, bevor deine Laterne erlischt.',
   'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit': 'Sag {key}der alten Hoshi{/}, oben in der Stadt, dass die Lampen brennen',
-  'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.': 'Alle Lampen brennen! Meine alte Lehrmeisterin hätte dir einen Keks gegeben: Ich gebe dir zwei.',
+  'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.': 'Alle Lampen brennen! Meine alte Lehrmeisterin hätte dir einen Keks gegeben: Ich habe nur Sternenstaub.',
 
   // ---- the Salt Painter’s reflections
   'The Salt Painter’s Reflections': 'Die Spiegelbilder der Salzmalerin',
@@ -340,7 +340,7 @@ export const CH7_DE = {
     'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.': 'In manchen Nächten bläst der Nebel die Lampen von Laternenhafen wieder aus. Zündet {key}alle sieben{/} an, bevor eure Laterne erlischt.',
     'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.': 'Passt auf die Motten auf und zündet {key}alle sieben Lampen{/} an, bevor eure Laterne erlischt.',
     'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit': 'Sagt {key}der alten Hoshi{/}, oben in der Stadt, dass die Lampen brennen',
-    'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.': 'Alle Lampen brennen! Meine alte Lehrmeisterin hätte euch einen Keks gegeben: Ich gebe euch zwei.',
+    'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.': 'Alle Lampen brennen! Meine alte Lehrmeisterin hätte euch einen Keks gegeben: Ich habe nur Sternenstaub.',
     'On the Saltmirror Flats, Blanche sees {key}three things{/} in the reflection that are not there above. Find them and bring them to her.': 'Auf dem Salzspiegel sieht Blanche im Spiegelbild {key}drei Dinge{/}, die es darüber gar nicht gibt. Findet sie und bringt sie ihr.',
     'Would you find them for me? Stand on each reflection and {key}reach in{/}.': 'Würdet ihr sie für mich finden? Stellt euch auf jedes Spiegelbild und {key}greift hinein{/}.',
     'Find the {key}three reflections{/} on the Saltmirror Flats, around the Saltworks': 'Findet die {key}drei Spiegelbilder{/} auf dem Salzspiegel, rund um die Saline',
@@ -350,5 +350,6 @@ export const CH7_DE = {
     'The Pagoda has stood for three hundred years. It can wait while you eat.': 'Die Pagode steht seit dreihundert Jahren. Sie kann warten, bis ihr gegessen habt.',
     'Look down, not up. The mirror is more honest than the sky.': 'Schaut nach unten, nicht nach oben. Der Spiegel ist ehrlicher als der Himmel.',
     'Your lantern is guttering — get back to the light!': 'Deine Laterne flackert – zurück ins Licht!',
+    'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.': 'Die Herzogin ist mit allen gestohlenen Flammen nach Osten übers Weite Meer geflohen. Fliegt ihr nach, an Bord von Kapitänin Wendys Teetasse. In den Morgenlanden ist seit einem Monat die Sonne nicht mehr aufgegangen: Findet ihr {key}Großes Herdfeuer{/} und entzündet es neu.',
   },
 };

@@ -212,7 +212,7 @@ R('queen').tick = (S, d, r) => {
       if (!S.st.lit.includes('elder')) S.st.lit.push('elder');
       S.save();
       st.mark('heartlight');
-      await st.say('narrator', 'The Heartlight wakes, green-gold, like sun through leaves. The {key}sixth flame{/} catches in the lantern.');
+      await st.say('narrator', 'The Heartlight wakes, green-gold, like sun through leaves. The {key}seventh flame{/} catches in the lantern.');
       st.music(null);
     });
     await d.D.exit({ done: true });
@@ -279,7 +279,7 @@ async function marisolOffer(S) {
 // ------------------------------------------------------------------ the chapter
 export const CH8 = {
   id: 8, title: 'Autumn & Roots',
-  recap: 'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.',
+  recap: 'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.',
   lv: 35, zones: ['autumn', 'glow', 'elder'], opens: ['moor', 'prism', 'clock', 'tundra'],
   // (Elderbough under the siphon: a grey sky until the Heartlight burns again)
   gloom(S) {

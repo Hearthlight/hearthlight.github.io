@@ -214,6 +214,9 @@ The cast is theatre people, villagers and odd professionals — give each a Germ
 | a gloom creature · Gloomlings | ein Trübling · die Trüblinge | |
 | gloomed / gloomy (infected) | vertrübt | ein vertrübter Baumhirte |
 | gloom camp · gloom nest | Trüblager · Trübnest | |
+| Gloom Boar · Gustbelly · Storm Ram · Gloom Ogre | der Trübeber · der Pustebauch · der Sturmwidder · der Trüboger | the four ground brutes |
+| the lantern’s flames | eine Zahl nur, wenn sie stimmt | Old Glimmer 1 · the Deepwood 2 · the Steppe 3 · Croakmire 4 · chapter 5: 3 when the Duchess snuffs Croakmire again, then 4 with the South · chapter 6: 5 (Croakmire’s flame comes home) · the Dawn Hearth 6 · the Heartlight 7 · Hollowmoor Manor 8 |
+| recaps, briefs, objectives | du · ihr | they speak to the player (»du«, with the »ihr« twin in `__group`), never »Jetzt heißt es« or »man muss« |
 | the Murk | der Grauschleier | *the Murk rolls back* → der Grauschleier lichtet sich |
 | Great Hearth(s) | das Große Herdfeuer (die Großen Herdfeuer) | *relit* → wieder entfacht |
 | Hearthstone | Herdstein | |

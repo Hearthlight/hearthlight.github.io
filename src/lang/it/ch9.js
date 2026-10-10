@@ -70,7 +70,7 @@ export const CH9_IT = {
   // ---- the chapter
   'Moor & Machines': 'Lande e Lancette',
   'Chapter 9': 'Capitolo 9',
-  'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Sei fiamme ardono nella lanterna, e le Controfigure ora sono dalla tua parte. La Duchessa è volata via a preparare il suo Riflettore d’Ombra, una luce che mangia tutte le altre. Attraversa la {key}landa dei fantasmi{/} e trova il modo di {key}spegnerlo{/}.',
+  'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Sette fiamme ardono nella lanterna, e le Controfigure ora sono dalla tua parte. La Duchessa è volata alla Cicatrice d’Ombra a preparare il suo Riflettore, una luce che mangia tutte le altre. Attraversa {key}Landacava{/}, la landa dei fantasmi, e trova il modo di {key}spegnerlo{/}.',
 
   // ---- Candlewick: the moor’s ghosts
   'The Moor’s Ghosts': 'I fantasmi della landa',
@@ -126,7 +126,7 @@ export const CH9_IT = {
   'They never did applaud her. So she never came home.': 'Non l’hanno mai applaudita. Così lei non è mai tornata a casa.',
   'Now she puts out every light, so that nobody can ever laugh at her again.': 'Ora spegne tutte le luci, perché nessuno possa mai più ridere di lei.',
   'When you find my Gloria…{p}tell her the {key}tea is still warm{/}.': 'Quando troverai la mia Gloria…{p}dille che il {key}tè è ancora caldo{/}.',
-  'The Lady in Grey fades away. In the lantern, a seventh flame lights.': 'La Dama in Grigio svanisce. Nella lanterna si accende una settima fiamma.',
+  'The Lady in Grey fades away. In the lantern, an eighth flame lights.': 'La Dama in Grigio svanisce. Nella lanterna si accende un’ottava fiamma.',
   'All through the manor, the clocks start ticking again. By the gate, the rose opens its first bud.': 'In tutto il maniero, gli orologi riprendono a ticchettare. Accanto al cancello, la rosa schiude il suo primo bocciolo.',
   'To put out the Duchess’s Spotlight, it will take a clockmaker. Go north to {key}Cogsworth{/} and find {key}Master Tock{/}.': 'Per spegnere il Riflettore della Duchessa ci vorrà un orologiaio. Vai a nord, a {key}Borgorotella{/}, e trova {key}Mastro Tac{/}.',
 
@@ -203,7 +203,7 @@ export const CH9_IT = {
   'Old Punctual has been on time for four hundred years. So have I.': 'Il Vecchio Puntuale è puntuale da quattrocento anni. Anch’io.',
 
   __group: {
-    'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Sei fiamme ardono nella lanterna, e le Controfigure ora sono dalla vostra parte. La Duchessa è volata via a preparare il suo Riflettore d’Ombra, una luce che mangia tutte le altre. Attraversate la {key}landa dei fantasmi{/} e trovate il modo di {key}spegnerlo{/}.',
+    'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Sette fiamme ardono nella lanterna, e le Controfigure ora sono dalla vostra parte. La Duchessa è volata alla Cicatrice d’Ombra a preparare il suo Riflettore, una luce che mangia tutte le altre. Attraversate {key}Landacava{/}, la landa dei fantasmi, e trovate il modo di {key}spegnerlo{/}.',
     'Sad ghosts wander Hollowmoor, and only your lantern shows them. Find {key}all four{/} and listen: they have a story to tell.': 'Fantasmi tristi vagano per Landacava, e solo la vostra lanterna li mostra. Trovateli {key}tutti e quattro{/} e ascoltate: hanno una storia da raccontare.',
     'Arrive in {key}Candlewick{/}, a village on the moor': 'Entrate a {key}Lucignolo{/}, un villaggio della landa',
     'Talk to {key}Aunt Tallow{/} in Candlewick': 'Parlate con {key}Zia Sego{/} a Lucignolo',

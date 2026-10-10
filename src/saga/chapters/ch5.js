@@ -413,7 +413,7 @@ R('chamber').take = async (S, d, r) => {
     if (st.vfx) st.vfx.pillar(x, z, { r: 1, h: 7, color: '#ffc890', life: 1.4 });
     st.sfx('shard', { volume: 0.9 });
     S.flag('southLit');
-    await st.say('narrator', 'Under the bell, the {key}Great Hearth{/} of the South wakes. A new flame leaps into the lantern!');
+    await st.say('narrator', 'Under the bell, the Great Hearth of the South wakes. Its flame leaps into the lantern: {key}four flames{/} again!');
   });
   await d.D.exit({ done: true });
 };
@@ -489,7 +489,7 @@ async function chordSong(S) {
 const got = (S, qid, k) => !!S.st.got[qid + ':0:' + k];
 export const CH5 = {
   id: 5, title: 'Sand & Sea',
-  recap: 'The turtles sent for help: in the south, the Sunken Bell has stopped ringing and the sea has gone dark. Cross the dunes, find the Bell’s clapper and wake the {key}Great Hearth{/} of the South. But the Duchess has sworn to snuff again every Hearth that is relit.',
+  recap: 'Croakmire is warm again, and the turtles call for help: in the south, the Sunken Bell has stopped ringing. Cross the dunes, find the Bell’s clapper and wake the {key}Great Hearth{/} of the South. But the Duchess has sworn to snuff again every Hearth you relight.',
   lv: 23, zones: ['dunes', 'lagoon', 'sunken'], opens: ['volcano', 'straits', 'dino'],
   // (Croakmire, snuffed again, keeps its colours drained until chapter 6 wins its flame back)
   drain: (S) => {
@@ -566,7 +566,7 @@ export const CH5 = {
     },
     c5_temple: {
       title: 'The Sunken Bell Temple',
-      brief: 'The clapper is found. In the Sunken Bell Temple, put it back, ring the Bell and wake the {key}Great Hearth{/} of the South.',
+      brief: 'The Duchess has snuffed Croakmire again: three flames left. Put the clapper back in the Sunken Bell Temple, ring the Bell and wake the {key}Great Hearth{/} of the South.',
       auto: true, after: 'c5_clapper', lv: 25,
       steps: [
         { do: 'talk', npc: 'tariq', text: 'Ask {key}Tariq{/}, at the Old Forum, to row you to the {key}temple{/}', run: boatToTemple },

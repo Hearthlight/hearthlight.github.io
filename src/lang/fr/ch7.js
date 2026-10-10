@@ -7,7 +7,7 @@
 // Blanche the Salt Painter → Blanche, la peintre du Sel, the Mime Troupe → la Troupe des
 // Mimes (the Understudies → les Doublures), Old Lucky → Vieux Veinard, the Paper Dragon → le
 // Dragon de Papier, the Lantern Pagoda → la Pagode aux Lanternes, the Dawn Mirror → le Miroir
-// de l’Aube, the Umbral Spotlight → le Projecteur Ombral, the Gloomstage → le Théâtre
+// de l’Aube, the Umbral Spotlight → le Projecteur d’Ombre, the Gloomstage → le Théâtre
 // d’Ombres, the gloom → l’Ombre, the Murk → la Brume Mauve (« la Brume » once it is named),
 // street lamps → réverbères, moths → phalènes. What must be understood is marked {key}…{/}.
 
@@ -63,7 +63,7 @@ export const CH7_FR = {
   'June and I became Lamplighters the same summer. Sixty years of letters…{p} then last spring, nothing.': 'June et moi, on est devenues Allumeuses le même été. Soixante ans de lettres…{p} et au printemps dernier, plus rien.',
   '…Well. She’d have liked you. She liked anyone who argues with the dark.': '…Bon. Tu lui aurais plu. Elle aimait tous ceux qui tiennent tête au noir.',
   'Testing, testing… is this thing on?{p}Of COURSE it’s on. It’s MINE.': 'Un, deux, un, deux… ça marche, ce truc ?{p}ÉVIDEMMENT que ça marche. C’est à MOI.',
-  'Good evening, Dawnlands! Tonight, a little rehearsal of my {key}Umbral Spotlight{/}.': 'Bonsoir, les Terres-de-l’Aube ! Ce soir, petite répétition de mon {key}Projecteur Ombral{/}.',
+  'Good evening, Dawnlands! Tonight, a little rehearsal of my {key}Umbral Spotlight{/}.': 'Bonsoir, les Terres-de-l’Aube ! Ce soir, petite répétition de mon {key}Projecteur d’Ombre{/}.',
   'ONE light, on ME. Darkness for everyone else, for ever.{p} Lights… OFF!': 'UNE seule lumière, sur MOI. Le noir pour tous les autres, pour toujours.{p} Extinction… des FEUX !',
   'Mmm. Not dark enough yet. Back to rehearsals!': 'Mmm. Pas encore assez noir. On retourne répéter !',
   'A lamp that’s been put out is only a lamp that’s waiting.': 'Une lampe éteinte, c’est juste une lampe qui attend.',
@@ -111,7 +111,7 @@ export const CH7_FR = {
   'When he lands, step on {key}the plate{/} that points at him: the Dawn Mirror will light him up.': 'Quand il se pose, monte sur {key}la dalle{/} qui pointe vers lui : le Miroir de l’Aube l’éclairera.',
   'The gloom burns off in violet smoke. A paper dragon is left, red and gold again, lying very still.': 'L’Ombre s’envole en fumée violette. Il reste un dragon de papier, de nouveau rouge et or, qui ne bouge plus.',
   'Then one eye opens, and the tail thumps twice: Old Lucky purrs.': 'Puis un œil s’ouvre, et la queue tape deux fois sur les tuiles : Vieux Veinard ronronne.',
-  'The Dawn Hearth burns again: a {key}fifth flame{/} lights up in the lantern.': 'Le Foyer de l’Aube brûle de nouveau : une {key}cinquième flamme{/} s’allume dans la lanterne.',
+  'The Dawn Hearth burns again: a {key}sixth flame{/} lights up in the lantern.': 'Le Foyer de l’Aube brûle à nouveau : une {key}sixième flamme{/} s’allume dans la lanterne.',
   'And over the Jade Terraces, for the first time in a month, the sun comes up.': 'Et sur les Terrasses de Jade, pour la première fois depuis un mois, le soleil se lève.',
   'Old Lucky, hardly singed! We shall mend his whiskers.': 'Vieux Veinard, à peine roussi ! On lui recoudra les moustaches.',
   'An old proverb says: « After the longest night, breakfast. »{p} It is on our kitchen wall.': 'Un vieux proverbe dit : « Après la plus longue nuit, le petit-déjeuner. »{p} Il est écrit sur le mur de notre cuisine.',
@@ -128,12 +128,12 @@ export const CH7_FR = {
   'At the end of the pier, three mimes sit and watch the lanterns go up. Nobody invited them.': 'Au bout de la jetée, trois mimes assis regardent monter les lanternes. Personne ne les a invités.',
   'The Gloomstage flew north-east, to {key}Elderbough{/} and its Great Tree. The Duchess wants the tree’s heart for her finale.': 'Le Théâtre d’Ombres est parti au nord-est, vers {key}Grande-Ramure{/} et son Grand Arbre. La Duchesse veut le cœur de l’arbre pour son grand final.',
   'Then that’s where we’re going. After the festival!': 'Alors c’est là qu’on va. Après la fête !',
-  'June’s lantern has five flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!': 'La lanterne de June a cinq flammes, maintenant. Elle serait…{p} Hmph. J’ai de la fumée dans l’œil. Allez danser !',
+  'June’s lantern has six flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!': 'La lanterne de June a six flammes, maintenant. Elle serait…{p} Hmph. J’ai de la fumée dans l’œil. Allez danser !',
   'The Lantern Festival': 'La Fête des Lanternes',
-  'Five flames in the lantern': 'Cinq flammes dans la lanterne',
+  'Six flames in the lantern': 'Six flammes dans la lanterne',
 
   // ---- the chapter’s recap
-  'The Duchess fled across the Wide Sea with the stolen flames, and we have just crossed after her. In the Dawnlands, the sun has not risen for a month. Find their {key}Great Hearth{/} and relight it.': 'La Duchesse a fui de l’autre côté de la Grande Mer avec les flammes volées, et on vient de traverser derrière elle. Ici, dans les Terres-de-l’Aube, le soleil ne se lève plus depuis un mois. Il faut trouver leur {key}Grand Foyer{/} et le rallumer.',
+  'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.': 'La Duchesse a fui vers l’est, par-dessus la Grande Mer, avec toutes les flammes qu’elle a volées. Traverse derrière elle à bord de la Tasse de Wendy. Dans les Terres-de-l’Aube, le soleil ne se lève plus depuis un mois : trouve leur {key}Grand Foyer{/} et rallume-le.',
 
   // ---- quests
   'The Crossing': 'La Traversée',
@@ -199,11 +199,11 @@ export const CH7_FR = {
   'Not one! You have the mind of a very peaceful stone. Take this anyway.': 'Pas une seule ! Tu as l’esprit d’un caillou très paisible. Prends ceci quand même.',
 
   // ---- Lamplighting, the mini-game to play again (its title is in world13.js)
-  'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.': 'Certaines nuits, le brouillard éteint de nouveau les réverbères de Port-Lanterne. Rallume {key}les sept{/} avant que ta lanterne s’éteigne.',
-  'Some nights, the fog comes back and blows my lamps out.': 'Certaines nuits, le brouillard revient et souffle mes lampes.',
+  'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.': 'Certaines nuits, la Brume éteint à nouveau les réverbères de Port-Lanterne. Rallume {key}les sept{/} avant que ta lanterne s’éteigne.',
+  'Some nights, the fog comes back and blows my lamps out.': 'Certaines nuits, la Brume revient et souffle mes lampes.',
   'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.': 'Gare aux phalènes ! Rallume {key}les sept réverbères{/} avant que ta lanterne s’éteigne.',
   'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit': 'Dis à {key}la vieille Hoshi{/}, en haut de la ville, que tout est rallumé',
-  'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.': 'Tout est rallumé ! Ma vieille maîtresse t’aurait donné un biscuit : moi, je t’en donne deux.',
+  'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.': 'Tout est rallumé ! Ma vieille maîtresse t’aurait donné un biscuit : moi, je n’ai que de la poussière d’étoiles.',
 
   // ---- the Salt Painter’s reflections
   'The Salt Painter’s Reflections': 'Les Reflets de la peintre du Sel',
@@ -254,7 +254,7 @@ export const CH7_FR = {
   '{name}’s kite is above the Murk!': 'Le cerf-volant de {name} a dépassé la Brume !',
   'Reel the kite': 'Enrouler',
   'A mime (reluctantly)': 'Un mime (à contrecœur)',
-  'A mime (very seriously)': 'Une mime (très sérieusement)',
+  'A mime (very seriously)': 'Un mime (très sérieusement)',
   'A mime (a big one)': 'Un mime (un grand)',
   'Hold to reel in, let go to let out': 'Maintiens pour enrouler, relâche pour dérouler',
   'Nibbled!': 'Croc !',
@@ -348,10 +348,10 @@ export const CH7_FR = {
     'Correct! You have the mind of a very clever kettle.': 'Exact ! Vous avez l’esprit d’une bouilloire très maligne.',
     'Some right, some wrong. Take this, for trying.': 'Du juste, du faux. Prenez ceci, pour avoir essayé.',
     'Not one! You have the mind of a very peaceful stone. Take this anyway.': 'Pas une seule ! Vous avez l’esprit d’un caillou très paisible. Prenez ceci quand même.',
-    'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.': 'Certaines nuits, le brouillard éteint de nouveau les réverbères de Port-Lanterne. Rallumez {key}les sept{/} avant que votre lanterne s’éteigne.',
+    'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.': 'Certaines nuits, la Brume éteint à nouveau les réverbères de Port-Lanterne. Rallumez {key}les sept{/} avant que votre lanterne s’éteigne.',
     'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.': 'Gare aux phalènes ! Rallumez {key}les sept réverbères{/} avant que votre lanterne s’éteigne.',
     'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit': 'Dites à {key}la vieille Hoshi{/}, en haut de la ville, que tout est rallumé',
-    'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.': 'Tout est rallumé ! Ma vieille maîtresse vous aurait donné un biscuit : moi, je vous en donne deux.',
+    'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.': 'Tout est rallumé ! Ma vieille maîtresse vous aurait donné un biscuit : moi, je n’ai que de la poussière d’étoiles.',
     'On the Saltmirror Flats, Blanche sees {key}three things{/} in the reflection that are not there above. Find them and bring them to her.': 'Sur le Miroir de Sel, Blanche voit dans le reflet {key}trois choses{/} qui n’existent pas au-dessus. Trouvez-les et rapportez-les-lui.',
     'Would you find them for me? Stand on each reflection and {key}reach in{/}.': 'Vous voulez bien les trouver ? Mettez-vous sur chaque reflet et {key}plongez la main{/} dedans.',
     'Find the {key}three reflections{/} on the Saltmirror Flats, around the Saltworks': 'Trouvez les {key}trois reflets{/} sur le Miroir de Sel, autour de la Saline',
@@ -361,5 +361,6 @@ export const CH7_FR = {
     'The Pagoda has stood for three hundred years. It can wait while you eat.': 'La Pagode tient debout depuis trois cents ans. Elle peut attendre que vous mangiez.',
     'Look down, not up. The mirror is more honest than the sky.': 'Regardez en bas, pas en haut. Le miroir est plus honnête que le ciel.',
     'Your lantern is guttering — get back to the light!': 'Ta lanterne faiblit — retourne vite à la lumière !',
+    'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.': 'La Duchesse a fui vers l’est, par-dessus la Grande Mer, avec toutes les flammes qu’elle a volées. Traversez derrière elle à bord de la Tasse de Wendy. Dans les Terres-de-l’Aube, le soleil ne se lève plus depuis un mois : trouvez leur {key}Grand Foyer{/} et rallumez-le.',
   },
 };

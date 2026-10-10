@@ -148,7 +148,7 @@ async function understudiesUninvited(S) {
     const swan = buildSwanPedalo(P.r3d);
     st.prop('swan', swan, x + 4, 0, z + 2.6);
     for (const [i, id] of ['minnow', 'fidget', 'brick'].entries()) { const a = st.actor(id, x + 3.2 + i * 0.8, z + 2.6, { face: { x: -1, z: -0.2 } }); if (a && a.n) a.n.seatY = 0.55; }
-    await st.say('barnaby', 'Winners: the lantern folk. Losers: the Understudies. The {key}propeller{/} is yours.', { expr: 'smug' });
+    await st.say('barnaby', 'Winners: the lantern folk. Losers: the Understudies. The {key}propeller{/} goes to Captain Wendy.', { expr: 'smug' });
     await st.say('minnow', 'We weren’t even TRYING! We’re saving our strength for the Duchess’s Debut.', { expr: 'sad' });
     await st.say('fidget', 'Minnow… She didn’t invite us. Understudies don’t get tickets.', { expr: 'cry' });
     await st.say('brick', 'Brick practised clapping. For weeks.', { expr: 'sad' });
@@ -391,7 +391,7 @@ async function marshHome(S) {
     await st.lights(0, 0, 1.4);
     st.mark('marshBack');
     await st.say('croakington', '{big}RIBBIT!{/}{p} No sneeze! The marsh is warm again, little heroes.', { expr: 'love', hop: true });
-    await st.say('narrator', 'In the lantern, the marsh’s flame catches again.');
+    await st.say('narrator', 'In the lantern, the marsh’s flame catches again: {key}five flames{/}!');
     // Wendy, with a patched envelope and a new propeller
     const ship = buildAirship(P.r3d);
     st.prop('teacup', ship, KING[0] + 18, 10, KING[1] - 6);
@@ -441,7 +441,7 @@ function swanRace(S, dt) {
 
 export const CH6 = {
   id: 6, title: 'Fire & Fins',
-  recap: 'The Duchess stole the marsh’s flame and keeps it on her flying theatre, up on the volcano Emberpeak. She shot down the Teacup, Captain Wendy’s airship, over Dino Isle. Mend the Teacup, get into the crater and take {key}the flame{/} back.',
+  recap: 'The Great Hearth of the South burns again, but the Duchess keeps the marsh’s flame on her flying theatre, up on the volcano Emberpeak. She shot down the Teacup, Captain Wendy’s airship, over Dino Isle. Mend the Teacup, get into the crater and take {key}the flame{/} back.',
   lv: 27, zones: ['volcano', 'straits', 'dino'], opens: ['whale'],
   update(S, dt) { swanRace(S, dt); },
   props: [
@@ -487,7 +487,7 @@ export const CH6 = {
       steps: [
         { do: 'talk', npc: 'barnaby', text: 'Ask {key}Old Barnaby{/} for a propeller, at {key}the Straits Light{/} to the east', run: barnabyTalk },
         { do: 'race', text: 'Win {key}the Regatta{/} by sailboat: round {key}the three buoys{/}, then back to the light', points: REGATTA, time: 55, r: 4, go: 'And they’re OFF!', fail: 'The swan wins! Back to the start line to try again.', rival: true },
-        { do: 'scene', text: 'Collect your {key}propeller{/} from Old Barnaby', run: understudiesUninvited },
+        { do: 'scene', text: 'Hear {key}Old Barnaby{/} award the propeller, at the Straits Light', run: understudiesUninvited },
       ],
     },
     c6_forge: {

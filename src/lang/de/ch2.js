@@ -16,7 +16,7 @@ export const CH2_DE = {
 
   // ---- the chapter
   'The Whispering Woods': 'Die wispernden Wälder',
-  'The Duchess snuffed out the lighthouse of Marigold Cove, and you relit it with Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'Die Herzogin hat den Leuchtturm von Marigold Cove gelöscht, und du hast ihn mit Oma Junes Laterne neu entfacht. Ihr Brief schickt dich nach Norden in den {key}Tiefen Flüsterwald{/}. Finde sein Großes Herdfeuer, das der alte Baum Borkenbart hütet, und {key}entfache es{/}.',
+  'Old Glimmer, the lighthouse of Marigold Cove, shines again: one flame burns in Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'Der Alte Schimmer, der Leuchtturm von Marigold Cove, leuchtet wieder: Eine Flamme brennt in Oma Junes Laterne. Ihr Brief schickt dich nach Norden in den {key}Tiefen Flüsterwald{/}. Finde sein Großes Herdfeuer, das der alte Baum Borkenbart hütet, und {key}entfache es{/}.',
 
   // ---- the foresters
   'The trees of Deep Whisperwood are whispering:{p} “…cold… so cold… the dark came down…”': 'Die Bäume im Tiefen Flüsterwald flüstern:{p} »…kalt… so kalt… das Dunkel kam herab…«',
@@ -70,7 +70,7 @@ export const CH2_DE = {
   'Hmmm. Daylight, at last.{p} Stand back, little ones: this old tree has work to do.': 'Hmmm. Endlich Tageslicht.{p} Tritt zurück, kleines Pflänzchen: Dieser alte Baum hat zu tun.',
   'The Deepwood breathes again': 'Der Tiefwald atmet wieder',
   'The Murk rolls back from the Golden Steppe, the Red Canyon and Bouncecap Woods': 'Der Grauschleier lichtet sich über der Goldenen Steppe, dem Roten Canyon und dem Hüpfpilzwald',
-  'Back in Marigold Cove, a certain mayor drops his tea.{p} He has started buying cheaper cups.': 'Derweil in Marigold Cove lässt ein gewisser Bürgermeister seinen Tee fallen.{p} Er kauft inzwischen billigere Tassen.',
+  'Back in Marigold Cove, Mayor Hollis drops his tea again.{p} He has started buying cheaper cups.': 'Derweil in Marigold Cove lässt Bürgermeister Hollis schon wieder seinen Tee fallen.{p} Er kauft inzwischen billigere Tassen.',
   'The next Great Hearth burns out west, in the {key}Golden Steppe{/}, under the old Festival Ring.': 'Das nächste Große Herdfeuer brennt im Westen, in der {key}Goldenen Steppe{/}, unter der alten Festarena.',
   'Go {key}west{/}, little Lamplighter, to the {key}Festival Ring{/}.': 'Geh nach {key}Westen{/}, kleines Licht, zur {key}Festarena{/}.',
 
@@ -185,7 +185,7 @@ export const CH2_DE = {
 
   // ihr: the same lines, said to the whole party
   __group: {
-    'The Duchess snuffed out the lighthouse of Marigold Cove, and you relit it with Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'Die Herzogin hat den Leuchtturm von Marigold Cove gelöscht, und ihr habt ihn mit Oma Junes Laterne neu entfacht. Ihr Brief schickt euch nach Norden in den {key}Tiefen Flüsterwald{/}. Findet sein Großes Herdfeuer, das der alte Baum Borkenbart hütet, und {key}entfacht es{/}.',
+    'Old Glimmer, the lighthouse of Marigold Cove, shines again: one flame burns in Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'Der Alte Schimmer, der Leuchtturm von Marigold Cove, leuchtet wieder: Eine Flamme brennt in Oma Junes Laterne. Ihr Brief schickt euch nach Norden in den {key}Tiefen Flüsterwald{/}. Findet sein Großes Herdfeuer, das der alte Baum Borkenbart hütet, und {key}entfacht es{/}.',
     '{key}Three of my trees{/} are sick with gloom. {key}Chase it away{/}: they will tell us what happened to Barkbeard.': '{key}Drei meiner Bäume{/} sind krank vor Trübsal. {key}Vertreibt sie{/}, dann erzählen sie uns, was mit Borkenbart geschehen ist.',
     'Only the wind from the mills can blow that mist away. Go and see {key}Barley the miller{/}, up on {key}Breezy Hill{/}.': 'Nur der Wind der Mühlen kann diesen Nebel fortblasen. Geht zu {key}Müller Barley{/}, oben auf dem {key}Brisenhügel{/}.',
     'Hop in the pouch! Next stop: Breezy Hill!': 'Hüpft in die Kehlsäcke! Nächster Halt: Brisenhügel!',

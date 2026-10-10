@@ -27,7 +27,7 @@ export const CH8_IT = {
   'The three Understudies fall a very long way, through a great many leaves.': 'Le tre Controfigure precipitano per un bel pezzo, attraverso un gran numero di foglie.',
   'Autumn & Roots': 'Autunno e Radici',
   'Chapter 8': 'Capitolo 8',
-  'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Al di là del mare, la lanterna ha ritrovato la sua quinta fiamma. La Duchessa è volata fino al {key}Grande Albero{/} per rubargli il Cuor di Luce, l’ultima luce che le serve. Seguila attraverso Bosco Fogliabrace e {key}fermala{/}.',
+  'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Il Focolare dell’Alba arde di nuovo: sei fiamme nella lanterna. La Duchessa è volata a nord-est, fino al {key}Grande Albero{/} di Frondantica, per rubargli il Cuor di Luce: l’ultima luce che le serve. Seguila attraverso Bosco Fogliabrace e {key}fermala{/}.',
   'The Duchess is at the Great Tree. I can’t fly you there: moths eat the Teacup’s lights.': 'La Duchessa è al Grande Albero. Non posso portarti in volo: le falene mangiano le luci della Tazzina.',
   'Go on foot. First stop: {key}Harvestholm{/}, south-east of here.': 'Vai a piedi. Prima tappa: {key}Mietivalle{/}, a sud-est di qui.',
   'Welcome to Harvestholm! Our festival is in two days, and {key}moths{/} the size of hats eat every lantern we hang!': 'Visite a Mietivalle, che gioia! La festa è fra due giorni, e delle {key}falene{/} grandi come cappelli mangiano ogni lanterna che appendiamo!',
@@ -84,7 +84,7 @@ export const CH8_IT = {
   'who drinks the light': 'che beve la luce',
   'Her swarm shields her! {key}Hang a jar{/} on a hook to draw the moths away, then hit her!': 'Lo sciame la protegge! {key}Appendi un barattolo{/} a un gancio per attirare le falene, poi colpiscila!',
   'The Moth Queen folds her wings, and her moths go out like a blown candle.': 'La Regina delle Falene richiude le ali, e le sue falene si spengono come una candela soffiata.',
-  'The Heartlight wakes, green-gold, like sun through leaves. The {key}sixth flame{/} catches in the lantern.': 'Il Cuor di Luce si risveglia, verde e oro, come il sole tra le foglie. La {key}sesta fiamma{/} si accende nella lanterna.',
+  'The Heartlight wakes, green-gold, like sun through leaves. The {key}seventh flame{/} catches in the lantern.': 'Il Cuor di Luce si risveglia, verde e oro, come il sole tra le foglie. La {key}settima fiamma{/} si accende nella lanterna.',
   'The Great Tree’s crown turns green again, like a lamp lit inside a lampshade.': 'La chioma del Grande Albero torna verde, come una lampada che si accende dentro un paralume.',
   'My straw! You broke my STRAW!': 'La mia cannuccia! Mi avete rotto la CANNUCCIA!',
   'Keep your twig! My Grand Finale awaits at {key}the Umbral Scar{/}, beyond a whole moor full of GHOSTS.{p}Toodle-oo!': 'Tenetevi il vostro rametto! Il mio Gran Finale mi aspetta alla {key}Cicatrice d’Ombra{/}, oltre un’intera landa piena di FANTASMI.{p}Ciao ciao, tesori!',
@@ -218,7 +218,7 @@ export const CH8_IT = {
   'Delicious little lights…': 'Deliziose lucine…',
 
   __group: {
-    'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Al di là del mare, la lanterna ha ritrovato la sua quinta fiamma. La Duchessa è volata fino al {key}Grande Albero{/} per rubargli il Cuor di Luce, l’ultima luce che le serve. Seguitela attraverso Bosco Fogliabrace e {key}fermatela{/}.',
+    'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Il Focolare dell’Alba arde di nuovo: sei fiamme nella lanterna. La Duchessa è volata a nord-est, fino al {key}Grande Albero{/} di Frondantica, per rubargli il Cuor di Luce: l’ultima luce che le serve. Seguitela attraverso Bosco Fogliabrace e {key}fermatela{/}.',
     'The Duchess is at the Great Tree. I can’t fly you there: moths eat the Teacup’s lights.': 'La Duchessa è al Grande Albero. Non posso portarvi in volo: le falene mangiano le luci della Tazzina.',
     'Go on foot. First stop: {key}Harvestholm{/}, south-east of here.': 'Andate a piedi. Prima tappa: {key}Mietivalle{/}, a sud-est di qui.',
     'And three strangers fell out of the sky into {key}Hazel’s pumpkin patch{/}, just east of here. Go and see!': 'E tre sconosciuti sono piovuti dal cielo tra le {key}zucche di Nocciola{/}, appena a est di qui. Andate a vedere!',

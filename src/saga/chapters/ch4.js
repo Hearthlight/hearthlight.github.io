@@ -107,7 +107,7 @@ async function shadowOnIce(S) {
 async function yukiTalk(S) {
   await S.say('yuki', 'A little red fellow on a balloon? My Tobi saw him, dears.', { expr: 'happy' });
   await S.say('tobi', 'He crashed on the {key}Cloud Isles{/}! I saw it with my OWN EYES. Both of them!', { expr: 'happy' });
-  await S.say('yuki', 'Only a balloon flies up there. Chase the ice imps off the {key}Balloon Station{/}, {key}far to the east{/}!', { expr: 'worried' });
+  await S.say('yuki', 'You need a balloon to get up there. Chase the ice imps off the {key}Balloon Station{/}, {key}far to the east{/}!', { expr: 'worried' });
 }
 async function wendyTalk(S) {
   await S.say('wendy', 'Thanks, chums! Captain Wendy, at your service.', { expr: 'happy' });
@@ -369,7 +369,7 @@ export const CH4 = {
     { id: 'tobi', at: TOBI, face: { x: 0.4, z: 1 }, when: (S) => S.done('c3_relight'),
       lines: ['Fastest sled on the glacier! Ask anyone! Ask me!', 'Mama Yuki says no sledding after dark. It’s ALWAYS nearly dark.'] },
     { id: 'wendy', at: WENDY, face: { x: -0.4, z: 1 }, when: (S) => S.done('c3_relight'),
-      lines: ['Up to the Cloud Isles? Only by balloon!', 'Nibs is afraid of heights. He’s an albatross. It’s complicated.'] },
+      lines: ['The Cloud Isles? Best seen from a balloon!', 'Nibs is afraid of heights. He’s an albatross. It’s complicated.'] },
     { id: 'nimbus', at: NIMBUS, face: { x: -0.3, z: 1 }, when: (S) => S.done('c3_relight'),
       lines: ['The clouds remember every song ever sung beneath them.', 'A cloud never hurries, and yet it is never late.'] },
   ],

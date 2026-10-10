@@ -107,7 +107,7 @@ export const CH1_DE = {
   'the boss of the Glimmer Grotto': 'der Boss der Schimmergrotte',
   'The Duchess will hear about this!{p} …Please don’t tell her.': 'Das wird die Herzogin erfahren!{p} …Bitte sag es ihr nicht.',
   'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'Das {key}letzte Glutstück{/} rollt aus dem Wrack und unter der hinteren Tür durch. Hinterher!',
-  'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'Die Glut springt in die Laterne: {key}drei Flammen{/}! Jetzt trag sie hinauf zum {key}Alten Schimmer{/}.',
+  'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Die drei Glutstücke verschmelzen zu {key}einer Flamme{/}: Die Laterne ist erwacht! Trag sie hinauf zum {key}Alten Schimmer{/}.',
   // (their shouts in the fight: src/combat/v7/troupe.js)
   'Hey!': 'He!',
   'How rude!': 'Frechheit!',
@@ -137,7 +137,7 @@ export const CH1_DE = {
   'Go on: hold the lantern up high!': 'Nur zu: Halt die Laterne hoch!',
   'Old Glimmer shines again': 'Der Alte Schimmer leuchtet wieder',
   'The Murk rolls back from Deep Whisperwood and the Windy Heights': 'Der Grauschleier weicht vom Tiefen Flüsterwald und den Windhöhen',
-  'Lamps come back on all over the cove.{p} And a very old mayor drops his tea.': 'Überall in der Bucht gehen die Lampen wieder an.{p} Und ein sehr alter Bürgermeister lässt seinen Tee fallen.',
+  'Lamps come back on all over the cove.{p} And Mayor Hollis drops his tea.': 'Überall in der Bucht gehen die Lampen wieder an.{p} Und Bürgermeister Hollis lässt seinen Tee fallen.',
   // (Perkins and Nana June’s letter)
   'PELICAN POST!{p} Perkins, postmaster. I have a letter for you!': 'PELIKANPOST!{p} Perkins, Postmeister. Ich habe einen Brief für dich!',
   'From a Mrs June. Posted…{p} ooh. Seven weeks ago.': 'Von einer Frau June. Aufgegeben…{p} oh. Vor sieben Wochen.',
@@ -202,7 +202,7 @@ export const CH1_DE = {
     'And YOU are our volunteers! This won’t hurt!{p} Much!': 'Und IHR habt euch gerade freiwillig gemeldet! Das tut gar nicht weh!{p} Fast nicht!',
     'The Duchess will hear about this!{p} …Please don’t tell her.': 'Das wird die Herzogin erfahren!{p} …Bitte sagt es ihr nicht.',
     'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'Das {key}letzte Glutstück{/} rollt aus dem Wrack und unter der hinteren Tür durch. Hinterher!',
-    'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'Die Glut springt in die Laterne: {key}drei Flammen{/}! Jetzt tragt sie hinauf zum {key}Alten Schimmer{/}.',
+    'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Die drei Glutstücke verschmelzen zu {key}einer Flamme{/}: Die Laterne ist erwacht! Tragt sie hinauf zum {key}Alten Schimmer{/}.',
     'The lantern holds its three embers. Carry it to {key}Old Glimmer{/} to light the lighthouse again and push back the Murk.': 'Die Laterne hat ihre drei Glutstücke. Tragt sie zum {key}Alten Schimmer{/}, um den Leuchtturm wieder anzuzünden und den Grauschleier zurückzudrängen.',
     'Carry the lantern to {key}Old Glimmer{/}, the lighthouse east of the village': 'Tragt die Laterne zum {key}Alten Schimmer{/}, dem Leuchtturm östlich vom Dorf',
     'Wait for the post at the foot of {key}Old Glimmer{/}': 'Wartet am Fuß des {key}Alten Schimmers{/} auf die Post',

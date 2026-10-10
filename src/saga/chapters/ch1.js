@@ -206,7 +206,7 @@ async function relight(S) {
     st.mark('murkBack');
     await st.wait(1.1);
     await st.title('Old Glimmer shines again', 'The Murk rolls back from Deep Whisperwood and the Windy Heights', 4);
-    await st.say('narrator', 'Lamps come back on all over the cove.{p} And a very old mayor drops his tea.');
+    await st.say('narrator', 'Lamps come back on all over the cove.{p} And Mayor Hollis drops his tea.');
   });
 }
 
@@ -365,7 +365,7 @@ R('shrine').take = async (S, d, r, p) => {
     if (st.vfx) st.vfx.pillar(x, z, { r: 0.8, h: 6, color: '#ffd66b', life: 1.4 });
     st.sfx('shard', { volume: 0.9 });
     S.flag('ember3'); S.flag('lanternFull');
-    await st.say('narrator', 'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.');
+    await st.say('narrator', 'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.');
     void p;
   });
   await d.D.exit({ done: true });

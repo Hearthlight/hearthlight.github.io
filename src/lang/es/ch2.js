@@ -16,7 +16,7 @@ export const CH2_ES = {
 
   // ---- the chapter
   'The Whispering Woods': 'Los Bosques Susurrantes',
-  'The Duchess snuffed out the lighthouse of Marigold Cove, and you relit it with Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'La Duquesa apagó el faro de Marigold Cove, y tú lo volviste a encender con el farol de la abuela June. Su carta te manda al norte, a {key}Bosquesusurro Profundo{/}. Encuentra su Gran Hogar, que cuida el viejo árbol Barbacorteza, y {key}vuelve a encenderlo{/}.',
+  'Old Glimmer, the lighthouse of Marigold Cove, shines again: one flame burns in Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'El Viejo Destello, el faro de Marigold Cove, vuelve a brillar: una llama arde en el farol de la abuela June. Su carta te manda al norte, a {key}Bosquesusurro Profundo{/}. Encuentra su Gran Hogar, que cuida el viejo árbol Barbacorteza, y {key}vuelve a encenderlo{/}.',
 
   // ---- the foresters
   'The trees of Deep Whisperwood are whispering:{p} “…cold… so cold… the dark came down…”': 'Los árboles de Bosquesusurro Profundo susurran:{p} «…frío… tanto frío… cayó la oscuridad…»',
@@ -70,7 +70,7 @@ export const CH2_ES = {
   'Hmmm. Daylight, at last.{p} Stand back, little ones: this old tree has work to do.': 'Hmmm. La luz del día, por fin.{p} Apártate, criatura: este viejo árbol tiene trabajo.',
   'The Deepwood breathes again': 'El Bosque Profundo vuelve a respirar',
   'The Murk rolls back from the Golden Steppe, the Red Canyon and Bouncecap Woods': 'La Bruma Malva se retira de la Estepa Dorada, el Cañón Rojo y el Bosque de los Rebotongos',
-  'Back in Marigold Cove, a certain mayor drops his tea.{p} He has started buying cheaper cups.': 'Mientras tanto, en Marigold Cove, a cierto alcalde se le cae el té.{p} Ya empezó a comprar tazas más baratas.',
+  'Back in Marigold Cove, Mayor Hollis drops his tea again.{p} He has started buying cheaper cups.': 'Mientras tanto, en Marigold Cove, al alcalde Hollis se le vuelve a caer el té.{p} Ya empezó a comprar tazas más baratas.',
   'The next Great Hearth burns out west, in the {key}Golden Steppe{/}, under the old Festival Ring.': 'El próximo Gran Hogar arde al oeste, en la {key}Estepa Dorada{/}, bajo la vieja Arena del Festival.',
   'Go {key}west{/}, little Lamplighter, to the {key}Festival Ring{/}.': 'Ve al {key}oeste{/}, lucecita, hasta la {key}Arena del Festival{/}.',
 
@@ -185,7 +185,7 @@ export const CH2_ES = {
 
   // ustedes: the same lines, said to the whole party
   __group: {
-    'The Duchess snuffed out the lighthouse of Marigold Cove, and you relit it with Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'La Duquesa apagó el faro de Marigold Cove, y ustedes lo volvieron a encender con el farol de la abuela June. Su carta los manda al norte, a {key}Bosquesusurro Profundo{/}. Encuentren su Gran Hogar, que cuida el viejo árbol Barbacorteza, y {key}vuelvan a encenderlo{/}.',
+    'Old Glimmer, the lighthouse of Marigold Cove, shines again: one flame burns in Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.': 'El Viejo Destello, el faro de Marigold Cove, vuelve a brillar: una llama arde en el farol de la abuela June. Su carta los manda al norte, a {key}Bosquesusurro Profundo{/}. Encuentren su Gran Hogar, que cuida el viejo árbol Barbacorteza, y {key}vuelvan a encenderlo{/}.',
     '{key}Three of my trees{/} are sick with gloom. {key}Chase it away{/}: they will tell us what happened to Barkbeard.': '{key}Tres de mis árboles{/} están enfermos de grisalla. {key}Ahuyéntenla{/}: ellos nos contarán qué le pasó a Barbacorteza.',
     'Only the wind from the mills can blow that mist away. Go and see {key}Barley the miller{/}, up on {key}Breezy Hill{/}.': 'Solo el viento de los molinos puede llevarse esa niebla. Vayan a ver a {key}Barley el molinero{/}, allá arriba, en {key}Colina Brisa{/}.',
     'Hop in the pouch! Next stop: Breezy Hill!': '¡Salten a los buches! Próxima parada: ¡Colina Brisa!',

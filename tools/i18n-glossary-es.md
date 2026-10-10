@@ -291,6 +291,9 @@ Always these, everywhere (they match `tools/i18n/names-es.json`).
 | the gloom (the creatures, the stuff) | la grisalla (`cangrejos de grisalla`) |
 | Gloomling / Big Gloomling | grisallín / grisallín grande |
 | gloom camp | campamento de grisalla |
+| Gloom Boar / Gustbelly / Storm Ram / Gloom Ogre (the four ground brutes) | jabalí de grisalla / Resoplón / carnero de tormenta / ogro de grisalla |
+| the lantern’s flames (a number in a line is this one, or none) | Old Glimmer 1 · the Deepwood 2 · the Steppe 3 · Croakmire 4 · chapter 5: 3 when the Duchess snuffs Croakmire again, then 4 with the South · chapter 6: 5 (Croakmire’s flame comes home) · the Dawn Hearth 6 · the Heartlight 7 · Hollowmoor Manor 8 |
+| recaps, briefs, objectives | speak to the player: «tú», with the «ustedes» twin in `__group` — never «hay que» |
 | the Murk | la Bruma Malva (short: la Bruma) |
 | Great Hearth(s) | Gran Hogar / Grandes Hogares |
 | Hearthstone | Piedra del Hogar |

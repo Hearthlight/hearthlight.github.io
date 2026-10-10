@@ -149,7 +149,7 @@ async function ladyAtPeace(S) {
     if (!S.st.lit.includes('moor')) S.st.lit.push('moor');
     S.save();
     await st.lights(0, 0, 1);
-    await st.say('narrator', 'The Lady in Grey fades away. In the lantern, a seventh flame lights.');
+    await st.say('narrator', 'The Lady in Grey fades away. In the lantern, an eighth flame lights.');
     await st.say('narrator', 'All through the manor, the clocks start ticking again. By the gate, the rose opens its first bud.');
     // (the scene ends on where to go next: the objective that follows says the same)
     await st.say('narrator', 'To put out the Duchess’s Spotlight, it will take a clockmaker. Go north to {key}Cogsworth{/} and find {key}Master Tock{/}.');
@@ -309,7 +309,7 @@ async function hikersDone(S) {
 // ------------------------------------------------------------------ the chapter
 export const CH9 = {
   id: 9, title: 'Moor & Machines',
-  recap: 'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.',
+  recap: 'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.',
   lv: 38, zones: ['moor', 'prism', 'clock', 'tundra'], opens: ['scar'],
   // (the moor, until the Lady is at peace: grey, and very quiet)
   gloom(S) {

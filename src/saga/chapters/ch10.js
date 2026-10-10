@@ -189,7 +189,7 @@ R('understage').onClear = (S) => { S.toast('Minnow (from above): « All clear! C
 
 // ------------------------------------------------------------------ the fly tower: the Understudies’ finest hour
 const TROUPE = ['minnow', 'fidget', 'brick'];
-const PRATFALLS = ['Fidget forgets his line. The follow-spot is hunting again: hide!', 'Brick drops Minnow. The follow-spot is hunting again: hide!', 'The act falls apart. The follow-spot is hunting again: hide!'];
+const PRATFALLS = ['Fidget forgets his line. The follow-spot is hunting again: hide!', 'Brick drops Minnow. The follow-spot is hunting again: hide!', 'The team pose collapses. The follow-spot is hunting again: hide!'];
 R('flytower').run = async (S, d, r) => {
   const P = S.P, c = mid(d, r);
   const CS = [8.5, 63.5];
@@ -371,7 +371,7 @@ async function finaleEnd(S, d, r, e) {
     await st.move('letter', { x: x - 0.2, y: 1.6, z: z + 0.3 }, 0.6);
     st.dropProp('letter');
     if (!st.skipping) await st.dialogue.showLetter('The Starfall Festival Committee', 'Dear Miss Gloria,\n\nThe hen was an accident. It belonged to the Mayor, and it has been spoken to.\n\nWe laughed at the hen — never at you. You were wonderful.\n\nPlease come back and close next year’s Festival. We would so like to hear the rest.', '— the Committee (June, secretary)');
-    await st.say('duchess', '« We would so like to hear the rest… »', { expr: 'cry' });
+    await st.say('duchess', '« We would so like to hear the rest… »{p}They… INVITED me?', { expr: 'cry' });
     st.heroesFace(x, z);
     await st.say(st.lead, 'And your mother has a message for you.{p}The tea is still warm.', { expr: 'sad' });
     st.mark('tea');
@@ -421,7 +421,7 @@ async function dawnOverAll(S) {
     await st.lights(0, 0, 2);
     st.mark('dawn');
     // (the flames come home: a hearth or three, the length of the world)
-    for (const [px, pz, line] of [[...LIGHTHOUSE, 'In Marigold Cove, Old Glimmer’s lamp burns gold again.'], [...GREAT_TREE, 'In Elderbough, the Great Tree’s heart beats warm and slow.'], [...LANTERNPORT, 'In Lanternport, somebody throws open the shutters and laughs out loud.']]) {
+    for (const [px, pz, line] of [[...LIGHTHOUSE, 'In Marigold Cove, Old Glimmer’s lamp burns brighter than ever.'], [...GREAT_TREE, 'In Elderbough, the Great Tree’s heart beats warm and slow.'], [...LANTERNPORT, 'In Lanternport, somebody throws open the shutters and laughs out loud.']]) {
       await st.fade(1, 0.4);
       await st.cam(px, pz, { dur: 0 });
       await st.wait(0.5);
@@ -436,7 +436,7 @@ async function dawnOverAll(S) {
     await st.say('duchess', '…They’ll all be at the Festival tonight. And they will all know it was me.', { expr: 'sad' });
     await st.say(st.lead, 'Come anyway.', { expr: 'happy' });
     await st.say('duchess', '…I haven’t sung FOR anybody in thirty years. Only AT them.', { expr: 'worried' });
-    await st.say('crumble', 'I’ll introduce you! I’ve been practising your title: I’ve nearly got it right!', { expr: 'happy', hop: true });
+    await st.say('crumble', 'I’ll introduce you! No more « Your Gloominess »: I’ve been practising your real name!', { expr: 'happy', hop: true });
     await st.say('wendy', 'Then all aboard the Teacup! Next stop: {key}the Festival{/}, in {key}Marigold Cove{/}!', { expr: 'happy' });
     st.mark('home');
     await st.title('Dawn over every land', 'The Murk is gone — and the Festival is tonight', 3.4);
@@ -573,7 +573,7 @@ async function festival(S) {
     st.prop('riser', rg, 0, 0, 0);
     for (let k = 0; k < 6; k++) { st.fx('firework', x - 7 + k * 2.8, 10 + (k % 2) * 2, z - 6, 26, { color: ['#ffd66b', '#ff8ab0', '#8fd6ff', '#b0f08a', '#c8a8ff', '#ffb07a'][k] }); st.sfx('firework', { volume: 0.5 }); await st.wait(0.3); }
     st.mark('fireworks');
-    await st.say('june', 'Well, my little Lamplighter. Seven flames home, one Duchess found, and not a single thing burned down.{p}I knew you could.', { expr: 'love' });
+    await st.say('june', 'Well, my little Lamplighter. Every flame home, one Duchess found, and not a single thing burned down.{p}I knew you could.', { expr: 'love' });
     await st.say('duchess', 'Same time next year? I have… a few more arias.', { expr: 'happy' });
     for (let k = 0; k < 6; k++) { st.fx('firework', x - 8 + Math.random() * 16, 11 + Math.random() * 3, z - 7, 26, { color: ['#ffd66b', '#ff8ab0', '#8fd6ff', '#b0f08a'][k % 4] }); st.sfx('firework', { volume: 0.45 }); await st.wait(0.35); }
     // the credits, over the festival, dimmed

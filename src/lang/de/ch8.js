@@ -27,7 +27,7 @@ export const CH8_DE = {
   'The three Understudies fall a very long way, through a great many leaves.': 'Die drei Zweitbesetzungen fallen sehr, sehr tief. Durch sehr, sehr viel Laub.',
   'Autumn & Roots': 'Laub & Wurzeln',
   'Chapter 8': 'Kapitel 8',
-  'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Jenseits des Meeres hat die Laterne ihre fünfte Flamme zurück. Die Herzogin ist zum {key}Großen Baum{/} weitergeflogen, um sein Herzlicht zu stehlen, das letzte Licht, das ihr fehlt. Folge ihr durch den Glutlaubwald und {key}halte sie auf{/}.',
+  'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Das Herdfeuer des Morgenrots brennt wieder: sechs Flammen in der Laterne. Die Herzogin ist nach Nordosten geflogen, zum {key}Großen Baum{/} von Urgeäst, um sein Herzlicht zu stehlen: das letzte Licht, das ihr fehlt. Folge ihr durch den Glutlaubwald und {key}halte sie auf{/}.',
   'The Duchess is at the Great Tree. I can’t fly you there: moths eat the Teacup’s lights.': 'Die Herzogin ist beim Großen Baum. Hinfliegen kann ich dich nicht: Motten fressen der Teetasse die Lichter weg.',
   'Go on foot. First stop: {key}Harvestholm{/}, south-east of here.': 'Geh zu Fuß. Erster Halt: {key}Garbenheim{/}, südöstlich von hier.',
   'Welcome to Harvestholm! Our festival is in two days, and {key}moths{/} the size of hats eat every lantern we hang!': 'Willkommen in Garbenheim! In zwei Tagen ist unser Fest, und {key}Motten{/} so groß wie Hüte fressen jede Laterne, die wir aufhängen!',
@@ -84,7 +84,7 @@ export const CH8_DE = {
   'who drinks the light': 'die das Licht trinkt',
   'Her swarm shields her! {key}Hang a jar{/} on a hook to draw the moths away, then hit her!': 'Ihr Schwarm schützt sie! {key}Häng ein Glas{/} an einen Haken, um die Motten wegzulocken, und dann schlag zu!',
   'The Moth Queen folds her wings, and her moths go out like a blown candle.': 'Die Mottenkönigin faltet die Flügel, und ihre Motten erlöschen wie eine ausgeblasene Kerze.',
-  'The Heartlight wakes, green-gold, like sun through leaves. The {key}sixth flame{/} catches in the lantern.': 'Das Herzlicht erwacht, grüngolden, wie Sonne durch Blätter. In der Laterne fängt die {key}sechste Flamme{/} Feuer.',
+  'The Heartlight wakes, green-gold, like sun through leaves. The {key}seventh flame{/} catches in the lantern.': 'Das Herzlicht erwacht, grüngolden, wie Sonne durch Blätter. In der Laterne fängt die {key}siebte Flamme{/} Feuer.',
   'The Great Tree’s crown turns green again, like a lamp lit inside a lampshade.': 'Die Krone des Großen Baums wird wieder grün, wie eine Lampe, die man unter ihrem Schirm anknipst.',
   'My straw! You broke my STRAW!': 'Mein Strohhalm! Ihr habt meinen STROHHALM zerbrochen!',
   'Keep your twig! My Grand Finale awaits at {key}the Umbral Scar{/}, beyond a whole moor full of GHOSTS.{p}Toodle-oo!': 'Behaltet euer Zweiglein! Mein Großes Finale wartet an {key}der Schattennarbe{/}, hinter einem ganzen Moor voller GEISTER.{p}Tschüssi, Darlings!',
@@ -218,7 +218,7 @@ export const CH8_DE = {
   'Delicious little lights…': 'Köstliche kleine Lichter…',
 
   __group: {
-    'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Jenseits des Meeres hat die Laterne ihre fünfte Flamme zurück. Die Herzogin ist zum {key}Großen Baum{/} weitergeflogen, um sein Herzlicht zu stehlen, das letzte Licht, das ihr fehlt. Folgt ihr durch den Glutlaubwald und {key}haltet sie auf{/}.',
+    'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Das Herdfeuer des Morgenrots brennt wieder: sechs Flammen in der Laterne. Die Herzogin ist nach Nordosten geflogen, zum {key}Großen Baum{/} von Urgeäst, um sein Herzlicht zu stehlen: das letzte Licht, das ihr fehlt. Folgt ihr durch den Glutlaubwald und {key}haltet sie auf{/}.',
     'The Duchess is at the Great Tree. I can’t fly you there: moths eat the Teacup’s lights.': 'Die Herzogin ist beim Großen Baum. Hinfliegen kann ich euch nicht: Motten fressen der Teetasse die Lichter weg.',
     'Go on foot. First stop: {key}Harvestholm{/}, south-east of here.': 'Geht zu Fuß. Erster Halt: {key}Garbenheim{/}, südöstlich von hier.',
     'And three strangers fell out of the sky into {key}Hazel’s pumpkin patch{/}, just east of here. Go and see!': 'Und drei Fremde sind vom Himmel in {key}Hasels Kürbisbeet{/} gefallen, gleich östlich von hier. Geht mal nachsehen!',

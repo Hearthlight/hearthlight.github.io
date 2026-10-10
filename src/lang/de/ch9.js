@@ -70,7 +70,7 @@ export const CH9_DE = {
   // ---- the chapter
   'Moor & Machines': 'Moor & Mechanik',
   'Chapter 9': 'Kapitel 9',
-  'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Sechs Flammen brennen in der Laterne, und die Zweitbesetzung steht jetzt auf deiner Seite. Die Herzogin ist fort, um ihren Schattenscheinwerfer fertigzumachen: ein Licht, das alle anderen frisst. Durchquere das {key}Geistermoor{/} und finde einen Weg, ihn zu {key}löschen{/}.',
+  'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Sieben Flammen brennen in der Laterne, und die Zweitbesetzung steht jetzt auf deiner Seite. Die Herzogin ist zur Schattennarbe geflogen, um ihren Scheinwerfer fertigzumachen: ein Licht, das alle anderen frisst. Durchquere {key}Hohlmoor{/}, das Geistermoor, und finde einen Weg, ihn zu {key}löschen{/}.',
 
   // ---- Candlewick: the moor’s ghosts
   'The Moor’s Ghosts': 'Die Geister des Moors',
@@ -126,7 +126,7 @@ export const CH9_DE = {
   'They never did applaud her. So she never came home.': 'Sie haben ihr nie applaudiert. Also kam sie nie heim.',
   'Now she puts out every light, so that nobody can ever laugh at her again.': 'Jetzt löscht sie jedes Licht, damit nie wieder jemand über sie lachen kann.',
   'When you find my Gloria…{p}tell her the {key}tea is still warm{/}.': 'Wenn du meine Gloria findest…{p}sag ihr, der {key}Tee ist noch warm{/}.',
-  'The Lady in Grey fades away. In the lantern, a seventh flame lights.': 'Die Graue Dame verblasst. In der Laterne leuchtet eine siebte Flamme auf.',
+  'The Lady in Grey fades away. In the lantern, an eighth flame lights.': 'Die Graue Dame verblasst. In der Laterne leuchtet eine achte Flamme auf.',
   'All through the manor, the clocks start ticking again. By the gate, the rose opens its first bud.': 'Im ganzen Schloss fangen die Uhren wieder an zu ticken. Am Tor öffnet die Rose ihre erste Knospe.',
   'To put out the Duchess’s Spotlight, it will take a clockmaker. Go north to {key}Cogsworth{/} and find {key}Master Tock{/}.': 'Um den Scheinwerfer der Herzogin zu löschen, braucht es einen Uhrmacher. Geh nach Norden, nach {key}Zahnradingen{/}, und finde {key}Meister Tock{/}.',
 
@@ -203,7 +203,7 @@ export const CH9_DE = {
   'Old Punctual has been on time for four hundred years. So have I.': 'Opa Pünktlich ist seit vierhundert Jahren pünktlich. Ich auch.',
 
   __group: {
-    'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Sechs Flammen brennen in der Laterne, und die Zweitbesetzung steht jetzt auf eurer Seite. Die Herzogin ist fort, um ihren Schattenscheinwerfer fertigzumachen: ein Licht, das alle anderen frisst. Durchquert das {key}Geistermoor{/} und findet einen Weg, ihn zu {key}löschen{/}.',
+    'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Sieben Flammen brennen in der Laterne, und die Zweitbesetzung steht jetzt auf eurer Seite. Die Herzogin ist zur Schattennarbe geflogen, um ihren Scheinwerfer fertigzumachen: ein Licht, das alle anderen frisst. Durchquert {key}Hohlmoor{/}, das Geistermoor, und findet einen Weg, ihn zu {key}löschen{/}.',
     'Sad ghosts wander Hollowmoor, and only your lantern shows them. Find {key}all four{/} and listen: they have a story to tell.': 'Traurige Geister irren durchs Hohlmoor, und nur eure Laterne zeigt sie. Findet {key}alle vier{/} und hört ihnen zu: Sie haben eine Geschichte zu erzählen.',
     'Arrive in {key}Candlewick{/}, a village on the moor': 'Betretet {key}Dochtingen{/}, ein Dorf im Moor',
     'Talk to {key}Aunt Tallow{/} in Candlewick': 'Sprecht mit {key}Tante Talg{/} in Dochtingen',

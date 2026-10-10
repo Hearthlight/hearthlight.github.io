@@ -35,7 +35,7 @@ export const CH8_FR = {
   'The three Understudies fall a very long way, through a great many leaves.': 'Les trois Doublures tombent de très, très haut, à travers beaucoup, beaucoup de feuilles.',
   'Autumn & Roots': 'Automne et Racines',
   'Chapter 8': 'Chapitre 8',
-  'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'De l’autre côté de la mer, la lanterne a retrouvé sa cinquième flamme. La Duchesse est partie au {key}Grand Arbre{/} voler sa Lueur-de-Cœur, la dernière lumière qu’il lui faut. Suis-la par Bois-Braise et {key}arrête-la{/}.',
+  'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Le Foyer de l’Aube brûle à nouveau : six flammes dans la lanterne. La Duchesse est partie au nord-est, vers le {key}Grand Arbre{/} de Grande-Ramure, voler sa Lueur-de-Cœur : la dernière lumière qu’il lui faut. Suis-la par Bois-Braise et {key}arrête-la{/}.',
   'The Duchess is at the Great Tree. I can’t fly you there: moths eat the Teacup’s lights.': 'La Duchesse est au Grand Arbre. Impossible de t’y emmener : les phalènes, ces papillons de nuit, mangeraient les lampes de la Tasse.',
   'Go on foot. First stop: {key}Harvestholm{/}, south-east of here.': 'Vas-y à pied. Première étape : {key}Moissonval{/}, au sud-est d’ici.',
   'Welcome to Harvestholm! Our festival is in two days, and {key}moths{/} the size of hats eat every lantern we hang!': 'Bienvenue à Moissonval ! La fête est dans deux jours, et des {key}phalènes{/} grosses comme des chapeaux mangent toutes nos lanternes !',
@@ -92,14 +92,14 @@ export const CH8_FR = {
   'who drinks the light': 'qui boit la lumière',
   'Her swarm shields her! {key}Hang a jar{/} on a hook to draw the moths away, then hit her!': 'Son essaim la protège ! {key}Accroche un bocal{/} à un crochet pour attirer les phalènes, puis frappe-la !',
   'The Moth Queen folds her wings, and her moths go out like a blown candle.': 'La Reine des Phalènes replie ses ailes, et ses phalènes s’éteignent comme une bougie qu’on souffle.',
-  'The Heartlight wakes, green-gold, like sun through leaves. The {key}sixth flame{/} catches in the lantern.': 'La Lueur-de-Cœur se réveille, vert et or, comme le soleil à travers les feuilles. La {key}sixième flamme{/} s’allume dans la lanterne.',
+  'The Heartlight wakes, green-gold, like sun through leaves. The {key}seventh flame{/} catches in the lantern.': 'La Lueur-de-Cœur se réveille, vert et or, comme le soleil à travers les feuilles. La {key}septième flamme{/} s’allume dans la lanterne.',
   'The Great Tree’s crown turns green again, like a lamp lit inside a lampshade.': 'Tout le feuillage du Grand Arbre redevient vert, comme une lampe qu’on allume sous son abat-jour.',
   'My straw! You broke my STRAW!': 'Ma paille ! Vous avez cassé ma PAILLE !',
-  'Keep your twig! My Grand Finale awaits at {key}the Umbral Scar{/}, beyond a whole moor full of GHOSTS.{p}Toodle-oo!': 'Gardez votre brindille ! Mon Grand Final m’attend à {key}la Balafre Ombrale{/}, derrière toute une lande pleine de FANTÔMES.{p}Tchao-tchao !',
+  'Keep your twig! My Grand Finale awaits at {key}the Umbral Scar{/}, beyond a whole moor full of GHOSTS.{p}Toodle-oo!': 'Gardez votre brindille ! Mon Grand Final m’attend à {key}la Balafre d’Ombre{/}, derrière toute une lande pleine de FANTÔMES.{p}Tchao-tchao !',
   'Brick is not afraid of ghosts.{p}…Brick is a little afraid of ghosts.': 'Brique n’a pas peur des fantômes.{p}…Brique a un peu peur des fantômes.',
   'The only road to the Scar crosses {key}Hollowmoor{/}, the moor east of here. We know the way backstage.': 'La seule route vers la Balafre traverse {key}la Lande-Creuse{/}, à l’est d’ici. Nous, on connaît le chemin des coulisses.',
   'The Heartlight burns again': 'La Lueur-de-Cœur brûle à nouveau',
-  'The Murk rolls back from Hollowmoor, Prism Springs, Cogsworth and the Aurora Tundra': 'La Brume Mauve se retire de la Lande-Creuse, des Sources Prisme, de Rouages et de la Toundra Aurore',
+  'The Murk rolls back from Hollowmoor, Prism Springs, Cogsworth and the Aurora Tundra': 'La Brume Mauve se retire de la Lande-Creuse, des Sources Prismatiques, des Hauts-Rouages et de la Toundra des Aurores',
 
   // ---- side quests
   'The Lost Harvest Ring': 'La bague des moissons',
@@ -226,7 +226,7 @@ export const CH8_FR = {
   'Delicious little lights…': 'Délicieuses petites lumières…',
 
   __group: {
-    'Across the sea, the lantern has its fifth flame back. The Duchess has flown on to {key}the Great Tree{/} to steal its Heartlight, the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'De l’autre côté de la mer, la lanterne a retrouvé sa cinquième flamme. La Duchesse est partie au {key}Grand Arbre{/} voler sa Lueur-de-Cœur, la dernière lumière qu’il lui faut. Suivez-la par Bois-Braise et {key}arrêtez-la{/}.',
+    'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.': 'Le Foyer de l’Aube brûle à nouveau : six flammes dans la lanterne. La Duchesse est partie au nord-est, vers le {key}Grand Arbre{/} de Grande-Ramure, voler sa Lueur-de-Cœur : la dernière lumière qu’il lui faut. Suivez-la par Bois-Braise et {key}arrêtez-la{/}.',
     'The Duchess is at the Great Tree. I can’t fly you there: moths eat the Teacup’s lights.': 'La Duchesse est au Grand Arbre. Impossible de vous y emmener : les phalènes, ces papillons de nuit, mangeraient les lampes de la Tasse.',
     'Go on foot. First stop: {key}Harvestholm{/}, south-east of here.': 'Allez-y à pied. Première étape : {key}Moissonval{/}, au sud-est d’ici.',
     'And three strangers fell out of the sky into {key}Hazel’s pumpkin patch{/}, just east of here. Go and see!': 'Et trois inconnus sont tombés du ciel dans les {key}citrouilles de Noisette{/}, juste à l’est. Allez voir !',

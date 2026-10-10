@@ -476,17 +476,17 @@ export const CH3 = {
     // ---- a mini-game, to play again and again (World v7 M13)
     c3_minecart: {
       title: 'The Minecart Rush',
-      brief: 'Nugget Nell’s ore cart keeps slipping its brake and rolling round Dusty Gulch. {key}Catch it{/} for a nugget, as many times as you like.',
+      brief: 'Nugget Nell’s ore cart keeps slipping its brake and rolling round Dusty Gulch. {key}Catch it{/} for some stardust, as many times as you like.',
       kind: 'side', repeat: true, giver: 'nell', after: 'c3_relight', lv: 14, dust: 15,
       offer: async (S) => {
         await S.say('nell', 'Dagnabbit! My ore cart has slipped its brake again!', { expr: 'angry' });
-        await S.say('nell', '{key}Catch it{/} as it rolls round Dusty Gulch: it slows at the corners. A nugget each time!', { expr: 'happy' });
+        await S.say('nell', '{key}Catch it{/} as it rolls round Dusty Gulch: it slows at the corners. Stardust for you each time!', { expr: 'happy' });
       },
       steps: [
         { do: 'chase', text: 'Catch {key}the runaway ore cart{/} in the streets of Dusty Gulch', area: [-196, 86, 6], speed: 6.2, tire: 18, model: (r3d) => buildOreCart(r3d), sound: 'thud', caught: 'Gotcha, cart!' },
         { do: 'talk', npc: 'nell', text: 'Bring her cart back to {key}Nugget Nell{/}', run: async (S) => {
           if (S.plays('c3_minecart')) await S.say('nell', 'Again! That cart only runs off when YOU are in town.', { expr: 'smug' });
-          else await S.say('nell', 'Whoa there! Caught fair and square. Here’s your nugget.', { expr: 'love' });
+          else await S.say('nell', 'Whoa there! Caught fair and square. Here’s your stardust.', { expr: 'love' });
         } },
       ],
     },
@@ -587,11 +587,11 @@ export const CH3 = {
     },
     c3_nell: {
       title: 'Gold Fever',
-      brief: 'The spring runs again, and the river carries gold. Nugget Nell’s back won’t bend: pan {key}three nuggets{/} for her, and she will share.',
+      brief: 'The spring runs again, and the river carries gold. Nugget Nell’s back won’t bend: pan {key}three nuggets{/} for her, and she pays in stardust.',
       kind: 'side', giver: 'nell', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
       offer: async (S) => {
         await S.say('nell', 'The river is washing gold down from the hills again! I can feel it in my socks!', { expr: 'love' });
-        await S.say('nell', 'My back won’t bend any more. Pan {key}three nuggets{/} for me in the river, and we’ll share!', { expr: 'happy' });
+        await S.say('nell', 'My back won’t bend any more. Pan {key}three nuggets{/} for me in the river, and I’ll pay you in stardust!', { expr: 'happy' });
       },
       steps: [
         { do: 'collect', text: 'Pan {key}three gold nuggets{/} in the river, east of Dusty Gulch', item: 'Gold Nugget', n: 3, spots: NUGGETS, hint: 'Something gleams in the shallows' },

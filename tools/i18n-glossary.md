@@ -57,6 +57,30 @@ literal. Keep jokes as jokes (adapt them if a pun doesn't survive).
 - Plain spoken French: « on » more than « nous », no rare word where a common one does, no
   sentence a ten-year-old must read twice.
 
+## One story (what the ten chapters must agree on)
+
+- **Recaps, briefs and objectives speak to the player**: « tu », with the « vous » twin in
+  `__group` — never « on » / « il faut ». A recap opens on the previous chapter’s last state, in
+  the same words (the same name for each Great Hearth, each land, each person), then gives this
+  chapter’s goal.
+- **The lantern’s flames** — a line, a recap or a title gives a number only if it is this one:
+  Old Glimmer 1 · the Deepwood 2 · the Steppe 3 · Croakmire 4 · chapter 5: 3 when the Duchess snuffs Croakmire again, then 4 with the South · chapter 6: 5 (Croakmire’s flame comes home) · the Dawn Hearth 6 · the Heartlight 7 · Hollowmoor Manor 8. The flames the Duchess carries are « les flammes volées »: they are hers until the
+  finale, and are never counted with the lantern’s.
+- **Place names are the map’s** (`src/lang/fr/world.js`, `world_v7.js`): la Balafre d’Ombre, les
+  Sources Prismatiques, Rouageville (the town) and les Hauts-Rouages (its land), la Toundra des
+  Aurores, le Camp des Aurores, Bout-de-Chandelle, Coassemarais, le Vieux-Ponctuel.
+- **A Great Hearth that is relit** « brûle à nouveau »; the Duchess « éteint » a Hearth (she
+  « éteindra à nouveau » the ones we relight: chapters 3 and 5 say it in the same words).
+- **A creature’s name sounds like a creature**, never like the weather (the Bogling is
+  « Gadouillon », not « Tourbillon »). « le brouillard » is real mist only (the falls of chapter
+  2, the moor at dusk); the fog that puts out the Dawnlands’ lamps is the Murk: « la Brume ».
+- **The running gags’ ledger** — a pay-off in chapter 10 was planted at least twice, in the same
+  words: Hollis’s tea (« le maire Hollis en renverse son thé »: chapters 1 and 2, then the
+  Festival); the hen (1, 3, 6, 9, then the Festival); not being invited (the Understudies in 6,
+  the mimes in 7, then the letter: « Ils… m’avaient INVITÉE ? »); Perkins’s lateness (seven
+  weeks in 1, thirty years of mail in 7, the letter in 10). Crumble says « Votre Obscurité »
+  once, in chapter 1; in chapter 10 he drops it for her real name.
+
 ## Names
 
 People keep their names: Hollis, Rosa, Pip, Finn, Ivy, Theo, Mabel, Sol, Wren,
@@ -119,6 +143,13 @@ Buttercup (Bram's cow), Captain Snuggles → « Capitaine Câlin ».
 | Duchess Gloria Gloomsworth | la Duchesse Gloria de Grisemine (kept: « faire grise mine ») |
 | the Murk | la Brume Mauve |
 | Gustbelly / Storm Ram | Soufflard / Bélier d’orage |
+| Bogling (a heap of mud with a face) | Gadouillon |
+| the Umbral Scar / the Umbral Spotlight (« Umbral » is always « d’Ombre ») | la Balafre d’Ombre / le Projecteur d’Ombre |
+| Her Radiance (the Duchess’s own title) | Sa Splendeur |
+| the Dauntless Teacup / the Teacup (Wendy’s airship) | la Tasse Intrépide / la Tasse (never « la Théière ») |
+| Minnow / Fidget / Brick (all three « il ») | Fretin / Frétille / Brique |
+| Perkins, postmaster | Perkins, facteur en chef |
+| the fog (over Lanternport: it is the Murk) | la Brume |
 | waystone / attune | pierre de voyage / éveiller (une pierre) |
 | Grumblecloud | Grognuage |
 | wave(s) | vague(s) |

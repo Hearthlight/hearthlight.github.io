@@ -37,7 +37,6 @@ export const CLASSES9_ES = {
   'Snack time!': '¡Hora de merendar!',
   'Sizzling!': '¡Chisporroteo!',
   'Delicious!': '¡Delicioso!',
-  'And her old kit, too. A frying pan, a star wand, a slingshot, a lute — a lantern pole, a watering can, a whisk and a toolbox.{p} Don’t ask. She was a very unusual Lamplighter.': 'Y también sus viejos trastos. Una sartén, una varita estelar, una honda, un laúd — una pértiga farol, una regadera, un batidor y una caja de herramientas.{p} No preguntes. Era una Farolera muy peculiar.',
   // the Lamplighter's trees
   'A lantern that watches over everyone.': 'Un farol que vela por todos.',
   'Steady Flame': 'Llama firme',

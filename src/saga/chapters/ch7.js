@@ -409,7 +409,7 @@ R('roof').tick = (S, d, r) => {
       S.flag('dawnLit');
       if (!S.st.lit.includes('harbor')) S.st.lit.push('harbor');
       S.save();
-      await st.say('narrator', 'The Dawn Hearth burns again: a {key}fifth flame{/} lights up in the lantern.');
+      await st.say('narrator', 'The Dawn Hearth burns again: a {key}sixth flame{/} lights up in the lantern.');
       st.music(null);
     });
     e.hold = false; e.fading = 0; if (e.remove) e.remove();
@@ -520,8 +520,8 @@ async function festival(S) {
     await st.cam(x, z, { dur: 1.2 });
     await st.say('hoshi', 'The Gloomstage flew north-east, to {key}Elderbough{/} and its Great Tree. The Duchess wants the tree’s heart for her finale.', { expr: 'worried' });
     await st.say('wendy', 'Then that’s where we’re going. After the festival!', { expr: 'smug' });
-    await st.say('hoshi', 'June’s lantern has five flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!', { expr: 'happy' });
-    await st.title('The Lantern Festival', 'Five flames in the lantern', 3.4);
+    await st.say('hoshi', 'June’s lantern has six flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!', { expr: 'happy' });
+    await st.title('The Lantern Festival', 'Six flames in the lantern', 3.4);
     for (const q of lan) st.dropProp(q.key);
     st.dropProp('riser'); st.dropProp('lucky'); st.dropProp('strings');
   });
@@ -581,7 +581,7 @@ const TOWN = (p) => p.pos.x > 755 && p.pos.x < 820 && p.pos.z > 25 && p.pos.z < 
 
 export const CH7 = {
   id: 7, title: 'The Dawnlands',
-  recap: 'The Duchess fled across the Wide Sea with the stolen flames, and we have just crossed after her. In the Dawnlands, the sun has not risen for a month. Find their {key}Great Hearth{/} and relight it.',
+  recap: 'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.',
   lv: 31, zones: ['wide', 'whale', 'harbor', 'jade', 'salt'], opens: ['autumn', 'glow', 'elder'],
   // (Grandmother Bellows keeps an eye open while her back itches)
   update(S, dt) {
@@ -737,7 +737,7 @@ export const CH7 = {
         { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 10, glow: 3.8, moths: { every: 4, max: 3, level: 31 }, model: buildStreetLamp },
         { do: 'talk', npc: 'hoshi', text: 'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit', run: async (S) => {
           if (S.plays('c7_lamplight')) await S.say('hoshi', 'Lit again, and quicker. The fog is starting to take it personally.', { expr: 'happy' });
-          else await S.say('hoshi', 'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.', { expr: 'love' });
+          else await S.say('hoshi', 'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.', { expr: 'love' });
         } },
       ],
     },

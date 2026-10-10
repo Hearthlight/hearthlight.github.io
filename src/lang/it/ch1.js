@@ -107,7 +107,7 @@ export const CH1_IT = {
   'the boss of the Glimmer Grotto': 'il boss della Grotta del Barlume',
   'The Duchess will hear about this!{p} …Please don’t tell her.': 'La Duchessa lo verrà a sapere!{p} …Acqua in bocca, per carità.',
   'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'L’{key}ultima brace{/} rotola fuori dai rottami e si infila sotto la porta in fondo. Inseguila!',
-  'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'La brace balza nella lanterna: {key}tre fiammelle{/}! Ora portala su al {key}Vecchio Barlume{/}.',
+  'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Le tre braci si fondono in {key}una sola fiamma{/}: la lanterna si è svegliata! Portala su al {key}Vecchio Barlume{/}.',
   // (their shouts in the fight: src/combat/v7/troupe.js)
   'Hey!': 'Ehi!',
   'How rude!': 'Che maleducazione!',
@@ -137,7 +137,7 @@ export const CH1_IT = {
   'Go on: hold the lantern up high!': 'Su: alza bene in alto la lanterna!',
   'Old Glimmer shines again': 'Il Vecchio Barlume torna a splendere',
   'The Murk rolls back from Deep Whisperwood and the Windy Heights': 'La Caligine si ritira dal Bosco Bisbiglio profondo e dalle Alture Ventose',
-  'Lamps come back on all over the cove.{p} And a very old mayor drops his tea.': 'In tutta la baia le lampade si riaccendono.{p} E un vecchissimo sindaco rovescia il suo tè.',
+  'Lamps come back on all over the cove.{p} And Mayor Hollis drops his tea.': 'In tutta la baia le lampade si riaccendono.{p} E al sindaco Hollis cade il tè.',
   // (Perkins and Nana June’s letter)
   'PELICAN POST!{p} Perkins, postmaster. I have a letter for you!': 'POSTA PELLICANO!{p} Perkins, direttore postale. Ho una lettera per te!',
   'From a Mrs June. Posted…{p} ooh. Seven weeks ago.': 'Da una certa signora June. Spedita…{p} ohibò. Sette settimane fa.',
@@ -202,7 +202,7 @@ export const CH1_IT = {
     'And YOU are our volunteers! This won’t hurt!{p} Much!': 'E VOI sarete le nostre cavie! Non farà male!{p} Troppo!',
     'The Duchess will hear about this!{p} …Please don’t tell her.': 'La Duchessa lo verrà a sapere!{p} …Acqua in bocca, per carità.',
     'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'L’{key}ultima brace{/} rotola fuori dai rottami e si infila sotto la porta in fondo. Inseguitela!',
-    'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'La brace balza nella lanterna: {key}tre fiammelle{/}! Ora portatela su al {key}Vecchio Barlume{/}.',
+    'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Le tre braci si fondono in {key}una sola fiamma{/}: la lanterna si è svegliata! Portatela su al {key}Vecchio Barlume{/}.',
     'The lantern holds its three embers. Carry it to {key}Old Glimmer{/} to light the lighthouse again and push back the Murk.': 'La lanterna ha le sue tre braci. Portatela al {key}Vecchio Barlume{/} per riaccendere il faro e far arretrare la Caligine.',
     'Carry the lantern to {key}Old Glimmer{/}, the lighthouse east of the village': 'Portate la lanterna al {key}Vecchio Barlume{/}, il faro a est del paese',
     'Wait for the post at the foot of {key}Old Glimmer{/}': 'Aspettate la posta ai piedi del {key}Vecchio Barlume{/}',

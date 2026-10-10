@@ -100,7 +100,7 @@ export const CH7_ES = {
   'When he lands, step on {key}the plate{/} that points at him: the Dawn Mirror will light him up.': 'Cuando se pose, pisa {key}la placa{/} que apunta hacia él: el Espejo del Alba lo iluminará.',
   'The gloom burns off in violet smoke. A paper dragon is left, red and gold again, lying very still.': 'La grisalla se quema en humo violeta. Queda un dragón de papel, rojo y dorado otra vez, tendido y muy quieto.',
   'Then one eye opens, and the tail thumps twice: Old Lucky purrs.': 'Entonces se abre un ojo, y la cola golpea dos veces las tejas: el Viejo Suertudo ronronea.',
-  'The Dawn Hearth burns again: a {key}fifth flame{/} lights up in the lantern.': 'El Hogar del Alba arde de nuevo: una {key}quinta llama{/} se enciende en el farol.',
+  'The Dawn Hearth burns again: a {key}sixth flame{/} lights up in the lantern.': 'El Hogar del Alba arde de nuevo: una {key}sexta llama{/} se enciende en el farol.',
   'And over the Jade Terraces, for the first time in a month, the sun comes up.': 'Y sobre las Terrazas de Jade, por primera vez en un mes, sale el sol.',
   'Old Lucky, hardly singed! We shall mend his whiskers.': '¡El Viejo Suertudo, apenas chamuscado! Le arreglaremos los bigotes.',
   'An old proverb says: « After the longest night, breakfast. »{p} It is on our kitchen wall.': 'Un viejo proverbio dice: «Después de la noche más larga, el desayuno».{p} Está en la pared de nuestra cocina.',
@@ -117,12 +117,12 @@ export const CH7_ES = {
   'At the end of the pier, three mimes sit and watch the lanterns go up. Nobody invited them.': 'Al final del muelle, tres mimos sentados miran subir los farolillos. Nadie los invitó.',
   'The Gloomstage flew north-east, to {key}Elderbough{/} and its Great Tree. The Duchess wants the tree’s heart for her finale.': 'El Teatro Grisalla voló al noreste, hacia {key}Gran Ramaje{/} y su Gran Árbol. La Duquesa quiere el corazón del árbol para su gran final.',
   'Then that’s where we’re going. After the festival!': 'Pues allá vamos. ¡Después de la fiesta!',
-  'June’s lantern has five flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!': 'El farol de June ya tiene cinco llamas. Ella estaría…{p} Hmpf. Se me metió humo en el ojo. ¡Vayan a bailar!',
+  'June’s lantern has six flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!': 'El farol de June ya tiene seis llamas. Ella estaría…{p} Hmpf. Se me metió humo en el ojo. ¡Vayan a bailar!',
   'The Lantern Festival': 'La Fiesta de los Farolillos',
-  'Five flames in the lantern': 'Cinco llamas en el farol',
+  'Six flames in the lantern': 'Seis llamas en el farol',
 
   // ---- the chapter’s recap
-  'The Duchess fled across the Wide Sea with the stolen flames, and we have just crossed after her. In the Dawnlands, the sun has not risen for a month. Find their {key}Great Hearth{/} and relight it.': 'La Duquesa huyó al otro lado del Ancho Mar con las llamas robadas, y acabamos de cruzarlo tras ella. Aquí, en las Tierras del Alba, hace un mes que no sale el sol. Hay que encontrar su {key}Gran Hogar{/} y volver a encenderlo.',
+  'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.': 'La Duquesa huyó al este, cruzando el Ancho Mar, con todas las llamas que ha robado. Crúzalo tras ella a bordo de la Taza de la capitana Wendy. En las Tierras del Alba hace un mes que no sale el sol: encuentra su {key}Gran Hogar{/} y vuelve a encenderlo.',
 
   // ---- quests
   'The Crossing': 'La travesía',
@@ -192,7 +192,7 @@ export const CH7_ES = {
   'Some nights, the fog comes back and blows my lamps out.': 'Algunas noches, la niebla vuelve y me apaga las farolas.',
   'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.': 'Cuidado con las polillas, y enciende {key}las siete farolas{/} antes de que se apague tu farol.',
   'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit': 'Dile a {key}la vieja Hoshi{/}, en lo alto del pueblo, que las farolas están encendidas',
-  'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.': '¡Todas encendidas! Mi vieja maestra te habría dado una galleta: yo te doy dos.',
+  'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.': '¡Todas encendidas! Mi vieja maestra te habría dado una galleta: yo solo tengo polvo de estrellas.',
 
   // ---- the Salt Painter’s reflections
   'The Salt Painter’s Reflections': 'Los reflejos de la pintora de sal',
@@ -340,7 +340,7 @@ export const CH7_ES = {
     'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.': 'Algunas noches la niebla vuelve a apagar las farolas de Puerto Farol. Enciendan {key}las siete{/} antes de que se apague su farol.',
     'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.': 'Cuidado con las polillas, y enciendan {key}las siete farolas{/} antes de que se apague su farol.',
     'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit': 'Díganle a {key}la vieja Hoshi{/}, en lo alto del pueblo, que las farolas están encendidas',
-    'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.': '¡Todas encendidas! Mi vieja maestra les habría dado una galleta: yo les doy dos.',
+    'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.': '¡Todas encendidas! Mi vieja maestra les habría dado una galleta: yo solo tengo polvo de estrellas.',
     'On the Saltmirror Flats, Blanche sees {key}three things{/} in the reflection that are not there above. Find them and bring them to her.': 'En el Salar Espejo, Blanche ve en el reflejo {key}tres cosas{/} que no están arriba. Encuéntrenlas y llévenselas.',
     'Would you find them for me? Stand on each reflection and {key}reach in{/}.': '¿Me las encontrarían? Pónganse sobre cada reflejo y {key}hundan la mano{/}.',
     'Find the {key}three reflections{/} on the Saltmirror Flats, around the Saltworks': 'Encuentren los {key}tres reflejos{/} en el Salar Espejo, alrededor de las salinas',
@@ -350,5 +350,6 @@ export const CH7_ES = {
     'The Pagoda has stood for three hundred years. It can wait while you eat.': 'La Pagoda lleva trescientos años en pie. Puede esperar mientras comen algo.',
     'Look down, not up. The mirror is more honest than the sky.': 'Miren abajo, no arriba. El espejo es más honesto que el cielo.',
     'Your lantern is guttering — get back to the light!': 'Tu farol parpadea — ¡vuelve a la luz!',
+    'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.': 'La Duquesa huyó al este, cruzando el Ancho Mar, con todas las llamas que ha robado. Crúcenlo tras ella a bordo de la Taza de la capitana Wendy. En las Tierras del Alba hace un mes que no sale el sol: encuentren su {key}Gran Hogar{/} y vuelvan a encenderlo.',
   },
 };

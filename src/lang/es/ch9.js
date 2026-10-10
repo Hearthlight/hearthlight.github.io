@@ -70,7 +70,7 @@ export const CH9_ES = {
   // ---- the chapter
   'Moor & Machines': 'Páramos y Engranajes',
   'Chapter 9': 'Capítulo 9',
-  'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Seis llamas arden en el farol, y los Suplentes ahora están de tu lado. La Duquesa se ha ido a preparar su Reflector Umbrío, una luz que se come a todas las demás. Cruza el {key}páramo de los fantasmas{/} y encuentra la forma de {key}apagarlo{/}.',
+  'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Siete llamas arden en el farol, y los Suplentes ahora están de tu lado. La Duquesa voló a la Cicatriz Umbría a preparar su Reflector, una luz que se come a todas las demás. Cruza el {key}Páramo Hondo{/}, el páramo de los fantasmas, y encuentra la forma de {key}apagarlo{/}.',
 
   // ---- Candlewick: the moor’s ghosts
   'The Moor’s Ghosts': 'Los fantasmas del páramo',
@@ -126,7 +126,7 @@ export const CH9_ES = {
   'They never did applaud her. So she never came home.': 'Nunca la aplaudieron. Y ella nunca volvió a casa.',
   'Now she puts out every light, so that nobody can ever laugh at her again.': 'Ahora apaga todas las luces, para que nadie pueda volver a reírse de ella.',
   'When you find my Gloria…{p}tell her the {key}tea is still warm{/}.': 'Cuando encuentres a mi Gloria…{p}dile que el {key}té sigue caliente{/}.',
-  'The Lady in Grey fades away. In the lantern, a seventh flame lights.': 'La Dama de Gris se desvanece. En el farol se enciende una séptima llama.',
+  'The Lady in Grey fades away. In the lantern, an eighth flame lights.': 'La Dama de Gris se desvanece. En el farol se enciende una octava llama.',
   'All through the manor, the clocks start ticking again. By the gate, the rose opens its first bud.': 'Por toda la mansión, los relojes vuelven a hacer tictac. Junto a la verja, el rosal abre su primer capullo.',
   'To put out the Duchess’s Spotlight, it will take a clockmaker. Go north to {key}Cogsworth{/} and find {key}Master Tock{/}.': 'Para apagar el Reflector de la Duquesa hará falta un relojero. Ve al norte, a {key}Engranalia{/}, y busca al {key}Maestro Tac{/}.',
 
@@ -203,7 +203,7 @@ export const CH9_ES = {
   'Old Punctual has been on time for four hundred years. So have I.': 'El Viejo Puntual lleva cuatrocientos años siendo puntual. Yo también.',
 
   __group: {
-    'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Seis llamas arden en el farol, y los Suplentes ahora están del lado de ustedes. La Duquesa se ha ido a preparar su Reflector Umbrío, una luz que se come a todas las demás. Crucen el {key}páramo de los fantasmas{/} y encuentren la forma de {key}apagarlo{/}.',
+    'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Siete llamas arden en el farol, y los Suplentes ahora están del lado de ustedes. La Duquesa voló a la Cicatriz Umbría a preparar su Reflector, una luz que se come a todas las demás. Crucen el {key}Páramo Hondo{/}, el páramo de los fantasmas, y encuentren la forma de {key}apagarlo{/}.',
     'Sad ghosts wander Hollowmoor, and only your lantern shows them. Find {key}all four{/} and listen: they have a story to tell.': 'Unos fantasmas tristes vagan por el Páramo Hondo, y solo el farol de ustedes los revela. Encuentren a {key}los cuatro{/} y escuchen: tienen una historia que contar.',
     'Arrive in {key}Candlewick{/}, a village on the moor': 'Entren en {key}Cabo de Vela{/}, un pueblo del páramo',
     'Talk to {key}Aunt Tallow{/} in Candlewick': 'Hablen con {key}la tía Sebo{/} en Cabo de Vela',

@@ -39,7 +39,6 @@ export const CLASSES9_FR = {
   'Snack time!': 'C’est l’heure du goûter !',
   'Sizzling!': 'Ça grésille !',
   'Delicious!': 'Délicieux !',
-  'And her old kit, too. A frying pan, a star wand, a slingshot, a lute — a lantern pole, a watering can, a whisk and a toolbox.{p} Don’t ask. She was a very unusual Lamplighter.': 'Et son vieux matériel, aussi. Une poêle, une baguette étoilée, un lance-pierre, un luth — une perche-lanterne, un arrosoir, un fouet et une boîte à outils.{p} Ne demande pas. C’était une Allumeuse très particulière.',
   // the Lamplighter's trees
   'A lantern that watches over everyone.': 'Une lanterne qui veille sur tout le monde.',
   'Steady Flame': 'Flamme tenace',

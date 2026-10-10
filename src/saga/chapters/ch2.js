@@ -249,7 +249,7 @@ async function dawnInTheWoods(S) {
     st.mark('murkBack2');
     await st.wait(0.8);
     await st.title('The Deepwood breathes again', 'The Murk rolls back from the Golden Steppe, the Red Canyon and Bouncecap Woods', 4);
-    await st.say('narrator', 'Back in Marigold Cove, a certain mayor drops his tea.{p} He has started buying cheaper cups.');
+    await st.say('narrator', 'Back in Marigold Cove, Mayor Hollis drops his tea again.{p} He has started buying cheaper cups.');
     await st.cam(x, z + 1.2, { dur: 1.4, ppu: st.basePpu() });
     await st.say('barkbeard', 'The next Great Hearth burns out west, in the {key}Golden Steppe{/}, under the old Festival Ring.', { expr: 'worried' });
     await st.say('barkbeard', 'Go {key}west{/}, little Lamplighter, to the {key}Festival Ring{/}.', { expr: 'happy' });
@@ -259,7 +259,7 @@ async function dawnInTheWoods(S) {
 // ------------------------------------------------------------------ the chapter
 export const CH2 = {
   id: 2, title: 'The Whispering Woods',
-  recap: 'The Duchess snuffed out the lighthouse of Marigold Cove, and you relit it with Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.',
+  recap: 'Old Glimmer, the lighthouse of Marigold Cove, shines again: one flame burns in Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.',
   lv: 5, zones: ['deepwood', 'heights'], opens: ['steppe', 'canyon', 'bouncecap'],
   props: [
     ...TREES.map(([x, z], k) => ({ id: 'tree' + k, at: [x, z], r: 0.9, build: (r3d) => buildSickTree(r3d, 'tree' + k) })),

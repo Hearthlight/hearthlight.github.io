@@ -108,7 +108,7 @@ export const CH1_FR = {
   'the boss of the Glimmer Grotto': 'le boss de la Grotte de la Lueur',
   'The Duchess will hear about this!{p} …Please don’t tell her.': 'La Duchesse le saura !{p} …Ne lui dis rien, s’il te plaît.',
   'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'La {key}dernière braise{/} roule hors de l’épave et file sous la porte du fond. Suis-la !',
-  'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'La braise saute dans la lanterne : {key}trois flammes{/} ! Maintenant, porte-la à la {key}Vieille Lueur{/}.',
+  'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Les trois braises se fondent en {key}une seule flamme{/} : la lanterne est réveillée ! Porte-la à la {key}Vieille Lueur{/}.',
   // (their shouts in the fight: src/combat/v7/troupe.js)
   'Hey!': 'Hé !',
   'How rude!': 'Malpoli !',
@@ -138,7 +138,7 @@ export const CH1_FR = {
   'Go on: hold the lantern up high!': 'Vas-y : lève la lanterne bien haut !',
   'Old Glimmer shines again': 'La Vieille Lueur brille à nouveau',
   'The Murk rolls back from Deep Whisperwood and the Windy Heights': 'La Brume Mauve se retire du Bois-Murmure profond et des Hauts-Venteux',
-  'Lamps come back on all over the cove.{p} And a very old mayor drops his tea.': 'Partout dans le village, les lampes se rallument.{p} Et un très vieux maire en renverse son thé.',
+  'Lamps come back on all over the cove.{p} And Mayor Hollis drops his tea.': 'Partout dans le village, les lampes se rallument.{p} Et le maire Hollis en renverse son thé.',
   // (Perkins and Nana June’s letter)
   'PELICAN POST!{p} Perkins, postmaster. I have a letter for you!': 'POSTE-PÉLICAN !{p} Perkins, facteur en chef. J’ai une lettre pour toi !',
   'From a Mrs June. Posted…{p} ooh. Seven weeks ago.': 'De la part d’une Mme June. Postée…{p} oh. Il y a sept semaines.',
@@ -203,7 +203,7 @@ export const CH1_FR = {
     'And YOU are our volunteers! This won’t hurt!{p} Much!': 'Et VOUS, vous êtes nos volontaires ! Ça ne fera pas mal !{p} Enfin, pas trop !',
     'The Duchess will hear about this!{p} …Please don’t tell her.': 'La Duchesse le saura !{p} …Ne lui dites rien, s’il vous plaît.',
     'The {key}last ember{/} rolls out of the wreck and under the back door. After it!': 'La {key}dernière braise{/} roule hors de l’épave et file sous la porte du fond. Suivez-la !',
-    'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.': 'La braise saute dans la lanterne : {key}trois flammes{/} ! Maintenant, portez-la à la {key}Vieille Lueur{/}.',
+    'The three embers melt into {key}one flame{/}: the lantern is awake! Carry it up to {key}Old Glimmer{/}.': 'Les trois braises se fondent en {key}une seule flamme{/} : la lanterne est réveillée ! Portez-la à la {key}Vieille Lueur{/}.',
     'The lantern holds its three embers. Carry it to {key}Old Glimmer{/} to light the lighthouse again and push back the Murk.': 'La lanterne a ses trois braises. Portez-la à la {key}Vieille Lueur{/} pour rallumer le phare et faire reculer la Brume Mauve.',
     'Carry the lantern to {key}Old Glimmer{/}, the lighthouse east of the village': 'Portez la lanterne à la {key}Vieille Lueur{/}, le phare à l’est du village',
     'Wait for the post at the foot of {key}Old Glimmer{/}': 'Attendez le courrier au pied de la {key}Vieille Lueur{/}',

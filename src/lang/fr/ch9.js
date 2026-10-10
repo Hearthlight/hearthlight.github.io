@@ -39,7 +39,7 @@ export const CH9_FR = {
   // ---- the foes of the north (combat/v7/manor.js)
   'Moor Wisp': 'Feu follet de la lande',
   'Clockwork Soldier': 'Soldat mécanique',
-  'Bogling': 'Tourbillon',
+  'Bogling': 'Gadouillon',
   'Poltergeist': 'Esprit frappeur',
   'the Lady in Grey': 'la Dame en Gris',
   'Lady Honoria, the Lady in Grey': 'Dame Honoria, la Dame en Gris',
@@ -80,7 +80,7 @@ export const CH9_FR = {
   // ---- the chapter
   'Moor & Machines': 'Landes et Rouages',
   'Chapter 9': 'Chapitre 9',
-  'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Six flammes brillent dans la lanterne, et les Doublures sont maintenant de ton côté. La Duchesse est partie préparer son Projecteur Ombral, une lumière qui mange toutes les autres. Traverse la {key}lande aux fantômes{/} et trouve comment {key}l’éteindre{/}.',
+  'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Sept flammes brûlent dans la lanterne, et les Doublures sont de ton côté. La Duchesse est partie à la Balafre d’Ombre préparer son Projecteur, une lumière qui mange les autres. Traverse la {key}Lande-Creuse{/}, la lande aux fantômes, et trouve comment {key}l’éteindre{/}.',
 
   // ---- Candlewick: the moor’s ghosts
   'The Moor’s Ghosts': 'Les Fantômes de la lande',
@@ -136,7 +136,7 @@ export const CH9_FR = {
   'They never did applaud her. So she never came home.': 'On ne l’a jamais applaudie. Alors elle n’est jamais rentrée.',
   'Now she puts out every light, so that nobody can ever laugh at her again.': 'Maintenant, elle éteint toutes les lumières, pour que plus personne ne puisse rire d’elle.',
   'When you find my Gloria…{p}tell her the {key}tea is still warm{/}.': 'Quand tu trouveras ma Gloria…{p}dis-lui que le {key}thé est encore chaud{/}.',
-  'The Lady in Grey fades away. In the lantern, a seventh flame lights.': 'La Dame en Gris s’efface doucement. Dans la lanterne, une septième flamme s’allume.',
+  'The Lady in Grey fades away. In the lantern, an eighth flame lights.': 'La Dame en Gris s’efface doucement. Dans la lanterne, une huitième flamme s’allume.',
   'All through the manor, the clocks start ticking again. By the gate, the rose opens its first bud.': 'Dans tout le manoir, les horloges se remettent en marche. Près du portail, le rosier ouvre son premier bouton.',
   'To put out the Duchess’s Spotlight, it will take a clockmaker. Go north to {key}Cogsworth{/} and find {key}Master Tock{/}.': 'Reste le Projecteur de la Duchesse : pour l’éteindre, il faudra un horloger. Va au nord, à {key}Rouageville{/}, et trouve {key}Maître Tic{/}.',
 
@@ -152,16 +152,16 @@ export const CH9_FR = {
   'keep the gloom off the cannon while it charges': 'pas une Ombre près du canon pendant qu’il se charge',
   'The cannon’s knocked over! Master Tock rights it — from the top.': 'Le canon est renversé ! Maître Tic le redresse : on recommence.',
   'Watch the {key}Lantern Cannon{/} fire': 'Regarde tirer le {key}Canon-Lanterne{/}',
-  'Master Tock, clockmaker! The Duchess’s Umbral Spotlight is a light that EATS light.': 'Maître Tic, horloger ! Le Projecteur Ombral de la Duchesse, c’est une lumière qui MANGE la lumière.',
+  'Master Tock, clockmaker! The Duchess’s Umbral Spotlight is a light that EATS light.': 'Maître Tic, horloger ! Le Projecteur d’Ombre de la Duchesse, c’est une lumière qui MANGE la lumière.',
   'Only one thing can put it out: your lantern’s light, in a single beam. A {key}Lantern Cannon{/}!': 'Une seule chose peut l’éteindre : la lumière de ta lanterne, en un seul rayon. Un {key}Canon-Lanterne{/} !',
   'Mine is built. All it lacks is a lens that can hold a rainbow.': 'Le mien est construit. Il ne lui manque qu’une lentille de verre, capable de retenir un arc-en-ciel.',
   'Rainbows only sit still at {key}Prism Springs{/}, south of the moor. Go and ask {key}Ranger Rhoda{/}.': 'Un arc-en-ciel, ça ne tient en place qu’aux {key}Sources Prismatiques{/}, au sud de la lande. Va voir {key}la garde Rhoda{/}.',
   'A rainbow? Stand by a geyser and catch it {key}at the very top{/} of its spray. Not before!': 'Un arc-en-ciel ? Mets-toi près d’un geyser et attrape-le quand le jet est {key}tout en haut{/}. Pas avant !',
   'Rule one: watch first. Rule two: I LOVE rules.': 'Règle numéro un : regarde d’abord. Règle numéro deux : j’ADORE les règles.',
-  'There are {key}three geysers{/}: Old Punctual, the Double and the Hiccup. One rainbow from each!': 'Il y a {key}trois geysers{/} : le Vieux Ponctuel, le Double et le Hoquet. Un arc-en-ciel de chacun !',
+  'There are {key}three geysers{/}: Old Punctual, the Double and the Hiccup. One rainbow from each!': 'Il y a {key}trois geysers{/} : le Vieux-Ponctuel, le Double et le Hoquet. Un arc-en-ciel de chacun !',
   'Three rainbows! Tweezers… tick… there: the lens is done.': 'Trois arcs-en-ciel ! Ma pince… tic… et voilà : la lentille est prête.',
   'Now the test-fire, on the square. The Duchess will NOT like it: {key}protect the cannon{/}!': 'Maintenant, le tir d’essai, sur la place. Ça ne va PAS plaire à la Duchesse : {key}protège le canon{/} !',
-  'The Lantern Cannon fires! Where its golden beam passes, the fog does not come back.': 'Le Canon-Lanterne tire ! Là où passe son rayon doré, le brouillard ne revient pas.',
+  'The Lantern Cannon fires! Where its golden beam passes, the fog does not come back.': 'Le Canon-Lanterne tire ! Là où passe son rayon doré, la Brume ne revient pas.',
   'IT WORKS! I haven’t been this happy since I fixed the sundial!': 'ÇA MARCHE ! Je n’ai pas été aussi heureux depuis que j’ai réparé le cadran solaire !',
   'The Duchess keeps her Spotlight at the very top of the Gloomstage. One clear shot would put it out.': 'La Duchesse garde son Projecteur tout en haut du Théâtre d’Ombres. Un seul tir bien visé, et il s’éteint.',
   'Then I’m bringing it! Meet us at the {key}Aurora Camp{/}, on the tundra {key}west of here{/}.': 'Alors j’emmène le canon ! Rendez-vous au {key}Camp des Aurores{/}, dans la toundra {key}à l’ouest d’ici{/}.',
@@ -210,10 +210,10 @@ export const CH9_FR = {
   'Tick. Tick. Tick. …Sorry, thinking.': 'Tic. Tic. Tic. …Pardon, je réfléchis.',
   'A clock doesn’t keep time: it keeps you company while time goes by.': 'Une horloge ne retient pas le temps : elle tient compagnie pendant qu’il passe.',
   'Rule eleven: have fun. Rule twelve: not TOO much fun.': 'Règle onze : on s’amuse. Règle douze : pas TROP.',
-  'Old Punctual has been on time for four hundred years. So have I.': 'Le Vieux Ponctuel est à l’heure depuis quatre cents ans. Moi aussi.',
+  'Old Punctual has been on time for four hundred years. So have I.': 'Le Vieux-Ponctuel est à l’heure depuis quatre cents ans. Moi aussi.',
 
   __group: {
-    'Six flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown off to ready her Umbral Spotlight, a light that eats all the others. Cross the {key}moor of ghosts{/} and find a way to {key}put it out{/}.': 'Six flammes brillent dans la lanterne, et les Doublures sont maintenant de votre côté. La Duchesse est partie préparer son Projecteur Ombral, une lumière qui mange toutes les autres. Traversez la {key}lande aux fantômes{/} et trouvez comment {key}l’éteindre{/}.',
+    'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.': 'Sept flammes brûlent dans la lanterne, et les Doublures sont de votre côté. La Duchesse est partie à la Balafre d’Ombre préparer son Projecteur, une lumière qui mange les autres. Traversez la {key}Lande-Creuse{/}, la lande aux fantômes, et trouvez comment {key}l’éteindre{/}.',
     'Sad ghosts wander Hollowmoor, and only your lantern shows them. Find {key}all four{/} and listen: they have a story to tell.': 'Des fantômes tristes errent sur la Lande-Creuse, et seule votre lanterne les montre. Trouvez-les {key}tous les quatre{/} et écoutez leur histoire.',
     'Arrive in {key}Candlewick{/}, a village on the moor': 'Entrez dans {key}Bout-de-Chandelle{/}, un village de la lande',
     'Talk to {key}Aunt Tallow{/} in Candlewick': 'Parlez à {key}Tante Suif{/}, à Bout-de-Chandelle',
