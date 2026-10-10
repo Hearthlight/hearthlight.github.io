@@ -39,14 +39,13 @@ async function lightsOut(S) {
     await st.cam(PLAZA.x, PLAZA.z, { dur: 0, ppu: st.basePpu() });
     await st.fade(0, 0.8);
     await st.wait(0.6);
-    await st.say('hollis', 'Lovely afternoon for it. Whatever “it” is. I’ll put the kettle on.', { expr: 'happy' });
     // a shadow falls over the sun
     st.sfx('whoosh', { volume: 0.5, pitch: -12 });
     const dark = st.lights(0.85, null, 2.2);
     await st.wait(1.2);
     st.heroesEmote('question');
     await dark;
-    await st.say('hollis', 'Hm? Is it teatime already? It’s gone all dark.', { expr: 'worried' });
+    await st.say('hollis', 'Hm? It’s gone all dark!', { expr: 'worried' });
     st.hop('pip');
     await st.say('pip', 'Mister Mayor…{p} there’s a {shake}THEATRE{/} in the sky.', { expr: 'shock', emote: 'exclaim' });
     // the Gloomstage comes down out of the clouds over Old Glimmer
@@ -67,25 +66,20 @@ async function lightsOut(S) {
     await st.cam(bx, bz - by + 0.6, { dur: 0.8 });
     st.sfx('fanfare', { volume: 0.7 });
     st.hop('crumble');
-    await st.say('crumble', 'LADIES, GENTLEMEN{p} AND ASSORTED WILDLIFE!', { shake: 1, expr: 'happy' });
-    await st.say('crumble', 'Tremble before Her Radiance, the Duchess of Dusk, the Countess of Clouds, the Baroness of…{p} of…{pp} of Bad Weather!', { expr: 'worried' });
-    await st.say('duchess', '{big}CRUMBLE.{/}', { shake: 1 });
-    await st.say('crumble', 'Sorry, Your Gloominess!', { expr: 'worried', emote: 'sweat' });
+    await st.say('crumble', 'LADIES AND GENTLEMEN!{p} The greatest diva of all time: {key}Duchess Gloria Gloomsworth{/}!', { shake: 1, expr: 'happy' });
     // Her Radiance
     const d = st.actor('duchess', bx + 0.6, bz, { face: { x: 0, z: 1 } });
     d.n.seatY = by;
     st.flash('#f4eaff', 0.3);
     st.sfx('chime', { volume: 0.8 });
     await st.say('duchess', '♪ Oh, Marigold Coooove… ♪', { expr: 'smug', speed: 0.6 });
-    await st.say('duchess', 'Thirty years. Thirty years since this dreary little cove {shake}booed{/} me off its stage.', { expr: 'angry' });
-    await st.say('hollis', 'Did we? I don’t remember booing anybody.', { expr: 'worried' });
+    await st.say('duchess', 'Thirty years ago, this dreary little cove {shake}booed{/} me off its stage!', { expr: 'angry' });
     await st.say('rosa', 'There was a hen, I think.', { expr: 'neutral' });
     st.shake(0.7);
     await st.say('duchess', '{big}WE DO NOT SPEAK OF THE HEN!{/}', { shake: 1.5, expr: 'angry' });
-    await st.say('duchess', 'Every light in this world shall go out, one by one…{p} until the only light left is {wave}my{/} spotlight.', { expr: 'smug' });
-    await st.say('duchess', 'And all of you will sit in the dark and watch ME.{p} For.{p} Ev.{p} Er.', { expr: 'happy' });
-    await st.say('duchess', 'Crumble! The Snuffer!', { expr: 'angry' });
-    await st.say('crumble', 'Snuffing the Snuffer, Your Snuffiness!', { expr: 'happy', hop: true });
+    await st.say('duchess', 'So I shall put out every light in the world…{p} until only {wave}my{/} spotlight is left!', { expr: 'smug' });
+    await st.say('duchess', 'And I’ll start with your lighthouse.{p} Crumble! The Snuffer!', { expr: 'angry' });
+    await st.say('crumble', 'At once, Your Gloominess!', { expr: 'happy', hop: true });
     // the Grand Snuffer comes down on Old Glimmer
     st.punch(st.basePpu());
     await st.cam(LIGHTHOUSE.x, LIGHTHOUSE.z - 11, { dur: 0.9 });
@@ -120,34 +114,33 @@ async function lightsOut(S) {
     st.music(null);
     await st.cam(PLAZA.x, PLAZA.z, { dur: 1.2 });
     await st.title('Lights Out', 'Chapter 1');
-    await st.say('hollis', 'Old Glimmer…', { expr: 'sad' });
-    await st.say('hollis', 'I dropped my tea.', { expr: 'cry', shake: 0.5 });
-    await st.say('hollis', 'Right.{p} Right! June always said this day might come.', { expr: 'worried' });
-    await st.say('hollis', 'She left something with me — for whoever would stand up when the lights went out.', { expr: 'neutral' });
+    // (what just happened, said plainly — then the order: come and talk to Hollis)
+    await st.say('hollis', 'She put out {key}Old Glimmer{/}… our lighthouse.', { expr: 'sad' });
+    await st.say('hollis', 'And the {key}gloom{/} is creeping in with the purple Murk.', { expr: 'worried' });
     st.heroesFace(PLAZA.x + 1.6, PLAZA.z - 1.4);
-    await st.say('hollis', 'I suppose that’s you.', { expr: 'happy' });
+    await st.say('hollis', 'June left me something for a day like this. It’s for you: {key}come and talk to me{/}!', { expr: 'happy' });
   });
 }
 
 // ------------------------------------------------------------------ Hollis hands over the lantern
 async function theLantern(S) {
-  await S.say('hollis', 'June’s lantern. The old Lamplighters carried these from hearth to hearth, keeping the world’s lights lit.', { expr: 'neutral' });
+  await S.say('hollis', 'This is Nana June’s {key}lantern{/}. The Lamplighters used them to keep the world lit.', { expr: 'neutral' });
   S.flag('lantern', true);
   S.P.world.fx.emit('sparkle', S.P.players[0].pos.x, 1.2, S.P.players[0].pos.z, 12, { color: '#ffd66b' });
   S.toast('You get: the Lamplighter’s Lantern', null, '#ffd66b');
-  await S.say('hollis', 'And her old kit, too. A frying pan, a star wand, a slingshot, a lute — a lantern pole, a watering can, a whisk and a toolbox.{p} Don’t ask. She was a very unusual Lamplighter.', { expr: 'happy' });
-  // (solo: the hero was chosen when you made your character — Hollis sees which of June's
-  // things found you, and keeps the rest for whenever you fancy a change)
+  // (solo: the hero was chosen when you made your character — Hollis sees which of June’s
+  // things found you, and keeps the rest for whenever you fancy a change; a party hears of
+  // her kit in one line)
   if (S.solo && S.P.me) {
     const C = CLASSES[S.P.me.cls] || CLASSES.knight;
     await S.say('hollis', C.kit, { expr: 'happy' });
     await S.say('hollis', 'The rest of her kit stays in my back room. Fancy a change one day? Come and swap.', { expr: 'neutral' });
     if (S.P.heroHint) S.P.toast(S.P.heroHint('Change your hero any time on your Hero page ({key})'), '#ffd66b');
     if (S.P.state) S.P.state.flags.wildIntro = true;
-  }
-  await S.say('hollis', 'The lantern’s cold, mind. It needs a spark of Old Glimmer’s own flame to wake up.', { expr: 'worried' });
-  await S.say('hollis', 'When that contraption came down, embers flew all over the cove. I saw three land: Bram’s fields, the Whisperwood camp, and the beach.', { expr: 'neutral' });
-  await S.say('hollis', 'And the gloom came creeping in behind that fog. Be careful out there.', { expr: 'worried' });
+  } else await S.say('hollis', 'And here’s her old kit: a frying pan, a star wand, a slingshot…{p} Don’t ask.', { expr: 'happy' });
+  // (the goal, then the order: the fields first)
+  await S.say('hollis', 'But the lantern is cold. To wake it, find {key}three embers{/} of Old Glimmer: they fell around the valley.', { expr: 'worried' });
+  await S.say('hollis', 'Start with {key}Bram’s fields{/}, west of the village. And watch out for the gloom!', { expr: 'neutral' });
 }
 
 // ------------------------------------------------------------------ the Understudies' first audition, on the beach
@@ -160,28 +153,28 @@ async function understudies(S) {
     st.actor('brick', x + 1.9, z + 1.6, { face: { x: -0.3, z: -1 } });
     await st.cam(x, z, { dur: 0, ppu: st.basePpu() * 2 });
     st.heroesFace(x, z + 1.4);
-    await st.say('minnow', 'HALT, villagers! Behold, the most promising villains of their generation!', { expr: 'smug', hop: true });
-    await st.say('minnow', 'We are…', { expr: 'happy' });
+    await st.say('minnow', 'HALT, villagers! We are the Duchess’s next great villains…', { expr: 'smug', hop: true });
     st.hop('minnow'); st.hop('fidget', 0.1); st.hop('brick', 0.2);
     await st.say('fidget', '{big}THE UNDERSTUDIES!{/}', { expr: 'happy' });
     st.sfx('boing', { volume: 0.7 });
     st.emote('fidget', 'sweat'); st.emote('brick', 'dots');
-    await st.say('fidget', 'Well — not officially. We sent the Duchess an application. Three, actually.', { expr: 'worried' });
-    await st.say('minnow', 'She’ll HAVE to hire us once she sees our act. Brick! The ember!', { expr: 'angry' });
-    await st.say('brick', 'Ember.', { expr: 'happy' });
+    await st.say('fidget', 'Well… she hasn’t hired us yet.', { expr: 'worried' });
+    await st.say('minnow', 'She will after this! Brick, {key}the ember{/}!', { expr: 'angry' });
     await st.say('minnow', 'Behold…{p} {wave}THE JUGGLING ACT!{/}', { expr: 'smug' });
     for (let k = 0; k < 3; k++) { st.hop('brick', k * 0.3); st.sfx('boing', { volume: 0.4, pitch: k * 3 }); }
     await st.wait(1.2);
     st.sfx('whoosh', { volume: 0.6 });
-    await st.say('narrator', 'The ember sails over Brick’s head, bounces twice on the sand… and rolls into a crack in the rocks under Old Glimmer.');
+    await st.say('narrator', 'The ember flies off… and rolls into a crack in the rocks, east of the beach.');
     await st.say('fidget', 'Was that part of the act?', { expr: 'worried' });
     await st.say('brick', 'No.', { expr: 'sad' });
-    await st.say('minnow', '{shake}AFTER IT!{/} Our big break is rolling away!', { expr: 'shock', shake: 1 });
+    await st.say('minnow', '{shake}AFTER IT!{/}', { expr: 'shock', shake: 1 });
     st.walk('minnow', GROTTO_DOOR[0], GROTTO_DOOR[1], { run: true });
     st.walk('fidget', GROTTO_DOOR[0] - 0.8, GROTTO_DOOR[1], { run: true });
     await st.walk('brick', GROTTO_DOOR[0] + 0.8, GROTTO_DOOR[1], { run: true });
     st.heroesEmote('dots');
     await st.wait(0.4);
+    // (the scene ends on the order: where the ember went, and to follow)
+    await st.say('narrator', 'Follow them into the rocks {key}under Old Glimmer{/}!');
   });
 }
 
@@ -193,7 +186,7 @@ async function relight(S) {
     st.actor('hollis', L.x - 2.4, L.z + 3.4, { face: { x: 0.6, z: -1 } });
     await st.cam(L.x, L.z, { dur: 0, ppu: st.basePpu() });
     st.heroesFace(L.x, L.z);
-    await st.say('hollis', 'Go on, then. Hold it up — Old Glimmer will know what to do.', { expr: 'happy' });
+    await st.say('hollis', 'Go on: hold the lantern up high!', { expr: 'happy' });
     // the flame climbs from the lantern up to the lamp
     const x0 = P.players[0].pos.x, z0 = P.players[0].pos.z;
     for (let k = 0; k < 14; k++) { const y = 1.4 + k * 0.4; st.fx('sparkle', x0 + (L.x - x0) * k / 14, y, z0 + (L.z - z0) * k / 14, 3, { color: '#ffd66b' }); await st.wait(0.07); }
@@ -213,7 +206,7 @@ async function relight(S) {
     st.mark('murkBack');
     await st.wait(1.1);
     await st.title('Old Glimmer shines again', 'The Murk rolls back from Deep Whisperwood and the Windy Heights', 4);
-    await st.say('narrator', 'Across Marigold Cove, lamps flicker on in windows.{p} Somewhere, a very old mayor drops his tea.{pp} Again.');
+    await st.say('narrator', 'Lamps come back on all over the cove.{p} And a very old mayor drops his tea.');
   });
 }
 
@@ -232,12 +225,12 @@ async function perkins(S) {
     st.shake(0.4);
     st.fx('dust', L.x + 1.5, 0.3, L.z + 2.8, 14);
     st.mark('perkins');
-    await st.say('perkins', 'PELICAN POST!{p} Special delivery for…{p} the new Lamplighter?', { expr: 'happy', hop: true });
-    await st.say('perkins', 'Perkins, postmaster. We deliver!{pp} Eventually.', { expr: 'smug' });
-    await st.say('perkins', 'This one’s from a Mrs June. Posted…{p} ooh. Seven weeks ago. The wind was against us.', { expr: 'worried' });
-    await st.say('narrator', '“My dear — if this letter finds you, Old Glimmer has gone out, and you are holding my lantern. I am so sorry, and so proud.”');
-    await st.say('narrator', '“Follow the old Lamplighters’ road north. The Foresters of Deep Whisperwood keep the next Great Hearth. They’ll know you by the lantern. Be brave, be kind, and wear a scarf. — June”');
-    await st.say('perkins', 'I’ve roosts all over the world, you know. Find one, and my pelicans can fly you back and forth. Sort of.', { expr: 'happy' });
+    await st.say('perkins', 'PELICAN POST!{p} Perkins, postmaster. I have a letter for you!', { expr: 'happy', hop: true });
+    await st.say('perkins', 'From a Mrs June. Posted…{p} ooh. Seven weeks ago.', { expr: 'worried' });
+    await st.say('narrator', '“My dear, if you are reading this, Old Glimmer has gone out and you carry my lantern. I am so sorry, and so proud.”');
+    await st.say('narrator', '“Be brave, be kind, and wear a scarf. — June”');
+    // (the letter ends on its order: the next chapter starts north)
+    await st.say('narrator', '“P.S. Take the Lamplighters’ road {key}north{/}: the Foresters of {key}Deep Whisperwood{/} keep the next Great Hearth.”');
     st.keep('perkins');
   });
 }
@@ -257,11 +250,8 @@ R('stage').run = async (S, d, r) => {
     st.actor('brick', c.x + 2.4, c.z - 3.5, { face: { x: -0.2, z: 1 } });
     await st.cam(c.x, c.z - 1.5, { dur: 0.9 });
     st.sfx('fanfare', { volume: 0.5, pitch: -5 });
-    await st.say('minnow', 'Ladies and gentlemen—{p} wait, that’s Crumble’s line.', { expr: 'worried' });
-    await st.say('fidget', 'Just start the act! Everyone’s looking at us!', { expr: 'worried', emote: 'sweat' });
-    await st.say('minnow', 'WELCOME to the Understudies’ audition! For one night only…{p} {wave}THE JUGGLING ACT!{/}', { expr: 'happy', hop: true });
-    await st.say('brick', 'Juggling.', { expr: 'happy' });
-    await st.say('minnow', 'And YOU are our volunteers from the audience! Hold still — this won’t hurt!{p} Much!', { expr: 'smug' });
+    await st.say('minnow', 'WELCOME to the Understudies’ audition!{p} {wave}THE JUGGLING ACT!{/}', { expr: 'happy', hop: true });
+    await st.say('minnow', 'And YOU are our volunteers! This won’t hurt!{p} Much!', { expr: 'smug' });
     await st.title('The Understudies', 'their Juggling Act', 2.2);
   });
   // the show: they fight as a trio (one bar for the three)
@@ -285,9 +275,8 @@ R('stage').tick = (S, d, r) => {
       await st.cam(c.x, c.z - 3, { dur: 0.7 });
       st.emote('brick', 'dots'); st.emote('fidget', 'sweat');
       await st.say('minnow', 'That…{p} was a dress rehearsal.', { expr: 'sad' });
-      await st.say('fidget', 'We’ll be back! With better costumes!', { expr: 'cry' });
-      await st.say('brick', 'And the ember.', { expr: 'happy' });
-      await st.say('minnow', 'AND the ember! Understudies — {shake}EXIT STAGE LEFT!{/}', { expr: 'angry', shake: 0.6 });
+      await st.say('fidget', 'Quick! {key}The ember{/}, to Mister Crumble!', { expr: 'cry' });
+      await st.say('minnow', 'Understudies — {shake}EXIT STAGE LEFT!{/}', { expr: 'angry', shake: 0.6 });
       const G4 = d.gate('g4');
       if (G4) d.setGate(G4, true);
       const up = { x: d.ox + 24, z: d.oz + 30 };
@@ -312,12 +301,11 @@ R('lair').run = async (S, d, r) => {
     await st.cam(c.x, c.z + 0.5, { dur: 0.9 });
     st.sfx('thud', { volume: 0.8 }); st.shake(0.5);
     await st.say('crumble', 'HALT, heroes! You have reached…{p} {big}THE BOSS ROOM!{/}', { shake: 1 });
-    await st.say('crumble', 'Behold my latest invention: the SNUFFBOT 3000! It snuffs! It stomps! It makes a lovely cup of cocoa!', { expr: 'happy' });
-    await st.say('crumble', '…{pp}It doesn’t make cocoa. I lied. Villains lie.', { expr: 'smug' });
+    await st.say('crumble', 'Behold the SNUFFBOT 3000! It snuffs! It stomps!', { expr: 'happy' });
     st.actor('minnow', c.x - 3, c.z + 6, { face: { x: 0.4, z: -1 } });
     st.actor('brick', c.x - 1.4, c.z + 6.3, { face: { x: 0.2, z: -1 } });
-    await st.say('minnow', 'Mister Crumble! We brought you the ember! Can we be in the show now?', { expr: 'happy', hop: true });
-    await st.say('crumble', 'Splendid! Pop it in the slot.{p} And now: shoo! This is a SOLO.', { expr: 'smug' });
+    await st.say('minnow', 'Mister Crumble! We brought {key}the ember{/}! Can we be in the show?', { expr: 'happy', hop: true });
+    await st.say('crumble', 'Splendid! Into the Snuffbot it goes.{p} Now shoo: this is a SOLO.', { expr: 'smug' });
     await st.say('brick', 'Aw.', { expr: 'sad' });
     st.walk('minnow', c.x - 4, c.z + 12, { run: true });
     await st.walk('brick', c.x - 2, c.z + 12, { run: true });
@@ -351,13 +339,12 @@ R('lair').tick = (S, d, r) => {
       a.n.seatY = 1.1;
       await st.cam(bx, bz + 0.5, { dur: 0.6, ppu: st.basePpu() * 2 });
       st.sfx('boing', { volume: 0.8 });
-      await st.say('crumble', 'Oh dear.{p} Oh dear oh dear.', { expr: 'worried', emote: 'sweat' });
-      await st.say('crumble', 'The Duchess will hear about this!{pp} …Please don’t tell her.', { expr: 'cry' });
+      await st.say('crumble', 'The Duchess will hear about this!{p} …Please don’t tell her.', { expr: 'cry', emote: 'sweat' });
       st.sfx('whoosh', { volume: 0.7 });
       for (let k = 0; k < 20; k++) { a.n.seatY = 1.1 + k * 0.45; await st.wait(0.05); }
       st.hide('crumble');
       st.fx('sparkle', c.x, 1.2, c.z + 1, 20, { color: '#ffd66b' });
-      await st.say('narrator', 'Something rolls out of the Snuffbot’s wreck and settles, glowing, by the shrine’s door: the last ember of Old Glimmer.');
+      await st.say('narrator', 'The {key}last ember{/} rolls out of the wreck and under the back door. After it!');
       const G6 = d.gate('g6');
       if (G6) d.setGate(G6, true);
       const sh = R('shrine');
@@ -378,7 +365,7 @@ R('shrine').take = async (S, d, r, p) => {
     if (st.vfx) st.vfx.pillar(x, z, { r: 0.8, h: 6, color: '#ffd66b', life: 1.4 });
     st.sfx('shard', { volume: 0.9 });
     S.flag('ember3'); S.flag('lanternFull');
-    await st.say('narrator', 'The ember leaps into the lantern. Three little flames dance together, warm and bright — Old Glimmer’s own.');
+    await st.say('narrator', 'The ember leaps into the lantern: {key}three flames{/}! Now carry it up to {key}Old Glimmer{/}.');
     void p;
   });
   await d.D.exit({ done: true });
@@ -386,7 +373,9 @@ R('shrine').take = async (S, d, r, p) => {
 
 // ------------------------------------------------------------------ the chapter
 export const CH1 = {
-  id: 1, title: 'Lights Out', lv: 1, zones: ['valley'], opens: ['deepwood', 'heights'],
+  id: 1, title: 'Lights Out',
+  recap: 'Duchess Gloria, a diva in a flying theatre, has put out {key}Old Glimmer{/}, the lighthouse of Marigold Cove. Now the gloom roams the valley. Wake Nana June’s lantern with {key}three embers{/} and light the lighthouse again.',
+  lv: 1, zones: ['valley'], opens: ['deepwood', 'heights'],
   // the colours of the valley stay drained until Old Glimmer shines again
   drain: (S) => (S.has('snuffed') && !S.done('c1_relight') ? 0.45 : 0),
   // the grotto's mouth, once the Understudies have run into it
@@ -396,104 +385,116 @@ export const CH1 = {
   npcs: [
     // (in solo the real villagers stand in their own spots: `villager`)
     { id: 'hollis', villager: true, at: (S) => (S.done('c1_grotto') ? [LIGHTHOUSE.x - 2.4, LIGHTHOUSE.z + 3.4] : [PLAZA.x + 1.6, PLAZA.z - 1.4]), face: { x: -0.2, z: 1 }, when: (S) => !!S.st.q.c1_intro,
-      lines: ['June would be proud of you. Now go and be proud of yourself!', 'I’ve drafted a strongly worded letter to the Duchess. Forty pages. Double-sided.'] },
+      lines: ['June would be proud of you.', 'Old Glimmer’s light keeps the gloom out of the valley.'] },
     { id: 'bram', villager: true, at: [FIELDS[0] + 2, FIELDS[1] - 1.5], face: { x: -0.4, z: 1 }, when: (S) => S.done('c1_intro'),
-      lines: ['The hens haven’t laid a single egg since the sky went dark. Can’t blame them.', 'Buttercup sends her regards. From inside the barn.'] },
+      lines: ['Not one egg from the hens since Old Glimmer went out.', 'My cow Buttercup is scared of the dark, poor thing.'] },
     { id: 'juniper', villager: true, at: [CAMP[0] - 2, CAMP[1] + 1.5], face: { x: 0.5, z: 1 }, when: (S) => S.done('c1_intro'),
-      lines: ['Gloom crows. In MY woods. I’ve written them a very stern note.', 'The owls went quiet when the Murk came. That’s never a good sign.'] },
+      lines: ['A Gloom Boar charges in a straight line: just step aside!', 'Not one owl has hooted since the Murk came.'] },
     { id: 'rosa', villager: true, at: [86.5, 78.5], face: { x: 0, z: 1 }, when: (S) => S.done('c1_intro'),
       lines: ['A bakery with a cold oven is just a room full of flour.', 'Stay warm out there, love.'] },
     { id: 'perkins', at: [LIGHTHOUSE.x + 1.5, LIGHTHOUSE.z + 2.8], face: { x: -1, z: 0.3 }, when: (S) => S.done('c1_relight'),
-      lines: ['Pelican Post: we deliver! Eventually.', 'A roost in every town, a pelican for every traveller. Tips gratefully accepted. In fish.'] },
+      lines: ['My pelicans will fly you from one roost to the next.', 'Tips are welcome. In fish.'] },
   ],
   quests: {
     c1_intro: {
       // (started by the story: Hollis's legend in solo, the Adventure's start in Party)
-      title: 'Lights Out', lv: 1,
+      title: 'Lights Out',
+      brief: 'The Duchess has put out Old Glimmer, the lighthouse, and the gloom is creeping in. {key}Mayor Hollis{/} is keeping something of Nana June’s for you.',
+      lv: 1,
       steps: [
-        { do: 'scene', text: 'Something is happening over the cove…', run: lightsOut },
-        { do: 'talk', npc: 'hollis', text: 'Talk to Mayor Hollis on the plaza', run: theLantern },
+        { do: 'scene', text: 'Look up: something is coming over {key}Marigold Cove{/}', run: lightsOut },
+        { do: 'talk', npc: 'hollis', text: 'Talk to {key}Mayor Hollis{/} on the village plaza', run: theLantern },
       ],
     },
     c1_spark: {
-      title: 'A Spark in the Dark', auto: true, after: 'c1_intro', lv: 2,
+      title: 'A Spark in the Dark',
+      brief: 'Nana June’s lantern is cold. {key}Three embers{/} of Old Glimmer fell around the valley: find them to wake it.',
+      auto: true, after: 'c1_intro', lv: 2,
       steps: [
-        { do: 'camp', text: 'Chase the gloom from Bram’s fields', camp: { id: 'c1_fields', at: FIELDS, level: 2, foes: ['gloomling', 'gloomling', 'fox'], n: 3, done: 'The fields are safe!' } },
-        { do: 'collect', text: 'Pick up the ember in the barnyard', item: 'Glimmer Ember', n: 1, spots: [[FIELDS[0] + 0.5, FIELDS[1] + 1]], hint: 'An ember of Old Glimmer, still warm!',
+        { do: 'camp', text: 'Chase the gloom from {key}Bram’s fields{/}, west of the village', camp: { id: 'c1_fields', at: FIELDS, level: 2, foes: ['gloomling', 'gloomling', 'fox'], n: 3, done: 'The fields are safe!' } },
+        { do: 'collect', text: 'Pick up the {key}ember{/} in Bram’s barnyard', item: 'Glimmer Ember', n: 1, spots: [[FIELDS[0] + 0.5, FIELDS[1] + 1]], hint: 'An ember of Old Glimmer, still warm!',
           run: async (S) => {
             S.flag('ember1');
-            await S.say('bram', 'Thank you, friend! The hens say thank you too. Well — they say “bawk”. Same thing.', { expr: 'happy' });
-            await S.say('bram', 'That fancy lady in the sky, though… She looked at my hens like they owed her money.', { expr: 'worried' });
-            await S.say('narrator', 'Your lantern gives a tiny flicker, like a sleepy yawn. One ember in. Two to go.');
+            await S.say('bram', 'Thank you! The hens say “bawk”. That means thank you too.', { expr: 'happy' });
+            await S.say('narrator', '{key}One ember{/} in the lantern, two to go. Next: the {key}Whisperwood camp{/}, north of the village.');
           } },
-        { do: 'camp', text: 'Free the Whisperwood camp from the gloom', camp: { id: 'c1_camp', at: CAMP, level: 3, foes: ['gloomling', 'crow', 'crow'], n: 3, done: 'The Whisperwood camp is free!' } },
-        { do: 'collect', text: 'Pick up the ember by the campfire', item: 'Glimmer Ember', n: 1, spots: [[CAMP[0] + 1.2, CAMP[1] + 0.8]], hint: 'An ember of Old Glimmer, still warm!',
+        { do: 'camp', text: 'Chase the gloom from the {key}Whisperwood camp{/}, north of the village', camp: { id: 'c1_camp', at: CAMP, level: 3, foes: ['gloomling'], n: 2, big: 'boar', done: 'The Whisperwood camp is free!' } },
+        { do: 'collect', text: 'Pick up the {key}ember{/} by Juniper’s campfire', item: 'Glimmer Ember', n: 1, spots: [[CAMP[0] + 1.2, CAMP[1] + 0.8]], hint: 'An ember of Old Glimmer, still warm!',
           run: async (S) => {
             S.flag('ember2'); S.flag('lanternLit');
-            await S.say('juniper', 'Two embers — look at your lantern glow! June would be tickled pink.', { expr: 'happy' });
-            await S.say('juniper', 'I left those crows a very stern note. They ate it. I’ll write another.', { expr: 'angry' });
-            await S.say('juniper', 'The last one fell by the beach, you said? Follow the gulls. Gulls always know where the trouble is.', { expr: 'neutral' });
+            await S.say('juniper', '{key}Two embers{/}: your lantern is glowing! Only one to go.', { expr: 'happy' });
+            await S.say('juniper', 'I left the gloom a very stern note. They ate it.', { expr: 'angry' });
+            await S.say('juniper', 'The last one fell on {key}Driftwood Beach{/}, south of the village.', { expr: 'neutral' });
           } },
-        { do: 'go', text: 'Find the last ember on Driftwood Beach', at: BEACH, r: 5, run: understudies },
+        { do: 'go', text: 'Find the last ember on {key}Driftwood Beach{/}, south of the village', at: BEACH, r: 5, run: understudies },
       ],
     },
     c1_grotto: {
-      title: 'The Glimmer Grotto', auto: true, after: 'c1_spark', lv: 4,
+      title: 'The Glimmer Grotto',
+      brief: 'The Understudies let the {key}last ember{/} roll into the caves under Old Glimmer. Go in after them and take it back.',
+      auto: true, after: 'c1_spark', lv: 4,
       steps: [
-        { do: 'go', text: 'Follow the Understudies into the rocks under Old Glimmer', at: GROTTO_DOOR, r: 2.2, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('grotto'); else S.flag('grottoDone'); } },
-        { do: 'dungeon', id: 'grotto', text: 'Explore the Glimmer Grotto' },
+        { do: 'go', text: 'Follow the Understudies into the rocks {key}under Old Glimmer{/}', at: GROTTO_DOOR, r: 2.2, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('grotto'); else S.flag('grottoDone'); } },
+        { do: 'dungeon', id: 'grotto', text: 'Find the {key}last ember{/} deep in the Glimmer Grotto' },
       ],
     },
     c1_relight: {
-      title: 'Old Glimmer Shines Again', auto: true, after: 'c1_grotto', lv: 5,
+      title: 'Old Glimmer Shines Again',
+      brief: 'The lantern holds its three embers. Carry it to {key}Old Glimmer{/} to light the lighthouse again and push back the Murk.',
+      auto: true, after: 'c1_grotto', lv: 5,
       steps: [
-        { do: 'go', text: 'Bring the ember to Old Glimmer', at: [LIGHTHOUSE.x, LIGHTHOUSE.z + 3], r: 3, run: relight },
-        { do: 'scene', text: '…', run: perkins },
+        { do: 'go', text: 'Carry the lantern to {key}Old Glimmer{/}, the lighthouse east of the village', at: [LIGHTHOUSE.x, LIGHTHOUSE.z + 3], r: 3, run: relight },
+        { do: 'scene', text: 'Wait for the post at the foot of {key}Old Glimmer{/}', run: perkins },
       ],
       done: async (S) => { S.st.lit.push('valley'); S.save(); },
       next: 2,
     },
     // ---- side quests
     c1_oven: {
-      title: 'The Cold Oven', kind: 'side', giver: 'rosa', lv: 3, when: (S) => S.has('lanternLit'), dust: 20,
+      title: 'The Cold Oven',
+      brief: 'Rosa’s oven went out with Old Glimmer. Light it again with your lantern, at {key}the bakery{/}.',
+      kind: 'side', giver: 'rosa', lv: 3, when: (S) => S.has('lanternLit'), dust: 20,
       offer: async (S) => {
-        await S.say('rosa', 'Every oven in the cove is lit from Old Glimmer’s flame — old tradition. When it went out, so did mine.', { expr: 'sad' });
-        await S.say('rosa', 'Is that…{p} is your lantern glowing? Could you spare a spark for my oven? There’s a warm bun in it for you.', { expr: 'happy' });
+        await S.say('rosa', 'When Old Glimmer went out, so did my oven.', { expr: 'sad' });
+        await S.say('rosa', 'But your lantern glows! Would you bring a spark to {key}my oven{/}, at the bakery?', { expr: 'happy' });
       },
       steps: [
-        { do: 'go', text: 'Bring the lantern’s spark to Rosa’s oven', at: [86.5, 60.8], r: 2.2,
+        { do: 'go', text: 'Bring the lantern’s spark to {key}Rosa’s oven{/}, at the bakery', at: [86.5, 60.8], r: 2.2,
           run: async (S) => {
             S.P.world.fx.emit('sparkle', 86.5, 1.2, 60.5, 16, { color: '#ffb040' });
-            await S.say('rosa', 'Ohh, listen to her crackle! That’s the sound of breakfast.', { expr: 'love' });
-            await S.say('rosa', 'Here — emergency buns. For emergencies. Or Tuesdays.', { expr: 'happy' });
+            await S.say('rosa', 'Ohh, listen to it crackle! That’s the sound of breakfast.', { expr: 'love' });
           } },
       ],
     },
     c1_buttercup: {
-      title: 'Buttercup Won’t Budge', kind: 'side', giver: 'bram', lv: 3, when: (S) => S.has('lanternLit'), dust: 20,
+      title: 'Buttercup Won’t Budge',
+      brief: 'Bram’s cow Buttercup is scared of the dark and won’t leave the barn. Lead her to {key}the pasture{/} with your lantern.',
+      kind: 'side', giver: 'bram', lv: 3, when: (S) => S.has('lanternLit'), dust: 20,
       offer: async (S) => {
-        await S.say('bram', 'Buttercup won’t leave the barn. She’s scared of the dark — always has been. She sleeps with a nightlight.', { expr: 'worried' });
-        await S.say('bram', 'Maybe if she saw that lantern of yours… Walk her out to the pasture?', { expr: 'neutral' });
+        await S.say('bram', 'Buttercup won’t leave the barn: she’s scared of the dark.', { expr: 'worried' });
+        await S.say('bram', 'Would you show her your lantern, at {key}the barn door{/}?', { expr: 'neutral' });
       },
       steps: [
-        { do: 'go', text: 'Show Buttercup the lantern at the barn door', at: [25.5, 51], r: 2.2,
-          run: async (S) => { await S.say('narrator', 'A long, suspicious “mooo”… then two big eyes, and one careful hoof out into the light.'); } },
-        { do: 'go', text: 'Walk Buttercup to the pasture', at: [16.5, 47], r: 3,
-          run: async (S) => { await S.say('bram', 'Well I never! Look at her, grazing like nothing happened. You’ve a way with worried creatures.', { expr: 'love' }); } },
+        { do: 'go', text: 'Show Buttercup the lantern at the door of {key}Bram’s barn{/}', at: [25.5, 51], r: 2.2,
+          run: async (S) => { await S.say('narrator', 'A suspicious “mooo”… and out she comes. Lead her to {key}the pasture{/}, west of the barn.'); } },
+        { do: 'go', text: 'Walk Buttercup to {key}the pasture{/}, west of the barn', at: [16.5, 47], r: 3,
+          run: async (S) => { await S.say('bram', 'Well I never! Look at her graze. Thank you!', { expr: 'love' }); } },
       ],
     },
     // ---- a mini-game, to play again and again (World v7 M13)
     c1_pelicanrush: {
-      title: 'Pelican Rush', kind: 'side', repeat: true, giver: 'perkins', after: 'c1_relight', lv: 4, dust: 15,
+      title: 'Pelican Rush',
+      brief: 'Perkins has {key}seven letters{/} for the village. Run them from door to door before time runs out.',
+      kind: 'side', repeat: true, giver: 'perkins', after: 'c1_relight', lv: 4, dust: 15,
       offer: async (S) => {
         await S.say('perkins', 'The Pelican Post has a SYSTEM. The system is: deliver everything before the pelicans get peckish.', { expr: 'smug' });
-        await S.say('perkins', 'Seven letters, seven doors — the bakery, the town hall, the café, the store, the library, Wren’s, the beach shack. Start at the notice board. The clock is ticking. The pelicans are peckish.', { expr: 'worried' });
+        await S.say('perkins', '{key}Seven letters{/}, seven doors, all round the village. Start at {key}the notice board{/}: the clock is ticking!', { expr: 'worried' });
       },
       steps: [
-        { do: 'race', text: 'Deliver the post round Marigold Cove before the pelicans get peckish (start at the notice board)', points: POST_ROUTE, time: 32, r: 1.7, go: 'Post’s out! Run!', fail: 'Too slow — a pelican ate the café’s mail. Back to the notice board!' },
-        { do: 'talk', npc: 'perkins', text: 'Tell Perkins the post is delivered', run: async (S) => {
+        { do: 'race', text: 'Deliver {key}7 letters{/} round the village: start at {key}the notice board{/}', points: POST_ROUTE, time: 32, r: 1.7, go: 'Post’s out! Run!', fail: 'Too slow — a pelican ate the café’s mail. Back to the notice board!' },
+        { do: 'talk', npc: 'perkins', text: 'Tell {key}Perkins{/}, at the foot of Old Glimmer, that it’s all delivered', run: async (S) => {
           if (S.plays('c1_pelicanrush')) await S.say('perkins', 'AGAIN? You’re making my pelicans look bad. They’ve formed a union.', { expr: 'shock' });
-          else await S.say('perkins', 'All delivered? ON TIME? That has never happened in the history of the Pelican Post. I’m going to have to sit down.', { expr: 'love' });
+          else await S.say('perkins', 'All seven delivered? Already? I need to sit down.', { expr: 'love' });
         } },
       ],
     },

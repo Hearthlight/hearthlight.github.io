@@ -15,7 +15,7 @@ export const GROTTO = {
   door: [125.5, 100.5],
   start: [24, 111],
   rooms: [
-    { id: 'mouth', x: 16, z: 102, w: 16, h: 13, kind: 'start', said: 'Your lantern flickers. Somewhere below, an ember answers.',
+    { id: 'mouth', x: 16, z: 102, w: 16, h: 13, kind: 'start', said: 'Your lantern flickers: the last ember is somewhere below.',
       props: [['crystal', 19, 106], ['crystal', 29, 109, 0.8], ['shell', 21, 111], ['shell', 27, 112], ['rock', 18, 110, 0.8], ['torch', 30, 105]] },
     { id: 'pools', x: 9, z: 80, w: 30, h: 19, kind: 'fight', pools: [[15, 86, 3.2, 2.2], [32, 92, 3.6, 2.4], [22, 94, 2.2, 1.4]],
       foesList: ['reefcrab', 'reefcrab', 'shellback', 'gloomling', 'gloomling'], shout: 'Gloom crabs scuttle out of the pools!', chest: [24, 88],
