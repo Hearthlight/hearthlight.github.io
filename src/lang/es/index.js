@@ -44,10 +44,17 @@ import { MULTI10_ES } from './multi10.js';
 import { CHAT_ES } from './chat.js';
 import { GUIDE_ES } from './guide.js';
 import { PLAY_ES } from './play.js';
+import { BRUTES11_ES } from './brutes11.js';
+import { QUESTS11_ES } from './quests11.js';
+import { READING11_ES } from './reading11.js';
+import { LEVELS11_ES } from './levels11.js';
+import { STORIES11_ES } from './stories11.js';
+import { MOBILE11_ES } from './mobile11.js';
+import { SPLIT11_ES } from './split11.js';
 
-export const ES = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_ES, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_ES, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_ES, ...WORLD7, ...CH2_ES, ...CH3_ES, ...CH4_ES, ...CH5_ES, ...CH6_ES, ...CH7_ES, ...CH8_ES, ...CH9_ES, ...CH10_ES, ...WORLD13_ES, ...CONTROLS_ES, ...RELEASE9_ES, ...CLASSES9_ES, ...MULTI10_ES, ...CHAT_ES, ...GUIDE_ES, ...PLAY_ES };
+export const ES = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_ES, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_ES, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_ES, ...WORLD7, ...CH2_ES, ...CH3_ES, ...CH4_ES, ...CH5_ES, ...CH6_ES, ...CH7_ES, ...CH8_ES, ...CH9_ES, ...CH10_ES, ...WORLD13_ES, ...CONTROLS_ES, ...RELEASE9_ES, ...CLASSES9_ES, ...MULTI10_ES, ...CHAT_ES, ...GUIDE_ES, ...PLAY_ES, ...BRUTES11_ES, ...QUESTS11_ES, ...READING11_ES, ...LEVELS11_ES, ...STORIES11_ES, ...MOBILE11_ES, ...SPLIT11_ES };
 
 // lines said to the whole party (ustedes): looked up first in Party Mode
 export const ES_GROUP = {};
-for (const d of [SAGA_UI, CH1_ES, CH2_ES, CH3_ES, CH4_ES, CH5_ES, CH6_ES, CH7_ES, CH8_ES, CH9_ES, CH10_ES, WORLD13_ES]) if (d.__group) Object.assign(ES_GROUP, d.__group);
+for (const d of [SAGA_UI, CH1_ES, CH2_ES, CH3_ES, CH4_ES, CH5_ES, CH6_ES, CH7_ES, CH8_ES, CH9_ES, CH10_ES, WORLD13_ES, BRUTES11_ES, QUESTS11_ES, READING11_ES, LEVELS11_ES, STORIES11_ES, MOBILE11_ES, SPLIT11_ES]) if (d.__group) Object.assign(ES_GROUP, d.__group);
 delete ES.__group;

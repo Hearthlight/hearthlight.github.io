@@ -1,5 +1,5 @@
 // World v7: the saga's interface — scenes, quests, levels, the Murk (« la
-// Brume Mauve » : la grisaille, c'est déjà la « gloom ») and the cast's names.
+// Brume Mauve » ; the gloom is « l’Ombre », its creatures « les Ombres ») and the cast's names.
 // `__group` holds the « vous » versions of lines said to the whole party.
 export const SAGA_UI = {
   'Hold Esc to skip': 'Maintiens Échap pour passer',

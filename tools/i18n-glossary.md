@@ -38,6 +38,25 @@ literal. Keep jokes as jokes (adapt them if a pun doesn't survive).
   ù û ü ç œ æ É È Ê À Â Î Ô Ù Û Ç Œ), « », €, ’, …, ♥ ★ ♪ → ← ↑ ↓ ✓ · °.
   Nothing else (no emoji).
 
+## Clarity (the story must be easy to follow, read aloud to a sofa of friends)
+
+- **One idea a line, two short sentences at most.** A line fits three rows of the dialogue
+  box: about 150 characters in French, less is better.
+- **One joke a scene**, after the useful part, never in the middle of an explanation. A
+  running gag (Hollis’s tea, Crumble’s titles, the Understudies’ pose, the hen) comes once a
+  chapter.
+- **What must be understood is marked** with `{key}…{/}` (drawn bold, in colour): the goal, the
+  place to go, the thing to bring, who to see, a number. One mark a line, two on a line that
+  gives an order, four words at most inside, never on a joke. The English line and the four
+  languages carry the same marks.
+- **A scene that sends the player somewhere ends on that order**, said plainly: who, where,
+  what. The objective line that follows says the same thing in the same words.
+- Every quest has a `brief` (why we do this: one or two short sentences) and every chapter a
+  `recap` (the story so far and this chapter’s goal: three short sentences); they are what a
+  player who got lost reads on their phone.
+- Plain spoken French: « on » more than « nous », no rare word where a common one does, no
+  sentence a ten-year-old must read twice.
+
 ## Names
 
 People keep their names: Hollis, Rosa, Pip, Finn, Ivy, Theo, Mabel, Sol, Wren,
@@ -87,7 +106,17 @@ Buttercup (Bram's cow), Captain Snuggles → « Capitaine Câlin ».
 | journal | journal |
 | critter log | carnet des bestioles |
 | Party Mode | Mode Fête |
-| gloom / Gloomlings | la grisaille / les Grisouilles |
+| the gloom (the dark stuff, the force) | l’Ombre (« pris par l’Ombre », « un feu d’Ombre ») — never « la grisaille » |
+| the gloom (its creatures, as a crowd) | les Ombres (« Chasse les Ombres des champs de Bram ») |
+| Gloomling(s) / Big Gloomling | Ombrelin(s) / Gros Ombrelin |
+| gloom camp / gloom nest | camp d’Ombres / nid d’Ombres |
+| Gloom + creature (Gloom Kraken, Gloom Hen…) | … d’Ombre (Kraken d’Ombre, Poule d’Ombre, Sanglier d’Ombre, Ogre d’Ombre) |
+| gloomed, gloomy (a creature it has taken) | pris(e) par l’Ombre |
+| the Gloomstage | le Théâtre d’Ombres |
+| Your Gloominess (Crumble’s garbled titles) | Votre Obscurité |
+| Duchess Gloria Gloomsworth | la Duchesse Gloria de Grisemine (kept: « faire grise mine ») |
+| the Murk | la Brume Mauve |
+| Gustbelly / Storm Ram | Soufflard / Bélier d’orage |
 | waystone / attune | pierre de voyage / éveiller (une pierre) |
 | Grumblecloud | Grognuage |
 | wave(s) | vague(s) |
