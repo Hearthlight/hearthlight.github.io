@@ -21,7 +21,8 @@ import { CLASSES } from '../combat/classes.js';
 import { HUD_MODES, HUD_NAMES } from '../ui/hud.js';
 import { randomLook } from '../data/looks.js';
 import { audio } from '../engine/audio.js';
-import { t, tn } from '../i18n.js';
+import { t, tn, getLang } from '../i18n.js';
+import { randomName } from '../data/nicknames.js';
 
 // [id, name, the picture on its tab]
 const PAGES = [['hero', 'Hero', 'pan'], ['talents', 'Talents', 'star'], ['gear', 'Gear', 'armory'], ['mounts', 'Mounts', 'horseshoe'], ['pets', 'Companions', 'pet'],
@@ -111,7 +112,8 @@ class TvHero extends HeroTab {
     if (this.osk) {
       this.typing(true);
       this.osk.update(dt, input);
-      if (this.osk.done) { this.p.name = this.osk.v.trim().slice(0, 12); this.P.profileOf(this.p).named = true; this.P.saveProfile(this.p); this.P.flashTag(this.p, 3); audio.sfx('confirm'); }
+      // (a name left as the die gave it stays the dice’s: « Surprise me » may roll it again)
+      if (this.osk.done) { if (!this.P.rename(this.p, this.osk.v, { dice: this.osk.diced })) { this.P.profileOf(this.p).named = true; this.P.saveProfile(this.p); this.P.flashTag(this.p, 3); } audio.sfx('confirm'); }
       if (this.osk.done || this.osk.back) { this.osk = null; this.typing(false); input.consume(); }
       return;
     }
@@ -204,7 +206,13 @@ class TvHero extends HeroTab {
     ctx.fillStyle = '#fff7e6'; ctx.fillRect(A.x + 3, A.y + 3, ps, ps);
     const img = P.portraits && P.portraits.get('party' + p.slot, p.look, 'happy');
     if (img) { ctx.imageSmoothingEnabled = false; ctx.drawImage(img, A.x + 3, A.y + 3, ps, ps); }
-    this.btn(ctx, 'lk:rand', A.x, A.y + ps + 12, lw, 15, t('★ Surprise me'), () => { P.setLook(p, randomLook()); P.saveProfile(p); audio.sfx('sparkle', { volume: 0.6 }); });
+    // (a look out of the hat — and a nickname, for whoever is still « Keys » or « Pad 1 », or took the last one from the dice)
+    this.btn(ctx, 'lk:rand', A.x, A.y + ps + 12, lw, 15, t('★ Surprise me'), () => {
+      P.setLook(p, randomLook());
+      const pr = P.profileOf(p);
+      if (!pr.named || pr.diced) P.rename(p, randomName(getLang(), P.players.map((q) => q.name)), { dice: true });
+      P.saveProfile(p); audio.sfx('sparkle', { volume: 0.6 });
+    });
     const hats = (P.profileOf(p).hats || []).filter((h) => TREASURE_HATS[h]).length;
     if (hats) wrap(tn('{n} treasure hat found on the rares', '{n} treasure hats found on the rares', hats), lw).slice(0, 3).forEach((l, i) => drawText(ctx, l, A.x, A.y + ps + 32 + i * 9, { color: '#b8862a' }));
     // the groups, then their parts: ◂ value ▸

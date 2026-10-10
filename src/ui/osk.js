@@ -7,7 +7,8 @@
 import { drawText, measure } from '../engine/font.js';
 import { panel, UI, fitText, ctl } from './ui.js';
 import { audio } from '../engine/audio.js';
-import { t } from '../i18n.js';
+import { t, getLang } from '../i18n.js';
+import { randomName } from '../data/nicknames.js';
 
 const ROWS = [
   'ABCDEFGHIJ'.split(''),
@@ -33,10 +34,6 @@ function dress(ch, chain) {
   for (const c of chain) { const i = c.indexOf(low); if (i >= 0 && i < c.length - 1) { const n = c[i + 1]; return up && n !== 'ß' ? n.toUpperCase() : n; } }
   return null;
 }
-// (no villager's name: Theo stays Theo)
-const NAMES = ['Alex', 'Sam', 'Robin', 'Charlie', 'Noa', 'Lou', 'Mika', 'Jules', 'Milo', 'Luna', 'Nico', 'Ada', 'Leo', 'Zoé', 'Léa', 'Hugo',
-  'Maya', 'Eli', 'Nina', 'Oscar', 'Iris', 'Tom', 'Emma', 'Lucas', 'Jade', 'Rémi', 'Noor', 'Aiko', 'Omar', 'Elsa', 'Yann', 'Suki'];
-
 export class Osk {
   constructor(value = '', { max = 12, title = 'Your name', keys = null, hint = null, chat = false } = {}) {
     this.v = value;
@@ -50,10 +47,12 @@ export class Osk {
     this.caps = !value;           // (a new name starts with a capital)
     this.done = false;            // OK pressed
     this.back = false;            // B on an empty name: leave it be
+    this.dice = null;             // the nickname the die gave last (`diced`: it is still the name, untouched)
     this.t = 0;
   }
 
   get key() { return this.rows[this.r][Math.min(this.c, this.rows[this.r].length - 1)]; }
+  get diced() { return !!this.v && this.v === this.dice; }
 
   update(dt, input) {
     this.t += dt;
@@ -86,9 +85,7 @@ export class Osk {
     if (k === '⌫') { this.v = this.v.slice(0, -1); if (!this.v) this.caps = true; audio.sfx('typewriter', { volume: 0.35 }); return; }
     if (k === '⇧') { this.caps = !this.caps; audio.sfx('select', { volume: 0.4 }); return; }
     if (k === '🎲') {
-      let n = this.v;
-      while (n === this.v) n = NAMES[Math.floor(Math.random() * NAMES.length)];
-      this.v = n; this.caps = false;
+      this.v = this.dice = randomName(getLang(), [this.v]).slice(0, this.max); this.caps = false;
       audio.sfx('page');
       return;
     }

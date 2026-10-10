@@ -15,6 +15,7 @@ import { padIcons } from '../combat/classes.js';
 import { ULTS } from '../combat/v4/talents.js';
 import { audio } from '../engine/audio.js';
 import { t, getLang } from '../i18n.js';
+import { cleanName } from '../data/nicknames.js';
 
 // the phone's buttons → the solo game's actions (B also backs out of menus)
 const BTN = { a: ['interact'], b: ['jump', 'cancel'], x: ['special'], y: ['dodge'], u: ['ult'] };
@@ -74,7 +75,7 @@ export class SoloPhone {
       if (this.pad && this.pad !== id) { this.net.send(id, { t: 'error', msg: t('Another phone is already playing') }); return; }
       const first = this.pad !== id;
       this.pad = id;
-      this.name = String(d.name || '').slice(0, 12);
+      this.name = cleanName(d.name);
       this.welcome();
       if (first) { audio.sfx('sparkle', { volume: 0.7 }); this.toast(t('Phone connected: {name} ♥', { name: this.name || '?' })); }
       if (this.panelOpen) this.closeAt = this.t + 1.4;

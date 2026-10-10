@@ -44,6 +44,7 @@ import { ULTS } from '../combat/v4/talents.js';
 import { t, tn, onLang, getLang, setAudience } from '../i18n.js';
 import { drawClassIcon } from '../combat/icons.js';
 import { cleanLook, randomLook } from '../data/looks.js';
+import { cleanName } from '../data/nicknames.js';
 import { NPCS } from '../data/npcs.js';
 import { newState, saveSettings } from '../state.js';
 import { drawGlyph } from '../combat/v4/icons.js';
@@ -106,7 +107,7 @@ export class PartyPlayer {
     this.id = src.id;
     this.kind = src.kind;
     this.input = src.input;
-    this.name = String(src.name || '').trim().slice(0, 12) || `Player ${slot + 1}`;
+    this.name = cleanName(src.name) || `Player ${slot + 1}`;
     this.look = cleanLook(src.look || randomLook());
     this.ready = src.kind !== 'phone';
     this.connected = true;
@@ -445,6 +446,7 @@ export class Party {
       case 'in': case 'b': if (!this.paused) p.input.onMsg(d); break;
       case 'hact': this.host.onMsg(p, d); break;
       case 'look': this.setLook(p, d.look); break;
+      case 'name': this.rename(p, d.name, { dice: d.dice === true }); break;
       case 'ready':
         if (this.phase !== 'lobby') break;
         p.ready = !!d.v;
@@ -594,6 +596,26 @@ export class Party {
     p.actor.setLook(p.look);
     p.portraitDue = 0.3;
     if (this.phase === 'lobby') { this.world.fx.emit('sparkle', p.pos.x, 1.2, p.pos.z, 4, { color: '#fff3c4' }); this.flashTag(p, 2.5); }
+  }
+
+  // a new name for a player (a phone’s name row or its dice, the big-screen menu): cleaned, told
+  // apart from a namesake, kept in their profile (`diced`: out of the hat — « Surprise me » may
+  // roll it again), flashed over their head; their phone hears what it became
+  rename(p, name, { dice = false } = {}) {
+    const base = cleanName(name);
+    let n = base;
+    for (let k = 2; n && this.players.some((q) => q !== p && q.name === n); k++) n = `${base.slice(0, 10).trim()} ${k}`;
+    const changed = !!n && n !== p.name;
+    if (changed) {
+      p.name = n;
+      const pr = this.profileOf(p);
+      pr.named = true; pr.diced = !!dice;
+      this.saveProfile(p);
+      this.flashTag(p, 4);
+      this.host.sentKey = '';                    // (the host’s menu lists the players by name)
+    }
+    if (p.kind === 'phone') this.net.send(p.id, { t: 'you', slot: p.slot, color: p.color, name: p.name });
+    return changed;
   }
 
   sendPortrait(p) {

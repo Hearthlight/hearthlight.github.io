@@ -76,6 +76,8 @@ export class Input {
       // Let the title screen's links keep normal keyboard focus and activation.
       const projectLinks = document.getElementById('project-links');
       if (projectLinks && !projectLinks.hidden && (e.code === 'Tab' || projectLinks.contains(e.target))) return;
+      // (a real text field over the canvas — ui/field.js — keeps its own keys: Space, ⌫, the letters)
+      if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
       this._gesture();
       this.lastDevice = 'keyboard';
       if (this.textHandler) {

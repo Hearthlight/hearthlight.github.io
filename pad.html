@@ -34,13 +34,15 @@
       touch-action: manipulation; user-select: text; -webkit-user-select: text;
     }
     .field:focus { border-color: #e0a526; }
+    .field.bad { border-color: #c8454f; background: #fbe4df; }
+    .field::placeholder { color: #a8927a; opacity: 1; }
     #code { text-transform: uppercase; text-align: center; letter-spacing: 6px; }
   </style>
 </head>
 <body>
   <canvas id="pad"></canvas>
-  <input id="code" class="field" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="CODE" />
-  <input id="name" class="field" maxlength="12" autocomplete="nickname" autocorrect="off" spellcheck="false" placeholder="Your name" />
+  <input id="code" class="field" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" inputmode="text" enterkeyhint="next" aria-label="The party's code" />
+  <input id="name" class="field" maxlength="12" autocomplete="nickname" autocorrect="off" autocapitalize="words" spellcheck="false" enterkeyhint="done" aria-label="Your name" />
   <script src="config.js"></script>
   <script type="module" src="./src/pad/pad.js"></script>
 </body>

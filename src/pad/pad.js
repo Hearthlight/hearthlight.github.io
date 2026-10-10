@@ -5,6 +5,8 @@
 import { drawText, measure, wrap } from '../engine/font.js';
 import { panel, button, UI, fitText, splitTwo, emoteGlyph } from '../ui/ui.js';
 import { questRows, fitRich, wrapFit, wrapTail, whereText, BRIEF, GOLD } from '../ui/questcard.js';
+import { bigButton as wideButton, diceButton, bigLines, drawLines, fitScale } from '../ui/big.js';
+import { randomName, cleanName } from '../data/nicknames.js';
 import { QUICK, QUICK_PAGES, QUICK_BY, EMOTES, EMOTE_BY, WHY, emojiOnly } from '../ui/chatdata.js';
 import { MAX_LEN, clean } from '../party/chatfilter.mjs';
 import { LOOK_GROUPS, TREASURE_HATS, randomLook, cleanLook } from '../data/looks.js';
@@ -13,7 +15,7 @@ import { drawClassIcon, drawGearIcon, drawMountIcon, drawPetIcon } from '../comb
 import { roundIcon, drawIcon, drawGlyph } from '../combat/v4/icons.js';
 import { TREES, TALENT, ROW_NEED, canLearn, whyNot, rankOf, spentIn, valueAt } from '../combat/v4/talents.js';
 import { itemName, itemDesc, UPGRADE, ROMAN, LEVEL_COLOR, BAG, itemBorder, itemTag, itemUpgrade, meltValue, isWorn, weaponLines } from '../combat/v3/gear.js';
-import { t, setLang, detectLang, onLang } from '../i18n.js';
+import { t, setLang, getLang, detectLang, onLang } from '../i18n.js';
 import { relayUrl } from '../party/net.js';
 import { PadMap } from './padmap.js';
 import { RemoteGuest } from './remote.js';
@@ -53,7 +55,12 @@ const S = {
   status: 'idle',        // idle | connecting | open | closed
   code: urlCode || store.get('code', ''),
   key: keyOf(location.hash),     // the invitation's video key (the choice: here, or at home)
-  name: store.get('name', ''),
+  name: cleanName(store.get('name', '')),
+  // (a name you typed is yours; one the dice gave is rolled again by « Surprise me »)
+  typed: store.get('typed', !!store.get('name', '')),
+  gift: store.get('gift', null),   // the nickname given at the door to a guest without a name (said on the next screen)
+  askCode: !urlCode,               // the join screen asks for the party’s code (a QR code or a link brings it)
+  badCode: false,                  // …and shows it in red: no party has it
   look: cleanLook(store.get('look', null) || randomLook()),
   me: null,              // { slot, color, name }
   phase: 'lobby',        // lobby | adventure (set by the big screen)
@@ -99,7 +106,7 @@ let ws = null, retry = 0, retryT = 0, lastSend = 0, gaveUpAt = 0;
 function connect() {
   clearTimeout(retryT);
   if (ws && ws.readyState <= 1) return;
-  if (!/^[A-Z]{4}$/.test(S.code)) { S.error = t('Type the 4-letter code from the big screen'); return; }
+  if (!/^[A-Z]{4}$/.test(S.code)) { S.error = t('Type the 4-letter code from the big screen'); S.badCode = S.askCode = true; return; }
   S.status = 'connecting';
   const sock = new WebSocket(relayUrl(`role=pad&code=${S.code}&id=${padId}`));
   ws = sock;
@@ -135,7 +142,8 @@ function onMessage(m) {
       break;
     case 'error': {
       // (the relay's reasons, in the phone's language)
-      const why = { nogame: t('No game with that code'), full: t('This party is full'), busy: t('The online party server is full right now. Try again in a few minutes.'), limit: t('Too many messages: wait a moment.') }[m.code] || m.msg;
+      const why = { nogame: t('No party has the code {code}. Check it on the big screen.', { code: S.code }), full: t('This party is full: eight players are in already.'), busy: t('The online party server is full right now. Try again in a few minutes.'), limit: t('Too many messages: wait a moment.') }[m.code] || m.msg;
+      if (m.code === 'nogame') S.askCode = S.badCode = true;
       if (S.joined) {
         // the big screen is probably restarting: keep trying for a while
         if (!gaveUpAt) gaveUpAt = performance.now();
@@ -147,6 +155,8 @@ function onMessage(m) {
     case 'you':
       S.me = { slot: m.slot, color: m.color, name: m.name };
       gaveUpAt = 0;
+      // (the big screen kept this seat under an older name: it hears the one typed since — once)
+      if (S.name && nameAsked !== S.name && m.name !== S.name && !String(m.name).startsWith(S.name.slice(0, 10) + ' ')) { nameAsked = S.name; send({ t: 'name', name: S.name, dice: !S.typed }); }
       break;
     case 'phase':
       S.phase = m.p;
@@ -218,6 +228,23 @@ function onMessage(m) {
 
 function hi() { send({ t: 'hi', name: S.name, look: S.look, cls: S.cls, ...(remote ? { remote: true, key: remote.key } : {}) }); }
 
+// ---- your name: typed (it is yours), or out of the hat (the dice, « Surprise me », a guest who
+// typed none) — once in the party, the big screen hears each change
+let nameAsked = '';
+function setName(name, typed) {
+  S.name = name; S.typed = typed;
+  if (nameIn.value !== name) nameIn.value = name;
+  store.set('name', name); store.set('typed', typed);
+}
+function tellName() { if (S.joined && S.name) { nameAsked = S.name; send({ t: 'name', name: S.name, dice: !S.typed }); } }
+function rollName() { setName(randomName(getLang(), [S.name, S.me && S.me.name]), false); S.error = ''; dropGift(); tellName(); buzz(8); }
+function dropGift() { if (S.gift) { S.gift = null; store.set('gift', null); } }
+// (the field left, or Enter: an emptied name goes back to what it was, one left as it was has typed nothing)
+function commitName() {
+  const name = cleanName(nameIn.value);
+  if (name && name !== S.name) { setName(name, true); dropGift(); tellName(); } else nameIn.value = S.name;
+}
+
 function buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* not supported */ } }
 
 // heartbeat so the big screen knows we're still here
@@ -248,15 +275,21 @@ function placeField(el, r) {
   const origin = cv.getBoundingClientRect();
   el.style.left = `${origin.left + r.x * k}px`; el.style.top = `${origin.top + r.y * k}px`;
   el.style.width = `${r.w * k}px`; el.style.height = `${r.h * k}px`;
+  // (its text as big as the field allows — never under 16 px: an iPhone zooms the page on a smaller one)
+  el.style.fontSize = `${Math.round(Math.max(16, Math.min(28, r.h * k * 0.52)))}px`;
 }
 codeIn.value = S.code;
 nameIn.value = S.name;
-nameIn.placeholder = t('Your name');
+codeIn.placeholder = '····';
+nameIn.placeholder = t('type here…');
 // (a language arrives a moment after it's chosen: its dictionary is fetched first)
-onLang(() => { nameIn.placeholder = t('Your name'); });
-codeIn.addEventListener('input', () => { S.code = codeIn.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); if (codeIn.value !== S.code) codeIn.value = S.code; S.error = ''; });
-nameIn.addEventListener('input', () => { S.name = nameIn.value.slice(0, 12); S.error = ''; });
-for (const el of [codeIn, nameIn]) el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { el.blur(); join(); } });
+onLang(() => { nameIn.placeholder = t('type here…'); });
+codeIn.addEventListener('input', () => { S.code = codeIn.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); if (codeIn.value !== S.code) codeIn.value = S.code; S.error = ''; S.badCode = false; });
+// (typed: yours. In the party it is told when the field is left; an emptied one is the hat’s again)
+nameIn.addEventListener('input', () => { if (S.joined) return; S.name = cleanName(nameIn.value); S.typed = !!S.name; S.error = ''; });
+nameIn.addEventListener('blur', () => { try { window.scrollTo(0, 0); } catch (e) { /* ignore */ } if (S.joined) commitName(); });
+codeIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { codeIn.blur(); if (S.name) join(); else nameIn.focus(); } });
+nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { nameIn.blur(); if (!S.joined) join(); } });
 chatIn.placeholder = t('Say something…');
 onLang(() => { chatIn.placeholder = t('Say something…'); });
 chatIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sayTyped(); } else if (e.key === 'Escape') { e.preventDefault(); S.menu = false; closeChat(); } });
@@ -267,25 +300,30 @@ function choiceBtn(x, y, w, h, label, sub, id, fn, color) {
   ctx.fillStyle = '#3b2a22'; ctx.fillRect(x + 1, y + dy, w - 2, h); ctx.fillRect(x, y + 1 + dy, w, h - 2);
   ctx.fillStyle = down ? shade(color, -0.2) : color; ctx.fillRect(x + 1, y + 1 + dy, w - 2, h - 2);
   ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + 1, y + 1 + dy, w - 2, 1);
-  drawText(ctx, fitText(label, w - 10), x + w / 2, y + 5 + dy, { color: '#fff7e6', align: 'center' });
-  drawText(ctx, fitText(sub, w - 10), x + w / 2, y + 17 + dy, { color: 'rgba(255,247,230,0.78)', align: 'center' });
+  // (a tall one: its name twice as big)
+  const sc = h >= 36 ? fitScale(label, w - 10) : 1;
+  drawText(ctx, fitText(label, w - 10, sc), x + w / 2, y + (sc === 2 ? 4 : 5) + dy, { color: '#fff7e6', align: 'center', scale: sc });
+  drawText(ctx, fitText(sub, w - 10), x + w / 2, y + (sc === 2 ? 22 : h >= 36 ? 20 : 17) + dy, { color: 'rgba(255,247,230,0.85)', align: 'center' });
   tapArea(id, x - 2, y - 2, w + 4, h + 4, fn);
 }
 
 // "On my own screen": the remote page, with this name (play.html joins by itself)
 function goHome() {
-  S.name = (S.name || '').trim().slice(0, 12);
-  if (!S.name) { S.error = t('Pick a name first!'); return; }
-  store.set('name', S.name);
+  nameAtDoor();
   codeIn.blur(); nameIn.blur();
   location.href = new URL('play.html#' + S.code + '.' + S.key, location.href).href;
 }
 
+// (no name typed: one out of the hat, and the next screen says so)
+function nameAtDoor() {
+  const name = cleanName(S.name);
+  if (name) setName(name, S.typed);
+  else { setName(randomName(getLang()), false); S.gift = S.name; S.giftT = 0; store.set('gift', S.gift); }
+}
+
 function join() {
-  S.name = (S.name || '').trim().slice(0, 12);
-  if (!S.name) { S.error = t('Pick a name first!'); return; }
-  store.set('name', S.name);
-  S.error = ''; S.kicked = false;
+  nameAtDoor();
+  S.error = ''; S.kicked = false; S.badCode = false;
   codeIn.blur(); nameIn.blur();
   goFullscreen();
   connect();
@@ -521,50 +559,116 @@ function portraitBox(x, y, size) {
 }
 
 // ------------------------------------------------------------------ screens
+// The first thing a guest sees — often someone who doesn’t play games. In order: 1 the party’s
+// code (and where to read it), 2 your name (or the dice), 3 one big button; words big enough for
+// an arm’s length, fields a thumb can’t miss, all of it in the top of the screen, clear of the
+// phone’s keyboard. A QR code or a link that brought the code asks for the name only.
+function stepLabel(n, texts, sub, x, y, w) {
+  let tx = x;
+  if (n) {
+    ctx.fillStyle = '#3b2a22'; ctx.fillRect(x, y - 1, 15, 17);
+    ctx.fillStyle = '#e0a526'; ctx.fillRect(x + 1, y, 13, 15);
+    drawText(ctx, String(n), x + 8, y + 1, { color: '#3b2a2e', align: 'center', scale: 2 });
+    tx += 20;
+  }
+  const text = texts.find((l) => measure(l, 2) <= w - (tx - x)) || texts[0], sc = fitScale(text, w - (tx - x));
+  drawText(ctx, fitText(text, w - (tx - x), sc), tx, y + (sc === 2 ? 1 : 4), { color: '#8a5234', scale: sc });
+  if (sub) drawText(ctx, fitText(sub, w), x, y + 20, { color: UI.inkSoft });
+}
+// (under a real field: its paper and its words in the game’s own letters — what a picture of the canvas keeps)
+function fieldBox(r, text, bad, center = false) {
+  ctx.fillStyle = bad ? '#c8454f' : '#8e5d3e'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = bad ? '#fbe4df' : '#fff8ea'; ctx.fillRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
+  const sc = fitScale(text, r.w - 12);
+  if (text) drawText(ctx, fitText(text, r.w - 12, sc), center ? r.x + r.w / 2 : r.x + 6, r.y + Math.round((r.h - 9 * sc) / 2) + sc, { color: INK, scale: sc, align: center ? 'center' : 'left' });
+}
+// a big button: the first of its labels that fits doubled (else the first, plain)
+function bigPill(x, y, w, h, labels, id, fn, color) {
+  const label = labels.find((l) => measure(l, 2) <= w - 10) || labels[0];
+  wideButton(ctx, x, y, w, h, label, { color, down: S.pressing === id });
+  tapArea(id, x - 2, y - 2, w + 4, h + 4, fn);
+}
+function diceBtn(x, y, size, id, fn) {
+  diceButton(ctx, x, y, size, size, { down: S.pressing === id });
+  tapArea(id, x - 3, y - 3, size + 6, size + 6, fn);
+}
+
 function drawJoin() {
   background();
-  const land = W > H;
-  const ty = land ? 14 : Math.round(H * 0.14);
-  drawText(ctx, 'Hearthlight', W / 2, ty, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
-  drawText(ctx, t('~ party controller ~'), W / 2, ty + 22, { color: '#f6d38f', align: 'center' });
-  const choosing = !remote && S.key && /^[A-Z]{4}$/.test(S.code);
-  const pw = Math.min(W - 20, 210), ph = choosing ? 160 : 124;
-  const px = Math.round((W - pw) / 2), py = land ? ty + 38 : Math.round(H * (choosing ? 0.24 : 0.3));
-  panel(ctx, px, py, pw, ph);
-  drawText(ctx, t('Room code'), px + 12, py + 10, { color: UI.inkSoft });
-  const codeR = { x: px + 12, y: py + 20, w: 76, h: 20 };
-  drawText(ctx, t('Your name'), px + 98, py + 10, { color: UI.inkSoft });
-  const nameR = { x: px + 98, y: py + 20, w: pw - 110, h: 20 };
-  placeField(codeIn, codeR); placeField(nameIn, nameR);
-  const busy = S.status === 'connecting';
-  // (an invitation link: where are you? at the big screen, or on your own screen at home)
-  const choose = !remote && S.key && /^[A-Z]{4}$/.test(S.code);
-  let hy = py + ph + 12;
-  if (choose) {
-    drawText(ctx, t('Where are you playing?'), px + pw / 2, py + 50, { color: '#8a5234', align: 'center' });
-    choiceBtn(px + 12, py + 62, pw - 24, 30, t('At the big screen'), t('this phone is my controller'), 'jroom', join, '#4f955a');
-    choiceBtn(px + 12, py + 98, pw - 24, 30, t('On my own screen'), t('from home: the game shows here'), 'jhome', goHome, '#4f73b6');
-    if (S.error) wrap(S.error, pw - 24).slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 134 + i * 11, { color: '#c8454f', align: 'center' }));
-    hy += 40;
-  } else {
-    pill(px + 12, py + 52, pw - 24, 24, busy ? t('Joining…') : t('Join the party ♥'), 'join', join, { color: '#4f955a' });
-    if (S.error) {
-      const lines = wrap(S.error, pw - 24);
-      lines.slice(0, 2).forEach((l, i) => drawText(ctx, l, px + pw / 2, py + 86 + i * 11, { color: '#c8454f', align: 'center' }));
-    } else drawText(ctx, window.HEARTHLIGHT && window.HEARTHLIGHT.relay ? t('Works from anywhere, over the internet') : t('Same Wi-Fi as the big screen'), px + pw / 2, py + 90, { color: UI.inkSoft, align: 'center' });
+  const hasCode = /^[A-Z]{4}$/.test(S.code);
+  const invited = hasCode && !S.askCode;          // (the code came with the QR code or the link: only your name is asked)
+  const choose = !remote && S.key && hasCode;     // (an invitation: at the big screen, or on your own screen at home?)
+  const wide = W > H && W >= 340;                 // (a phone on its side: two columns)
+  const pw = Math.min(W - 12, wide ? 440 : 260), px = Math.round((W - pw) / 2), inner = pw - 20, x0 = px + 10;
+  const fh = 28, stepH = 32 + fh, colW = wide ? Math.floor((inner - 12) / 2) : inner, x2 = wide ? x0 + colW + 12 : x0;
+  // its blocks: the code (typed, or on its ticket), your name, what to press — and what went wrong
+  // upright: one under the other · on its side: code | name over the button, or ticket & name | button
+  const codeH = invited ? 46 : stepH, side = wide && invited, split = wide && !invited;
+  const actW = side ? colW : inner, actX = side ? x2 : x0;
+  const where = choose ? bigLines(t('Where are you playing?'), actW, 1) : null;
+  const actH = choose ? where.h + 6 + (split ? 36 : 76) : 32;
+  const nameY = split ? 0 : codeH + (invited ? 0 : 8), nameX = split ? x2 : x0;
+  const bodyH = side ? Math.max(codeH + stepH, actH) : nameY + stepH + 10 + actH;
+  const actY = side ? Math.round((bodyH - actH) / 2) : nameY + stepH + 10;
+  const err = S.error ? bigLines(S.error, inner - 16, 4) : null;
+  const info = err ? [] : wrap(window.HEARTHLIGHT && window.HEARTHLIGHT.relay ? t('Works from anywhere, over the internet') : t('Same Wi-Fi as the big screen'), inner);
+  const noteH = err ? err.h + 14 : info.length * 11;
+  const ph = 10 + bodyH + 8 + noteH + 9;
+  // (the title above the card when the screen is tall enough for both)
+  const titleH = H - ph >= 96 ? 48 : !wide && H - ph >= 34 ? 24 : 0;
+  const py = titleH ? titleH + 8 : Math.max(4, Math.min(8, H - ph - 4)), y0 = py + 10;
+  if (titleH) {
+    drawText(ctx, 'Hearthlight', W / 2, titleH === 48 ? 14 : 7, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
+    if (titleH === 48) drawText(ctx, t('~ party controller ~'), W / 2, 36, { color: '#f6d38f', align: 'center' });
   }
-  const tip = t('Scan the QR code on the big screen, or type the code it shows.');
-  if (!choose) wrap(tip, Math.min(W - 24, 220)).forEach((l, i) => drawText(ctx, l, W / 2, hy + i * 11, { color: '#b9a2e3', align: 'center' }));
+  panel(ctx, px, py, pw, ph);
+  let codeR = null;
+  if (invited) {
+    // which party: its code, on a ticket
+    const cx = x0 + Math.round(colW / 2), say = t('You’re joining the party'), sc = fitScale(say, colW);
+    drawText(ctx, fitText(say, colW), cx, y0 + (sc === 2 ? 0 : 3), { color: '#8a5234', align: 'center', scale: sc });
+    const code = S.code.split('').join(' '), cw = measure(code, 2) + 20;
+    ctx.fillStyle = '#3b2a22'; ctx.fillRect(cx - cw / 2, y0 + 18, cw, 22);
+    ctx.fillStyle = '#4f955a'; ctx.fillRect(cx - cw / 2 + 1, y0 + 19, cw - 2, 20);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(cx - cw / 2 + 1, y0 + 19, cw - 2, 1);
+    drawText(ctx, code, cx, y0 + 22, { color: '#fff7e6', align: 'center', scale: 2 });
+  } else {
+    stepLabel(1, [t('The party’s code'), t('Code')], t('4 letters, on the big screen'), x0, y0, colW);
+    codeR = { x: x0, y: y0 + 32, w: colW, h: fh };
+    fieldBox(codeR, S.code.split('').join(' '), S.badCode, true);
+  }
+  stepLabel(invited ? 0 : 2, [t('Your name')], t('Type it, or tap the dice'), nameX, y0 + nameY, colW);
+  const nameR = { x: nameX, y: y0 + nameY + 32, w: colW - fh - 4, h: fh };
+  fieldBox(nameR, S.name, false);
+  diceBtn(nameX + colW - fh, nameR.y, fh, 'jdice', rollName);
+  codeIn.classList.toggle('bad', !!S.badCode);
+  codeAt = codeR; nameAt = nameR;
+  const ay = y0 + actY;
+  if (choose) {
+    drawLines(ctx, where, actX + actW / 2, ay, { color: '#8a5234', align: 'center' });
+    const cw = split ? Math.floor((actW - 8) / 2) : actW, cy = ay + where.h + 6;
+    choiceBtn(actX, cy, cw, 36, t('At the big screen'), t('this phone is my controller'), 'jroom', join, '#4f955a');
+    choiceBtn(split ? actX + cw + 8 : actX, split ? cy : cy + 40, cw, 36, t('On my own screen'), t('from home: the game shows here'), 'jhome', goHome, '#4f73b6');
+  } else bigPill(actX, ay, actW, 32, [t('Join the party ♥'), t('Join ♥')], 'join', join, '#4f955a');
+  const ny = y0 + bodyH + 8;
+  if (err) {
+    // what went wrong, big, in plain words
+    ctx.fillStyle = '#c8454f'; ctx.fillRect(x0, ny, inner, err.h + 12);
+    ctx.fillStyle = '#fbe4df'; ctx.fillRect(x0 + 1, ny + 1, inner - 2, err.h + 10);
+    drawLines(ctx, err, px + pw / 2, ny + 6, { color: '#a8323c', align: 'center' });
+  } else info.forEach((l, i) => drawText(ctx, l, px + pw / 2, ny + 1 + i * 11, { color: UI.inkSoft, align: 'center' }));
+  // (under the card, if the screen goes on: how to find a party at all)
+  const tips = invited || choose ? [] : wrap(t('Scan the QR code on the big screen, or type the code it shows.'), Math.min(W - 24, 230));
+  if (py + ph + 12 + tips.length * 11 <= H - 4) tips.forEach((l, i) => drawText(ctx, l, W / 2, py + ph + 12 + i * 11, { color: '#b9a2e3', align: 'center' }));
 }
 
 function drawWaiting(text) {
   background();
   header();
-  placeField(codeIn, null); placeField(nameIn, null);
-  const dots = '.'.repeat(1 + (Math.floor(S.t * 3) % 3));
-  drawText(ctx, t(text) + dots, W / 2, H / 2 - 8, { color: '#fff7e6', align: 'center' });
-  drawText(ctx, t('Room {code}', { code: S.code }), W / 2, H / 2 + 8, { color: '#b9a2e3', align: 'center' });
-  pill(Math.round(W / 2 - 40), H - 34, 80, 18, t('Leave'), 'leave', leave, { color: '#8a5d42' });
+  const dots = '.'.repeat(1 + (Math.floor(S.t * 3) % 3)), sc = fitScale(t(text) + '...', W - 16);
+  drawText(ctx, t(text) + dots, Math.round(W / 2 - measure(t(text) + '...', sc) / 2), H / 2 - 16, { color: '#fff7e6', scale: sc });
+  drawText(ctx, t('Room {code}', { code: S.code }), W / 2, H / 2 + 10, { color: '#b9a2e3', align: 'center' });
+  bigPill(Math.round(W / 2 - 60), H - 44, 120, 28, [t('Leave')], 'leave', leave, '#8a5d42');
 }
 
 function drawLook() {
@@ -574,51 +678,85 @@ function drawLook() {
   const groups = LOOK_GROUPS;
   const nTabs = groups.length + 1;           // + the hero tab
   let colX, colY, colW;
-  // portrait + main buttons
-  const ps = land ? 88 : H >= 500 ? 132 : 88;
-  let bx, by, bw;
+  // your name right under the header, clear of the phone’s keyboard — its field, its die: a typo
+  // is fixed without leaving the party —, your portrait, the two main buttons
+  const fh = 24, TAB = 20;
+  let bx, by, bw, nameR;
   if (land) {
-    const lw = Math.min(150, Math.round(W * 0.34));
-    portraitBox(Math.round((lw - ps) / 2) + 4, 28, ps);
-    bx = 8; bw = lw - 8; by = 28 + ps + 8;
+    const lw = Math.min(160, Math.round(W * 0.34)), ps = Math.max(48, Math.min(88, H - 26 - fh - 6 - 8 - 26 - 6 - 28 - 6));
+    nameR = { x: 8, y: 26, w: lw - 8 - fh - 4, h: fh };
+    portraitBox(Math.round((lw - ps) / 2) + 4, 26 + fh + 6, ps);
+    bx = 8; bw = lw - 8; by = 26 + fh + 6 + ps + 8;
     colX = lw + 10; colY = 26; colW = W - colX - 8;
   } else {
-    portraitBox(Math.round((W - ps) / 2), 28, ps);
-    colX = 8; colY = 28 + ps + 10; colW = W - 16;
+    const lab = t('Your name'), lw = measure(lab) + 6, ps = H >= 520 ? 120 : H >= 420 ? 88 : H >= 350 ? 64 : 48;
+    drawText(ctx, lab, 8, 26 + 8, { color: '#e8dcf2' });
+    nameR = { x: 8 + lw, y: 26, w: W - 16 - lw - fh - 4, h: fh };
+    portraitBox(Math.round((W - ps) / 2), 26 + fh + 8, ps);
+    colX = 8; colY = 26 + fh + 8 + ps + 10; colW = W - 16;
     bx = 8; bw = W - 16;
-    const rowsEnd = colY + 21 + g0RowH(colY) * maxParts();
-    by = Math.min(H - 58, rowsEnd + 14);
+    by = Math.min(H - 64, colY + TAB + 3 + g0RowH(colY) * maxParts() + 12);
   }
+  fieldBox(nameR, S.name, false);
+  diceBtn(nameR.x + nameR.w + 4, nameR.y, fh, 'ldice', rollName);
+  if (!S.menu) nameAt = nameR;
   // buttons
-  pill(bx, by, bw, 20, t('★ Surprise me'), 'random', () => { S.look = randomLook(); pushLook(); });
-  if (S.phase === 'lobby') pill(bx, by + 26, bw, 24, t('Ready!  →'), 'ready', () => { S.ready = true; S.view = 'pad'; send({ t: 'ready', v: true }); }, { color: '#4f955a' });
-  else pill(bx, by + 26, bw, 24, t('Back to the game'), 'lookdone', () => { S.view = 'pad'; }, { color: '#4f955a' });
-  // tabs
-  const tw = Math.floor(colW / nTabs);
+  bigPill(bx, by, bw, 26, [t('★ Surprise me')], 'random', surpriseLook, '#8e5d3e');
+  if (S.phase === 'lobby') bigPill(bx, by + 32, bw, 28, [t('Ready!  →')], 'ready', () => { S.ready = true; S.view = 'pad'; dropGift(); send({ t: 'ready', v: true }); }, '#4f955a');
+  else bigPill(bx, by + 32, bw, 28, [t('Back to the game')], 'lookdone', () => { S.view = 'pad'; dropGift(); }, '#4f955a');
+  // tabs: as wide as their words ask, the room left shared out (a long « Vêtements » is never cut)
+  const tabNames = [...groups.map((g) => t(g.name)), t('Hero')], need = tabNames.map((n) => measure(n) + 8);
+  const spare = colW - need.reduce((a, b) => a + b, 0), even = Math.floor(colW / nTabs);
+  const tws = spare < 0 || need.every((n) => n <= even) ? tabNames.map(() => even) : need.map((n) => n + Math.floor(spare / nTabs));
+  let tabX = colX;
   for (let i = 0; i < nTabs; i++) {
     const on = i === S.tab;
-    const x = colX + i * tw;
+    const x = tabX, tw = tws[i];
+    tabX += tw;
     const hero = i === groups.length;
     ctx.fillStyle = on ? '#fbf1dc' : hero ? '#6a4a3a' : '#5a4468';
-    ctx.fillRect(x + 1, colY, tw - 2, 15);
+    ctx.fillRect(x + 1, colY, tw - 2, TAB);
     ctx.fillStyle = on ? '#e0a526' : hero ? '#b8862a' : '#6e5680';
     ctx.fillRect(x + 1, colY, tw - 2, 2);
-    drawText(ctx, hero ? t('Hero') : t(groups[i].name), x + tw / 2, colY + 4, { color: on ? INK : '#e8dcf2', align: 'center', maxChars: Math.floor((tw - 4) / 5) });
-    tapArea('tab' + i, x, colY - 4, tw, 22, () => { S.tab = i; });
+    drawText(ctx, fitText(tabNames[i], tw - 4), x + tw / 2, colY + 7, { color: on ? INK : '#e8dcf2', align: 'center' });
+    tapArea('tab' + i, x, colY - 3, tw, TAB + 4, () => { S.tab = i; });
   }
-  const areaH = land ? H - colY - 20 : g0RowH(colY) * maxParts() + 6;
-  if (S.tab === groups.length) { drawHeroes(colX, colY + 15, colW, areaH); return; }
-  // rows
-  const g = groups[S.tab];
-  const rowH = land ? Math.max(20, Math.min(26, Math.floor((H - colY - 20) / g.parts.length))) : g0RowH(colY);
-  panel(ctx, colX, colY + 15, colW, rowH * g.parts.length + 6);
+  const areaH = land ? H - colY - TAB - 5 : g0RowH(colY) * maxParts() + 6;
+  if (S.tab === groups.length) drawHeroes(colX, colY + TAB, colW, areaH);
+  else drawLookRows(groups[S.tab], colX, colY + TAB, colW, land ? Math.max(24, Math.min(30, Math.floor((H - colY - TAB - 11) / groups[S.tab].parts.length))) : g0RowH(colY));
+  // (a guest who typed no name: the one given at the door, said kindly — until they touch something)
+  if (S.gift && S.me && !S.menu) {
+    if (!S.giftT) S.giftT = S.t;
+    if (S.t - S.giftT > 16) dropGift();
+    else {
+      const gw = land ? Math.max(bw, 190) : W - 16, lines = wrap(t('No name? We’ll call you {name}! Type yours up here, or tap the dice.', { name: S.me.name }), gw - 14);
+      const gy = nameR.y + fh + 5, gh = lines.length * 11 + 9;
+      ctx.fillStyle = '#3b2a22'; ctx.fillRect(8, gy, gw, gh);
+      for (let i = 0; i < 5; i++) ctx.fillRect(nameR.x + 12 - i, gy - 5 + i, i * 2 + 1, 1);
+      ctx.fillStyle = '#fff3c4'; ctx.fillRect(9, gy + 1, gw - 2, gh - 2);
+      for (let i = 1; i < 5; i++) ctx.fillRect(nameR.x + 13 - i, gy - 4 + i, i * 2 - 1, 1);
+      lines.forEach((l, i) => drawText(ctx, l, 8 + gw / 2, gy + 6 + i * 11, { color: INK, align: 'center' }));
+      tapArea('gift', 8, gy, gw, gh, dropGift);
+    }
+  }
+}
+
+// a nickname goes with a surprise look, unless the name was typed
+function surpriseLook() {
+  S.look = randomLook(); pushLook();
+  if (!S.typed) rollName();
+}
+
+// the rows of a group of the look: its label, ◂ value ▸
+function drawLookRows(g, colX, top, colW, rowH) {
+  panel(ctx, colX, top, colW, rowH * g.parts.length + 6);
   g.parts.forEach((part, i) => {
-    const y = colY + 18 + i * rowH;
+    const y = top + 3 + i * rowH;
     const opts = part.key === 'hat' ? part.options.concat(S.hats.map((id) => ({ id, name: TREASURE_HATS[id], treasure: true }))) : part.options;
     let idx = opts.findIndex((o) => o.id === S.look[part.key]);
     if (idx < 0) idx = 0;
     const o = opts[idx];
-    const aw = 20, ah = rowH - 6;
+    const aw = 20, ah = rowH - 4;
     const vx = colX + Math.max(64, Math.round(colW * 0.38)), vw = colX + colW - 8 - vx;
     const lab = splitTwo(t(part.label), vx - colX - 12);
     if (lab.length > 1 && rowH >= 22) lab.forEach((l, k) => drawText(ctx, fitText(l, vx - colX - 12), colX + 8, y + Math.round(rowH / 2) - 9 + k * 9, { color: UI.inkSoft }));
@@ -642,10 +780,11 @@ const maxParts = () => Math.max(...LOOK_GROUPS.map((g) => g.parts.length));
 
 // portrait layout: rows grow to fill the space above the two big buttons
 function g0RowH(colY) {
-  return Math.max(22, Math.min(32, Math.floor((H - 58 - 14 - colY - 22) / maxParts())));
+  return Math.max(24, Math.min(32, Math.floor((H - 64 - 12 - colY - 23) / maxParts())));
 }
 
 function pushLook() {
+  dropGift();
   store.set('look', S.look);
   send({ t: 'look', look: S.look });
 }
@@ -666,7 +805,8 @@ function drawHeroes(x, y, w, h) {
   const n = CLASS_ORDER.length, gap = 3;
   const roomy = Math.floor((h - 8 - gap * (n - 1)) / n) >= 24;
   const cols = roomy ? (n > 4 && w >= 240 ? 2 : 1) : 2, rows = Math.ceil(n / cols);
-  const detail = roomy ? 0 : 34;
+  const descs = roomy ? [] : CLASS_ORDER.map((id) => wrap(t(CLASSES[id].desc), w - 10)), nl = Math.min(3, Math.max(1, ...descs.map((d) => d.length)));
+  const detail = roomy ? 0 : 25 + nl * 9;
   const ch = roomy ? Math.max(24, Math.min(52, Math.floor((h - 8 - gap * (rows - 1)) / rows))) : Math.max(18, Math.min(30, Math.floor((h - 8 - detail - gap * (rows - 1)) / rows)));
   const colW = Math.floor((w - 8 - gap * (cols - 1)) / cols);
   CLASS_ORDER.forEach((id, i) => {
@@ -700,8 +840,10 @@ function drawHeroes(x, y, w, h) {
   });
   if (!roomy && CLASSES[S.cls]) {
     const c = CLASSES[S.cls], dy = y + 6 + rows * (ch + gap);
-    drawText(ctx, fitText(t('X: {move}', { move: t(c.special.name) }) + ' · ' + t(c.role || ''), w - 10), x + 5, dy, { color: '#7d4f93' });
-    wrap(t(c.desc), w - 10).slice(0, 2).forEach((l, k) => drawText(ctx, l, x + 5, dy + 10 + k * 9, { color: UI.inkSoft }));
+    const lines = wrap(t(c.desc), w - 10);
+    drawText(ctx, fitText(t('X: {move}', { move: t(c.special.name) }), w - 10), x + 5, dy, { color: '#7d4f93' });
+    drawText(ctx, fitText(t(c.role || ''), w - 10), x + 5, dy + 10, { color: '#8a5234' });
+    lines.slice(0, nl).forEach((l, k) => drawText(ctx, k === nl - 1 && lines.length > nl ? fitText(l + '…', w - 10) : l, x + 5, dy + 20 + k * 9, { color: UI.inkSoft }));
   }
 }
 
@@ -1994,13 +2136,14 @@ function frame(now) {
   if (!frame.manual) requestAnimationFrame(frame);
 }
 
+let codeAt = null, nameAt = null;     // where this frame’s screen wants the code and the name fields
 function drawScreen() {
   remote?.update(performance.now());
+  codeAt = nameAt = null;
   if (!S.joined) {
     if (S.status === 'connecting' || (S.status === 'open' && !S.me)) drawWaiting('Joining');
     else drawJoin();
   } else {
-    placeField(codeIn, null); placeField(nameIn, null);
     if (S.menu !== 'chat') closeChat();
     if (!S.me) drawWaiting(S.hostGone ? 'Waiting for the big screen' : 'Joining');
     else if (S.screen === 'choice') drawChoice();
@@ -2014,6 +2157,8 @@ function drawScreen() {
     else drawPad();
     if (S.hostGone || S.status !== 'open') drawHostGone();
   }
+  // (a field left alone keeps its place and its focus; one no screen asked for goes — and lets go of the keyboard)
+  placeField(codeIn, codeAt); placeField(nameIn, nameAt);
 }
 requestAnimationFrame(frame);
 
@@ -2028,7 +2173,7 @@ window.addEventListener('hashchange', () => {
   if (S.joined || ws) leave();
   if (remote) remote.key = location.hash.slice(1).split('.')[1] || '';
   S.key = keyOf(location.hash);
-  S.code = c;
+  S.code = c; S.askCode = false; S.error = '';
   codeIn.value = c;
   if (S.name && (remote || !S.key)) join();
 });

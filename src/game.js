@@ -12,6 +12,7 @@ import { World } from './scenes/world.js';
 import { Dialogue } from './ui/dialogue.js';
 import { Creator } from './ui/creator.js';
 import { panel, button, UI, fitText, bindInput, ctl, device, closeButton, tc, keyHint, isFace } from './ui/ui.js';
+import { bigButton } from './ui/big.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
 import { newState, loadGame, saveGame, hasSave, loadSettings, saveSettings, hearts } from './state.js';
@@ -124,7 +125,8 @@ export class Game {
 
   frame(dt) {
     this.t += dt;
-    if (this.mode !== 'game') this.input.touchUi = true;
+    // (a page over the game — the wardrobe, the shipping bin… — takes plain taps too)
+    if (this.mode !== 'game' || this.overlay) this.input.touchUi = true;
     this.input.update(dt);
     this.phone.update(dt);
     // (the saves page open over the game: nothing reads a key meanwhile)
@@ -568,9 +570,9 @@ export class Game {
     if (menu) { w.menu.draw(ctx); return; }
     // menu
     const items = this.titleItems();
-    // (a finger wants taller rows)
-    const rh = this.input.touchMode ? 21 : 16;
-    const mw = Math.max(130, ...items.map(([label]) => measure(label) + 44)), mh = items.length * rh + 10;
+    // (a finger wants taller rows, and words it reads at arm’s length)
+    const touch = this.input.touchMode, ms = touch ? 2 : 1, rh = touch ? 32 : 16;
+    const mw = Math.max(touch ? 150 : 130, ...items.map(([label]) => measure(label, ms) + (touch ? 64 : 44))), mh = items.length * rh + 10;
     const mx = Math.round(W / 2 - mw / 2), my = Math.round(Math.min(H * 0.6, hintY - mh - 12));
     this.titleRects = [];
     if (box) { this.drawPlay(ctx, W, box); items.length = 0; }
@@ -581,25 +583,25 @@ export class Game {
       ctx.fillRect(mx, my, mw, 1);
     }
     items.forEach(([label], i) => {
-      const y = my + 6 + i * rh + Math.floor((rh - 16) / 2);
-      const on = i === this.titleSel;
-      if (on) { ctx.fillStyle = 'rgba(246,211,143,0.22)'; ctx.fillRect(mx + 4, y - 3 - Math.floor((rh - 16) / 2), mw - 8, rh - 2); drawText(ctx, '♥', mx + 12, y, { color: '#ec5f73' }); }
-      drawText(ctx, label, W / 2 + 4, y, { color: on ? '#fff3c4' : '#d9c8b0', align: 'center', shadow: '#2a1f33' });
-      this.titleRects.push({ x: mx, y: y - 3 - Math.floor((rh - 16) / 2), w: mw, h: rh - 2, i });
+      const y = my + 6 + i * rh + Math.floor((rh - 16 * ms) / 2) + (ms - 1) * 5;
+      const on = i === this.titleSel, ry = my + 3 + i * rh;
+      if (on) { ctx.fillStyle = 'rgba(246,211,143,0.22)'; ctx.fillRect(mx + 4, ry, mw - 8, rh - 2); drawText(ctx, '♥', mx + 12, y, { color: '#ec5f73', scale: ms }); }
+      drawText(ctx, label, W / 2 + 4 * ms, y, { color: on ? '#fff3c4' : '#d9c8b0', align: 'center', shadow: '#2a1f33', scale: ms });
+      this.titleRects.push({ x: mx, y: ry, w: mw, h: rh - 2, i });
     });
     if (this.confirmNew) {
-      const yes = t('Start over'), no = t('Keep it');
+      const yes = t('Start over'), no = t('Keep it'), bh = this.input.touchMode ? 22 : 14;
       const bw = Math.max(70, measure(yes) + 12, measure(no) + 12);
-      const pw = Math.min(W - 12, Math.max(210, bw * 2 + 70)), ph = 56;
+      const pw = Math.min(W - 12, Math.max(210, bw * 2 + 70)), ph = 42 + bh;
       const msg = wrap(t('Start over? Your saved cove will be lost.'), pw - 16);
       const extra = (msg.length - 1) * 10;
       const px = Math.round(W / 2 - pw / 2), py = Math.round(H / 2 - (ph + extra) / 2);
       panel(ctx, px, py, pw, ph + extra);
       msg.forEach((l, i) => drawText(ctx, l, W / 2, py + 10 + i * 10, { color: UI.ink, align: 'center' }));
       const x0 = px + Math.round(pw / 2 - bw - 15), x1 = px + Math.round(pw / 2 + 15);
-      button(ctx, x0, py + 30 + extra, bw, 14, yes, { hot: this.confirmSel === 0 });
-      button(ctx, x1, py + 30 + extra, bw, 14, no, { hot: this.confirmSel === 1 });
-      this.confirmRects = [{ x: x0, y: py + 30 + extra, w: bw, h: 14, i: 0 }, { x: x1, y: py + 30 + extra, w: bw, h: 14, i: 1 }];
+      button(ctx, x0, py + 30 + extra, bw, bh, yes, { hot: this.confirmSel === 0 });
+      button(ctx, x1, py + 30 + extra, bw, bh, no, { hot: this.confirmSel === 1 });
+      this.confirmRects = [{ x: x0, y: py + 30 + extra, w: bw, h: bh, i: 0 }, { x: x1, y: py + 30 + extra, w: bw, h: bh, i: 1 }];
     }
     if (this.titleMessage) {
       // (good news in green, four seconds; what went wrong in red, long enough to read)
@@ -662,6 +664,7 @@ export class Game {
     const c = this.creator;
     c.update(dt, this.input);
     if (c.back) {
+      c.dispose();
       this.r3d.scene.remove(this.preview.root); this.r3d.scene.remove(this.previewPet.root);
       this.preview = this.previewPet = this.creator = null;
       this.input.textHandler = null; this.input.consume(); this.toTitle(); return;
@@ -673,14 +676,19 @@ export class Game {
     this.preview.update(dt, c.demo ? c.demo(dt) : {});
     this.previewPet.update(dt, { happy: true });
     this.previewPet.root.rotation.y = -0.6;
-    if (c.done) this.startNewGame(c.done);
+    if (c.done) { c.dispose(); this.startNewGame(c.done); }
   }
 
   drawCreator() {
     const r3d = this.r3d, d = this.display;
     const home = this.world.maps.home;
-    const ppu = d.wh > 400 ? 64 : 48;
-    if (d.portrait) {
+    let ppu = d.wh > 400 ? 64 : 48;
+    if (this.creator.touch) {
+      // a finger’s layout: the hero in the middle of the room its cards leave free
+      const V = this.creator.touchLayout().view, k = d.scale / d.wscale;
+      if (V.h * k < 190) ppu = 48;
+      r3d.setView(3.9 - (V.x + V.w / 2 - d.w / 2) * k / ppu, 4.0 - (V.y + V.h / 2 - d.h / 2) * k / ppu, ppu);
+    } else if (d.portrait) {
       // the panel covers the bottom: frame the character in the space above it
       const panelH = Math.min(Math.round(d.h * 0.58), 240) + 6;
       const shiftZ = (panelH * d.scale / d.wscale) / 2 / ppu;
