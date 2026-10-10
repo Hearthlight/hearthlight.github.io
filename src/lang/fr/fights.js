@@ -12,14 +12,14 @@ export const FIGHTS = {
   // the big world's gloom creatures
   'Dune Burrower': 'Creuse-dune', 'Ember Imp': 'Diablotin de braise', 'Frost Wisp': 'Feu follet de givre',
   'Bog Toad': 'Crapaud des tourbières', 'Spore Shaman': 'Chaman des spores', 'Sporeling': 'Sporelin',
-  'Gloom Mender': 'Papillon guérisseur', 'Shieldbearer': 'Porte-bouclier', 'Armour Beetle': 'Scarabée blindé',
+  'Gloom Mender': 'Guérisseur d’Ombre', 'Shieldbearer': 'Porte-bouclier', 'Armour Beetle': 'Scarabée blindé',
   'Cloud Harpy': 'Harpie des nuages', 'Canyon Slinger': 'Frondeur du canyon', 'Reef Crab': 'Crabe de récif',
   'Drowned Sailor': 'Marin noyé', 'Lava Slug': 'Limace de lave', 'Storm Crow': 'Corbeau d’orage',
-  'Gloom Totem': 'Totem de grisaille', 'Sandworm': 'Ver des sables', 'Frost Yeti': 'Yéti du givre',
+  'Gloom Totem': 'Totem d’Ombre', 'Sandworm': 'Ver des sables', 'Frost Yeti': 'Yéti du givre',
   'Gulp!': 'Gloups !', 'Pop!': 'Pop !',
   // gloom camps
-  'A gloom camp! ({zone})': 'Un camp de grisaille ! ({zone})',
-  'Gloom camp cleared!': 'Camp de grisaille nettoyé !',
+  'A gloom camp! ({zone})': 'Un camp d’Ombres ! ({zone})',
+  'Gloom camp cleared!': 'Camp d’Ombres nettoyé !',
   'Camps: {n} of {total}': 'Camps : {n} sur {total}',
   // zone bosses & their lairs
   'Sand Queen': 'Reine des sables', 'The Sand Queen': 'La Reine des sables',
@@ -31,12 +31,12 @@ export const FIGHTS = {
   '*BUUURP*': '*BUUURP*',
   'Its core is showing — hit it!': 'Son cœur est à nu — frappe-le !',
   'Something huge stirs nearby…': 'Quelque chose d’énorme remue tout près…',
-  'A guardian of the wild, lost in the gloom': 'Un gardien des terres sauvages, perdu dans la grisaille',
+  'A guardian of the wild, lost in the gloom': 'Un gardien des terres sauvages, pris par l’Ombre',
   '{boss} gives up and goes back to its lair…': '{boss} abandonne et retourne dans son repaire…',
   'Boss defeated!': 'Boss vaincu !',
   '{boss} is free!': '{boss} est libre !',
   'The Sand Queen sinks back to sleep, calm at last!': 'La Reine des sables se rendort, enfin apaisée !',
   'The Frost Colossus melts into a gentle snowman!': 'Le Colosse de givre fond en un gentil bonhomme de neige !',
-  'The Frog King is free of the gloom — long live the King!': 'Le Roi Grenouille est libéré de la grisaille — vive le Roi !',
+  'The Frog King is free of the gloom — long live the King!': 'Le Roi Grenouille est libéré de l’Ombre — vive le Roi !',
   'The Magma Golem cools down and dozes off!': 'Le Golem de magma refroidit et s’assoupit !',
 };

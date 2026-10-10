@@ -110,6 +110,8 @@ Buttercup (Bram's cow), Captain Snuggles → « Capitaine Câlin ».
 | the gloom (its creatures, as a crowd) | les Ombres (« Chasse les Ombres des champs de Bram ») |
 | Gloomling(s) / Big Gloomling | Ombrelin(s) / Gros Ombrelin |
 | gloom camp / gloom nest | camp d’Ombres / nid d’Ombres |
+| Gloom Waves / Gloom invasion (a group of them) | Vagues d’Ombres / Invasion d’Ombres — « d’Ombres » for a crowd, « d’Ombre » for one creature or a thing made of it |
+| Gloomy Fox / Stag (an animal it has taken) | renard / cerf pris par l’Ombre |
 | Gloom + creature (Gloom Kraken, Gloom Hen…) | … d’Ombre (Kraken d’Ombre, Poule d’Ombre, Sanglier d’Ombre, Ogre d’Ombre) |
 | gloomed, gloomy (a creature it has taken) | pris(e) par l’Ombre |
 | the Gloomstage | le Théâtre d’Ombres |

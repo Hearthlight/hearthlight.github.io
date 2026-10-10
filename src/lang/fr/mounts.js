@@ -31,6 +31,6 @@ export const MOUNTS_FR = {
   '{y} to get off · {y} again to whistle it back': '{y} pour descendre · {y} pour l’appeler d’un sifflement',
   '{animal} bolted! Try again in a moment': '{animal} a filé ! Réessaie dans un instant',
   '{name} picked up {food}': '{name} a ramassé {food}',
-  '{animal} is free of the gloom — and trusts {name}!': '{animal} n’est plus sous l’emprise de la grisaille — et fait confiance à {name} !',
+  '{animal} is free of the gloom — and trusts {name}!': '{animal} sort de l’Ombre — et fait confiance à {name} !',
   '{a} to ride it · {y} to get off · {y} to whistle': '{a} pour monter · {y} pour descendre · {y} pour siffler',
 };

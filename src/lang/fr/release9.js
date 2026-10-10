@@ -101,7 +101,7 @@ export const RELEASE9_FR = {
   'Mind the scenery, darlings!': 'Attention au décor, mes chéris !',
   'A new set! Isn’t it DIVINE?': 'Un nouveau décor ! N’est-ce pas DIVIN ?',
   'Swept off with the scenery!': 'Le décor t’emporte !',
-  'Beyond the valley, the wild lands stretch as far as the eye can see. Gloom creatures roam out here.': 'Au-delà de la vallée, les terres sauvages s’étendent à perte de vue. Des créatures de grisaille rôdent par ici.',
+  'Beyond the valley, the wild lands stretch as far as the eye can see. Gloom creatures roam out here.': 'Au-delà de la vallée, les terres sauvages s’étendent à perte de vue. Des Ombres rôdent par ici.',
   // the party relay (the online one, the desktop app's)
   'Can’t reach the party server. Check your connection.': 'Impossible de joindre le serveur du Mode Fête. Vérifie ta connexion.',
   'No game with that code': 'Aucune partie avec ce code',

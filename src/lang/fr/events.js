@@ -1,11 +1,11 @@
 // Party mode: the wild world's events (gloom invasions, migrations, shooting stars).
 export const EVENTS_FR = {
-  'Gloom attack at a waystone: {place}!': 'La grisaille attaque une pierre de voyage : {place} !',
+  'Gloom attack at a waystone: {place}!': 'Les Ombres attaquent une pierre de voyage : {place} !',
   'defend the waystone — follow the arrow': 'défendez la pierre de voyage — suivez la flèche',
   'defend the waystone! Follow the arrow': 'défends la pierre de voyage ! Suis la flèche',
   'Wave {n} beaten! More gloom coming…': 'Vague {n} battue ! D’autres arrivent…',
   'Wave {n}/{total}!': 'Vague {n}/{total} !',
-  'The gloom drifted away… ({place})': 'La grisaille s’est dissipée… ({place})',
+  'The gloom drifted away… ({place})': 'Les Ombres sont reparties… ({place})',
   'The waystone is safe!': 'La pierre de voyage est sauvée !',
   '{place} shines brighter than ever': '{place} brille plus que jamais',
   'Migration: {animals} on the move!': 'Migration : {animals} en route !',
@@ -25,7 +25,7 @@ export const EVENTS_FR = {
   'everyone feels wonderful!': 'tout le monde se sent merveilleusement bien !',
   'A waystone is under attack: {place} — follow the arrow!': 'Une pierre de voyage est attaquée : {place} — suis la flèche !',
   'Defend the waystone! Wave {n}/{total}': 'Défends la pierre de voyage ! Vague {n}/{total}',
-  'Gloom attack: {place}': 'Attaque de grisaille : {place}',
+  'Gloom attack: {place}': 'Attaque d’Ombres : {place}',
   '{zone} · get there!': '{zone} · allez-y !',
   'wave {n}/{total} beaten': 'vague {n}/{total} battue',
   'wave {n}/{total} · {k} left': 'vague {n}/{total} · encore {k}',

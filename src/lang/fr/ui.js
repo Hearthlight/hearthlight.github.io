@@ -479,7 +479,7 @@ export const UI = {
   'Acorn Cap': 'Chapeau de gland',
   'Glowcap Hat': 'Chapeau-luisant',
   'Pan Helmet': 'Casque-casserole',
-  'Gloom Horns': 'Cornes de grisaille',
+  'Gloom Horns': 'Cornes d’Ombre',
   'Round Glasses': 'Lunettes rondes',
   'Freckles': 'Taches de son',
   'Rosy Cheeks': 'Joues roses',

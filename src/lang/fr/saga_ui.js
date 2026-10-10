@@ -16,7 +16,7 @@ export const SAGA_UI = {
   'Talk to {npc}': 'Parler à {npc}',
   'Pick up': 'Ramasser',
   'Something glints here': 'Quelque chose brille ici',
-  'The gloom is gone!': 'La grisaille a disparu !',
+  'The gloom is gone!': 'Les Ombres sont parties !',
   'The Murk is too thick to cross. ({zone} opens later in the story.)': 'La Brume Mauve est trop épaisse. ({zone} s’ouvrira plus tard dans l’histoire.)',
   'Chapter {n} — {title}': 'Chapitre {n} — {title}',
   'the adventure goes on': 'l’aventure continue',
@@ -24,7 +24,7 @@ export const SAGA_UI = {
   'Level {a}–{b}': 'Niveau {a}–{b}',
   'The Adventure': 'L’Aventure',
   'the story begins in Marigold Cove': 'l’histoire commence à Marigold Cove',
-  'The gloom stirs!': 'La grisaille s’agite !',
+  'The gloom stirs!': 'Les Ombres s’agitent !',
   'The way opens!': 'Le passage s’ouvre !',
   // the cast
   'Duchess Gloria Gloomsworth': 'la Duchesse Gloria de Grisemine',

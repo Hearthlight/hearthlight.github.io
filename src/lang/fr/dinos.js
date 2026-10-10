@@ -11,11 +11,11 @@ export const DINOS = {
   // the gentle ones
   'Pat': 'Caresser', 'A baby dinosaur! Give it a pat': 'Un bébé dinosaure ! Fais-lui une caresse', 'A gentle giant. Give it a pat': 'Un gentil géant. Fais-lui une caresse',
   // dinosaurs in the gloom
-  'Gloom Raptor': 'Raptor de grisaille', 'Gloom Dilophosaur': 'Dilophosaure de grisaille', 'Gloom Pteranodon': 'Ptéranodon de grisaille',
-  'Gloom Ankylosaur': 'Ankylosaure de grisaille', 'Compsognathus': 'Compsognathus', 'Gloom Triceratops': 'Tricératops de grisaille',
+  'Gloom Raptor': 'Raptor d’Ombre', 'Gloom Dilophosaur': 'Dilophosaure d’Ombre', 'Gloom Pteranodon': 'Ptéranodon d’Ombre',
+  'Gloom Ankylosaur': 'Ankylosaure d’Ombre', 'Compsognathus': 'Compsognathus', 'Gloom Triceratops': 'Tricératops d’Ombre',
   // new gloom elsewhere
-  'Gloom Jellyfish': 'Méduse de grisaille', 'Gloom Bat': 'Chauve-souris de grisaille', 'Mimic': 'Mimique',
-  'CHOMP!': 'CROC !', 'It’s a mimic!': 'C’est une mimique !', 'Gloom jellyfish rise from the sea!': 'Des méduses de grisaille sortent de la mer !',
+  'Gloom Jellyfish': 'Méduse d’Ombre', 'Gloom Bat': 'Chauve-souris d’Ombre', 'Mimic': 'Mimique',
+  'CHOMP!': 'CROC !', 'It’s a mimic!': 'C’est une mimique !', 'Gloom jellyfish rise from the sea!': 'Des méduses d’Ombre sortent de la mer !',
   // the Tyrant King
   'Tyrant King': 'Roi Tyran', 'The Tyrant King': 'Le Roi Tyran', 'Dizzy!': 'Étourdi !', 'ROOAAR!': 'ROOAAAR !', 'STOMP! STOMP!': 'BOUM ! BOUM !',
   'The Tyrant King, himself again. Give him a pat': 'Le Roi Tyran, redevenu lui-même. Fais-lui une caresse',

@@ -7,7 +7,7 @@ export const PHONE = {
   'You are here': 'Tu es ici', 'Objective': 'Objectif', 'Cleared': 'Nettoyé', 'Cleansed': 'Purifié', 'Freed': 'Libéré', 'Opened': 'Ouvert',
   'Attuned: you can travel here': 'Éveillée : tu peux voyager jusqu’ici', 'Not attuned yet': 'Pas encore éveillée',
   'Three plates to light at once': 'Trois dalles à allumer en même temps', 'A tune to play back': 'Un air à rejouer',
-  'Gloom invasion': 'Invasion de grisaille', 'Hold the waystone!': 'Une pierre de voyage à défendre !',
+  'Gloom invasion': 'Invasion d’Ombres', 'Hold the waystone!': 'Une pierre de voyage à défendre !',
   'Shooting star': 'Étoile filante', 'Catch it for a wish': 'Attrape-la pour faire un vœu',
   'Ring the gong to fight there': 'Frappe le gong pour y combattre',
 };
