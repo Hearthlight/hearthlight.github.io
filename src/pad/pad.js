@@ -4,6 +4,7 @@
 
 import { drawText, measure, wrap } from '../engine/font.js';
 import { panel, button, UI, fitText, splitTwo, emoteGlyph } from '../ui/ui.js';
+import { questRows, fitRich, wrapFit, wrapTail, whereText, BRIEF, GOLD } from '../ui/questcard.js';
 import { QUICK, QUICK_PAGES, QUICK_BY, EMOTES, EMOTE_BY, WHY, emojiOnly } from '../ui/chatdata.js';
 import { MAX_LEN, clean } from '../party/chatfilter.mjs';
 import { LOOK_GROUPS, TREASURE_HATS, randomLook, cleanLook } from '../data/looks.js';
@@ -79,6 +80,9 @@ const S = {
   hmenu: null,                   // the host menu, as sent by the big screen
   htab: 0, hscroll: 0, hconfirm: null, hconfirmT: 0,
   paused: null,                  // { by } while the host has paused the game
+  quest: null,                   // the story’s card (Saga.card): the chapter, the quests, where to go
+  questStep: '', questNew: false,   // (the main quest’s step, and whether it changed since the page was last open)
+  qopen: null, qscroll: 0, qvel: 0, // the Quest page: a side quest opened, how far down it is scrolled
   t: 0,
 };
 
@@ -146,7 +150,7 @@ function onMessage(m) {
       break;
     case 'phase':
       S.phase = m.p;
-      if (m.p === 'lobby') { S.ready = !!m.ready; S.view = S.ready ? 'pad' : 'look'; }
+      if (m.p === 'lobby') { S.ready = !!m.ready; S.view = S.ready ? 'pad' : 'look'; S.quest = null; S.questStep = ''; S.questNew = false; }
       if (m.p === 'solo') { S.host = false; S.hmenu = null; S.lobby = null; }
       S.menu = false;
       break;
@@ -185,6 +189,15 @@ function onMessage(m) {
     case 'mounts': S.mounts = { owned: Array.isArray(m.owned) ? m.owned : [], all: Array.isArray(m.all) ? m.all : null, active: m.active || null }; break;
     case 'pets': S.pets = { list: Array.isArray(m.list) ? m.list : [], active: m.active || null }; break;
     case 'prog': S.prog = m; break;
+    // (the story’s card — none: no story is running, no Quest page; a new step lights the tile’s dot)
+    case 'quest': {
+      const one = (q) => (q && typeof q === 'object' && typeof q.id === 'string' ? { ...q, title: String(q.title || ''), brief: String(q.brief || ''), now: String(q.now || ''), tail: String(q.tail || ''), done: Array.isArray(q.done) ? q.done.map(String) : [], left: +q.left || 0, where: q.where && typeof q.where === 'object' ? q.where : null } : null);
+      S.quest = m.ch && typeof m.ch === 'object' ? { ch: m.ch, main: one(m.main), sides: (Array.isArray(m.sides) ? m.sides : []).map(one).filter(Boolean), offers: (Array.isArray(m.offers) ? m.offers : []).filter((o) => o && typeof o === 'object') } : null;
+      const step = S.quest && S.quest.main ? S.quest.main.id + ':' + S.quest.main.k : '';
+      if (step !== S.questStep) { S.questStep = step; S.questNew = !!step && S.menu !== 'quest'; }
+      if (!S.quest && S.menu === 'quest') S.menu = false;
+      break;
+    }
     case 'lobby': S.lobby = { ready: m.ready || 0, total: m.total || 0, host: m.host || '' }; break;
     // (the chat: every line said, and why one of ours didn't go)
     case 'chat': if (m.l && typeof m.l === 'object') { S.chat.push(m.l); if (S.chat.length > 50) S.chat.splice(0, S.chat.length - 50); if (S.menu !== 'chat' && !(S.me && m.l.n === S.me.name)) S.chatNew = true; } break;
@@ -289,6 +302,7 @@ function goFullscreen() {
 
 // ------------------------------------------------------------------ input
 let regions = [];
+let scroller = null;                 // the scrolling part of the page on screen, if any: { y, h, max } (drawQuest)
 const pointers = new Map();          // pointerId -> { kind, id }
 const stick = { id: null, ox: 0, oy: 0, x: 0, y: 0, vx: 0, vy: 0, r: 26 };
 const held = { a: false, b: false, x: false, u: false };
@@ -325,8 +339,9 @@ cv.addEventListener('pointerdown', (e) => {
     pointers.set(e.pointerId, { kind: 'map' });
     PM.down(mapBox(), e.pointerId, p, performance.now());
   } else {
-    pointers.set(e.pointerId, { kind: 'tap', id: r.id });
-    S.pressing = r.id;
+    // (on a page that scrolls, a finger that slides drags the page instead of tapping)
+    pointers.set(e.pointerId, { kind: 'tap', id: r.id, y0: p.y, s0: S.qscroll, drag: !!scroller && p.y >= scroller.y && p.y < scroller.y + scroller.h, vy: 0, at: 0 });
+    S.pressing = r.id; S.qvel = 0; S.qto = null;
   }
 });
 cv.addEventListener('pointermove', (e) => {
@@ -336,9 +351,20 @@ cv.addEventListener('pointermove', (e) => {
   const p = toUi(e);
   if (q.kind === 'stick') { stick.x = p.x; stick.y = p.y; }
   else if (q.kind === 'map') PM.move(mapBox(), e.pointerId, p, performance.now());
+  else if (q.kind === 'tap' && q.drag && Math.abs(p.y - q.y0) > 4) { q.kind = 'scroll'; S.pressing = null; }
+  if (q.kind === 'scroll' && scroller) {
+    const y = Math.max(0, Math.min(scroller.max, q.s0 + q.y0 - p.y)), dt = (lastTouch - q.at) / 1000;
+    if (q.at && dt > 0) q.vy = q.vy * 0.5 + ((y - S.qscroll) / dt) * 0.5;
+    q.at = lastTouch; S.qscroll = y;
+  }
 });
-// (a mouse wheel over the map zooms it — handy on a tablet with a mouse, or a laptop)
-cv.addEventListener('wheel', (e) => { if (S.menu !== 'map' || !PM.ready()) return; e.preventDefault(); const p = toUi(e); PM.step(mapBox(), e.deltaY < 0 ? 1 : -1, p.x, p.y); }, { passive: false });
+// (a mouse wheel over the map zooms it — handy on a tablet with a mouse, or a laptop; it scrolls
+// the Quest page)
+cv.addEventListener('wheel', (e) => {
+  if (S.menu === 'quest' && scroller) { e.preventDefault(); S.qscroll = Math.max(0, Math.min(scroller.max, S.qscroll + Math.sign(e.deltaY) * 24)); return; }
+  if (S.menu !== 'map' || !PM.ready()) return;
+  e.preventDefault(); const p = toUi(e); PM.step(mapBox(), e.deltaY < 0 ? 1 : -1, p.x, p.y);
+}, { passive: false });
 function release(e) {
   const q = pointers.get(e.pointerId);
   if (!q) return;
@@ -347,6 +373,7 @@ function release(e) {
   else if (q.kind === 'hold') setHeld(q.id, false);
   else if (q.kind === 'press') S.pressing = null;
   else if (q.kind === 'map') PM.up(mapBox(), e.pointerId, toUi(e), performance.now(), e.type === 'pointercancel');
+  else if (q.kind === 'scroll') S.qvel = performance.now() - q.at < 90 ? q.vy : 0;      // (let go on the move: it glides on)
   else {
     S.pressing = null;
     if (e.type === 'pointercancel') return;
@@ -744,20 +771,25 @@ function drawSolo() {
   // what's going on: your portrait, health and the game's hint
   const hint = mode === 'wait' ? t('Look at the big screen!') : mode === 'talk' ? t('A: next · the stick picks an answer') : c.hint || '';
   const hp = typeof c.hp === 'number' ? c.hp : null;
+  // (the story’s step under it, as in Party: a tap opens the Quest page)
+  const goal = mode === 'play' ? goalNow() : null;
   if (land) {
-    const hl = hint ? wrap(hint, W - 16).slice(0, 2) : [];
-    hl.forEach((l, i) => drawText(ctx, l, W / 2, y + 2 + i * 10, { color: '#f6d38f', align: 'center' }));
-    y += Math.max(12, hl.length * 10 + 4);
+    const hl = goalStrip(hint, goal, y + 2, W - 16);
+    y += Math.max(12, hl * 10 + 4);
     if (hp !== null) { hpBar(8, y - 2, Math.round(W * 0.3), hp); y += 6; }
   } else {
-    const cardH = Math.max(54, Math.min(80, Math.round(H * 0.15)));
+    const gl = goal ? goalLines(goal, W - 46, 3, GOLD, '#8a5234') : [], band = gl.length ? 7 + gl.length * 11 : 0;
+    const base = Math.max(54, Math.min(80, Math.round(H * 0.15))), cardH = base + band;
     panel(ctx, 6, y + 2, W - 12, cardH);
-    const ps = cardH - 16;
+    const ps = base - 16;
     portraitBox(14, y + 10, ps);
     const tx = 14 + ps + 10;
     let hy = y + 11;
     if (hp !== null) { hpBar(tx, y + 11, W - tx - 18, hp); hy = y + 20; }
-    wrap(hint || t('Have fun!'), W - tx - 18).slice(0, Math.max(1, Math.floor((y + cardH - hy - 2) / 11))).forEach((l, i) => drawText(ctx, l, tx, hy + i * 11, { color: '#5a4a5a' }));
+    const lines = Math.max(1, Math.floor((y + base - hy - 2) / 11));
+    wrap(hint || (goal ? '' : t('Have fun!')), W - tx - 18).slice(0, lines).forEach((l, i) => drawText(ctx, l, tx, hy + i * 11, { color: '#5a4a5a' }));
+    if (band && !hint) wrapFit(S.quest.main.title, W - tx - 18, Math.min(2, lines)).forEach((l, i) => drawText(ctx, l, tx, hy + i * 11, { color: '#8a5234' }));
+    if (band) goalBand(9, y + cardH - band - 1, W - 18, band, gl);
     y += cardH + 6;
   }
   // (the game thinks you're stuck: the way out, first)
@@ -797,6 +829,7 @@ function drawSolo() {
   else if (S.menu === 'gear') drawGear();
   else if (S.menu === 'map') drawMapScreen();
   else if (S.menu === 'chat') drawChat();
+  else if (S.menu === 'quest') drawQuest();
 }
 
 function drawPad() {
@@ -828,11 +861,12 @@ function drawPad() {
   let infoH;
   const score = S.score !== null && S.score !== undefined ? String(S.score) : '';
   const hp = !lobby && typeof S.ctx.hp === 'number' ? S.ctx.hp : null;
+  // (the story’s step, always in sight: under the hint of the moment — a tap opens the Quest page)
+  const goal = lobby ? null : goalNow();
   if (land) {
     infoH = 16;
-    const hl = hint ? wrap(hint, W - 70).slice(0, 2) : [];
-    hl.forEach((l, i) => drawText(ctx, l, W / 2, top + 2 + i * 10, { color: '#f6d38f', align: 'center' }));
-    if (hl.length > 1) infoH = 26;
+    const hl = goalStrip(hint, goal, top + 2, W - 70, lobby ? 0 : 108);
+    if (hl > 1) infoH = 26;
     if (score) drawText(ctx, score, W - 8, top + 2, { color: '#fff3c4', align: 'right' });
     if (hp !== null) { hpBar(8, top + infoH - 4, Math.round(W * 0.3), hp); infoH += 6; }
     if (lobby && S.prog) {
@@ -844,8 +878,9 @@ function drawPad() {
     // a little paper card: portrait, name, stars and what to do
     // (a long hint makes the card taller — up to a point — rather than being cut short)
     const base = Math.max(62, Math.min(96, Math.round(H * 0.19))), ps = base - 16, tx = 14 + ps + 10;
-    const need = (hp !== null ? 29 : 22) + 8 + wrap(hint || t('Have fun!'), W - tx - 18).length * 11 + (lobby && S.prog ? 18 : 0);
-    const cardH = Math.max(base, Math.min(Math.round(H * 0.3), need));
+    const say = hint || (goal ? '' : t('Have fun!')), gl = goal ? goalLines(goal, W - 46, 3, GOLD, '#8a5234') : [], band = gl.length ? 7 + gl.length * 11 : 0;
+    const need = (hp !== null ? 29 : 22) + 8 + wrap(say, W - tx - 18).length * 11 + (lobby && S.prog ? 18 : 0);
+    const cardH = Math.max(base, Math.min(Math.round(H * 0.3), need)) + band;
     panel(ctx, 6, top + 2, W - 12, cardH);
     portraitBox(14, top + 10, ps);
     if (S.me) drawText(ctx, S.me.name, tx, top + 11, { color: INK });
@@ -854,8 +889,11 @@ function drawPad() {
     if (hp !== null) { hpBar(tx, top + 21, W - tx - 18, hp); hy = top + 29; }
     ctx.fillStyle = '#e8d6b4'; ctx.fillRect(tx, hy, W - tx - 16, 1);
     const room = lobby && S.prog ? 18 : 0;
-    const lines = Math.max(1, Math.floor((top + 2 + cardH - hy - 8 - room) / 11));
-    wrap(hint || t('Have fun!'), W - tx - 18).slice(0, lines).forEach((l, i) => drawText(ctx, l, tx, hy + 5 + i * 11, { color: '#5a4a5a' }));
+    const lines = Math.max(1, Math.floor((top + 2 + cardH - band - hy - 8 - room) / 11));
+    wrap(say, W - tx - 18).slice(0, lines).forEach((l, i) => drawText(ctx, l, tx, hy + 5 + i * 11, { color: '#5a4a5a' }));
+    // (no hint just now: the quest’s name keeps its place, over its step)
+    if (band && !say) wrapFit(S.quest.main.title, W - tx - 18, Math.min(2, lines)).forEach((l, i) => drawText(ctx, l, tx, hy + 5 + i * 11, { color: '#8a5234' }));
+    if (band) goalBand(9, top + cardH - band - 1, W - 18, band, gl);
     // between games: talents & gear right on the card
     if (room) {
       const bw = Math.floor((W - tx - 22) / 2), yy = top + cardH - 16, pts = S.prog.points || 0;
@@ -891,6 +929,220 @@ function drawPad() {
   else if (S.menu === 'map') drawMapScreen();
   else if (S.menu === 'invite') drawInvite();
   else if (S.menu === 'chat') drawChat();
+  else if (S.menu === 'quest') drawQuest();
+}
+
+// ------------------------------------------------------------------ the story: the objective & the Quest page
+// The big screen sends each phone its player’s card (Saga.card: the chapter, the quests under
+// way, where to go — in « tu »). The step of the main quest stays in sight on the controller, and
+// a tap on it (or the menu’s first tile) opens the Quest page: the chapter and its recap, the
+// main quest — why, the steps done, the one under way — then the side quests (a tap opens one
+// the same way) and who has a quest to give. At its foot, always there: where the step is and a
+// big « Go there » — the guide on the big screen, an arrow at your hero’s feet — or « Stop
+// guiding » while it runs. The page scrolls under a finger.
+const goalNow = () => (S.quest && S.quest.main && S.quest.main.now ? S.quest.main : null);
+function openQuest(id = null) { S.menu = 'quest'; S.qopen = id; S.qscroll = 0; S.qvel = 0; S.qto = null; S.questNew = false; }
+// (the guide, asked by name: the big screen knows where a quest’s step or a villager is)
+function questGuide(d, w) {
+  const stop = w.go === 2;
+  send({ t: 'goto', ...d, stop: stop ? 1 : 0 });
+  buzz(stop ? 10 : [12, 30, 12]);
+  w.go = stop ? 1 : 2;
+  if (!stop) S.menu = false;
+}
+
+// a little arrow, eight ways (0 east, 2 south… — up is north, as on the big screen)
+const DIR_PIX = [['.......', '...#...', '....#..', '#######', '....#..', '...#...', '.......'], ['..#####', '.....##', '....#.#', '...#..#', '..#...#', '.#.....', '#......']];
+function dirArrow(x, y, dir, color) {
+  const rows = DIR_PIX[dir % 2], turns = dir % 2 ? ((dir + 1) / 2) % 4 : dir / 2;
+  ctx.fillStyle = color;
+  for (let j = 0; j < 7; j++) for (let i = 0; i < 7; i++) {
+    if (rows[j][i] !== '#') continue;
+    let a = i, b = j;
+    for (let k = 0; k < turns; k++) [a, b] = [6 - b, a];
+    ctx.fillRect(x + a, y + b, 1, 1);
+  }
+}
+// the step on the controller, on `rows` lines: its words, its count and how far it is — « …
+// (0/1) · 45 m », the end of it never cut
+function goalLines(g, w, rows, gold, soft) {
+  const far = g.where && g.where.d >= 5 ? ` {${soft}}· ${t('{n} m', { n: g.where.d })}{/}` : '';
+  return wrapTail(g.now + far, g.tail + far, w, rows, gold);
+}
+// …upright: a strip at the foot of the card, which way the step is at its end, that opens the
+// Quest page
+function goalBand(x, y, w, h, lines) {
+  const down = S.pressing === 'goalp', wh = S.quest.main.where;
+  ctx.fillStyle = down ? '#e6d2ac' : UI.paperShade; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#e0cba4'; ctx.fillRect(x, y, w, 1);
+  drawText(ctx, '★', x + 4, y + 4, { color: '#e0a526' });
+  lines.forEach((l, i) => drawText(ctx, l, x + 14, y + 4 + i * 11, { color: INK }));
+  if (wh && wh.dir >= 0 && wh.d >= 5) dirArrow(x + w - 11, y + Math.round(h / 2) - 4, wh.dir, '#8a5234');
+  else drawText(ctx, '▸', x + w - 9, y + Math.round(h / 2) - 4, { color: '#8a5234' });
+  if (S.questNew) badgeAt(x + w, y - 3, '•');
+  tapArea('goalp', x, y - 2, w, h + 4, () => openQuest());
+}
+// …on its side: the hint of the moment and the step on two lines at most, centred; how many
+// (`keep`: what a second line leaves free on the right — the special’s label hangs at that
+// height —: two lines start at the left edge then, the first one as long as the screen)
+function goalStrip(hint, goal, y, w = W - 70, keep = 0) {
+  const star = '{#e0a526}★{/} ', step = (n) => goalLines(goal, w - 12, n, '#ffd66b', '#b9a2e3').map((l, i) => (i ? l : star + l));
+  const lay = (w1) => (!goal ? (hint ? wrap(hint, w).slice(0, 2) : []) : hint ? [fitRich(hint, w1), ...step(1)] : step(2));
+  let L = lay(w);
+  const left = keep && L.length > 1;
+  if (left) { w = W - keep - 16; L = lay(W - 16); }
+  L.forEach((l, i) => drawText(ctx, l, left ? 8 : W / 2, y + i * 10, { color: goal && (!hint || i) ? '#fff3c4' : '#f6d38f', align: left ? 'left' : 'center' }));
+  if (goal) tapArea('goalp', left ? 4 : Math.round(W / 2 - w / 2), y - 4, w, L.length * 10 + 6, () => openQuest());
+  return L.length;
+}
+
+// the guide’s button: green « Go there », red « Stop guiding » (big letters when they fit)
+function goButton(x, y, w, h, on, fn) {
+  const down = S.pressing === 'qgo', dy = down ? 1 : 0, color = on ? '#a8483a' : '#4f955a', label = on ? t('Stop guiding') : t('Go there');
+  ctx.fillStyle = 'rgba(30,18,30,0.3)'; ctx.fillRect(x + 1, y + 2, w, h);
+  ctx.fillStyle = '#3b2a22'; ctx.fillRect(x + 1, y + dy, w - 2, h); ctx.fillRect(x, y + 1 + dy, w, h - 2);
+  ctx.fillStyle = down ? shade(color, -0.2) : color; ctx.fillRect(x + 1, y + 1 + dy, w - 2, h - 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x + 1, y + 1 + dy, w - 2, 1);
+  const flag = on ? 0 : 20, s = measure(label, 2) <= w - 16 - flag ? 2 : 1, tw = measure(label, s) + flag, x0 = Math.round(x + (w - tw) / 2);
+  if (flag) drawGlyph(ctx, 'flag', x0, y + Math.round((h - 16) / 2) + dy, 1);
+  drawText(ctx, fitText(label, w - 10 - flag, s), x0 + flag, y + Math.round((h - 8 * s) / 2) + dy, { color: '#fff7e6', scale: s });
+  tapArea('qgo', x - 2, y - 2, w + 4, h + 4, fn);
+}
+
+function drawQuest() {
+  const C = S.quest, land = W > H;
+  ctx.fillStyle = '#1c1428'; ctx.fillRect(0, 0, W, H);
+  regions.push({ kind: 'tap', id: 'scrim', x: 0, y: 0, w: W, h: H, fn: () => {} });
+  const open = S.qopen && C ? C.sides.find((s) => s.id === S.qopen) : null;
+  if (S.qopen && !open) S.qopen = null;
+  const q = open || (C && C.main);
+  // the title bar: back to the whole story from a side quest, ✕
+  ctx.fillStyle = '#20172a'; ctx.fillRect(0, 0, W, 22);
+  drawGlyph(ctx, 'book', 3, 3, 1);
+  const back = '← ' + t('Back'), kw = measure(back) + 12;
+  drawText(ctx, fitText(open ? t('Side quest') : t('Quest'), W - 54 - (open ? kw : 0)), 22, 7, { color: '#fff7e6' });
+  if (open) pill(W - 30 - kw, 3, kw, 16, back, 'qback', () => openQuest(), { color: '#6a5a7a' });
+  iconBtn(W - 24, 2, 20, 18, 'close', 'qdone', () => { S.menu = false; }, { color: '#a8483a' });
+  const px = 4, py = 24, pw = W - 8, ph = H - 28;
+  panel(ctx, px, py, pw, ph);
+  if (!C) { drawText(ctx, t('Waiting for the big screen…'), W / 2, py + 40, { color: UI.inkSoft, align: 'center' }); return; }
+  const wh = q && q.where, where = wh ? whereText(wh) : '', can = !!(wh && wh.go), on = can && wh.go === 2;
+  const fh = !where && !can ? 0 : land ? 34 : (where ? 15 : 0) + (can ? 30 : 0) + 6;
+  const bx = px + 10, bw = pw - 20, by = py + 6, bh = ph - 12 - fh;
+  // what it says, as rows { h, draw(x, y) } for a column w wide
+  const say = (s, color, o = {}) => ({ h: o.h || 12, draw: (x, y) => drawText(ctx, s, x, y, { color, scale: o.scale || 1 }) });
+  const space = (h) => ({ h });
+  const head = (s, w) => ({ h: 15, draw: (x, y) => { drawText(ctx, s, x, y, { color: '#8a5234' }); ctx.fillStyle = '#e0cba4'; ctx.fillRect(x + measure(s) + 5, y + 4, Math.max(0, w - measure(s) - 5), 1); } });
+  const chapter = (w) => [
+    say(t('Chapter {n}', { n: C.ch.n }), '#8a5234'),
+    ...wrap(String(C.ch.title || ''), w, 2).map((l) => say(l, INK, { h: 21, scale: 2 })),
+    ...(C.ch.recap ? [space(2), ...wrap(String(C.ch.recap), w).map((l) => say(l, '#5a4a5a'))] : []),
+  ];
+  // a quest in three parts: its name, why (its brief), its steps — done ✓ dimmed, the one under
+  // way bright on its band, how many are to come
+  const name = (s, w) => {
+    // (a side quest opened: the title bar says what it is)
+    const R = open ? [space(2)] : [say(s.side ? t('Side quest') : t('Main quest'), '#8a5234')], mark = s.side ? '♥' : '★', mc = s.side ? '#ec5f73' : '#e0a526';
+    wrap(s.title, w - 18, 2).forEach((l, i) => R.push({ h: 21, draw: (x, y) => { if (!i) drawText(ctx, mark, x, y, { color: mc, scale: 2 }); drawText(ctx, l, x + 18, y, { color: INK, scale: 2 }); } }));
+    return R;
+  };
+  const why = (s, w) => (s.brief ? wrap(s.brief, w).map((l) => say(l, BRIEF)) : []);
+  const steps = (s, w, done) => questRows(s, w - 6, { done, brief: false, where: false }).map((r) => ({ h: 12 + r.gap, draw: (x, y) => {
+    if (r.now) { ctx.fillStyle = '#fff3c4'; ctx.fillRect(x, y + r.gap - 2, w, 12); ctx.fillStyle = '#e0a526'; ctx.fillRect(x, y + r.gap - 2, 2, 12); }
+    if (r.mark) drawText(ctx, r.mark, x + 5, y + r.gap, { color: r.mc });
+    drawText(ctx, r.text, x + 4 + r.x, y + r.gap, { color: r.color });
+  } }));
+  const others = (w) => {
+    const R = [];
+    if (C.sides.length) R.push(space(10), head(t('Side quests'), w));
+    for (const s of C.sides) {
+      const L = wrapTail(s.now, s.tail, w - 30, 2), h = 17 + L.length * 11, id = 'qs' + s.id, mc = s.side ? '#ec5f73' : '#e0a526';
+      R.push({ h: h + 4, draw: (x, y) => {
+        ctx.fillStyle = S.pressing === id ? '#e6d2ac' : UI.paperShade; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = mc; ctx.fillRect(x, y, 2, h);
+        drawText(ctx, s.side ? '♥' : '★', x + 6, y + 4, { color: mc });
+        drawText(ctx, fitRich(s.title, w - 32), x + 16, y + 4, { color: INK });
+        L.forEach((l, i) => drawText(ctx, l, x + 16, y + 15 + i * 11, { color: '#7a6060' }));
+        drawText(ctx, '▸', x + w - 9, y + Math.round(h / 2) - 4, { color: '#8a5234' });
+        tapArea(id, x, y, w, h, () => openQuest(s.id));
+      } });
+    }
+    // who has a quest to give, and the way to them
+    if (C.offers.length) R.push(space(C.sides.length ? 6 : 10));
+    for (const o of C.offers) {
+      const L = wrap(t('{name} has something for you', { name: String(o.name || '') }), w - 22), sub = whereText(o, true);
+      const label = o.go === 2 ? t('Stop guiding') : t('Go there'), gw = measure(label) + 12, beside = !o.go || measure(sub) + gw + 28 <= w;
+      const h = 8 + L.length * 11 + (o.go && !beside ? 31 : o.go ? 19 : sub ? 11 : 0);
+      R.push({ h: h + 4, draw: (x, y) => {
+        ctx.fillStyle = UI.paperShade; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = '#e0a526'; ctx.fillRect(x, y, 2, h);
+        drawText(ctx, '!', x + 8, y + 4, { color: '#e0a526' });
+        L.forEach((l, i) => drawText(ctx, l, x + 16, y + 4 + i * 11, { color: INK }));
+        const yy = y + 4 + L.length * 11;
+        drawText(ctx, fitRich(sub, w - 22 - (o.go && beside ? gw + 6 : 0)), x + 16, yy + (o.go && beside ? 5 : 0), { color: '#7a6060' });
+        if (o.go) pill(beside ? x + w - gw - 4 : x + 16, beside ? yy + 1 : yy + 13, gw, 16, label, 'qo' + o.who, () => questGuide({ who: o.who }, o), { color: o.go === 2 ? '#a8483a' : '#4f955a' });
+      } });
+    }
+    return R;
+  };
+  // upright: the chapter, the quest (its name, why, its steps), the others. On its side, two
+  // columns: what to do on the left (the quest’s name and its steps: the one under way shows
+  // without scrolling), why on the right (its brief, then the chapter and the others)
+  const cols = land && q ? 2 : 1, gap = 16, cw = Math.floor((bw - (cols - 1) * gap) / cols);
+  const rule = (w) => [space(6), { h: 8, draw: (x, y) => { ctx.fillStyle = '#e0cba4'; ctx.fillRect(x, y, w, 1); } }];
+  const none = q ? [] : [space(8), ...wrap(t('No quests yet. Explore and talk to people!'), cw).map((l) => say(l, UI.inkSoft))];
+  const rest = open ? [] : [...chapter(cw), ...others(cw)];
+  const columns = cols === 2 ? [[...name(q, cw), space(5), ...steps(q, cw, 2)], [...why(q, cw), ...(q.brief && rest.length ? rule(cw) : []), ...rest]]
+    : open ? [[...name(open, cw), space(2), ...why(open, cw), space(6), ...steps(open, cw, 6)]]
+      : [[...chapter(cw), ...none, ...(q ? [...rule(cw), ...name(q, cw), space(2), ...why(q, cw), space(6), ...steps(q, cw, 6)] : []), ...others(cw)]];
+  // it scrolls: a finger drags it (and it glides on), the arrow pages — each column as far as
+  // it is long (one that fits stays put)
+  const tails = columns.map((R) => { const h = R.reduce((a, r) => a + r.h, 0); return h > bh ? h + 22 - bh : 0; });
+  const max = Math.max(...tails), tall = max + bh - 22;
+  const dt = Math.min(0.05, Math.max(0, S.t - (S.qT ?? S.t)));
+  S.qT = S.t;
+  if (![...pointers.values()].some((p) => p.kind === 'scroll')) {
+    if (S.qto != null) { S.qscroll += (S.qto - S.qscroll) * Math.min(1, dt * 14); if (Math.abs(S.qto - S.qscroll) < 0.6) { S.qscroll = S.qto; S.qto = null; } }
+    else if (Math.abs(S.qvel) > 6) { S.qscroll += S.qvel * dt; S.qvel *= Math.pow(0.03, dt); } else S.qvel = 0;
+  }
+  S.qscroll = Math.max(0, Math.min(max, S.qscroll));
+  scroller = { y: by, h: bh, max };
+  const r0 = regions.length;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(px + 3, by, pw - 6, bh); ctx.clip();
+  columns.forEach((R, c) => {
+    let y = by - Math.round(Math.min(S.qscroll, tails[c]));
+    for (const r of R) { if (r.draw && y + r.h > by && y < by + bh) r.draw(bx + c * (cw + gap), y); y += r.h; }
+  });
+  ctx.restore();
+  // (what can be tapped in it stays inside it)
+  for (let i = regions.length - 1; i >= r0; i--) {
+    const r = regions[i], y0 = Math.max(r.y, by), y1 = Math.min(r.y + r.h, by + bh);
+    if (y1 - y0 < 6) regions.splice(i, 1); else { r.y = y0; r.h = y1 - y0; }
+  }
+  if (max > 0) {
+    const more = S.qscroll < max - 1, th = Math.max(12, Math.round((bh * bh) / (tall + 22)));
+    ctx.fillStyle = '#e8d6b4'; ctx.fillRect(px + pw - 6, by, 2, bh);
+    ctx.fillStyle = '#b08a5a'; ctx.fillRect(px + pw - 6, by + Math.round(((bh - th) * S.qscroll) / max), 2, th);
+    if (more) for (let k = 0; k < 10; k++) { ctx.fillStyle = `rgba(251,241,220,${(k + 1) / 11})`; ctx.fillRect(px + 3, by + bh - 10 + k, pw - 10, 1); }
+    pill(px + pw - 34, by + bh - 21, 24, 18, more ? '↓' : '↑', 'qpage', () => { S.qvel = 0; S.qto = more ? Math.min(max, S.qscroll + Math.round(bh * 0.7)) : 0; });
+  }
+  // the foot: where the step is, the guide
+  if (fh) {
+    const fy = py + ph - 6 - fh, act = () => questGuide({ q: q.id }, wh), dir = wh.dir >= 0 ? 11 : 0;
+    ctx.fillStyle = '#e0cba4'; ctx.fillRect(px + 8, fy + 2, pw - 16, 1);
+    if (land) {
+      const gw = can ? Math.min(180, Math.round(bw * 0.45)) : 0, s = fitRich(where, bw - gw - dir - 10);
+      if (dir) dirArrow(bx, fy + 15, wh.dir, '#8a5234');
+      drawText(ctx, s, bx + dir, fy + 14, { color: '#8a5234' });
+      if (can) goButton(bx + bw - gw, fy + 7, gw, 24, on, act);
+    } else {
+      const s = fitRich(where, bw - dir), x0 = Math.round(W / 2 - (measure(s) + dir) / 2);
+      if (where && dir) dirArrow(x0, fy + 8, wh.dir, '#8a5234');
+      if (where) drawText(ctx, s, x0 + dir, fy + 7, { color: '#8a5234' });
+      if (can) goButton(bx, fy + (where ? 21 : 7), bw, 26, on, act);
+    }
+  }
 }
 
 // ------------------------------------------------------------------ the chat (every mode)
@@ -1312,6 +1564,7 @@ function drawMenu() {
   const pts = S.prog && S.prog.points > 0 && S.phase !== 'lobby' ? S.prog.points : 0;
   const solo = S.phase === 'solo';
   const tiles = [
+    S.quest && { id: 'questm', glyph: 'book', label: t('Quest'), color: '#d9b877', badge: S.questNew ? '•' : '', fn: () => openQuest() },
     !solo && S.host && { id: 'hostm', glyph: 'crown', label: t('Host'), color: '#d8962a', fn: () => { S.menu = 'host'; S.hconfirm = null; } },
     S.prog && { id: 'talm', glyph: 'star', label: t('Talents'), color: '#5a9a48', badge: pts ? '+' + pts : '', fn: () => { S.menu = 'talents'; S.talSel = null; } },
     S.prog && { id: 'gearm', glyph: 'armory', label: t('Gear'), color: '#8a6a9a', fn: () => { S.menu = 'gear'; S.gearSel = null; } },
@@ -1732,7 +1985,7 @@ function frame(now) {
   // full speed while a finger is on it)
   if (now - lastTouch < 800 || now - lastDraw >= 30 || frame.manual) {
     lastDraw = now;
-    regions = [];
+    regions = []; scroller = null;
     ctx.clearRect(0, 0, W, H);
     // (a screen that fails to draw must never freeze the controller: the stick & the loop go on)
     try { drawScreen(); S.drawError = null; } catch (e) { console.error(e); S.drawError = String(e); }

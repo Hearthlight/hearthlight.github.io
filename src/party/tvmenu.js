@@ -10,6 +10,7 @@
 
 import { drawText, measure, wrap } from '../engine/font.js';
 import { panel, UI, fitText, keyLabel, padName, isFace, faceGlyph, moveKeys, closeButton } from '../ui/ui.js';
+import { questRows, rowsHeight, drawRows, fitRich, wrapFit, wrapTail, OPEN } from '../ui/questcard.js';
 import { drawWorldPanel, MapView } from './worldmap.js';
 import { MapPick } from './guide.js';
 import { LOOK_GROUPS, TREASURE_HATS } from '../data/looks.js';
@@ -257,30 +258,52 @@ class TvHero extends HeroTab {
     this.home = 'map';
   }
 
-  // ---- the quest journal: the adventure's quests, what to do next
+  // ---- the quest journal: the story so far (the chapter’s recap), then the quests — the chosen
+  // one opened: why, the steps done, the one under way, where it is (Saga.card), and A shows the way
   questList() { const S = this.P.saga; return S ? S.journal().filter((q) => !q.done || q.def.main) : []; }
   drawQuests(ctx, A) {
     const S = this.P.saga, list = this.questList();
-    if (S) drawText(ctx, fitText(t('Chapter {n} · {title}', { n: S.chapter.id, title: t(S.chapter.title) }), A.w), A.x, A.y, { color: '#8a5234' });
-    if (!list.length) { drawText(ctx, t('No quests yet. Explore and talk to people!'), A.x, A.y + 16, { color: UI.inkSoft }); this.item('q', A.x, A.y, A.w, 12, () => {}); this.home = 'q'; return; }
+    let y = A.y;
+    if (S) {
+      const C = S.card(this.p).ch;
+      drawText(ctx, fitRich(t('Chapter {n} · {title}', { n: C.n, title: C.title }), A.w), A.x, y, { color: '#8a5234' });
+      y += 12;
+      for (const l of C.recap ? wrapFit(C.recap, A.w, 4) : []) { drawText(ctx, l, A.x, y, { color: UI.inkSoft }); y += 9; }
+      if (C.recap) { ctx.fillStyle = '#e0cba4'; ctx.fillRect(A.x, y + 2, A.w, 1); y += 7; } else y += 2;
+    }
+    if (!list.length) { drawText(ctx, t('No quests yet. Explore and talk to people!'), A.x, y + 2, { color: UI.inkSoft }); this.item('q', A.x, A.y, A.w, 12, () => {}); this.home = 'q'; return; }
     this.qSel = Math.min(this.qSel, list.length - 1);
-    const first = Math.max(0, Math.min(this.qSel - 2, list.length - 5)), rows = [];
-    let y = A.y + 14;
-    list.forEach((q, i) => {
-      if (i < first || y > A.y + A.h - 16) return;
-      const on = i === this.qSel, lines = q.done ? [t('Completed ✓')] : wrap(q.obj || '', A.w - 16).slice(0, on ? 4 : 1);
-      const h = 11 + lines.length * 9;
-      if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(A.x - 2, y - 2, A.w + 4, h + 2); }
+    // each quest’s rows: the chosen one in full, the others their step on a line, the finished ones a name
+    const sel = list[this.qSel], open = sel.done ? null : S.quest(sel.id.slice(5), this.p), wh = open && open.where, can = !!(wh && wh.go);
+    const how = can ? t(wh.go === 2 ? '{a}: stop guiding' : '{a}: go there', { a: keyOf(this.p, 'a') }) : '';
+    const body = list.map((q, i) => (q.done ? [] : i === this.qSel && open ? questRows(open, A.w - 12)
+      : [{ text: wrapTail(q.obj || '', q.tail, A.w - 12, 1)[0], color: UI.inkSoft, x: 0, mark: '', gap: 0 }]));
+    const hOf = (i) => 11 + rowsHeight(body[i], 9) + (i === this.qSel && how ? 10 : 0) + 3;
+    // (the list starts where the chosen one shows whole)
+    const room = A.y + A.h - y;
+    this.qFirst = Math.max(0, Math.min(this.qFirst || 0, this.qSel));
+    for (let h = 0, i = this.qSel; i >= this.qFirst; i--) { h += hOf(i); if (h > room && i < this.qSel) { this.qFirst = i + 1; break; } }
+    const rows = [];
+    for (let i = this.qFirst; i < list.length; i++) {
+      const q = list[i], on = i === this.qSel, h = hOf(i) - 3;
+      if (y + h > A.y + A.h && !on) break;
+      if (on) { ctx.fillStyle = open ? OPEN : UI.sel; ctx.fillRect(A.x - 2, y - 2, A.w + 4, h + 2); }
       drawText(ctx, q.def.main ? '★' : '♥', A.x, y, { color: q.done ? '#b8a080' : q.def.main ? '#e0a526' : '#ec5f73' });
-      drawText(ctx, fitText(t(q.def.title), A.w - 12), A.x + 10, y, { color: q.done ? '#b8a080' : UI.ink });
-      lines.forEach((l, k) => drawText(ctx, on || k === 0 ? l : '', A.x + 10, y + 10 + k * 9, { color: q.done ? '#c8b8a0' : UI.inkSoft }));
+      drawText(ctx, fitRich(t(q.def.title), A.w - 22), A.x + 10, y, { color: q.done ? '#b8a080' : UI.ink });
+      if (q.done) drawText(ctx, '✓', A.x + A.w - 2, y, { color: '#9ab890', align: 'right' });
+      const end = drawRows(ctx, body[i], A.x + 10, y + 10, 9);
+      if (on && how) drawText(ctx, how, A.x + A.w - 3, end + 1, { color: wh.go === 2 ? '#a8483a' : '#3f8a4a', align: 'right' });
       rows.push({ i, y0: y - 2, y1: y + h + 1 });
       y += h + 3;
-    });
-    // (a click on a quest opens it)
+    }
+    // (A — or a click on the chosen quest — shows the way to its step, and the menu closes: off you
+    // go; a click on another one opens it)
     this.item('q', A.x, A.y + 12, A.w, A.h - 12, (m) => {
       const r = m && rows.find((o) => m.y >= o.y0 && m.y < o.y1);
-      if (r && r.i !== this.qSel) { this.qSel = r.i; audio.sfx('select', { volume: 0.4 }); }
+      if (r && r.i !== this.qSel) { this.qSel = r.i; audio.sfx('select', { volume: 0.4 }); return; }
+      if ((m && !r) || !can) return;
+      const G = this.P.guides;
+      if (wh.go === 2) G.clear(this.p, true); else { G.set(this.p, S.placeOf({ q: open.id })); this.P.tvmenus.close(this.p); }
     });
     this.home = 'q';
   }

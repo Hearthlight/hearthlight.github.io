@@ -17,6 +17,7 @@ import { FOG_CELL, fogSeen } from '../state.js';
 import { SPECIES, SPECIES_ORDER } from '../systems/critters.js';
 import { audio } from '../engine/audio.js';
 import { dayLabel, timeLabel, HUD_MODES, HUD_NAMES } from './hud.js';
+import { questRows, rowsHeight, drawRows, fitRich, wrapFit, tailed, OPEN } from './questcard.js';
 import { drawWorldPanel, MapView } from '../party/worldmap.js';
 import { MapPick } from '../party/guide.js';
 import { HeroTab } from '../solo/herotab.js';
@@ -122,7 +123,9 @@ export class Menu {
     // clickable rows
     if (this.rowRects && key !== 'bag') {
       for (const r of this.rowRects) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
-        if (input.mouse.moved) this.sel = r.i;
+        // (the journal opens the selected quest: a click picks it — under a mouse just passing
+        // by, the rows would jump about)
+        if (input.mouse.moved && key !== 'quests') this.sel = r.i;
         if (input.mouse.pressed) { this.sel = r.i; this.activateRow(key, input); }
       }
     }
@@ -434,7 +437,7 @@ export class Menu {
     if (q) {
       const obj = q.step && typeof q.step.obj === 'function' ? String(q.objective) : t(q.objective);
       drawText(ctx, '★', tx, cy + 21, { color: '#e0a526' });
-      drawText(ctx, fitText(t(q.title) + ' — ' + obj, tw2 - 10), tx + 9, cy + 21, { color: '#8a5234' });
+      drawText(ctx, fitRich(t(q.title) + ' — ' + obj, tw2 - 10), tx + 9, cy + 21, { color: '#8a5234' });
     }
     ctx.fillStyle = '#e0cba4'; ctx.fillRect(px + 8, py + cardH - 2, pw - 16, 1);
     // the choices
@@ -515,34 +518,48 @@ export class Menu {
   }
 
   drawQuests(ctx, px, py, pw, ph) {
-    const list = this.questList();
-    drawText(ctx, t('Journal'), px + 12, py + 10, { color: '#8a5234' });
-    if (!list.length) { wrap(t('No quests yet. Explore and talk to people!'), pw - 24).forEach((l, i) => drawText(ctx, l, px + 12, py + 30 + i * 10, { color: UI.inkSoft })); return; }
+    const list = this.questList(), W = this.world.wild, S = W && W.saga;
+    let y = py + 10;
+    // the story so far: the chapter and its recap (Saga.card)
+    if (S) {
+      const C = S.card(W.me).ch;
+      drawText(ctx, fitRich(t('Chapter {n} · {title}', { n: C.n, title: C.title }), pw - 24), px + 12, y, { color: '#8a5234' });
+      y += 13;
+      for (const l of C.recap ? wrapFit(C.recap, pw - 24, 4) : []) { drawText(ctx, l, px + 12, y, { color: UI.inkSoft }); y += 10; }
+      if (C.recap) { ctx.fillStyle = '#e0cba4'; ctx.fillRect(px + 10, y + 2, pw - 20, 1); y += 8; } else y += 3;
+    } else { drawText(ctx, t('Journal'), px + 12, y, { color: '#8a5234' }); y += 16; }
+    if (!list.length) { wrap(t('No quests yet. Explore and talk to people!'), pw - 24).forEach((l, i) => drawText(ctx, l, px + 12, y + 4 + i * 10, { color: UI.inkSoft })); return; }
     this.rowRects = [];
-    let y = py + 26;
     const tracked = this.world.trackedQuest();
-    // (the list scrolls to keep the selected row in view)
-    const first = Math.max(0, Math.min(this.sel - 3, list.length - 4));
-    list.forEach((q, i) => {
-      if (i < first) return;
-      if (y > py + ph - 30) return;
-      const on = i === this.sel;
-      const def = q.def;
-      const st = q.saga ? null : def.steps[Math.min(q.step, def.steps.length - 1)];
+    // each quest’s rows — the selected one of the saga in full: why, the steps done, the one under
+    // way, where it is; the others (and the valley’s) their objective; the finished ones a word
+    this.sel = Math.max(0, Math.min(this.sel, list.length - 1));
+    const sel = list[this.sel], open = sel.saga && !sel.done ? S.quest(sel.id.slice(5), W.me) : null;
+    const body = list.map((q, i) => {
+      if (open && i === this.sel) return questRows(open, pw - 44);
+      const st = q.saga ? null : q.def.steps[Math.min(q.step, q.def.steps.length - 1)];
       // objectives computed by a function come translated; plain ones are English
-      let obj = q.done ? t('Completed ✓') : q.saga ? q.obj : typeof st.obj === 'function' ? st.obj(this.world.state) : t(st.obj);
+      let obj = q.done ? t('Completed ✓') : q.saga ? tailed(q.obj, q.tail) : typeof st.obj === 'function' ? st.obj(this.world.state) : t(st.obj);
       if (Array.isArray(obj)) obj = obj.join('  ');
-      const lines = wrap(obj, pw - 44);
-      const hgt = 12 + lines.length * 10;
-      if (on) { ctx.fillStyle = UI.sel; ctx.fillRect(px + 8, y - 2, pw - 16, hgt); }
+      return wrap(obj, pw - 44).map((l) => ({ text: l, color: q.done ? '#c8b8a0' : UI.inkSoft, x: 0, mark: '', gap: 0 }));
+    });
+    const hOf = (i) => 12 + rowsHeight(body[i], 10) + 4;
+    // (the list starts where the selected one shows whole)
+    const bottom = py + ph - 16;
+    this.qFirst = Math.max(0, Math.min(this.qFirst || 0, this.sel));
+    for (let h = 0, i = this.sel; i >= this.qFirst; i--) { h += hOf(i); if (h > bottom - y && i < this.sel) { this.qFirst = i + 1; break; } }
+    for (let i = this.qFirst; i < list.length; i++) {
+      const q = list[i], on = i === this.sel, def = q.def, hgt = hOf(i) - 4;
+      if (y + hgt > bottom && !on) break;
+      if (on) { ctx.fillStyle = open ? OPEN : UI.sel; ctx.fillRect(px + 8, y - 2, pw - 16, hgt); }
       const star = def.main ? '★' : '♥';
       drawText(ctx, star, px + 12, y, { color: q.done ? '#b8a080' : def.main ? '#e0a526' : '#ec5f73' });
       const title = t(def.title) + (tracked && tracked.id === q.id ? '  ' + t('(tracking)') : '');
-      drawText(ctx, fitText(title, pw - 34), px + 22, y, { color: q.done ? '#b8a080' : UI.ink });
-      lines.forEach((l, k) => drawText(ctx, l, px + 22, y + 11 + k * 10, { color: q.done ? '#c8b8a0' : UI.inkSoft }));
+      drawText(ctx, fitRich(title, pw - 34), px + 22, y, { color: q.done ? '#b8a080' : UI.ink });
+      drawRows(ctx, body[i], px + 22, y + 11, 10);
       this.rowRects.push({ x: px + 8, y: y - 2, w: pw - 16, h: hgt, i });
       y += hgt + 4;
-    });
+    }
   }
 
   drawFriends(ctx, px, py, pw, ph) {

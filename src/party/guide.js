@@ -359,11 +359,14 @@ export class Guides {
     if (r) drawText(ctx, fitText(how, r.mw - 190), r.mx, r.my - 12, { color: '#f6d38f', outline: '#241a2e' });
   }
 
-  // ---- a phone: « go there » from its map (the place it tapped, found again here)
+  // ---- a phone: « go there » from its map (the place it tapped, found again here) or from its
+  // Quest page (a quest’s step `q`, someone with a quest `who`: the story knows where)
   fromPhone(p, d) {
+    if (d.stop) { this.clear(p, true); return; }
+    const S = this.P.saga, step = S && (d.q || d.who) ? S.placeOf(d) : null;
+    if (step) { if (!p.guide || p.guide.id !== step.id) this.set(p, step); return; }
     const x = +d.x, z = +d.z;
     if (!Number.isFinite(x) || !Number.isFinite(z)) return;
-    if (d.stop) { this.clear(p, true); return; }
     const pl = this.placeNear(x, z);
     if (pl) this.set(p, pl);
   }

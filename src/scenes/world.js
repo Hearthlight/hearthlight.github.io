@@ -647,7 +647,7 @@ export class World {
   }
   trackedQuest() {
     const S = this.wild && this.wild.saga, q = this.sagaPick();
-    if (q) { const o = S.objective(q); if (o) return { id: 'saga:' + o.id, title: o.title, objective: o.lines[0], objectiveLines: o.lines, step: { obj: () => o.lines } }; }
+    if (q) { const o = S.objective(q); if (o) return { id: 'saga:' + o.id, title: o.title, brief: o.brief, tail: o.tail, objective: o.lines[0], objectiveLines: o.lines, step: { obj: () => o.lines } }; }
     return this.story.tracked();
   }
 

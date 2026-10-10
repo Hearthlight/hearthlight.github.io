@@ -8,9 +8,9 @@
 // scenes (stage.js) and the lands it opens when it ends (the Murk rolls back).
 // Scripts get this saga as `S`: S.say / S.ask / S.scene / S.give / S.flag…
 
-import { t } from '../i18n.js';
+import { t, getAudience, setAudience } from '../i18n.js';
 import { audio } from '../engine/audio.js';
-import { drawText, measure } from '../engine/font.js';
+import { drawText, measure, stripTags } from '../engine/font.js';
 import { questXp } from './levels.js';
 import { CHAPTERS, QUESTS } from './chapters/index.js';
 import { ZONES } from '../world/big/layout.js';
@@ -21,6 +21,7 @@ import { PelicanPost } from './pelican.js';
 import { Escorts } from './escort.js';
 import { StepGames } from './games7.js';
 import { TeacupLine } from './teacup.js';
+import { NPCS } from '../data/npcs.js';
 
 const GAME_STEPS = new Set(['whack', 'lamps', 'kite', 'net', 'carry', 'rhythm', 'piles', 'seek', 'snap', 'defend', 'chase']);
 
@@ -500,6 +501,7 @@ export class Saga {
     this.t = (this.t || 0) + dt;
     if (this.props) for (const q of this.props.values()) if (q.obj.userData.anim) q.obj.userData.anim(this.t, this);
     for (const C of CHAPTERS) if (C.update && C.id <= this.st.ch) C.update(this, dt);
+    this.syncPads(dt);
     // nobody stays lost inside the Murk (an old save, a stray teleport): back to the plaza
     this.lostT = (this.lostT || 0) - dt;
     if (this.lostT <= 0 && this.murk) {
@@ -624,29 +626,33 @@ export class Saga {
     return main || ids[0];
   }
 
-  objLines(qid) {
+  // a step’s line: its words, and what moves at their end (`tail`: a count, a race’s clock, a
+  // mini-game’s score — the screens keep it in sight, in gold, however long the words are)
+  objParts(qid) {
     const st = this.stepDef(qid), q = this.st.q[qid];
-    if (!st) return [];
+    if (!st) return null;
     const txt = typeof st.text === 'function' ? st.text(this) : st.text;
     let n = st.n ? t(' ({n}/{total})', { n: Math.min(q.n, st.n), total: st.n }) : '';
     if (st.do === 'race' && this.race && this.race.qid === qid) n = t(' — {s} s', { s: Math.max(0, Math.ceil(this.race.left)) });
     if (GAME_STEPS.has(st.do)) n = this.games.objText(qid);
-    return [t(txt || '…', st.vars) + n];
+    return { text: t(txt || '…', st.vars), tail: n || '' };
   }
+  objLines(qid) { const o = this.objParts(qid); return o ? [o.text + o.tail] : []; }
 
   objective(qid = this.tracked()) {
     if (!qid) return null;
-    const Q = QUESTS[qid];
-    return { id: qid, title: t(Q.title), lines: this.objLines(qid), side: Q.kind === 'side' };
+    const Q = QUESTS[qid], o = this.objParts(qid);
+    return { id: qid, step: this.stepOf(qid), title: t(Q.title), brief: Q.brief ? t(Q.brief) : '', lines: o ? [o.text + o.tail] : [], tail: o ? o.tail : '', side: Q.kind === 'side' };
   }
 
-  // the journal’s rows: { id: ’saga:…’, saga, done, def: { title, main }, obj }
+  // the journal’s rows: { id: ’saga:…’, saga, done, def: { title, main }, obj, tail }
   journal() {
     const out = [];
     for (const [id, q] of Object.entries(this.st.q)) {
       const Q = QUESTS[id];
       if (!Q) continue;
-      out.push({ id: 'saga:' + id, saga: true, done: q.done, step: q.s, def: { title: Q.title, main: Q.kind !== 'side' }, obj: q.done ? '' : this.objLines(id).join(' ') });
+      const o = q.done ? null : this.objParts(id);
+      out.push({ id: 'saga:' + id, saga: true, done: q.done, step: q.s, def: { title: Q.title, main: Q.kind !== 'side' }, obj: o ? o.text + o.tail : '', tail: o ? o.tail : '' });
     }
     return out.sort((a, b) => (a.done - b.done) || ((b.def.main ? 1 : 0) - (a.def.main ? 1 : 0)));
   }
@@ -684,17 +690,130 @@ export class Saga {
     return null;
   }
 
-  refreshCard() { if (this.onChange) this.onChange(); }
+  // ------------------------------------------------------------------ the story at a glance
+  // Everything a screen says about « where are we in the story », translated, for player p:
+  // the chapter (its recap), the main quest and the other quests under way — each one’s brief,
+  // its steps as a checklist (the ones done, the one under way with its count or clock, and only
+  // how many are still to come: never their words) and where its step is (the place, how far
+  // from p, which way, whether p is being guided there) — and who has a quest to give (three at
+  // most). `one`: said to one person (a phone in a hand: « tu »), whatever the party’s size.
+  // The journals, the trackers and the phones’ Quest page all read this.
+  card(p = null, { one = false } = {}) {
+    const B = this.cardBase(one);
+    const near = (w) => (w && p ? { ...w, ...this.wayTo(w, p) } : w);
+    const quest = (q) => ({ ...q, where: near(q.where) });
+    return { ch: B.ch, main: B.main && quest(B.main), sides: B.sides.map(quest), offers: B.offers.map(near) };
+  }
+  // (what every player’s card shares, kept a quarter of a second: eight phones ask at once)
+  cardBase(one) {
+    const K = this.cardCache || (this.cardCache = {}), c = K[one], now = this.t || 0;
+    if (c && c.v === this.cardV && now >= c.at && now - c.at < 0.25) return c.base;
+    const was = getAudience();
+    if (one) setAudience('one');
+    let base;
+    try {
+      const C = this.chapter, main = this.tracked();
+      // (a quest to give — a step to talk through is on its quest’s own line already; the latest
+      // chapter’s people first)
+      const offers = [];
+      for (const [id, N] of this.wanted()) {
+        const o = this.offerOf(id);
+        if (o && o.kind === 'give' && !o.Q.repeat) offers.push([o.Q.ch || 0, { who: id, name: this.nameOf(id), ...this.spot({ x: N.at[0], z: N.at[1] }) }]);
+      }
+      base = {
+        ch: { n: C.id, title: t(C.title), recap: C.recap ? t(C.recap) : '' },
+        main: main ? this.questCard(main) : null,
+        sides: this.activeIds().filter((id) => id !== main).map((id) => this.questCard(id)),
+        offers: offers.sort((a, b) => b[0] - a[0]).slice(0, 3).map((o) => o[1]),
+      };
+    } finally { setAudience(was); }
+    K[one] = { v: this.cardV, at: now, base };
+    return base;
+  }
+  // one quest of the card: { id, k (its step), title, brief, side, done[], now (the step under
+  // way, whole), tail (what moves at its end), left, where }
+  questCard(qid) {
+    const Q = QUESTS[qid], q = this.st.q[qid], o = this.objParts(qid) || { text: '', tail: '' };
+    const said = (st) => { try { const s = typeof st.text === 'function' ? st.text(this) : st.text; return s && s !== '…' ? t(s, st.vars) : ''; } catch (e) { return ''; } };
+    const tg = this.targetOf(qid);
+    // (a scene plays by itself: neither a step ticked nor one to come)
+    return {
+      id: qid, k: q.s, title: t(Q.title), brief: Q.brief ? t(Q.brief) : '', side: Q.kind === 'side',
+      done: Q.steps.slice(0, q.s).filter((st) => st.do !== 'scene').map(said).filter(Boolean),
+      now: o.text + o.tail, tail: o.tail, left: Q.steps.slice(q.s + 1).filter((st) => st.do !== 'scene').length,
+      where: tg ? this.spot(tg) : null,
+    };
+  }
+  // a quest of the card by its id (the one a journal has selected), for player p
+  quest(qid, p = null, opts) { const c = this.card(p, opts); return [c.main, ...c.sides].find((q) => q && q.id === qid) || null; }
+  nameOf(id) { const d = NPCS[id]; return d ? t(d.short || d.name || id) : id; }
+  // a place of the card: its name and where it is (go: a guide can lead there)
+  spot(tg) {
+    const P = this.P, G = P.guides, name = P.placeName ? P.placeName(tg.x, tg.z) : '';
+    return { place: name ? t(name) : '', x: Math.round(tg.x * 2) / 2, z: Math.round(tg.z * 2) / 2, go: G && G.route() && G.onMap(tg) ? 1 : 0 };
+  }
+  // …from where p stands: how far (to 5 tiles; -1: not in the same world — a dungeon seen from
+  // outside), which way (0 east, 2 south, 4 west, 6 north; -1 right here), and go 2 while p’s
+  // guide is leading there
+  wayTo(w, p) {
+    const G = this.P.guides, at = G ? G.posOf(p) : p.pos, dx = w.x - at.x, dz = w.z - at.z, d = Math.hypot(dx, dz), g = p.guide;
+    if (d > 1500) return { d: -1, dir: -1 };
+    return { d: Math.round(d / 5) * 5, dir: d < 2.5 ? -1 : (Math.round(Math.atan2(dz, dx) / (Math.PI / 4)) + 8) % 8, go: w.go && g && Math.hypot(g.x - w.x, g.z - w.z) < 2.5 ? 2 : w.go };
+  }
+
+  // where a guide leads for a quest’s step (`q`) or someone with a quest to give (`who`): the
+  // phone’s Quest page and the journal ask by name, never by coordinates
+  placeOf(d) {
+    if (typeof d.q === 'string' && this.active(d.q)) {
+      const tg = this.targetOf(d.q);
+      return tg ? { id: 'quest:' + d.q, name: stripTags(t(QUESTS[d.q].title)), k: 'questGoal', x: tg.x, z: tg.z } : null;
+    }
+    const N = typeof d.who === 'string' && this.offerOf(d.who) ? this.wanted().get(d.who) : null;
+    return N ? { id: 'npc:' + d.who, name: this.nameOf(d.who), k: 'questGive', x: N.at[0], z: N.at[1] } : null;
+  }
+  // (a guide set on a quest follows it — the next ember, the walker you escort — and ends with it)
+  followGuides() {
+    const G = this.P.guides;
+    if (!G) return;
+    for (const p of this.P.players) {
+      const g = p.guide;
+      if (!g || !String(g.id).startsWith('quest:')) continue;
+      const tg = this.active(g.id.slice(6)) ? this.targetOf(g.id.slice(6)) : null;
+      if (!tg) G.clear(p);
+      else if (Math.hypot(tg.x - g.x, tg.z - g.z) > 2) { g.x = tg.x; g.z = tg.z; G.plan(p); }
+    }
+  }
+
+  // every phone has its player’s card, said to them alone: sent when it joins (its key is wiped)
+  // and when its words change — a distance alone, once a second at most
+  syncPads(dt) {
+    this.padT = (this.padT || 0) - dt;
+    if (this.padT > 0) return;
+    this.padT = 0.25;
+    this.followGuides();
+    const P = this.P, now = this.t || 0;
+    for (const p of P.players) {
+      if (p.kind !== 'phone' || p.connected === false) continue;
+      const c = this.card(p, { one: true }), key = JSON.stringify(c);
+      if (key === p.questKey) continue;
+      const words = JSON.stringify(c, (k, v) => (k === 'd' || k === 'dir' ? undefined : v));
+      if (words === p.questWords && Math.abs(now - (p.questAt || 0)) < 1) continue;
+      p.questKey = key; p.questWords = words; p.questAt = now;
+      P.net.send(p.id, { t: 'quest', ...c });
+    }
+  }
+
+  refreshCard() { this.cardV = (this.cardV || 0) + 1; if (this.onChange) this.onChange(); }
 
   // marks on every map: who has a quest (!) or a step (?), and where to go
   mapMarks(out) {
     for (const [id, N] of this.wanted()) {
       const o = this.offerOf(id);
       if (!o) continue;
-      out.push({ k: o.kind === 'give' ? 'questGive' : 'questTalk', x: N.at[0], z: N.at[1], on: true, name: t(o.kind === 'give' ? QUESTS[o.qid].title : 'Talk to {npc}', { npc: id }) });
+      out.push({ k: o.kind === 'give' ? 'questGive' : 'questTalk', x: N.at[0], z: N.at[1], on: true, name: stripTags(t(o.kind === 'give' ? QUESTS[o.qid].title : 'Talk to {npc}', { npc: this.nameOf(id) })) });
     }
     const tg = this.target();
-    if (tg) out.push({ k: 'questGoal', x: tg.x, z: tg.z, on: true, name: (this.objective() || {}).title || '' });
+    if (tg) out.push({ k: 'questGoal', x: tg.x, z: tg.z, on: true, name: stripTags((this.objective() || {}).title || '') });
     if (this.post) this.post.mapMarks(out);
     if (this.teacup) this.teacup.mapMarks(out);
   }

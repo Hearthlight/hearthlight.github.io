@@ -35,6 +35,7 @@ import { Campfires } from './camp.js';
 import { Rooms } from './rooms.js';
 import { DinoLife } from './dinos.js';
 import { weatherIcon, dayLabel, timeLabel, sunMoon, HUD_MODES, HUD_NAMES } from '../ui/hud.js';
+import { trackerLayout, drawTracker } from '../ui/questcard.js';
 import { Buddies } from './buddies.js';
 import { ExploreAct } from './explore.js';
 import { Combat } from '../combat/combat.js';
@@ -621,6 +622,9 @@ export class Party {
     this.net.send(p.id, { t: 'pause', v: !!this.paused, by: this.paused ? this.paused.by : '' });
     p.ctxKey = '';
     p.portraitDue = 0.05;
+    // (the story’s card: the saga sends it afresh — no story, no Quest page)
+    p.questKey = '';
+    if (!this.saga) this.net.send(p.id, { t: 'quest' });
     if (this.act) this.act.syncPad(p);
     if (this.vote) this.sendVote(p);
     this.pchat.syncPad(p);
@@ -798,13 +802,18 @@ export class Party {
   // show a player’s name over their head for a moment
   flashTag(p, sec = 3) { p.tagT = Math.max(p.tagT || 0, sec); }
 
-  // The objective card (top left) slides in when the goal changes, stays a
-  // few seconds, then tucks itself away: phones always show it anyway.
-  showObjective(text, sub = '', secs = 7, extra = '') {
-    const o = this.obj;
+  // The objective card (top left) slides in when the goal changes, stays a few seconds, then
+  // tucks itself away. The Adventure’s never leaves (`more.stay`): open wide for those seconds —
+  // under its quest’s title (`more.title`), with the quest’s brief when the quest is new
+  // (`more.brief`) — then small, the title and the step (ui/questcard.js lays both out; what
+  // moves at the end of the step, `more.tail`, a count or a clock, is kept in sight).
+  showObjective(text, sub = '', secs = 7, extra = '', more = null) {
+    const o = this.obj, m = more || {};
     if (!text) { this.obj = null; return; }
-    if (o && o.text === text && o.sub === sub && o.extra === extra && o.t < o.secs - 0.5) { o.secs = Math.max(o.secs, o.t + secs); return; }
-    this.obj = { text, sub, extra, t: o && o.text === text && o.t < o.secs ? Math.min(o.t, 0.3) : 0, secs };
+    if (o && o.text === text && o.sub === sub && o.extra === extra && o.title === (m.title || '') && o.brief === (m.brief || '') && o.t < o.secs - 0.5) { o.secs = Math.max(o.secs, o.t + secs); return; }
+    // (a card that was there already opens where it is: only a new one slides in)
+    const there = !!o && (o.stay || o.t < o.secs);
+    this.obj = { text, sub, extra, title: m.title || '', brief: m.brief || '', tail: m.tail || '', stay: !!m.stay, t: o && o.text === text && o.t < o.secs ? Math.min(o.t, 0.3) : 0, secs, on: there && m.stay ? Math.max(o.on, 0.3) : 0, aw: there ? o.aw : 0, ah: there ? o.ah : 0 };
   }
 
   // A note in the right-hand column: three on screen at most (the next ones wait their turn),
@@ -1083,7 +1092,13 @@ export class Party {
       else this.updateChips(p, ctx, dt);
     }
     this.updateToasts(dt);
-    if (this.obj) this.obj.t += dt;
+    if (this.obj) {
+      // (its frame grows and closes with what it says)
+      const o = this.obj, L = this.objectiveForm(), k = Math.min(1, dt * 14);
+      o.t += dt; o.on += dt;
+      o.aw = o.aw && Math.abs(L.w - o.aw) > 0.6 ? o.aw + (L.w - o.aw) * k : L.w;
+      o.ah = o.ah && Math.abs(L.h - o.ah) > 0.6 ? o.ah + (L.h - o.ah) * k : L.h;
+    }
     this.lane.update(dt);
     if (this.note) { this.note.t += dt; if (this.note.t > 1.8) this.note = null; }
     this.updateAmbience(dt);
@@ -1582,6 +1597,8 @@ export class Party {
         const a = d.worldToUi(v.rect.x, v.rect.y);
         let x = Math.round(a.x) + 4, y = Math.round(a.y) + 4;
         if (y < 30) y = 30;
+        const O = this.objectiveRect();
+        if (O && x < O.x + O.w + 2 && y < O.y + O.h + 3) y = O.y + O.h + 3;
         for (const m of v.members) { ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, 8, 8); ctx.fillStyle = m.color; ctx.fillRect(x, y, 6, 6); x += 9; }
       }
     }
@@ -2111,18 +2128,22 @@ export class Party {
     ctx.globalAlpha = 1;
   }
 
-  // where the objective card sits right now (the race & event cards keep clear of it)
+  // what the objective card says right now, laid out — the tracker on one row in the minimal
+  // display, and whenever a boss’s bar is up (the bar sits right under it); beside a player’s
+  // menu, in the room the menu leaves
+  objectiveForm() {
+    const o = this.obj, W = this.display.w, bar = !!(this.combat && this.combat.barRect);
+    return trackerLayout(o, W, !o.stay ? 0 : bar ? 2 : this.settings.hud === 'minimal' ? 1 : 0, this.tvmenus.open ? Math.max(96, W - this.tvmenus.width() - 18) : W);
+  }
+  // where the objective card sits right now (the race & event cards, the notes, the views’ colour
+  // chips keep clear of it)
   objectiveRect() {
     const o = this.obj;
-    if (!o || o.t >= o.secs || this.vote || this.dialogue.active || this.phase === 'lobby') return null;
-    const W = this.display.w;
-    const k = Math.max(0, Math.min(1, o.t * 5, (o.secs - o.t) * 4));
+    if (!o || (!o.stay && o.t >= o.secs) || this.vote || this.dialogue.active || this.phase === 'lobby') return null;
+    const L = this.objectiveForm(), w = Math.round(o.aw || L.w), h = Math.round(o.ah || L.h);
+    const k = Math.max(0, o.stay ? Math.min(1, o.on * 5) : Math.min(1, o.t * 5, (o.secs - o.t) * 4));
     const ease = 1 - (1 - k) * (1 - k);
-    const w = Math.round(Math.min(W * 0.5, Math.max(measure(o.text), measure(o.sub), Math.min(measure(o.extra), W * 0.5 - 20)) + 20));
-    const lines = wrap(o.text, w - 18).slice(0, 2);
-    const ex = o.extra ? wrap(o.extra, w - 18).slice(0, 2) : [];
-    const h = 9 + lines.length * 11 + (o.sub ? 11 : 0) + ex.length * 10;
-    return { x: Math.round(6 - (1 - ease) * (w + 12)), y: 4, w, h, lines, ex };
+    return { x: Math.round(6 - (1 - ease) * (w + 12)), y: 4, w, h, top: L.top, rows: L.rows };
   }
 
   // a card at the top of the screen, beside (or under) the objective card
@@ -2137,13 +2158,8 @@ export class Party {
   }
 
   drawObjective(ctx) {
-    const o = this.obj, R = this.objectiveRect();
-    if (!R) return;
-    const { x, w, h, lines, ex } = R;
-    panel(ctx, x, 4, w, h);
-    lines.forEach((l, i) => drawText(ctx, l, x + 8, 10 + i * 11, { color: UI.ink }));
-    if (o.sub) drawText(ctx, o.sub, x + 8, 10 + lines.length * 11, { color: '#8a5234', maxChars: 60 });
-    ex.forEach((l, i) => drawText(ctx, l, x + 8, 10 + lines.length * 11 + (o.sub ? 11 : 0) + i * 10, { color: '#7d4f93' }));
+    const R = this.objectiveRect();
+    if (R) drawTracker(ctx, R);
   }
 
   // everyone along the bottom: colour, name, a value (stars, level, K.O.s…)

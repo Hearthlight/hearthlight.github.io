@@ -112,6 +112,8 @@ export class SoloPhone {
       case 'mount': if (W && W.mounts) W.mounts.choose(W.me, d.v); break;
       case 'pet': if (W && W.buddies) W.buddies.choose(W.me, typeof d.v === 'string' ? d.v : null); break;
       case 'cls': if (W) W.chooseClass(d.v); break;
+      // (« go there » from the phone’s map or its Quest page: the guide — party/guide.js)
+      case 'goto': if (W && W.guides) W.guides.fromPhone(W.me, d); break;
       // (talking: the chat sheet — solo/solochat.js)
       case 'say': case 'quick': case 'emote': case 'typing': { const C = this.game.world && this.game.world.schat; if (C && this.game.mode === 'game') C.onMsg(d); break; }
       default: break;
@@ -134,6 +136,7 @@ export class SoloPhone {
     this.send({ t: 'phase', p: 'solo' });
     this.send({ t: 'screen', s: 'play' });
     this.send({ t: 'lang', v: getLang() });
+    this.send({ t: 'quest' });          // (no story yet: the saga sends its card once the hero is attached)
     this.sendPortrait();
     this.attach();
     this.ctxKey = '';
@@ -145,6 +148,7 @@ export class SoloPhone {
     if (!W || !this.pad) return;
     W.me.kind = 'phone';
     W.me.id = this.pad;
+    W.me.questKey = '';
     if (W.mounts) W.mounts.sendList(W.me);
     if (W.buddies) W.buddies.sendList(W.me);
     if (W.progress) { W.me.progKey = null; W.progress.sync(W.me); }

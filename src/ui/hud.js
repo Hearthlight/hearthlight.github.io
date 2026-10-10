@@ -9,6 +9,7 @@ import { fmtTime, weekday, HOTBAR, saveSettings } from '../state.js';
 import { makeCanvas } from '../engine/gfx.js';
 import { TT } from '../world/tiles.js';
 import { t, num, getLang } from '../i18n.js';
+import { wrapFit, wrapTail, tailed, BRIEF } from './questcard.js';
 
 // how much the HUD shows (Settings « Display », V / LT / the phone / a tap on it cycles them):
 // everything · a small minimap and the quest on one line · just the clock, health in a fight
@@ -137,6 +138,7 @@ export class Hud {
     if (this.saveNote) { this.saveNote.age += dt; if (this.saveNote.age > 2.6) this.saveNote = null; }
     if (this.modeNote) { this.modeNote.age += dt; if (this.modeNote.age > 1.8) this.modeNote = null; }
     if (this.objShowT > 0) this.objShowT -= dt;
+    if (this.briefT > 0) this.briefT -= dt;
     const coins = this.game.state.coins;
     if (this.coinShown === null) this.coinShown = coins;
     if (this.coinShown !== coins) {
@@ -268,11 +270,13 @@ export class Hud {
 
     if (ry > mapTop) this.hudRects.push({ x: W - MW - 5, y: mapTop, w: MW, h: ry - mapTop - 3 });
     // ---- quest tracker: the title and the objective · compact: the objective on one line ·
-    // minimal: a little star (it opens up for a few seconds when the objective changes)
+    // minimal: a little star (it opens up for a few seconds when the objective changes — a new
+    // quest: longer, with its brief, why we do this)
     const q = g.trackedQuest();
     let rightBottom = ry;
     const objKey = q ? q.id + '|' + String(q.objective) : '';
     if (objKey !== this.objKey) { if (this.objKey !== undefined && objKey) this.objShowT = 6; this.objKey = objKey; }
+    if ((q ? q.id : '') !== this.objQuest) { this.objQuest = q ? q.id : ''; this.briefT = q && q.brief ? 11 : 0; this.objShowT = Math.max(this.objShowT || 0, this.briefT); }
     // (a phone held sideways: one line at most — the touch buttons need the right-hand side)
     const shortTouch = g.input.touchMode && H < 300;
     const qMode = shortTouch ? (mode === 'minimal' && !(this.objShowT > 0) ? 'minimal' : 'compact') : this.objShowT > 0 ? 'full' : mode;
@@ -289,7 +293,7 @@ export class Hud {
       const tw = Math.round(Math.min(W * 0.46, Math.max(96, measure(obj) + 20), 210));
       panel(ctx, W - tw - 5, ry, tw, 16);
       drawText(ctx, '★', W - tw + 1, ry + 4, { color: '#f2b63d' });
-      drawText(ctx, fitText(obj, tw - 16), W - tw + 10, ry + 4, { color: UI.inkSoft });
+      drawText(ctx, wrapTail(obj, q.tail, tw - 16, 1)[0], W - tw + 10, ry + 4, { color: UI.inkSoft });
       this.hudRects.push({ x: W - tw - 5, y: ry, w: tw, h: 16 });
       rightBottom = ry + 16;
     } else if (q) {
@@ -297,14 +301,16 @@ export class Hud {
       const lines = [];
       // objectives computed by a function come translated; plain ones are English
       const dyn = q.step && typeof q.step.obj === 'function';
-      for (const l of q.objectiveLines || [q.objective]) lines.push(...wrap(dyn ? String(l) : t(l), tw - 13));
+      for (const l of q.objectiveLines || [q.objective]) lines.push(...wrap(tailed(dyn ? String(l) : t(l), q.tail), tw - 13));
       const title = splitTwo(t(q.title), tw - 20).map((l) => fitText(l, tw - 20));
-      const th = 20 + (title.length - 1) * 10 + lines.length * 10;
+      const why = this.briefT > 0 && q.brief ? wrapFit(q.brief, tw - 13, 6) : [];
+      const th = 20 + (title.length - 1) * 10 + lines.length * 10 + (why.length ? why.length * 10 + 3 : 0);
       panel(ctx, W - tw - 5, ry, tw, th);
       drawText(ctx, '★', W - tw + 2, ry + 6, { color: '#f2b63d' });
       title.forEach((l, i) => drawText(ctx, l, W - tw + 11, ry + 6 + i * 10, { color: '#8a5234' }));
       const oy = ry + 17 + (title.length - 1) * 10;
       lines.forEach((l, i) => drawText(ctx, l, W - tw + 4, oy + i * 10, { color: UI.inkSoft }));
+      why.forEach((l, i) => drawText(ctx, l, W - tw + 4, oy + lines.length * 10 + 3 + i * 10, { color: BRIEF }));
       this.hudRects.push({ x: W - tw - 5, y: ry, w: tw, h: th });
       rightBottom = ry + th;
     }

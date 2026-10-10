@@ -254,7 +254,6 @@ export class ExploreAct {
     // (World v7: the saga runs the adventure — the old nests and the Grumblecloud rest)
     this.saga = new Saga(party);
     party.saga = this.saga;
-    this.saga.onChange = () => { this.cardKey = null; };
     this.place();
   }
 
@@ -391,6 +390,7 @@ export class ExploreAct {
 
   suspend() {
     this.suspended = true;
+    this.party.showObjective('');          // (the tracker steps aside for the Ring: it is back with the adventure)
     for (const n of this.nests) if (n.state === 'asleep' || n.state === 'awake') { n.enemies = []; n.state = 'idle'; }
     this.wanderers = [];
   }
@@ -787,8 +787,9 @@ export class ExploreAct {
     if (!P.busy) this.updateCard(dt);
   }
 
-  // the objective card pops up when something changes (goal, relics, who's
-  // here, a new area), and now and then as a reminder — never for long
+  // the objective stays in sight (the tracker, top left): small, and open wide for a few seconds
+  // when the step changes (a new quest: with its brief), when relics or who’s here change, in
+  // a new area — a count or a clock in the line just ticks where it is
   updateCard(dt) {
     const P = this.party, s = P.state;
     const v0 = P.cam.views[0];
@@ -797,16 +798,16 @@ export class ExploreAct {
     const sub = G && G.total > 1 ? t('{n}/{total} here', { n: G.here, total: G.total }) + (G.late.length && G.late.length <= 3 ? ' · ' + t('waiting for {names}', { names: G.late.map((p) => p.name).join(', ') }) : '')
       : `${t(area)} · ${timeLabel(s.hour)}`;
     const relics = this.relics.length ? t('Relics: {list}', { list: this.relics.map((r) => t(BLESSINGS[r].name)).join(', ') }) : '';
-    const key = this.objective + '|' + (G ? G.here : '') + '|' + this.relics.length;
-    this.remindT = (this.remindT ?? 30) - dt;
+    const so = this.saga && this.saga.objective();
+    const key = (so ? so.id + ':' + so.step : this.objective) + '|' + (G ? G.here : '') + '|' + this.relics.length;
     this.areaT = (this.areaT || 0) - dt;
-    // (cardArea is the place the card last showed: a new one waits for areaT, it isn't forgotten;
-    // a card already out just gets its line updated)
-    const o = P.obj;
-    if (o && o.t < o.secs && o.text === this.objective && o.sub !== sub) o.sub = sub;
-    if (key !== this.cardKey) { P.showObjective(this.objective, sub, 7, relics); this.cardKey = key; this.remindT = 90; this.areaT = 20; this.cardArea = area; }
-    else if (area !== this.cardArea && this.areaT <= 0) { P.showObjective(this.objective, sub, 5, relics); this.remindT = 90; this.areaT = 20; this.cardArea = area; }
-    else if (this.remindT <= 0) { P.showObjective(this.objective, sub, 5, relics); this.remindT = 90; this.cardArea = area; }
+    // (cardArea is the place the card last showed: a new one waits for areaT, it isn’t forgotten)
+    const o = P.obj, brief = so && so.id !== this.cardQuest ? so.brief : '';
+    const tail = so ? so.tail : '';
+    const show = (secs, why = '') => P.showObjective(this.objective, sub, secs, relics, { stay: true, title: so ? so.title : '', brief: why, tail });
+    if (key !== this.cardKey || !o) { show(brief ? 11 : 7, brief); this.cardKey = key; this.cardQuest = so ? so.id : null; this.areaT = 20; this.cardArea = area; }
+    else if (area !== this.cardArea && this.areaT <= 0) { show(5); this.areaT = 20; this.cardArea = area; }
+    else { o.text = this.objective; o.tail = tail; if (o.t < o.secs) o.sub = sub; }
   }
 
   progressText() {
@@ -859,11 +860,14 @@ export class ExploreAct {
     const indoor = P.rooms && P.rooms.hint(p);
     if (indoor) return { a: f && f.charging ? 'Release!' : 'Attack', b: 'Jump', hint: indoor.hint, vars: indoor.vars };
     const secret = this.stage === 'roam' && P.secrets ? P.secrets.hint(p) : null;
+    // (with a quest under way a phone shows its step where the everyday hints went: its card —
+    // Saga.syncPads — says it better)
     const hint = secret || (this.stage === 'gather' ? 'Everyone to Starfall Hill!'
       : this.stage === 'boss' ? 'Hit the Grumblecloud while it naps!'
         : NIGHT(P.state.hour) ? 'Night: light a campfire (button at the top) and sleep till morning'
-          : P.big && !P.big.inValley(p.pos.x, p.pos.z) ? 'The wild lands: gloom camps, guardians, sealed chests, races — follow the arrow'
-            : 'Explore! Cleanse gloom nests, dig for treasure');
+          : this.saga && this.saga.tracked() ? ''
+            : P.big && !P.big.inValley(p.pos.x, p.pos.z) ? 'The wild lands: gloom camps, guardians, sealed chests, races — follow the arrow'
+              : 'Explore! Cleanse gloom nests, dig for treasure');
     return { a: f && f.charging ? 'Release!' : 'Attack', b: 'Jump', hint };
   }
 
