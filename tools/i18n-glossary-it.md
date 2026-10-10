@@ -229,7 +229,7 @@ phone pills, tabs). Aim for the English length in UI.
 | gloom (the grey stuff and its creatures) | il grigiume («Raptor di grigiume») |
 | gloomy (the Duchess's taste) | tetro («Gallina tetra», «il Tetro Teatro») |
 | Gloomling · Big Gloomling | Grigiotto · Grigiottone |
-| Gloom Boar · Gustbelly · Storm Ram · Gloom Ogre (the four ground brutes) | cinghiale di grigiume · Soffione · ariete di tempesta · orco di grigiume |
+| Gloom Boar · Gustbelly · Storm Ram · Gloom Ogre (the four ground brutes) | cinghiale di grigiume · Soffione · ariete della tempesta · orco di grigiume |
 | the lantern’s flames (a number in a line is this one, or none) | Old Glimmer 1 · the Deepwood 2 · the Steppe 3 · Croakmire 4 · chapter 5: 3 when the Duchess snuffs Croakmire again, then 4 with the South · chapter 6: 5 (Croakmire’s flame comes home) · the Dawn Hearth 6 · the Heartlight 7 · Hollowmoor Manor 8 |
 | recaps, briefs, objectives | speak to the player: «tu», with the «voi» twin in `__group` — never «bisogna» |
 | the Murk (the fog that gates lands) | la Caligine |
