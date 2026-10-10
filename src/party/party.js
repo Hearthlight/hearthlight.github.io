@@ -980,13 +980,13 @@ export class Party {
     // the wheel too (not over someone’s own menu, the map or the host’s menu: they scroll or zoom those)
     this.wheelCd = Math.max(0, (this.wheelCd || 0) - dt);
     if (g.input.mouse.wheel && !this.wheelCd && !this.bigMapOpen && !this.host.menu && !this.tvmenus.pointing()) { this.host.act('zoom', g.input.mouse.wheel < 0 ? 1 : -1); g.input.mouse.wheel = 0; this.wheelCd = 0.25; }
-    // the display: V on the big screen’s keyboard (LT on a gamepad), or a click on the corner’s
-    // minimap — in the minimal display, on the little map that comes up there under the mouse
+    // the display: V on the big screen’s keyboard (LT on a gamepad). The corner’s minimap: a click
+    // on it puts it away, a click on the little map that comes up there under the mouse brings it back
     this.mouseIdle = g.input.mouse.moved ? 0 : (this.mouseIdle || 0) + dt;
     if (this.phase !== 'lobby' && !this.host.menu && !this.bigMapOpen && !this.vote) {
       const R = this.miniRect || this.miniSpot, gi = g.input;
       if (gi.pressed('hud')) this.cycleHud();
-      else if (R && gi.mouse.pressed && gi.mouseIn(R.x, R.y, R.w, R.h) && !this.tvmenus.pointing() && !this.dialogue.active) { gi.mouse.pressed = false; this.cycleHud(); }
+      else if (R && gi.mouse.pressed && gi.mouseIn(R.x, R.y, R.w, R.h) && !this.tvmenus.pointing() && !this.dialogue.active) { gi.mouse.pressed = false; this.toggleMap(); }
     }
     this.saveT = (this.saveT || 0) + dt;
     if (this.saveT >= 30) { this.saveT = 0; this.saveNow(); }
@@ -2091,6 +2091,18 @@ export class Party {
     audio.sfx('select', { volume: 0.5 });
   }
 
+  // the big screen’s minimap: put away unless the party wants it
+  mapShown() { return !!this.settings.partyMap && this.hudMode() !== 'minimal'; }
+  toggleMap() {
+    const st = this.settings, on = !this.mapShown();
+    st.partyMap = on;
+    if (on && this.hudMode() === 'minimal') st.hud = 'compact';
+    saveSettings(st);
+    this.host.sentKey = '';
+    audio.sfx('select', { volume: 0.5 });
+    this.toast(t(on ? 'Minimap shown' : 'Minimap hidden'), '#8fd6e0');
+  }
+
   // « Display: Compact » for a moment after a change (the solo game’s words), with its three pips
   drawNote(ctx) {
     const n = this.note, mode = this.hudMode(), text = t('Display: {m}', { m: t(HUD_NAMES[mode]) });
@@ -2134,15 +2146,16 @@ export class Party {
     this.clockRect = { x: W - w - 5, y: 4, w, h: 23 };
   }
 
-  // The corner minimap of an activity out in the world (compact: a small one; minimal: none —
-  // a little map comes up there under the mouse, to click the display back). `hide`: the
-  // activity has the corner for something else.
+  // The corner minimap of an activity out in the world — only when the party asks for it
+  // (`settings.partyMap`: every phone has the map, and the big one is a press away), a small one
+  // in the compact display, none in the minimal one. Without it, a little map comes up there
+  // under the mouse, to click it back. `hide`: the activity has the corner for something else.
   drawCornerMap(ctx, hide = false) {
     const W = this.display.w, H = this.display.h, mode = this.hudMode(), gi = this.game.input;
     this.miniSpot = null;
     if (hide || this.cam.layout.type === 'grid' || this.dialogue.active || this.vote || this.bigMapOpen) return;
     const full = Math.min(110, Math.round(W * 0.2)), mw = mode === 'compact' ? Math.round(full * 0.6) : full, mh = Math.round(mw * 0.62);
-    if (mode !== 'minimal') { this.drawMiniMap(ctx, W - mw - 7, H - 21 - mh - 5, mw, mh); return; }
+    if (this.mapShown()) { this.drawMiniMap(ctx, W - mw - 7, H - 21 - mh - 5, mw, mh); return; }
     if (this.remoteFor) return;
     const R = { x: W - 29, y: H - 46, w: 22, h: 20 }, m = gi.mouse;
     this.miniSpot = R;

@@ -17,6 +17,7 @@ import { ArenaAct, ARENA, GONG } from './arena.js';
 import { drawMarks } from './mapmarks.js';
 import { drawTargetArrow } from './story.js';
 import { Chests } from './chests.js';
+import { noteTime } from './announce.js';
 import { t } from '../i18n.js';
 import { timeLabel } from '../ui/hud.js';
 import { Saga } from '../saga/saga.js';
@@ -340,6 +341,8 @@ export class ExploreAct {
       await P.fadeTo(0, 0.6);
       const ch = S.chapter;
       P.showBanner(t('Chapter {n} — {title}', { n: ch.id, title: t(ch.title) }), t('the adventure goes on'), { keep: true });
+      // (a story picked up again, perhaps a week later: where it stands, in the chapter’s own words)
+      if (ch.recap) { const recap = t(ch.recap); P.lane.push({ kind: 'hint', title: recap, dur: noteTime(recap) + 3, keep: true }); }
     }
     this.stage = 'roam';
   }

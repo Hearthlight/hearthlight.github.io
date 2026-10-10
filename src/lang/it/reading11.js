@@ -1,7 +1,13 @@
 // Italian: reading comfort: the dialogue box, announcements, the display modes of the big screen.
 export const READING11_IT = {
   // (the host menu’s « Display » row: what its three displays show)
-  'everything · a small minimap and the hour · just the world, no minimap': 'tutto · una minimappa piccola e l’ora · solo il mondo, senza minimappa',
+  'everything · the hour alone, less chat · just the world': 'tutto · solo l’ora, meno chat · solo il mondo',
+  // (the big screen’s minimap, put away unless the party asks for it: the host menu’s row and its note)
+  'Shown': 'Visibile',
+  'Hidden': 'Nascosta',
+  'Minimap shown': 'Minimappa visibile',
+  'Minimap hidden': 'Minimappa nascosta',
+  'in a corner of the big screen · every phone has the map': 'in un angolo dello schermo grande · ogni telefono ha la mappa',
   __group: {
   },
 };

@@ -154,9 +154,10 @@ export class Host {
       { id: 'split', kind: 'choice', label: 'Split screen', value: t(SPLITS[splitOf(P.game.settings)].name), sub: SPLITS[splitOf(P.game.settings)].sub },
     ];
     if (P.big) camera.push({ id: 'map', kind: 'button', label: P.bigMapOpen ? 'Hide the world map' : 'Show the world map' });
+    camera.push({ id: 'minimap', kind: 'choice', label: 'Minimap', value: t(P.mapShown() ? 'Shown' : 'Hidden'), sub: 'in a corner of the big screen · every phone has the map' });
     // (how much the big screen shows — the solo game’s three displays: party.js `hudMode`)
     const hud = P.hudMode();
-    camera.push({ id: 'hud', kind: 'choice', label: 'Display', value: t(HUD_NAMES[hud]), bar: [HUD_MODES.indexOf(hud), HUD_MODES.length], sub: 'everything · a small minimap and the hour · just the world, no minimap' });
+    camera.push({ id: 'hud', kind: 'choice', label: 'Display', value: t(HUD_NAMES[hud]), bar: [HUD_MODES.indexOf(hud), HUD_MODES.length], sub: 'everything · the hour alone, less chat · just the world' });
     const vol = (k) => Math.round((P.game.settings[k] ?? 0.7) * 10);
     const options = [
       { id: 'diff', kind: 'choice', label: 'Difficulty', value: t(D.name), bar: [DIFF_ORDER.indexOf(this.opts.diff), DIFF_ORDER.length] },
@@ -220,6 +221,7 @@ export class Host {
     }
     if (id === 'map') { P.bigMapOpen = !P.bigMapOpen; return; }
     if (id === 'hud') { P.cycleHud(dir || 1); return; }
+    if (id === 'minimap') { P.toggleMap(); return; }
     if (id.startsWith('inv:')) { const it = P.inviteItems().find((x) => x.id === id); if (it && it.url) copyText(it.url).then((ok) => P.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a')); return; }
     if (id === 'saves') { if (!from) { this.closeMenu(); g.saves.open(); } return; }
     if (id.startsWith('tv:')) { const q = P.players.find((x) => x.slot === +id.slice(3)); this.closeMenu(); if (q && !P.tvmenus.blocked()) { if (P.tvmenus.cur) P.tvmenus.close(P.tvmenus.cur.p, true); P.tvmenus.openFor(q); } return; }
