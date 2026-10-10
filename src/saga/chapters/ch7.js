@@ -51,9 +51,8 @@ const lampOut = (S, i) => !!S.st.f['lpOut' + i];
 
 // ------------------------------------------------------------------ the crossing
 async function wendyMast(S) {
-  await S.say('wendy', 'There she is! The Dauntless Teacup, on her very own mooring mast. Barnaby let me build it. He said « Forecast: regret ».', { expr: 'happy', hop: true });
-  await S.say('wendy', 'The Wide Sea. Nobody’s crossed it in fifty years. Fifty-one, if you count my aunt, who turned back for her hat.', { expr: 'smug' });
-  await S.say('wendy', 'All aboard! Next stop: the Dawnlands. Estimated flight time: one pot of tea.', { expr: 'happy' });
+  await S.say('wendy', 'The Duchess fled across the Wide Sea with the stolen flames. We’re going after her!', { expr: 'happy', hop: true });
+  await S.say('wendy', 'All aboard the Dauntless Teacup! Next stop: {key}the Dawnlands{/}.', { expr: 'happy' });
 }
 
 async function crossing(S) {
@@ -73,9 +72,8 @@ async function crossing(S) {
     const [wx, wz] = [WHALE_LAND[0] - 10, WHALE_LAND[1] + 8];
     const fly = st.move('teacup', { x: wx, z: wz }, 8, { ease: 'lin' });
     st.mark('crossing');
-    await st.say('wendy', 'Wide Sea below. Blue in every direction. I love it. I hate it. I love it.', { expr: 'happy' });
-    await st.say('wendy', '…Hm. The needle. She runs on tea, you know. Strong. Two sugars.{p} Tea: low.', { expr: 'worried' });
-    await st.say('wendy', 'There’s an island down there that isn’t on any chart. Which is suspicious. But it has an inn. Which is not.', { expr: 'neutral' });
+    await st.say('wendy', '…Hm. She runs on tea, you know.{p} And the tea is low.', { expr: 'worried' });
+    await st.say('wendy', 'An island that isn’t on any chart… with an inn. We’re landing!', { expr: 'neutral' });
     await fly;
     st.cv.ppu = st.basePpu(); st.applyCam();
     ship.userData.anim = prop0;
@@ -89,8 +87,7 @@ async function crossing(S) {
     await st.cam(WHALE_LAND[0] + 2, WHALE_LAND[1] + 0.5, { dur: 0.6 });
     st.actor('bess', BESS[0] + 1.5, BESS[1] - 1, { face: { x: -1, z: 0.5 } });
     st.walk('bess', BESS[0] - 1, BESS[1] + 0.4);
-    await st.say('bess', 'Visitors! Petals, you look like you’ve been blown here by a teapot.', { expr: 'happy', hop: true });
-    await st.say('bess', 'Barnacle Bess, keeper of the Blowhole Inn. Rooms: two. Beds: three. Tea: plenty — I’ll fill your pot.', { expr: 'happy' });
+    await st.say('bess', 'Visitors! I’m Barnacle Bess, keeper of the Blowhole Inn. I’ll fill your teapot.', { expr: 'happy', hop: true });
     // (the ground rumbles)
     st.sfx('growl', { volume: 0.9, pitch: -16 });
     st.shake(0.9);
@@ -105,12 +102,11 @@ async function crossing(S) {
     for (let k = 0; k <= 20; k++) { if (eye) eye.userData.open = k / 20; await st.wait(0.06); }
     st.fx('water', EYE[0], 1.2, EYE[1] + 0.5, 12);
     st.mark('eye');
-    await st.say('bellows', '{big}Mmmmmm…{/}{p}Little… ones… on… my… back… Again.', { expr: 'neutral', speed: 0.5 });
-    await st.say('bellows', 'I… am… Grandmother… Bellows. I… have… carried… this… inn… for… two… hundred… years.', { expr: 'neutral', speed: 0.5 });
-    await st.say('bellows', 'Since… the grey… fog… came… I… itch. Gloom… barnacles.{p}Right… between… the… shoulders.', { expr: 'sad', speed: 0.5 });
-    await st.say('bellows', 'Would… you… be… dears…?', { expr: 'happy', speed: 0.5 });
+    await st.say('bellows', '{big}Mmmmmm…{/}{p}I am… Grandmother Bellows.', { expr: 'neutral', speed: 0.5 });
+    await st.say('bellows', '{key}Gloom barnacles{/}… make my back itch. Would you be dears?', { expr: 'sad', speed: 0.5 });
     await st.cam(WHALE_LAND[0] + 1, WHALE_LAND[1] + 0.5, { dur: 1.2, ppu: st.basePpu() });
-    await st.say('wendy', 'A whale. We parked on a WHALE.{p} …Well. She did ask nicely.', { expr: 'shock' });
+    await st.say('wendy', 'A whale. We parked on a WHALE.', { expr: 'shock' });
+    await st.say('wendy', 'Well, she asked nicely. {key}Stomp the barnacles{/} on her back!', { expr: 'happy' });
     await st.title('The Dawnlands', 'Chapter 7');
     void K;
   });
@@ -122,19 +118,18 @@ async function spout(S) {
     const eye = eyeOf(P);
     await st.cam(EYE[0] + 3, EYE[1] - 1, { dur: 0.8, ppu: st.basePpu() });
     if (eye) eye.userData.open = 1;
-    await st.say('bellows', 'Ohhhh…{p}That’s… the… spot…', { expr: 'happy', speed: 0.5 });
-    await st.say('bellows', 'Now… hold… on… to… your… teapot…', { expr: 'happy', speed: 0.5 });
+    await st.say('bellows', 'Ohhhh… that’s the spot.{p} Now hold on: I’ll blow you over the Murk.', { expr: 'happy', speed: 0.5 });
     // (everyone in the Teacup, the Teacup over the blowhole)
     hide(P, true);
     const ship = buildAirship(P.r3d), sp = buildSpout(P.r3d);
     st.prop('teacup', ship, BLOWHOLE[0], 0.3, BLOWHOLE[1]);
     st.prop('spout', sp, BLOWHOLE[0], 0, BLOWHOLE[1]);
     await st.cam(BLOWHOLE[0], BLOWHOLE[1] - 1, { dur: 0.8 });
-    await st.say('wendy', 'Why are we parked on her blowhole? Why am I asking? I know why. Hold on to your—', { expr: 'shock' });
+    await st.say('wendy', 'Why are we parked on her blowhole?{p} …Oh. Hold on to your—', { expr: 'shock' });
     st.sfx('geyser', { volume: 1 });
     st.shake(1.4);
     st.flash('#e8f4ff', 0.3);
-    // (up goes the spout, up goes the Teacup — seen from the whale's back, zoomed out)
+    // (up goes the spout, up goes the Teacup — seen from the whale’s back, zoomed out)
     await st.cam(BLOWHOLE[0], BLOWHOLE[1] - 7, { dur: 0.3, ppu: Math.max(8, Math.round(st.basePpu() / 16) * 8) });
     for (let k = 0; k <= 24; k++) {
       sp.userData.k = Math.min(1, k / 16);
@@ -145,7 +140,7 @@ async function spout(S) {
     }
     ride(st, ship, 0.6);
     for (let k = 0; k <= 12; k++) { ship.position.y += 0.6; await st.wait(0.05); }
-    await st.say('narrator', 'Grandmother Bellows blows. The spout goes up and up — and the Teacup goes up on top of it, clean over the wall of fog.');
+    await st.say('narrator', 'Grandmother Bellows blows. Her spout lifts the Teacup clean over the wall of Murk.');
     await st.fade(1, 0.6);
     st.dropProp('spout');
     // (down into Lantern Bay, in the dark)
@@ -164,9 +159,8 @@ async function spout(S) {
     st.actor('wendy', WENDY_E[0], WENDY_E[1], { face: { x: 0.4, z: 1 } });
     await st.cam(LP_LAND[0], LP_LAND[1] - 3, { dur: 0.8 });
     st.mark('lanternport');
-    await st.say('wendy', 'Lanternport. Or what’s left of the light of it.', { expr: 'sad' });
-    await st.say('narrator', 'The streets are dark. Every lamp is out. But behind the shutters, here and there, a candle: somebody is still here.');
-    await st.say('wendy', 'I’ll moor her. You find whoever wrote those letters. And mind the moths — the dark ones come for lanterns.', { expr: 'worried' });
+    await st.say('wendy', '{key}Lanternport{/}. Not one lamp lit… but there are candles behind the shutters.', { expr: 'sad' });
+    await st.say('wendy', 'I’ll moor her. You, {key}relight the street lamps{/}, from the quay up to the hall.', { expr: 'worried' });
   });
 }
 
@@ -183,22 +177,20 @@ async function townWakes(S) {
     st.walk('tamsin', 789.5, 56);
     await st.wait(0.8);
     st.heroesEmote('heart', 2);
-    await st.say('narrator', 'One by one the shutters open. The people of Lanternport come out into the light, blinking.');
+    await st.say('narrator', 'One by one, the shutters open. Lanternport comes out into the light.');
     await st.say('mei', 'The lamps! Mum, the LAMPS!', { expr: 'love', hop: true });
-    await st.say('tamsin', 'Thirty days in the dark and I still burnt the fish.', { expr: 'happy' });
     // (and up the hill, under the one lamp that never went out)
     await st.cam(HOSHI[0], HOSHI[1] + 1, { dur: 1.2 });
     st.actor('hoshi', HOSHI[0], HOSHI[1], { face: { x: -0.3, z: 1 } });
     st.mark('hoshi');
-    await st.say('hoshi', 'Hmph. Took your time.', { expr: 'smug' });
+    await st.say('hoshi', 'Hmph. Took your time.{p} Come up to {key}the hall steps{/}: we must talk.', { expr: 'smug' });
   });
 }
 
 async function hoshiTalk(S) {
-  await S.say('hoshi', 'Old Hoshi. Lamplighter. The last one this side of the sea.', { expr: 'neutral' });
-  await S.say('hoshi', 'Thirty days I kept that one lamp burning. I counted. Somebody had to. Then I put letters in bottles, which is what you do when you’ve run out of better ideas.', { expr: 'neutral' });
+  await S.say('hoshi', 'Old Hoshi, Lamplighter. The last one this side of the sea.', { expr: 'neutral' });
   await S.say('hoshi', '…That lantern. That’s June’s lantern.', { expr: 'surprised' });
-  await S.say('hoshi', 'June and I lit our first hearths the same summer. She wrote to me every Starfall. Sixty years of letters.{p}Then last spring, they stopped.', { expr: 'sad' });
+  await S.say('hoshi', 'June and I became Lamplighters the same summer. Sixty years of letters…{p} then last spring, nothing.', { expr: 'sad' });
   await S.say('hoshi', '…Well. She’d have liked you. She liked anyone who argues with the dark.', { expr: 'happy' });
   await broadcast(S);
 }
@@ -225,8 +217,8 @@ async function broadcast(S) {
     for (let k = 0; k <= 20; k++) { if (g.userData.face) g.userData.face.material.opacity = k / 20 * 0.95; await st.wait(0.04); }
     st.mark('broadcast');
     await st.say('duchess', 'Testing, testing… is this thing on?{p}Of COURSE it’s on. It’s MINE.', { expr: 'smug' });
-    await st.say('duchess', 'Good evening, Dawnlands! You may have noticed the dark. You’re welcome.', { expr: 'happy' });
-    await st.say('duchess', 'Tonight, a little rehearsal. My Umbral Spotlight: ONE light, on ME — and darkness for everyone else. Forever.{p}Lights… OFF!', { expr: 'angry', shake: 1 });
+    await st.say('duchess', 'Good evening, Dawnlands! Tonight, a little rehearsal of my {key}Umbral Spotlight{/}.', { expr: 'happy' });
+    await st.say('duchess', 'ONE light, on ME. Darkness for everyone else, for ever.{p} Lights… OFF!', { expr: 'angry', shake: 1 });
     // a beam of darkness sweeps the town: every lamp it touches goes out
     const beam = new THREE.Mesh(new THREE.ConeGeometry(3.2, 12, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x1a0a2a, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
     const bg = new THREE.Group(); beam.position.y = 6; bg.add(beam);
@@ -241,13 +233,12 @@ async function broadcast(S) {
       await st.wait(0.05);
     }
     st.dropProp('umbral');
-    await st.say('duchess', 'Mmm. Needs more… ME. Back to rehearsals!', { expr: 'smug' });
+    await st.say('duchess', 'Mmm. Not dark enough yet. Back to rehearsals!', { expr: 'smug' });
     for (let k = 20; k >= 0; k--) { if (g.userData.face) g.userData.face.material.opacity = k / 20 * 0.85; await st.wait(0.03); }
     st.dropProp('face');
     // the one lamp she kept — and Hoshi’s taper
     await st.cam(HOSHI[0], HOSHI[1] + 2, { dur: 0.9 });
     st.actor('hoshi', HOSHI[0], HOSHI[1], { face: { x: 0, z: 1 } });
-    await st.say('hoshi', 'Hmph. « Rehearsal ».', { expr: 'angry' });
     await st.say('hoshi', 'A lamp that’s been put out is only a lamp that’s waiting.', { expr: 'neutral' });
     st.sfx('chime', { volume: 0.7 });
     st.fx('sparkle', HALL_LAMP[0], 3, HALL_LAMP[1], 20, { color: '#ffd66b' });
@@ -260,9 +251,9 @@ async function broadcast(S) {
     }
     S.save();
     await st.lights(0.25, null, 1);
-    await st.say('hoshi', 'When she gets that thing working, it won’t be a street she puts out. It’ll be the world.', { expr: 'worried' });
-    await st.say('hoshi', 'Our Great Hearth burned at the top of the Lantern Pagoda, up at the Dawn Monastery. She snuffed it a month ago — and the gloom got into the monks’ festival dragon. Old Lucky. Guarding the tower now, poor old thing.', { expr: 'sad' });
-    await st.say('hoshi', 'North, up the Pilgrims’ Way. Go on. I’ll keep the lamps.', { expr: 'neutral' });
+    await st.say('hoshi', 'The day her Spotlight works, she will put out the whole world.', { expr: 'worried' });
+    await st.say('hoshi', 'A month ago, she snuffed our Great Hearth, at the top of the {key}Lantern Pagoda{/}.', { expr: 'sad' });
+    await st.say('hoshi', 'Go north, up the {key}Pilgrims’ Way{/}: the Pagoda is at the {key}Dawn Monastery{/}. I’ll keep the lamps.', { expr: 'neutral' });
   });
 }
 
@@ -275,14 +266,12 @@ async function mimesMeet(S) {
     st.actor('mminnow', x - 1.8, z - 0.6, { face: { x: 0, z: 1 } });
     st.actor('mfidget', x, z - 1, { face: { x: 0, z: 1 } });
     st.actor('mbrick', x + 2, z - 0.6, { face: { x: 0, z: 1 } });
-    await st.say('narrator', 'Three mimes stand across the Pilgrims’ Way, in white faces and berets. They do not speak. They are VERY good at not speaking.');
+    await st.say('narrator', 'Three mimes block the Pilgrims’ Way: the Duchess’s Understudies, in white faces and berets.');
     st.emote('mminnow', 'dots', 1.4);
-    await st.say('mminnow', 'We are MIMES now! She said it would stop us TALKING!', { expr: 'angry', hop: true });
+    await st.say('mminnow', 'We are MIMES now! The Duchess said it would stop us TALKING!', { expr: 'angry', hop: true });
     await st.say('mfidget', 'Minnow.', { expr: 'neutral' });
-    await st.say('mminnow', '…', { expr: 'sad' });
     st.mark('mimes');
-    await st.say('narrator', 'Minnow mimes zipping his mouth shut. Brick mimes a very small, very sad violin. Fidget mimes a wall — right across the road.');
-    await st.say('mfidget', '(Fidget mimes: « You. Shall. Not. PASS. »)', { expr: 'smug' });
+    await st.say('narrator', 'Fidget mimes a wall, right across the road. To pass, beat {key}the Mime Troupe{/}!');
     await st.title('The Mime Troupe', 'Silent, but deadly', 2.2);
     for (const id of ['mminnow', 'mfidget', 'mbrick']) st.hide(id);
   });
@@ -300,7 +289,7 @@ function spawnMimes(S) {
   C.bounds = { x, z: z + 1.5, rx: 9.5, rz: 7 };
   S.mimeBand = band;
 }
-// (a game loaded — or a knock-out — while the Mime Troupe is to be beaten: they're back on the
+// (a game loaded — or a knock-out — while the Mime Troupe is to be beaten: they’re back on the
 // road when someone comes near, the count starting over)
 function ensureMimes(S) {
   const q = S.st.q.c7_mimes, st = S.stepDef('c7_mimes');
@@ -324,22 +313,20 @@ async function mimesBeaten(S) {
     await st.say('mfidget', '(Fidget mimes a white flag.)', { expr: 'sad' });
     await st.say('mminnow', 'We LOST. Out LOUD.', { expr: 'cry' });
     st.mark('mimesBeaten');
-    await st.say('mbrick', 'Brick liked the invisible box. Brick felt safe in the invisible box.', { expr: 'sad' });
-    await st.say('narrator', 'For a moment, nobody says anything. Even Minnow.');
-    await st.say('mfidget', 'We’re not going back to the Gloomstage tonight. She’d only make us mimes AGAIN.', { expr: 'sad' });
+    await st.say('mfidget', 'We’re not going back to the Gloomstage tonight. The Duchess would only make us mimes AGAIN.', { expr: 'sad' });
     for (const id of ['mminnow', 'mfidget', 'mbrick']) st.walk(id, x - 14, z + 6, { speed: 3 });
     await st.wait(1.6);
     for (const id of ['mminnow', 'mfidget', 'mbrick']) st.hide(id);
+    await st.say('narrator', 'The road is open: on to the {key}Dawn Monastery{/}, to the north!');
   });
 }
 
 // ------------------------------------------------------------------ the Dawn Monastery
 async function abbotTalk(S) {
-  await S.say('sen', 'Welcome, travellers. An old proverb says: « The door that will not open is only waiting for the right morning. »', { expr: 'happy', speed: 0.85 });
-  await S.say('sen', 'I made that one up just now. It is old now.', { expr: 'smug', speed: 0.85 });
-  await S.say('sen', 'The Pagoda opens only to the first light of dawn. But under this fog, no light has touched its doors for a month.', { expr: 'worried', speed: 0.85 });
-  await S.say('sen', 'So: the Dawn Kites. Above the fog, the morning is still there. Fly high enough and your kite will catch it — and send it down the string to us.', { expr: 'neutral', speed: 0.85 });
-  await S.say('sen', 'The field is east of the court. The novices will hand you a kite. Mind the gusts, and the tree.', { expr: 'happy', speed: 0.85 });
+  await S.say('sen', 'The Great Hearth is at the top of our Pagoda. But its doors open only to the first light of dawn.', { expr: 'happy', speed: 0.85 });
+  await S.say('sen', 'And under the Murk, there has been no dawn for a month.', { expr: 'worried', speed: 0.85 });
+  await S.say('sen', 'Above the Murk, the morning is still there. A {key}kite{/} can catch it and send it down its string.', { expr: 'neutral', speed: 0.85 });
+  await S.say('sen', 'Go to the {key}kite field{/}, east of the court, and fly one high!', { expr: 'happy', speed: 0.85 });
 }
 
 async function dawnColumn(S) {
@@ -347,7 +334,7 @@ async function dawnColumn(S) {
     const P = S.P, [dx, dz] = PAGODA_DOOR, K = kit(P.r3d);
     await st.cam(KITES[0] - 5, KITES[1] + 1, { dur: 0.8, ppu: st.basePpu() });
     st.sfx('chime', { volume: 0.8, pitch: 7 });
-    await st.say('narrator', 'High above the fog, the kites catch the morning. It runs down their strings like honey — gold, and warm.');
+    await st.say('narrator', 'Above the Murk, the kites catch the morning: it runs down their strings like honey.');
     // (a column of gold comes down on the Pagoda’s door)
     const col = K.noCast(K.put(new THREE.Group(), K.cyl(1.2, 1.2, 1, 16), K.light('#ffe8a0', 0.4), 0, 0, 0));
     const g = col.parent;
@@ -359,11 +346,10 @@ async function dawnColumn(S) {
     st.shake(0.4);
     await st.wait(0.7);
     st.mark('dawn');
-    await st.say('narrator', 'The light touches the Pagoda’s doors, and with a long, grateful creak, they open.');
+    await st.say('narrator', 'The light touches the Pagoda’s doors, and they creak open.');
     st.actor('sen', dx - 2.5, dz + 2.6, { face: { x: 0.5, z: -1 } });
-    await st.say('sen', '…It has been a long month. Thank you.', { expr: 'love', speed: 0.85 });
-    await st.say('sen', 'Inside, Old Lucky waits. Forty years he danced for us at every festival. It was not his fault — the gloom got into his paper.', { expr: 'sad', speed: 0.85 });
-    await st.say('sen', 'If there is any way… please. Bring him back to us.', { expr: 'worried', speed: 0.85 });
+    await st.say('sen', 'Inside is {key}Old Lucky{/}, our festival dragon. The gloom got into his paper.', { expr: 'sad', speed: 0.85 });
+    await st.say('sen', 'Please: go into the {key}Lantern Pagoda{/} and bring him back to us.', { expr: 'worried', speed: 0.85 });
     st.dropProp('column');
   });
 }
@@ -383,15 +369,15 @@ R('roof').run = async (S, d, r) => {
   e.spawnT = 0; e.obj.scale.setScalar(1);
   r.boss = e;
   C.bounds = { x: H.x, z: H.z, rx: r.w / 2 - 1.2, rz: r.h / 2 - 1 };
-  // (up on the roof it's morning: the open sky's light)
+  // (up on the roof it’s morning: the open sky’s light)
   d.room.def.dark = false; d.room.room.def.dark = false; d.room.room.def.ambient = 0.75;
   await S.scene(async (st) => {
     await st.cam(H.x, H.z - 2, { dur: 0.8 });
     st.sfx('roar', { volume: 0.8, pitch: 4 });
-    await st.say('narrator', 'On the roof, under the open sky, something long and red uncoils from round the Dawn Mirror — a festival dragon of paper and gold, ink-dark about the eyes.');
+    await st.say('narrator', 'Something long and red uncoils from round the Dawn Mirror: a paper dragon, its eyes dark with gloom.');
     st.mark('dragon');
     await st.title('Old Lucky', 'The Paper Dragon', 2.2);
-    await st.say('narrator', 'Up in the air, nothing reaches it. But when it lands… the mirror in the middle turns towards whichever plate you stand on.');
+    await st.say('narrator', 'When he lands, step on {key}the plate{/} that points at him: the Dawn Mirror will light him up.');
   });
 };
 R('roof').tick = (S, d, r) => {
@@ -411,9 +397,9 @@ R('roof').tick = (S, d, r) => {
       st.flash('#fff4c8', 0.5);
       for (let k = 0; k < 16; k++) st.fx('smoke', e.x + (Math.random() - 0.5) * 3, 1 + Math.random() * 2, e.z + (Math.random() - 0.5) * 3, 1, { color: '#4a3a6a' });
       if (e.obj) e.obj.userData.brow.visible = false;
-      await st.say('narrator', 'The last of the gloom burns off in a puff of violet smoke. What’s left is a paper dragon — red and gold again, a little singed at the whiskers — lying very still.');
+      await st.say('narrator', 'The gloom burns off in violet smoke. A paper dragon is left, red and gold again, lying very still.');
       st.mark('lucky');
-      await st.say('narrator', 'Then one eye opens. The tail thumps, twice, on the roof tiles. Old Lucky purrs.');
+      await st.say('narrator', 'Then one eye opens, and the tail thumps twice: Old Lucky purrs.');
       // the Dawn Hearth, relit
       await st.cam(H.x, H.z - 7, { dur: 1 });
       st.sfx('chord', { volume: 0.9 });
@@ -423,7 +409,7 @@ R('roof').tick = (S, d, r) => {
       S.flag('dawnLit');
       if (!S.st.lit.includes('harbor')) S.st.lit.push('harbor');
       S.save();
-      await st.say('narrator', 'The Dawn Hearth catches — and the fifth flame in the lantern with it.');
+      await st.say('narrator', 'The Dawn Hearth burns again: a {key}fifth flame{/} lights up in the lantern.');
       st.music(null);
     });
     e.hold = false; e.fading = 0; if (e.remove) e.remove();
@@ -448,8 +434,9 @@ async function sunrise(S) {
     S.openZones(['autumn', 'glow', 'elder']);
     if (S.P.murk) S.P.murk.pulse(-1);
     st.actor('sen', dx - 2.5, dz + 2.6, { face: { x: 0.5, z: -1 } });
-    await st.say('sen', 'Old Lucky! Look at him — hardly singed. We shall mend his whiskers for the festival.', { expr: 'love', hop: true, speed: 0.85 });
-    await st.say('sen', 'An old proverb says: « After the longest night, breakfast. » I did not make that one up. It is on the kitchen wall.', { expr: 'happy', speed: 0.85 });
+    await st.say('sen', 'Old Lucky, hardly singed! We shall mend his whiskers.', { expr: 'love', hop: true, speed: 0.85 });
+    await st.say('sen', 'An old proverb says: « After the longest night, breakfast. »{p} It is on our kitchen wall.', { expr: 'happy', speed: 0.85 });
+    await st.say('sen', 'Lanternport holds its Lantern Festival tonight: go back down to {key}the harbour square{/}!', { expr: 'happy', speed: 0.85 });
     await st.title('Morning over the Dawnlands', 'The Murk rolls back from Emberleaf, Glowtide and Elderbough', 3.4);
   });
 }
@@ -493,7 +480,7 @@ async function festival(S) {
     }
     st.prop('strings', strings, x, 0, z);
     await st.fade(0, 1);
-    await st.say('narrator', 'That night, Lanternport throws the Lantern Festival it has been saving up for a month.');
+    await st.say('narrator', 'That night, Lanternport holds its Lantern Festival at last.');
     // (sky lanterns rising over the bay)
     const lan = [];
     for (let k = 0; k < 26; k++) {
@@ -507,7 +494,7 @@ async function festival(S) {
     rg.userData.anim = (tm, dt) => rise(dt || 0.016);
     st.prop('riser', rg, 0, 0, 0);
     st.mark('festival');
-    await st.say('mei', 'Make a wish! You have to make a wish when yours goes up. Mine’s about fish. Don’t tell Mum.', { expr: 'love', hop: true });
+    await st.say('mei', 'Make a wish! You have to, when your lantern goes up.', { expr: 'love', hop: true });
     for (let k = 0; k < 4; k++) { st.fx('firework', x - 4 + k * 3, 9, z - 8, 24, { color: ['#ffd66b', '#ff8ab0', '#8fd6ff', '#b0f08a'][k] }); st.sfx('firework', { volume: 0.5 }); await st.wait(0.35); }
     // Perkins, with thirty years of undelivered mail
     const pel = buildPelican(P.r3d, { rider: '#3f6f9e' });
@@ -518,8 +505,8 @@ async function festival(S) {
     pel.userData.mode = 'sit';
     st.dropProp('perkins');
     st.actor('perkins', x + 4.2, z + 0.6, { face: { x: -1, z: 0 } });
-    await st.say('perkins', 'Special delivery! Thirty years of undelivered Dawnlands mail! The Murk ate the route.', { expr: 'happy', hop: true });
-    await st.say('perkins', 'Birthday cards, mostly. A very late apology. And one for a « Miss G. Gloomsworth, Marigold Cove »…{p}Never did find her. No forwarding address.', { expr: 'neutral' });
+    await st.say('perkins', 'Special delivery! Thirty years of Dawnlands mail: the Murk had eaten the route.', { expr: 'happy', hop: true });
+    await st.say('perkins', 'And one letter for a « {key}Miss G. Gloomsworth{/}, Marigold Cove »…{p} Never did find her.', { expr: 'neutral' });
     st.heroesEmote('question', 1.6);
     await st.say('perkins', 'Ah well. Back in the sack it goes!', { expr: 'happy' });
     // (at the end of the pier)
@@ -529,11 +516,11 @@ async function festival(S) {
     st.actor('mbrick', 759, 63.6, { face: { x: 0, z: -1 } });
     for (const id of ['mminnow', 'mfidget', 'mbrick']) { const a = st.actorOf(id); if (a && a.n) a.n.seatY = 0.2; }
     st.mark('pier');
-    await st.say('narrator', 'At the end of the pier, three mimes sit and watch the lanterns go up. Nobody invited them. Nobody ever invites mimes.');
+    await st.say('narrator', 'At the end of the pier, three mimes sit and watch the lanterns go up. Nobody invited them.');
     await st.cam(x, z, { dur: 1.2 });
-    await st.say('hoshi', 'The Gloomstage went north-east, over Emberleaf. To Elderbough, and the Great Tree. She’ll want its heart for her finale.', { expr: 'worried' });
-    await st.say('wendy', 'Then that’s where we’re going. After the festival. After the fireworks. After breakfast.', { expr: 'smug' });
-    await st.say('hoshi', 'June’s lantern has five flames in it now. She’d be…{p}Hmph. Smoke in my eye. Go and dance, the lot of you.', { expr: 'happy' });
+    await st.say('hoshi', 'The Gloomstage flew north-east, to {key}Elderbough{/} and its Great Tree. The Duchess wants the tree’s heart for her finale.', { expr: 'worried' });
+    await st.say('wendy', 'Then that’s where we’re going. After the festival!', { expr: 'smug' });
+    await st.say('hoshi', 'June’s lantern has five flames now. She’d be…{p} Hmph. Smoke in my eye. Go and dance!', { expr: 'happy' });
     await st.title('The Lantern Festival', 'Five flames in the lantern', 3.4);
     for (const q of lan) st.dropProp(q.key);
     st.dropProp('riser'); st.dropProp('lucky'); st.dropProp('strings');
@@ -552,25 +539,23 @@ async function riddles(S) {
   ];
   let score = 0;
   for (const [i, R0] of Q.entries()) {
-    await S.say('bao', i === 0 ? 'Riddle the first!' : i === 1 ? 'Riddle the second!' : 'Riddle the third, and last!', { expr: 'happy' });
     const k = await S.ask(R0.q, R0.a, 'bao');
     if (k === R0.ok) { score++; await S.say('bao', ['Correct! The dawn smiles on you.', 'Correct! You have the mind of a very clever kettle.', 'CORRECT! Oh, I shall have to think of harder ones.'][i], { expr: 'love', hop: true }); }
     else await S.say('bao', R0.no[k] || 'Hmm. The dawn frowns. Only a little.', { expr: 'neutral' });
   }
   S.flag('baoScore', score);
-  if (score === 3) await S.say('bao', 'Three of three! My vow says I must now speak plainly for one whole sentence: thank you, that was the best morning I have had in a month.', { expr: 'love' });
-  else if (score > 0) await S.say('bao', 'Some right, some riddled. That is the way of things. Take this, for trying.', { expr: 'happy' });
-  else await S.say('bao', 'Not one! Magnificent. You have the mind of a very peaceful stone. Take this anyway.', { expr: 'happy' });
+  if (score === 3) await S.say('bao', 'Three out of three! My vow allows me one plain sentence: thank you.', { expr: 'love' });
+  else if (score > 0) await S.say('bao', 'Some right, some wrong. Take this, for trying.', { expr: 'happy' });
+  else await S.say('bao', 'Not one! You have the mind of a very peaceful stone. Take this anyway.', { expr: 'happy' });
 }
 
 async function blancheOffer(S) {
-  await S.say('blanche', 'Forty-seven kinds of white. I have catalogued them all. White number twelve: salt at noon. White number thirty: a gull, disapproving.', { expr: 'happy' });
-  await S.say('blanche', 'But the mirror… the flats show me things in the reflection that aren’t there when I look up. Three of them. Plain as day, upside down.', { expr: 'worried' });
-  await S.say('blanche', 'Would you find them for me? Stand where the reflection is, and reach in. Gently. Mirrors bruise.', { expr: 'neutral' });
+  await S.say('blanche', 'I paint these salt flats. They are a mirror, and it shows me {key}three things{/} that aren’t there when I look up.', { expr: 'worried' });
+  await S.say('blanche', 'Would you find them for me? Stand on each reflection and {key}reach in{/}.', { expr: 'neutral' });
 }
 async function blancheDone(S) {
-  await S.say('blanche', 'A kite. A paper lantern. And… a rubber duck?{p}Of course. Things the fog swallowed, the mirror kept.', { expr: 'surprised' });
-  await S.say('blanche', 'Everything that’s lost is somewhere. Usually upside down. I shall paint them back into the world.', { expr: 'love' });
+  await S.say('blanche', 'A kite, a paper lantern… and a rubber duck?', { expr: 'surprised' });
+  await S.say('blanche', 'What the Murk swallowed, the mirror kept. I shall paint them back into the world.', { expr: 'love' });
 }
 
 // a reflection on the salt: a thing painted upside down on the mirror, pale and
@@ -595,7 +580,9 @@ function buildReflection(r3d, i) {
 const TOWN = (p) => p.pos.x > 755 && p.pos.x < 820 && p.pos.z > 25 && p.pos.z < 80;
 
 export const CH7 = {
-  id: 7, title: 'The Dawnlands', lv: 31, zones: ['wide', 'whale', 'harbor', 'jade', 'salt'], opens: ['autumn', 'glow', 'elder'],
+  id: 7, title: 'The Dawnlands',
+  recap: 'The Duchess fled across the Wide Sea with the stolen flames, and we have just crossed after her. In the Dawnlands, the sun has not risen for a month. Find their {key}Great Hearth{/} and relight it.',
+  lv: 31, zones: ['wide', 'whale', 'harbor', 'jade', 'salt'], opens: ['autumn', 'glow', 'elder'],
   // (Grandmother Bellows keeps an eye open while her back itches)
   update(S, dt) {
     S.mimeT = (S.mimeT || 0) - dt;
@@ -634,112 +621,134 @@ export const CH7 = {
   ],
   npcs: [
     { id: 'wendy', at: (S) => (S.done('c7_whale') ? WENDY_E : WENDY_W), face: { x: -0.3, z: 1 }, when: (S) => S.st.ch >= 7,
-      lines: ['She runs on tea. Strong. Two sugars. Tea: full!', 'Lanternport to Lighthouse Isle, whenever you like. Just ring the bell on the mast.'] },
+      lines: ['The Teacup is full of tea and ready to fly.', 'Lanternport to Lighthouse Isle, whenever you like: {key}ring the bell{/} on the mast.'] },
     { id: 'bess', at: BESS, face: { x: -0.4, z: 1 }, when: (S) => S.done('c7_cross'),
-      lines: ['Rooms: two. Beds: three. Don’t ask about the third bed.', 'Grandmother Bellows likes a song at bedtime. Sea shanties. Never whale songs — she says they’re all gossip.'] },
+      lines: ['Two hundred years this inn has sat on Grandmother Bellows’s back.', 'Grandmother Bellows hates whale songs: she says they’re all gossip.'] },
     { id: 'hoshi', at: HOSHI, face: { x: -0.3, z: 1 }, when: (S) => S.done('c7_lamps'),
       lines: ['The lamps will hold. Go.', 'June used to say the dark is only a room nobody has lit yet.'] },
     { id: 'mei', at: [785, 55], face: { x: 0.3, z: 1 }, when: (S) => S.done('c7_lamps'),
-      lines: ['I’m staying up for the WHOLE festival. Even the boring speeches.', 'Old Hoshi says lamps are like people: they only need someone to believe they’ll light.'] },
+      lines: ['I’m staying up for the WHOLE Lantern Festival!', 'Old Hoshi kept one lamp lit for thirty days, all by herself.'] },
     { id: 'tamsin', at: [790.5, 57.5], face: { x: -0.4, z: 1 }, when: (S) => S.done('c7_lamps'),
       lines: ['Thirty days in the dark and I still burnt the fish.', 'Fresh fish! Well. Fish.'] },
     { id: 'sen', at: ABBOT, face: { x: 0.2, z: 1 }, when: (S) => S.st.ch >= 7,
-      lines: ['The Pagoda has stood for three hundred years. It can stand a little longer. You, however, should eat something.', 'An old proverb: a kite does not fear the wind. It fears the tree.'] },
+      lines: ['Above the Murk, the morning is always there.', 'The Pagoda has stood for three hundred years. It can wait while you eat.'] },
     { id: 'bao', at: BAO, face: { x: -0.2, z: 1 }, when: (S) => S.done('c7_mimes'),
       lines: ['(Brother Bao bows. Somehow, the bow is also a riddle.)', 'What walks on four legs in the morning… no, wait. That one is taken.'] },
     { id: 'blanche', at: BLANCHE, face: { x: -0.5, z: 1 }, when: (S) => S.done('c7_lamps'),
-      lines: ['White number thirty-one: the white of an egg you didn’t mean to drop.', 'Look down, not up. The mirror is more honest than the sky.'] },
+      lines: ['White number thirty-one: an egg you didn’t mean to drop.', 'Look down, not up. The mirror is more honest than the sky.'] },
   ],
   quests: {
     c7_cross: {
-      title: 'The Crossing', auto: true, lv: 28,
+      title: 'The Crossing',
+      brief: 'The Duchess fled east across the Wide Sea with the stolen flames. Board {key}Captain Wendy’s airship{/} and cross after her.',
+      auto: true, lv: 28,
       steps: [
-        { do: 'talk', npc: 'wendy', text: 'Meet Captain Wendy at the new mooring mast on Lighthouse Isle', run: wendyMast },
-        { do: 'scene', text: '…', run: crossing },
+        { do: 'talk', npc: 'wendy', text: 'Meet {key}Captain Wendy{/} at the mast on {key}Lighthouse Isle{/}, by Barnaby’s lighthouse', run: wendyMast },
+        { do: 'scene', text: 'Cross {key}the Wide Sea{/} aboard the Dauntless Teacup', run: crossing },
       ],
     },
     c7_whale: {
-      title: 'The Itch', auto: true, after: 'c7_cross', lv: 29,
+      title: 'The Itch',
+      brief: 'This island is a whale: Grandmother Bellows. {key}Gloom barnacles{/} make her back itch: stomp them all.',
+      auto: true, after: 'c7_cross', lv: 29,
       steps: [
-        { do: 'whack', text: 'Stomp the gloom barnacles on Grandmother Bellows’s back (land a jump on them!)', at: WHACK, r: 8, holes: HOLES, n: 14, per: 4, time: 45, up: 1.5, every: 0.75, model: buildBarnacle, go: 'Stomp!' },
-        { do: 'scene', text: '…', run: spout },
+        { do: 'whack', text: 'Stomp the {key}gloom barnacles{/} on the whale’s back: jump on them!', at: WHACK, r: 8, holes: HOLES, n: 14, per: 4, time: 45, up: 1.5, every: 0.75, model: buildBarnacle, go: 'Stomp!' },
+        { do: 'scene', text: 'Hold on to the Teacup: next stop, {key}Lanternport{/}', run: spout },
       ],
     },
     c7_lamps: {
-      title: 'Lanternport in the Dark', auto: true, after: 'c7_whale', lv: 29,
+      title: 'Lanternport in the Dark',
+      brief: 'Lanternport is in the dark. Relight its {key}seven street lamps{/} and stay in their light: in the dark, moths eat your lantern’s flame.',
+      auto: true, after: 'c7_whale', lv: 29,
       steps: [
-        { do: 'lamps', text: 'Relight Lanternport’s street lamps, from the quay up to the hall', lamps: LAMPS, start: LP_LAND, light: 11, glow: 3.8, moths: { every: 4.5, max: 2, level: 29 }, model: buildStreetLamp },
-        { do: 'scene', text: '…', run: townWakes },
+        { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 11, glow: 3.8, moths: { every: 4.5, max: 2, level: 29 }, model: buildStreetLamp },
+        { do: 'scene', text: 'Watch {key}Lanternport{/} wake up', run: townWakes },
       ],
     },
     c7_hoshi: {
-      title: 'The Last Lamplighter', auto: true, after: 'c7_lamps', lv: 30,
+      title: 'The Last Lamplighter',
+      brief: 'At the top of the town, one lamp never went out: {key}Old Hoshi{/} kept it lit. Go and talk to her.',
+      auto: true, after: 'c7_lamps', lv: 30,
       steps: [
-        { do: 'talk', npc: 'hoshi', text: 'Talk to Old Hoshi, at the top of the town', run: hoshiTalk },
+        { do: 'talk', npc: 'hoshi', text: 'Talk to {key}Old Hoshi{/} on the hall steps, at the top of the town', run: hoshiTalk },
       ],
     },
     c7_mimes: {
-      title: 'The Mime Troupe', auto: true, after: 'c7_hoshi', lv: 30,
+      title: 'The Mime Troupe',
+      brief: 'The Dawnlands’ Great Hearth is out, at the Dawn Monastery in the north. Take the {key}Pilgrims’ Way{/} and beat whoever blocks the road.',
+      auto: true, after: 'c7_hoshi', lv: 30,
       steps: [
-        { do: 'go', text: 'Take the Pilgrims’ Way north towards the Dawn Monastery', at: MIMES, r: 7, run: mimesMeet },
-        { do: 'kill', tag: 'mimes', n: 3, text: 'Beat the Mime Troupe (a friend pops a box; jump to slip the rope)', at: MIMES, r: 14, target: () => MIMES },
-        { do: 'scene', text: '…', run: mimesBeaten },
+        { do: 'go', text: 'Take the {key}Pilgrims’ Way{/} north, towards the Dawn Monastery', at: MIMES, r: 7, run: mimesMeet },
+        { do: 'kill', tag: 'mimes', n: 3, text: 'Beat {key}the Mime Troupe{/}: jump over the rope, hop out of the box', at: MIMES, r: 14, target: () => MIMES },
+        { do: 'scene', text: 'Watch {key}the Mime Troupe{/} give up', run: mimesBeaten },
       ],
     },
     c7_kites: {
-      title: 'The Dawn Kites', auto: true, after: 'c7_mimes', lv: 31,
+      title: 'The Dawn Kites',
+      brief: 'The Lantern Pagoda opens only to the light of dawn, and the Murk hides it. Fly a {key}kite{/} above the Murk to bring the morning down.',
+      auto: true, after: 'c7_mimes', lv: 31,
       steps: [
-        { do: 'talk', npc: 'sen', text: 'Ask at the Dawn Monastery about the sealed Pagoda', run: abbotTalk },
-        { do: 'kite', text: 'Fly your Dawn Kite above the Murk (hold to reel in, let go to let out)', at: KITES, r: 8, climb: 0.075, gust: 1.1, model: buildKite },
-        { do: 'scene', text: '…', run: dawnColumn },
+        { do: 'talk', npc: 'sen', text: 'Talk to {key}Abbot Sen{/} at the {key}Dawn Monastery{/}, to the north', run: abbotTalk },
+        { do: 'kite', text: 'Fly your kite higher than the Murk, in the {key}field to the east{/}', at: KITES, r: 8, climb: 0.075, gust: 1.1, model: buildKite },
+        { do: 'scene', text: 'Watch the dawn open the {key}Lantern Pagoda{/}', run: dawnColumn },
       ],
     },
     c7_pagoda: {
-      title: 'The Lantern Pagoda', auto: true, after: 'c7_kites', lv: 32,
+      title: 'The Lantern Pagoda',
+      brief: 'The Pagoda is open. Climb to its roof, free {key}Old Lucky{/} the paper dragon from the gloom, and relight the Dawn Hearth.',
+      auto: true, after: 'c7_kites', lv: 32,
       steps: [
-        { do: 'go', text: 'Enter the Lantern Pagoda', at: PAGODA_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('lanternpagoda'); else S.flag('dawnLit'); } },
-        { do: 'dungeon', id: 'lanternpagoda', text: 'Climb the Lantern Pagoda — and bring Old Lucky back' },
+        { do: 'go', text: 'Enter the {key}Lantern Pagoda{/}, on the monastery’s court', at: PAGODA_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('lanternpagoda'); else S.flag('dawnLit'); } },
+        { do: 'dungeon', id: 'lanternpagoda', text: 'Climb to the roof of the Pagoda and free {key}Old Lucky{/} from the gloom' },
       ],
     },
     c7_festival: {
-      title: 'The Lantern Festival', auto: true, after: 'c7_pagoda', lv: 33,
+      title: 'The Lantern Festival',
+      brief: 'The sun is back over the Dawnlands. Tonight Lanternport holds its {key}Lantern Festival{/}: go back down to the harbour square.',
+      auto: true, after: 'c7_pagoda', lv: 33,
       steps: [
-        { do: 'go', text: 'Back to Lanternport for the Lantern Festival', at: FESTIVAL, r: 4, run: festival },
+        { do: 'go', text: 'Go back to {key}Lanternport{/}, on the harbour square, for the festival', at: FESTIVAL, r: 4, run: festival },
       ],
       next: 8,
     },
     // ---- side quests
     c7_riddles: {
-      title: 'Brother Bao’s Vow', kind: 'side', giver: 'bao', after: 'c7_mimes', lv: 31, dust: 25,
+      title: 'Brother Bao’s Vow',
+      brief: 'Brother Bao, on the Pilgrims’ Way, speaks only in riddles. Answer his {key}three riddles{/}.',
+      kind: 'side', giver: 'bao', after: 'c7_mimes', lv: 31, dust: 25,
       offer: async (S) => {
-        await S.say('bao', 'Halt, traveller! I have taken a vow of riddles. I may say nothing that is not a riddle. This is very inconvenient at breakfast.', { expr: 'happy' });
-        await S.say('bao', 'Answer three, and I shall… also be very pleased. Are you ready? You are ready.', { expr: 'smug' });
+        await S.say('bao', 'Halt! I have taken a vow: I speak only in riddles. It is very inconvenient at breakfast.', { expr: 'happy' });
+        await S.say('bao', 'Answer my {key}three riddles{/}, and I shall be very pleased.', { expr: 'smug' });
       },
       steps: [
-        { do: 'talk', npc: 'bao', text: 'Answer Brother Bao’s three riddles', run: riddles },
+        { do: 'talk', npc: 'bao', text: 'Answer the {key}three riddles{/} of Brother Bao, on the Pilgrims’ Way', run: riddles },
       ],
     },
     // ---- a mini-game, to play again and again (World v7 M13): the fog blows the lamps out
     c7_lamplight: {
-      title: 'Lamplighting', kind: 'side', repeat: true, giver: 'hoshi', after: 'c7_festival', lv: 32, dust: 20,
+      title: 'Lamplighting',
+      brief: 'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.',
+      kind: 'side', repeat: true, giver: 'hoshi', after: 'c7_festival', lv: 32, dust: 20,
       offer: async (S) => {
-        await S.say('hoshi', 'Every few nights the fog creeps back up the quay and blows my lamps out. Old habits. Its, not mine.', { expr: 'worried' });
-        await S.say('hoshi', 'Relight them all — quay to hall — before your lantern gutters. Mind the moths. The harbour keeps score, you know. The harbour always keeps score.', { expr: 'smug' });
+        await S.say('hoshi', 'Some nights, the fog comes back and blows my lamps out.', { expr: 'worried' });
+        await S.say('hoshi', 'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.', { expr: 'smug' });
       },
       steps: [
-        { do: 'lamps', text: 'Relight Lanternport’s lamps before the fog wins', lamps: LAMPS, start: LP_LAND, light: 10, glow: 3.8, moths: { every: 4, max: 3, level: 31 }, model: buildStreetLamp },
-        { do: 'talk', npc: 'hoshi', text: 'Tell Hoshi the lamps are lit', run: async (S) => {
+        { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 10, glow: 3.8, moths: { every: 4, max: 3, level: 31 }, model: buildStreetLamp },
+        { do: 'talk', npc: 'hoshi', text: 'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit', run: async (S) => {
           if (S.plays('c7_lamplight')) await S.say('hoshi', 'Lit again, and quicker. The fog is starting to take it personally.', { expr: 'happy' });
-          else await S.say('hoshi', 'Look at that. Every lamp on the quay, and not a moth singed. My old teacher would have given you a biscuit. I’ll give you two.', { expr: 'love' });
+          else await S.say('hoshi', 'Every lamp is lit! My old teacher would have given you a biscuit: I’ll give you two.', { expr: 'love' });
         } },
       ],
     },
     c7_mirror: {
-      title: 'The Salt Painter’s Reflections', kind: 'side', giver: 'blanche', after: 'c7_lamps', lv: 32, dust: 25,
+      title: 'The Salt Painter’s Reflections',
+      brief: 'On the Saltmirror Flats, Blanche sees {key}three things{/} in the reflection that are not there above. Find them and bring them to her.',
+      kind: 'side', giver: 'blanche', after: 'c7_lamps', lv: 32, dust: 25,
       offer: blancheOffer,
       steps: [
-        { do: 'collect', text: 'Find the three things that exist only in the Saltmirror’s reflection', item: 'Reflection', n: 3, spots: REFLECT, model: buildReflection, verb: 'Reach in', hint: 'Something shows in the mirror — but nothing above it' },
-        { do: 'talk', npc: 'blanche', text: 'Bring them to Blanche at the Saltworks', run: blancheDone },
+        { do: 'collect', text: 'Find the {key}three reflections{/} on the Saltmirror Flats, around the Saltworks', item: 'Reflection', n: 3, spots: REFLECT, model: buildReflection, verb: 'Reach in', hint: 'Something shows in the mirror — but nothing above it' },
+        { do: 'talk', npc: 'blanche', text: 'Bring them to {key}Blanche{/}, at the Saltworks', run: blancheDone },
       ],
     },
   },

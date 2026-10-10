@@ -21,17 +21,17 @@ export const LANTERNPAGODA = {
   start: [20, 144],
   rooms: [
     { id: 'gate', x: 12, z: 136, w: 16, h: 12, kind: 'start',
-      said: 'The Lantern Pagoda. Paper walls, red pillars — and the morning, caught in a golden lens, waiting to be let in.',
+      said: 'The Lantern Pagoda. Climb to the roof: Old Lucky waits up there.',
       props: [['plantern', 13.5, 138], ['plantern', 25.5, 138], ['incense', 20, 138], ['bonsai', 14, 145.5], ['bonsai', 26, 145.5]] },
     // (one mirror: turn it and the lotus blooms)
     { id: 'hall', x: 8, z: 110, w: 24, h: 18, kind: 'beam', sun: [9.5, 118, 'e'], mirrors: [[25, 118, 1]], lotus: [[25, 112.5]], opens: ['g2'],
-      said: 'The Hall of Mirrors. The dawn comes in through the lens and runs along the floor. Step on a mirror’s plate to turn it.',
+      said: 'The Hall of Mirrors. Step on the plate in front of a mirror to turn it, and send the beam to the lotus lantern.',
       done: 'The lotus lantern blooms — the doors open!',
       props: [['plantern', 10, 112], ['plantern', 30, 112], ['gong', 27, 125], ['scroll', 13, 111.4], ['scroll', 27, 111.4], ['teatable', 13, 125]] },
     // (paper screens across the light: it burns its way through, in order)
     { id: 'screens', x: 6, z: 84, w: 28, h: 20, kind: 'beam', sun: [32.5, 100, 'w'], mirrors: [[26, 100, 0], [26, 89, 0]],
       screens: [[26, 95, 'x', 3], [16, 89, 'z', 3]], lotus: [[9.5, 89]], opens: ['g3'],
-      said: 'Paper screens. Paper burns. The morning is very, very hot up close.',
+      said: 'Paper screens block the way. Turn the beam onto them: paper burns.',
       done: 'Through the screens — the lotus blooms!',
       props: [['plantern', 8, 86], ['plantern', 32, 86], ['incense', 20, 102], ['bonsai', 8, 102], ['scroll', 20, 85.4]] },
     { id: 'ink', x: 8, z: 60, w: 24, h: 18, kind: 'fight', foesList: ['inkimp', 'inkimp', 'inkimp', 'paperlantern', 'paperlantern', 'paperbat', 'paperbat'], shout: 'Ink imps have been painting the walls — in gloom!', chest: [28, 63],
@@ -39,7 +39,7 @@ export const LANTERNPAGODA = {
     // (a prism splits the light in two: both lotuses at once)
     { id: 'split', x: 4, z: 30, w: 32, h: 24, kind: 'beam', sun: [35.5, 50, 'w'], prisms: [[20, 44]], mirrors: [[20, 50, 0], [8, 44, 0], [32, 44, 1]],
       screens: [[26, 44, 'z', 3]], lotus: [[8, 34], [32, 34]], opens: ['g5'],
-      said: 'A crystal on a stand: it splits whatever light it’s given. Two lotuses, two beams.',
+      said: 'A crystal splits the beam in two. Light both lotus lanterns at the same time.',
       done: 'Both lotuses bloom — the way to the roof opens!',
       props: [['plantern', 6, 32], ['plantern', 34, 32], ['plantern', 6, 52], ['plantern', 34, 52], ['incense', 14, 50], ['bonsai', 26, 50]] },
     // (the roof: the Dawn Mirror, and Old Lucky)
