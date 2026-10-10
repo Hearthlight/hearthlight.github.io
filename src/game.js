@@ -12,7 +12,7 @@ import { World } from './scenes/world.js';
 import { Dialogue } from './ui/dialogue.js';
 import { Creator } from './ui/creator.js';
 import { panel, button, UI, fitText, bindInput, ctl, device, closeButton, tc, keyHint, isFace } from './ui/ui.js';
-import { bigButton } from './ui/big.js';
+import { bigButton, bigLines, drawLines } from './ui/big.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
 import { newState, loadGame, saveGame, hasSave, loadSettings, saveSettings, hearts } from './state.js';
@@ -412,6 +412,7 @@ export class Game {
   playBox(W, top, bottom) {
     const P = this.play, rows = this.playRows(), touch = this.input.touchMode, story = P.step === 'story';
     const head = P.step === 'what' ? t('What would you like to play?') : P.step === 'who' ? P.exp.name() : story ? t('Continue a story, or begin a new one') : t('Your cove');
+    if (touch) return this.playBoxTouch(W, top, bottom, rows, head);
     // (a card no wider than it needs, nor than a comfortable line: a story’s players and its date
     // want a longer one)
     const need = (r) => (r.story ? Math.max(measure(r.name) + measure(r.when) + 30, measure(r.sub) + 18) : Math.max(measure(r.name), measure(r.sub))) + 44;
@@ -428,6 +429,7 @@ export class Game {
     return { rows, head, pw, lines, note, hs, gap, ph, px, py, fits: ph <= bottom - top };
   }
   drawPlay(ctx, W, box) {
+    if (box.touch) { this.drawPlayTouch(ctx, W, box); return; }
     const P = this.play, { rows, head, pw, lines, note, hs, gap, ph, px, py } = box, touch = this.input.touchMode;
     const back = t('Back'), bw = measure(back) + 14;
     panel(ctx, px, py, pw, ph);
@@ -475,7 +477,8 @@ export class Game {
     if (P.del) this.drawPlayDelete(ctx, W, py + Math.round(ph / 2));
   }
   drawPlayDelete(ctx, W, cy) {
-    const D = this.play.del, H = this.display.h, yes = t('Delete'), no = t('Keep this story'), bh = this.input.touchMode ? 18 : 14;
+    if (this.input.touchMode) { this.drawPlayDeleteTouch(ctx, W, cy); return; }
+    const D = this.play.del, H = this.display.h, yes = t('Delete'), no = t('Keep this story'), bh = 14;
     ctx.fillStyle = 'rgba(20,14,28,0.5)'; ctx.fillRect(0, 0, W, H);
     const bw = Math.max(70, measure(yes) + 16, measure(no) + 16), pw = Math.min(W - 12, Math.max(250, bw * 2 + 50));
     const who = [storyWho(D.story, (x) => measure(x) <= pw - 90), storyLevel(D.story)].filter(Boolean).join(' · ');
@@ -494,6 +497,141 @@ export class Game {
     button(ctx, x0, y, bw, bh, yes, { hot: D.sel === 0, color: D.sel === 0 ? '#c8454f' : null });
     button(ctx, x1, y, bw, bh, no, { hot: D.sel === 1 });
     D.rects = [{ x: x0, y, w: bw, h: bh, i: 0 }, { x: x1, y, w: bw, h: bh, i: 1 }];
+  }
+
+  // ---- the same card under a finger, read at arm’s length: the choices’ names twice as big, rows
+  // and a story’s ✕ a thumb can’t miss, a real Back button. A saved story says « Chapter 3 » big, then
+  // its title, who played and how far — under it on a narrow card, beside it on a wide one (a phone
+  // on its side, where four stories and « New story » must fit); two choices that don’t fit one
+  // above the other sit side by side
+  playBoxTouch(W, top, bottom, rows, head) {
+    const P = this.play, story = P.step === 'story', room = bottom - top, wide = W >= 420;
+    const note = P.error ? wrap(P.error, Math.min(W - 12, 300) - 20).slice(0, 3) : [];
+    const backH = 22, foot = (note.length ? note.length * 9 + 4 : 0) + backH + 9;
+    const parts = rows.map((r) => {
+      if (!r.story) return null;
+      const big = r.story.begun ? t('Chapter {n}', { n: r.story.ch }) : '';
+      return { big, title: big && r.name.startsWith(big) ? r.name.slice(big.length).replace(/^[\s—–:·-]+/, '') : r.name };
+    });
+    const bigW = Math.max(0, ...parts.map((q) => (q ? measure(q.big, 2) : 0)));
+    const measured = (pw, side, cuts) => {
+      const inner = pw - 16, cw = side ? Math.floor((inner - 6) / 2) : inner, tw = cw - 24, heads = wrap(head, inner - 8).slice(0, 2), headH = 10 + heads.length * 10 + 2;
+      // (a story’s lines beside its chapter when the card is wide enough for a title there)
+      const beside = story && tw - 28 >= bigW + 8 + 150;
+      let box = null;
+      for (const [pad, cut] of cuts) {
+        const gap = pad > 4 ? 4 : 2;
+        const lines = rows.map((r) => (r.story ? [] : wrap(r.sub, tw).slice(0, cut)));
+        let hs = rows.map((r, i) => (r.story ? (beside ? 18 : 34) : 16 + lines[i].length * 9) + pad);
+        if (side) hs = hs.map(() => Math.max(...hs));
+        const ph = headH + (side ? hs[0] + gap : hs.reduce((a, h) => a + h + gap, 0)) + foot;
+        box = { touch: true, rows, heads, headH, pw, cw, tw, lines, hs, gap, note, parts, bigW, beside, side, ph, fits: ph <= room };
+        if (box.fits) break;
+      }
+      return box;
+    };
+    // (what each choice is, said whole: one above the other, else side by side; cut to a line only
+    // where nothing else fits — « New story » under four stories, or a card that has the whole screen)
+    const pw = Math.min(W - 12, wide && story ? 460 : 300), whole = [[10, 3], [7, 3], [4, 3]], tight = [[4, 1], [2, 1]];
+    let box = measured(pw, false, story ? [...whole, ...tight] : whole);
+    if (!box.fits && wide && !story && rows.length === 2) { const two = measured(Math.min(W - 16, 440), true, whole); if (two.fits) box = two; }
+    if (!box.fits && !story && top < 20) { const one = measured(pw, false, tight); if (one.fits) box = one; }
+    box.px = Math.round(W / 2 - box.pw / 2);
+    box.py = Math.round(Math.max(top, Math.min(bottom - box.ph, (top + bottom) / 2 - box.ph / 2)));
+    return box;
+  }
+  drawPlayTouch(ctx, W, box) {
+    const P = this.play, { rows, heads, headH, pw, cw, lines, hs, gap, note, parts, bigW, beside, side, ph, px, py } = box;
+    panel(ctx, px, py, pw, ph);
+    heads.forEach((l, k) => drawText(ctx, l, W / 2, py + 9 + k * 10, { color: '#8a5234', align: 'center' }));
+    this.playRects = [];
+    let y = py + headH;
+    rows.forEach((r, i) => {
+      const on = P.sel === i, h = hs[i], x = px + 8 + (side ? i * (cw + 6) : 0), tx = x + 20, mid = y + Math.round(h / 2);
+      ctx.fillStyle = on ? UI.sel : UI.paperShade; ctx.fillRect(x, y, cw, h);
+      ctx.fillStyle = r.off ? '#c9b89a' : ['#8fd67a', '#ffd66b', '#9fdcff', '#f59ac8'][i % 4]; ctx.fillRect(x, y, 3, h);
+      if (on) drawText(ctx, '♥', x + 9, mid - 4, { color: r.off ? '#b8a48a' : '#ec5f73' });
+      else if (r.one && !r.off) { ctx.fillStyle = '#b8862a'; ctx.fillRect(x + 9, mid - 1, 7, 1); ctx.fillRect(x + 12, mid - 4, 1, 7); }
+      if (r.story) {
+        // its ✕, a button of its own at the row’s end (it asks before it deletes)
+        const q = parts[i], dx = x + cw - 24, dy = mid - 10, tw = dx - 4 - tx, lv = storyLevel(r.story), whenW = measure(r.when);
+        ctx.fillStyle = '#5a3b2a'; ctx.fillRect(dx + 1, dy, 18, 20); ctx.fillRect(dx, dy + 1, 20, 18);
+        ctx.fillStyle = '#c9a77c'; ctx.fillRect(dx + 1, dy + 1, 18, 18);
+        ctx.fillStyle = '#e0c89a'; ctx.fillRect(dx + 1, dy + 1, 18, 1);
+        ctx.fillStyle = '#6b4330';
+        for (let k = -3; k <= 3; k++) for (const o of [9, 10]) { ctx.fillRect(dx + o + k, dy + 10 + k, 1, 1); ctx.fillRect(dx + o + k, dy + 9 - k, 1, 1); }
+        this.playRects.push({ x: dx - 4, y, w: 28, h, i, del: true });
+        const who = (room) => [storyWho(r.story, (v) => measure(v) <= room - measure(' · ' + lv)), lv].filter(Boolean).join(' · ');
+        if (beside) {
+          // (every chapter’s lines start in one column; a story that has not begun has the row’s width)
+          const sx = q.big ? tx + bigW + 8 : tx, sw = tw - (sx - tx), ty = mid - 9;
+          if (q.big) drawText(ctx, q.big, tx, mid - 7, { color: UI.ink, scale: 2 });
+          drawText(ctx, r.when, tx + tw, ty, { color: UI.inkSoft, align: 'right' });
+          drawText(ctx, fitText(q.title, sw - whenW - 8), sx, ty, { color: UI.ink });
+          drawText(ctx, fitText(who(sw), sw), sx, ty + 9, { color: UI.inkSoft });
+        } else if (q.big) {
+          const ty = mid - 17;
+          drawText(ctx, r.when, tx + tw, ty + 4, { color: UI.inkSoft, align: 'right' });
+          drawText(ctx, q.big, tx, ty, { color: UI.ink, scale: 2 });
+          drawText(ctx, fitText(q.title, tw), tx, ty + 17, { color: UI.ink });
+          drawText(ctx, fitText(who(tw), tw), tx, ty + 26, { color: UI.inkSoft });
+        } else {
+          // (a story that has not begun: said whole, then who played, then when — a line each)
+          const ty = mid - 14;
+          drawText(ctx, fitText(q.title, tw), tx, ty, { color: UI.ink });
+          drawText(ctx, fitText(who(tw), tw), tx, ty + 10, { color: UI.inkSoft });
+          drawText(ctx, fitText(t('last played: {when}', { when: r.when }), tw), tx, ty + 20, { color: UI.inkSoft });
+        }
+      } else {
+        const tw = cw - 24, ns = measure(r.name, 2) <= tw ? 2 : 1, ty = mid - Math.round((16 + lines[i].length * 9) / 2);
+        drawText(ctx, fitText(r.name, tw, ns), tx, ty + (ns === 2 ? 0 : 4), { color: r.off ? UI.inkSoft : UI.ink, scale: ns });
+        lines[i].forEach((l, k) => drawText(ctx, lines[i].length === 1 ? fitText(l, tw) : l, tx, ty + 18 + k * 9, { color: UI.inkSoft }));
+      }
+      this.playRects.push({ x, y, w: cw, h, i });
+      if (!side) y += h + gap;
+    });
+    if (side) y += hs[0] + gap;
+    note.forEach((l, k) => drawText(ctx, l, W / 2, y + 2 + k * 9, { color: '#a8483a', align: 'center' }));
+    const back = t('Back'), bw = measure(back, 2) + 28, bx = Math.round(W / 2 - bw / 2), by = py + ph - 22 - 5;
+    bigButton(ctx, bx, by, bw, 22, back);
+    this.playRects.push({ x: bx - 4, y: by - 3, w: bw + 8, h: 28, i: -1 });
+    if (P.del) this.drawPlayDelete(ctx, W, py + Math.round(ph / 2));
+  }
+  // a question under a finger (« Delete this story? », « Start over? »): its words big, what it is
+  // about on a strip, what it costs in red, and two buttons big and well apart — side by side
+  // with room between them, else one above the other, the one that keeps things nearest the
+  // thumb. Returns the buttons’ boxes (0: yes · 1: no)
+  drawConfirmTouch(ctx, W, cy, { title, named = [], warn = '', yes, no, sel = 1 }) {
+    const H = this.display.h, bh = 26;
+    ctx.fillStyle = 'rgba(20,14,28,0.6)'; ctx.fillRect(0, 0, W, H);
+    const pw = Math.min(W - 12, 340), inner = pw - 24, T = bigLines(title, inner, 3), warns = warn ? wrap(warn, inner) : [];
+    const sc = Math.max(measure(yes, 2), measure(no, 2)) + 16 <= inner ? 2 : 1, wy = measure(yes, sc) + 24, wn = measure(no, sc) + 24, side = wy + wn + 32 <= inner;
+    const strip = named.length ? named.length * 10 + 7 : 0;
+    const ph = 10 + T.h + 8 + (strip ? strip + 6 : 0) + (warns.length ? warns.length * 10 + 8 : 2) + (side ? bh : bh * 2 + 18) + 10;
+    const px = Math.round(W / 2 - pw / 2), py = Math.round(Math.max(4, Math.min(H - ph - 4, cy - ph / 2)));
+    panel(ctx, px, py, pw, ph);
+    drawLines(ctx, T, W / 2, py + 10, { color: '#8a5234', align: 'center' });
+    let y = py + 10 + T.h + 8;
+    if (strip) {
+      ctx.fillStyle = UI.paperShade; ctx.fillRect(px + 10, y, pw - 20, strip);
+      ctx.fillStyle = '#ffd66b'; ctx.fillRect(px + 10, y, 3, strip);
+      named.forEach((l, i) => drawText(ctx, l, W / 2, y + 5 + i * 10, { color: i ? UI.inkSoft : UI.ink, align: 'center' }));
+      y += strip + 6;
+    }
+    warns.forEach((l, i) => drawText(ctx, l, W / 2, y + i * 10, { color: '#a8483a', align: 'center' }));
+    y += warns.length ? warns.length * 10 + 8 : 2;
+    const R = side ? [{ x: px + 12, y, w: wy, h: bh }, { x: px + pw - 12 - wn, y, w: wn, h: bh }] : [{ x: px + 12, y, w: inner, h: bh }, { x: px + 12, y: y + bh + 18, w: inner, h: bh }];
+    // (a gamepad on a touch screen: a gold edge round the button under the hand)
+    if (device() !== 'touch') { const q = R[sel]; ctx.fillStyle = '#e0a526'; ctx.fillRect(q.x - 2, q.y - 2, q.w + 4, q.h + 5); }
+    bigButton(ctx, R[0].x, R[0].y, R[0].w, bh, yes, { color: '#c8454f', scale: sc });
+    bigButton(ctx, R[1].x, R[1].y, R[1].w, bh, no, { color: '#4f955a', scale: sc });
+    return R.map((q, i) => ({ x: q.x - 2, y: q.y - 3, w: q.w + 4, h: q.h + 6, i }));
+  }
+  drawPlayDeleteTouch(ctx, W, cy) {
+    const D = this.play.del, inner = Math.min(W - 12, 340) - 24;
+    const who = [storyWho(D.story, (x) => measure(x) <= inner - 70), storyLevel(D.story)].filter(Boolean).join(' · ');
+    const named = [fitText(storyName(D.story), inner - 12), who, t('last played: {when}', { when: storyWhen(D.story) })].filter(Boolean);
+    D.rects = this.drawConfirmTouch(ctx, W, cy, { title: t('Delete this story?'), named, warn: t('It cannot be recovered.'), yes: t('Delete'), no: t('Keep this story'), sel: D.sel });
   }
 
   // ------------------------------------------------------------------ party mode
@@ -589,8 +727,9 @@ export class Game {
       drawText(ctx, label, W / 2 + 4 * ms, y, { color: on ? '#fff3c4' : '#d9c8b0', align: 'center', shadow: '#2a1f33', scale: ms });
       this.titleRects.push({ x: mx, y: ry, w: mw, h: rh - 2, i });
     });
-    if (this.confirmNew) {
-      const yes = t('Start over'), no = t('Keep it'), bh = this.input.touchMode ? 22 : 14;
+    if (this.confirmNew && touch) this.confirmRects = this.drawConfirmTouch(ctx, W, Math.round(H / 2), { title: t('Start over? Your saved cove will be lost.'), yes: t('Start over'), no: t('Keep it'), sel: this.confirmSel });
+    else if (this.confirmNew) {
+      const yes = t('Start over'), no = t('Keep it'), bh = 14;
       const bw = Math.max(70, measure(yes) + 12, measure(no) + 12);
       const pw = Math.min(W - 12, Math.max(210, bw * 2 + 70)), ph = 42 + bh;
       const msg = wrap(t('Start over? Your saved cove will be lost.'), pw - 16);
