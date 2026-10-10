@@ -23,12 +23,12 @@ export const FORGEHEART = {
   door: FORGE_DOOR,
   start: [28, 189],
   rooms: [
-    { id: 'rim', x: 20, z: 180, w: 16, h: 14, kind: 'start', ground: 'ash', said: 'The Forge Heart. The old smiths’ way down into Emberpeak — the air shimmers, the rocks tick in the heat.',
+    { id: 'rim', x: 20, z: 180, w: 16, h: 14, kind: 'start', ground: 'ash', said: 'The Forge Heart: the old smiths’ way down into the crater, where the Duchess sings.',
       props: [['anvil', 22.5, 184], ['anvil', 33.5, 186, 0.8], ['brazier', 23, 190], ['brazier', 33, 190]] },
     // (one vent over a band of lava: stand on it when it blows)
     { id: 'moat', x: 12, z: 152, w: 32, h: 20, kind: 'vent', lavas: [[28, 161, 16, 2.6, 'rect']], goal: [28, 155.5], goalZ: 158.2,
       vents: [{ at: [28, 167], to: [28, 155.5], period: 3.2 }], back: [28, 169.5],
-      said: 'A river of lava, and a vent in the rock that breathes. Stand on it when it blows.',
+      said: 'A river of lava! Stand on the vent when it blows: it throws you across.',
       props: [['anvil', 16, 168], ['brazier', 40, 168], ['anvil', 40, 155], ['brazier', 16, 155]] },
     { id: 'foundry', x: 10, z: 126, w: 36, h: 18, kind: 'fight', ground: 'basalt', foesList: ['imp', 'imp', 'slug', 'slug', 'knight', 'imp'], shout: 'Magma imps in the old foundry — and they’ve lit the furnaces!', chest: [38, 129],
       props: [['anvil', 14, 130], ['anvil', 42, 140], ['furnace', 20, 129], ['furnace', 36, 140], ['brazier', 28, 142]] },
@@ -39,7 +39,7 @@ export const FORGEHEART = {
         { at: [28, 115.6], cap: [25.4, 117.6], tos: [[28, 110.5, 1], [28, 106.5, 1], [28, 101.8]], period: 3.4, phase: 1.1 },
         { at: [40, 115.6], cap: [42.6, 117.6], tos: [[38, 110.5, 1], [36, 106.5, 1], [34, 101.8]], period: 3.4, phase: 2.2 },
       ],
-      said: 'Three vents, one great lake. Each has a stone cap on a lever. The more you cap, the harder the others blow.', short: 'Not far enough — into the lava! Back to the rocks.',
+      said: 'Three vents, one lake of lava. Shut two with their levers: the third throws you across.', short: 'Not far enough — into the lava! Back to the rocks.',
       done: 'Across the lake!',
       props: [['brazier', 10, 118], ['brazier', 46, 118], ['anvil', 12, 101.5], ['anvil', 44, 101.5]] },
     // (a chain: vent to islet to vent, over a lava river — in rhythm)
@@ -49,7 +49,7 @@ export const FORGEHEART = {
         { at: [28, 81.5], to: [28, 72], period: 3, phase: 1.8 },
         { at: [28, 72], to: [28, 63], period: 3, phase: 0.5 },
       ],
-      said: 'Islets in a river of lava, each with a vent. Ride them one after another — keep to the rhythm.',
+      said: 'Islets in the lava, a vent on each. Ride them one after another, in rhythm.',
       props: [['brazier', 20, 90], ['brazier', 36, 90], ['anvil', 21, 62], ['brazier', 35, 62]] },
     // (Crumble’s Snuffbot Mk II: vents in the floor — lure it onto one when it blows)
     { id: 'snuffbot', x: 10, z: 34, w: 36, h: 20, kind: 'vent', ground: 'basalt',
