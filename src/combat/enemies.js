@@ -15,7 +15,6 @@ export const ENEMIES = {
   biggloom: { name: 'Big Gloomling', hp: 75, speed: 1.7, r: 0.52, h: 1.1, dmg: 14, xp: 14, cost: 3, knockRes: 0.5 },
   fox: { name: 'Gloomy Fox', hp: 34, speed: 3.9, r: 0.32, h: 0.7, dmg: 7, xp: 9, cost: 2, animal: 'fox', knockRes: 0.1 },
   stag: { name: 'Gloomy Stag', hp: 85, speed: 2.2, r: 0.5, h: 1.3, dmg: 18, xp: 16, cost: 4, animal: 'deer', knockRes: 0.6 },
-  crow: { name: 'Gloom Crow', hp: 22, speed: 3.2, r: 0.32, h: 0.5, dmg: 9, xp: 8, cost: 2, flying: true, knockRes: 0 },
   puffcap: { name: 'Puffcap', hp: 34, speed: 0, r: 0.38, h: 0.9, dmg: 7, xp: 8, cost: 2, knockRes: 1 },
   shellback: { name: 'Shellback', hp: 75, speed: 1.35, r: 0.56, h: 0.8, dmg: 12, xp: 15, cost: 4, animal: 'crab', armor: 'front', knockRes: 0.7 },
   boss: { name: 'Grumblecloud', hp: 650, speed: 1.6, r: 1.3, h: 1.4, dmg: 22, xp: 120, cost: 99, boss: true, flying: true, knockRes: 1 },
@@ -69,29 +68,6 @@ function sporelingModel(r3d) {
   const g = new THREE.Group();
   g.add(inner);
   g.userData.body = body;
-  return g;
-}
-
-function crowModel(r3d) {
-  const g = new THREE.Group();
-  const body = new THREE.Group();
-  g.add(body);
-  const black = mat(r3d, '#2e2438'), dark = mat(r3d, '#403250');
-  box(body, 0.26, 0.2, 0.42, black, 0, 0, 0);
-  box(body, 0.2, 0.2, 0.2, dark, 0, 0.1, 0.24);
-  box(body, 0.06, 0.05, 0.14, mat(r3d, '#d9a441'), 0, 0.08, 0.4);
-  for (const sx of [-0.06, 0.06]) box(body, 0.04, 0.04, 0.02, mat(r3d, '#ff6b8b', '#ff4a6a', 1.2), sx, 0.15, 0.34);
-  box(body, 0.16, 0.04, 0.2, black, 0, 0.02, -0.28);
-  const wings = [];
-  for (const sx of [-1, 1]) {
-    const w = new THREE.Group();
-    w.position.set(sx * 0.13, 0.05, 0);
-    box(w, 0.36, 0.03, 0.26, dark, sx * 0.18, 0, 0);
-    body.add(w);
-    wings.push(w);
-  }
-  g.userData.body = body;
-  g.userData.wings = wings;
   return g;
 }
 
@@ -207,16 +183,17 @@ export class Enemy {
     this.obj = MODELS[type] ? MODELS[type](r3d)
       : type === 'sporeling' ? sporelingModel(r3d)
       : d.animal ? gloomAnimal(r3d, C.world.critters, d.animal)
-      : type === 'crow' ? crowModel(r3d)
-        : type === 'puffcap' ? puffcapModel(r3d)
-          : type === 'boss' ? bossModel(r3d)
-            : gloomlingModel(r3d, type === 'biggloom');
+      : type === 'puffcap' ? puffcapModel(r3d)
+        : type === 'boss' ? bossModel(r3d)
+          : gloomlingModel(r3d, type === 'biggloom');
     this.mats = [];
     this.obj.traverse((m) => { if (m.isMesh && m.material && m.material.emissive) this.mats.push({ m: m.material, e: m.material.emissive.clone(), i: m.material.emissiveIntensity }); });
     this.obj.position.set(x, this.y, z);
     this.brain = BRAINS[type] || null;
     if (this.brain && this.brain.init) this.brain.init(this);
     if (this.brain) this.obj.position.set(x, this.y, z);
+    // (a brain may start in a state of its own: asleep, it keeps it for when it wakes)
+    if (opts.sleep && this.state !== 'sleep') { this.wakeTo = this.state; this.state = 'sleep'; }
     if (type === 'boss') { this.y = 3.4; this.phase2 = false; this.cycle = 0; this.tiredT = 9; }
     if (type === 'puffcap') { this.pop = 0; this.state = opts.sleep ? 'sleep' : 'pop'; this.shots = 0; }
     C.root.add(this.obj);
@@ -341,26 +318,6 @@ export class Enemy {
         if (!moved) { this.stun = 1.7; this.state = 'chase'; this.timer = rand(2, 3); C.shakeAt(this, 0.3); C.sfx('bonk', this); C.bubble(this, 'BONK!'); }
         else if (this.timer <= 0) { this.state = 'chase'; this.timer = rand(1.8, 3.2); }
       }
-    } else if (T === 'crow') {
-      if (this.state === 'chase' || this.state === 'sleep') {
-        this.ang = (this.ang ?? Math.random() * 6) + dt * 1.3;
-        const tx = tgt.pos.x + Math.cos(this.ang) * 3.3, tz = tgt.pos.z + Math.sin(this.ang) * 2.4;
-        C.moveEnemy(this, (tx - this.x) * dt * 2, (tz - this.z) * dt * 2, false, true);
-        this.faceTo(tx, tz);
-        this.y += (2.3 - this.y) * dt * 3;
-        if (this.timer <= 0) { this.state = 'mark'; this.timer = 0.55; this.aimAt = { x: tgt.pos.x, z: tgt.pos.z }; C.telegraphCircle(this.aimAt.x, this.aimAt.z, 0.8, 0.55); }
-      } else if (this.state === 'mark') {
-        this.y += (2.8 - this.y) * dt * 4;
-        this.faceTo(this.aimAt.x, this.aimAt.z);
-        if (this.timer <= 0) { this.state = 'swoop'; this.timer = 0.75; this.from = { x: this.x, z: this.z }; this.hitOnce.clear(); C.sfx('caw', this); }
-      } else if (this.state === 'swoop') {
-        const k = 1 - this.timer / 0.75;
-        const ex = this.aimAt.x + (this.aimAt.x - this.from.x) * 0.6, ez = this.aimAt.z + (this.aimAt.z - this.from.z) * 0.6;
-        this.x = this.from.x + (ex - this.from.x) * k; this.z = this.from.z + (ez - this.from.z) * k;
-        this.y = 0.55 + Math.abs(k - 0.5) * 4.4;
-        if (this.y < 1.4) C.enemyTouch(this, d.dmg, 3, 0.6);
-        if (this.timer <= 0) { this.state = 'chase'; this.timer = rand(2.4, 3.8); }
-      }
     } else if (T === 'puffcap') {
       if (this.state === 'pop') {
         this.pop = Math.min(1, this.pop + dt * 2.5);
@@ -458,11 +415,6 @@ export class Enemy {
       body.position.y = hop * 0.14;
       body.scale.set(1 + (this.state === 'windup' ? 0.12 : 0) - hop * 0.08 + wind, 1 - (this.state === 'windup' ? 0.18 : 0) + hop * 0.12, 1 + (this.state === 'windup' ? 0.12 : 0));
       if (this.state === 'sleep') body.scale.set(1.08, 0.86 + Math.sin(t * 2) * 0.04, 1.08);
-    } else if (T === 'crow') {
-      this.obj.rotation.y = heading;
-      const flap = this.state === 'sleep' ? -0.15 : Math.sin(t * (this.state === 'swoop' ? 6 : 16));
-      u.wings[0].rotation.z = flap * 0.7; u.wings[1].rotation.z = -flap * 0.7;
-      body.rotation.x = this.state === 'swoop' ? 0.5 : 0;
     } else if (T === 'puffcap') {
       body.scale.set(1, Math.max(0.05, this.pop) * (1 - (this.squashT > 0 ? 0.2 : 0)), 1);
       if (this.squashT > 0) this.squashT -= dt;

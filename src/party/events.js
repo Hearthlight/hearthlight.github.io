@@ -1,4 +1,4 @@
-// The wild world doesn't wait for you. While exploring, every few minutes
+// The wild world doesn't wait for you. While exploring, now and then
 // something happens somewhere near the party:
 //  - a gloom invasion: a waystone out in the wild is attacked. Get there
 //    (follow the arrow), hold out through three waves, and the stone shines
@@ -10,7 +10,7 @@
 // (Weather events — gusts, blizzards, sandstorms, squalls — live in zones.js.)
 
 import { THREE } from '../render/r3d.js';
-import { ZONE_FOES, ZONE_BIG, makeElite } from '../combat/v3/bestiary.js';
+import { ZONE_FOES, ZONE_BIG, makeElite, pickFoes } from '../combat/v3/bestiary.js';
 import { MOUNTS } from './mounts.js';
 import { ZONES } from '../world/big/layout.js';
 import { TT } from '../world/tiles.js';
@@ -25,8 +25,8 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const ZNAME = Object.fromEntries(ZONES.map((z) => [z.id, z.name]));
 const NIGHT = (h) => h >= 20 || h < 6;
 
-const FIRST = [150, 240];        // seconds of roaming before the first big event
-const EVERY = [260, 420];        // then between events
+const FIRST = [600, 900];        // seconds of roaming before the first big event
+const EVERY = [900, 1500];       // then between events
 const WAVES = 3;
 const REACH = 16;                // someone this close starts the defence
 const HERD = { stag: 'stags', boar: 'boars', hen: 'giant hens', bear: 'bears', frog: 'big frogs' };
@@ -159,8 +159,7 @@ export class Events {
     const lv = this.level(), n = this.live().length || 1;
     const pool = ZONE_FOES[I.zone] || ZONE_FOES.steppe;
     const count = Math.min(10, 2 + I.wave + Math.floor(n * 0.8) + Math.floor(lv / 4));
-    const types = [];
-    for (let i = 0; i < count; i++) types.push(pick(pool));
+    const types = pickFoes(pool, count, n);
     if (I.wave === WAVES && ZONE_BIG[I.zone]) types[0] = ZONE_BIG[I.zone];
     types.forEach((ty, i) => {
       const a = (i / types.length) * Math.PI * 2 + rnd(-0.3, 0.3), r = rnd(6, 9);
@@ -169,7 +168,7 @@ export class Events {
       e.invasion = true;
       I.foes.push(e);
     });
-    if (I.wave >= 2 && lv >= 3) { const e = I.foes.find((q) => q.alive && q.type !== ZONE_BIG[I.zone]); if (e) makeElite(e); }
+    if (I.wave >= 2 && lv >= 3) { const e = I.foes.find((q) => q.alive && q.type !== ZONE_BIG[I.zone] && !q.def.brute); if (e) makeElite(e); }
     P.toast(t('Wave {n}/{total}!', { n: I.wave, total: WAVES }), '#ff9aa8');
     audio.sfx('growl', { volume: 0.7 });
   }

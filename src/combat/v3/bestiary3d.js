@@ -163,25 +163,6 @@ export const MODELS = {
     g.userData = { body, shell, head, legs };
     return own(g);
   },
-  // a big purple sky bird with a crest
-  harpy(r3d) {
-    const g = new THREE.Group(), body = grp(g);
-    ball(body, 0.28, mat(r3d, '#5a3a8a'), 0, 0.3, 0, 0.9, 0.9, 1.3);
-    ball(body, 0.18, mat(r3d, '#7a5ab0'), 0, 0.5, 0.3);
-    box(body, 0.1, 0.07, 0.16, mat(r3d, '#f2b63d'), 0, 0.48, 0.5);
-    eyes(r3d, body, 0.56, 0.42, 0.08, 0.05, '#ff9aa8', '#ff3a5a');
-    for (let i = 0; i < 3; i++) { const f = box(body, 0.05, 0.2, 0.05, mat(r3d, '#ef6479'), 0, 0.68 + i * 0.02, 0.26 - i * 0.09); f.rotation.x = -0.4 - i * 0.2; }
-    const wings = [];
-    for (const sx of [-1, 1]) {
-      const w = grp(body, sx * 0.18, 0.36, 0);
-      box(w, 0.7, 0.05, 0.36, mat(r3d, '#4a2a7a'), sx * 0.36, 0, 0);
-      box(w, 0.3, 0.04, 0.2, mat(r3d, '#b88cf0'), sx * 0.68, 0.01, -0.06);
-      wings.push(w);
-    }
-    box(body, 0.3, 0.05, 0.3, mat(r3d, '#4a2a7a'), 0, 0.3, -0.42);
-    g.userData = { body, wings };
-    return own(g);
-  },
   // a gloomling bandit with a sling and a bag of gloom bombs
   slinger(r3d) {
     const g = new THREE.Group(), body = grp(g);
@@ -234,23 +215,6 @@ export const MODELS = {
     for (const [x, z] of [[0.1, 0.1], [-0.12, -0.2], [0.14, -0.35], [-0.08, 0.3]]) box(body, 0.16, 0.03, 0.06, mat(r3d, '#ffb040', '#ff6a1a', 1.5), x, 0.44, z);
     for (const sx of [-0.1, 0.1]) { box(body, 0.03, 0.18, 0.03, mat(r3d, '#6a2a24'), sx, 0.62, 0.46); box(body, 0.07, 0.07, 0.07, mat(r3d, '#fff3a0', '#ffd23a', 1.2), sx, 0.72, 0.46); }
     g.userData = { body };
-    return own(g);
-  },
-  // a crow crackling with storm light
-  stormcrow(r3d) {
-    const g = new THREE.Group(), body = grp(g);
-    ball(body, 0.22, mat(r3d, '#2a2a4a'), 0, 0.3, 0, 0.9, 0.9, 1.3);
-    ball(body, 0.14, mat(r3d, '#2a2a4a'), 0, 0.44, 0.24);
-    box(body, 0.08, 0.06, 0.16, mat(r3d, '#ffe066', '#ffd23a', 1), 0, 0.42, 0.42);
-    eyes(r3d, body, 0.48, 0.36, 0.06, 0.05, '#fff6a0', '#ffe066');
-    const wings = [];
-    for (const sx of [-1, 1]) {
-      const w = grp(body, sx * 0.14, 0.34, 0);
-      box(w, 0.5, 0.04, 0.26, mat(r3d, '#3a3a6a'), sx * 0.26, 0, 0);
-      box(w, 0.2, 0.05, 0.08, mat(r3d, '#ffe066', '#ffd23a', 1.2), sx * 0.4, 0.01, 0.08);
-      wings.push(w);
-    }
-    g.userData = { body, wings };
     return own(g);
   },
   // a carved gloom totem that shields its friends

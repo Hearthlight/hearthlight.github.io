@@ -116,7 +116,7 @@ export function legendKeys(P) {
   if (P.travel) key('stone', 'Waystone', P.travel.attuned().length, P.travel.stones.length);
   if (P.secrets) key('secret', 'Sealed chest', P.secrets.list.filter((q) => P.secrets.save.solved[q.id]).length, P.secrets.list.length);
   if (P.races) key('race', 'Race', P.races.list.filter((c) => P.races.best[c.id]).length, P.races.list.length);
-  if (P.encounters) key('camp', 'Gloom camp', P.encounters.cleared.size, P.encounters.camps.length);
+  if (P.encounters) { const E = P.encounters.tally(); key('camp', 'Gloom camp', E.n, E.total); }
   if (P.lairs) key('lair', 'Boss lair', P.lairs.list.filter((L) => L.state === 'beaten').length, P.lairs.list.length);
   if (P.actKind === 'explore' && P.act && P.act.nests) key('nest', 'Gloom nest', P.act.nests.filter((n) => n.state === 'clean').length, P.act.nests.length);
   return keys;

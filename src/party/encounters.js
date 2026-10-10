@@ -1,12 +1,12 @@
-// Gloom camps. Out in the big world every zone has a couple of camps —
-// ragged purple tents round a gloom fire — guarded by that zone’s creatures
-// (a totem shielding them now and then, an elite once the party is strong,
-// the zone’s big one later on). Sneak up, wake them, beat them: the fire
-// turns warm again, flowers pop up and a chest tumbles out of the sky.
-// Camps come back a few minutes after everyone has left.
+// Gloom camps. Out in the big world every zone has a camp — ragged purple
+// tents round a gloom fire — guarded by a few of that zone’s creatures, a
+// brute among them now and then (or a totem shielding them, an elite, the
+// zone’s big one). They sleep until someone comes close: walk round, or wake
+// them and beat them — the fire turns warm again, flowers pop up and a chest
+// tumbles out of the sky. A camp comes back long after everyone has left.
 
 import { THREE, toon } from '../render/r3d.js';
-import { ZONE_FOES, ZONE_BIG, NEW_ENEMIES, makeElite } from '../combat/v3/bestiary.js';
+import { ZONE_FOES, ZONE_BIG, NEW_ENEMIES, makeElite, pickFoes, isBrute } from '../combat/v3/bestiary.js';
 import { ARENA_SITE, ZONES } from '../world/big/layout.js';
 import { HERDS as DINO_HERDS } from './dinos.js';
 import { TT } from '../world/tiles.js';
@@ -16,11 +16,9 @@ import { drawMarks } from './mapmarks.js';
 import { levelAt, rollLevel, killXp } from '../saga/levels.js';
 
 const ZNAME = Object.fromEntries(ZONES.map((z) => [z.id, z.name]));
-// (at night, bats come down from the trees & the cliffs to join these zones’ camps)
-const NIGHT_BATS = new Set(['deepwood', 'bouncecap', 'canyon', 'marsh']);
-// (and gloom jellyfish rise from the warm seas when someone walks these shores)
+// (gloom jellyfish rise from the warm seas when someone walks these shores)
 const WARM = new Set(['lagoon', 'sunken', 'dino', 'sea']);
-const WAKE = 8, SPAWN = 32, DESPAWN = 48, RESPAWN = 240;
+const WAKE = 8, SPAWN = 32, DESPAWN = 48, RESPAWN = 1200;
 const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let q = Math.imul(a ^ (a >>> 15), 1 | a); q = (q + Math.imul(q ^ (q >>> 7), 61 | q)) ^ q; return ((q ^ (q >>> 14)) >>> 0) / 4294967296; }; }
@@ -39,15 +37,18 @@ export class Encounters {
     this.cleared = new Set(party.loadSave('camps', []));
     this.bloomT = 20; this.bloom = [];
     this.place();
+    // (a camp an old save cleared, and that is no more)
+    for (const id of this.cleared) if (!id.startsWith('saga:') && !this.camps.some((c) => c.id === id)) this.cleared.delete(id);
   }
 
   get big() { return this.party.big; }
 
-  // two camps per zone, in open ground, away from herds, landmarks & the Festival Ring
+  // a camp per zone, in open ground, away from herds, landmarks & the Festival Ring (two are
+  // drawn, the first is kept: every camp stays where it always was)
   place() {
     const B = this.big;
     if (!B) return;
-    const m = B.map, r = mulberry(m.seed + 4242), A = ARENA_SITE;
+    const m = B.map, r = mulberry(m.seed + 4242), A = ARENA_SITE, drawn = [];
     const herds = this.party.mounts ? this.party.mounts.wild.map((w) => w.herd) : [];
     for (const zone of Object.keys(ZONE_FOES)) {
       let made = 0;
@@ -57,7 +58,7 @@ export class Encounters {
         if (!zz || zz.id !== zone) return;
         if (((x - A.x) / (A.rx + 12)) ** 2 + ((z - A.z) / (A.rz + 12)) ** 2 < 1) return;
         if (!this.open(x, z)) return;
-        if (this.camps.some((c) => Math.hypot(c.x - x, c.z - z) < (zone === 'dino' ? 24 : 40))) return;
+        if (drawn.some((c) => Math.hypot(c.x - x, c.z - z) < (zone === 'dino' ? 24 : 40))) return;
         if (herds.some((h) => Math.hypot(h.x - x, h.z - z) < (zone === 'dino' ? 8 : 14))) return;     // (Dino Isle is small & crowded)
         if (zone === 'dino' && DINO_HERDS.some((h) => Math.hypot(h.x - x, h.z - z) < h.roam + 8)) return;   // (the gentle giants graze away from the gloom)
         if (m.pois.some((p) => Math.hypot(p.x - x, p.z - z) < (p.kind === 'rex_nest' ? 20 : 9))) return;
@@ -65,7 +66,8 @@ export class Encounters {
         const id = zone + ':' + made;
         // (each camp keeps its level, somewhere in its land’s range)
         const level = rollLevel(ZONES.find((q) => q.id === zone).lv || [1, 5], ((made * 0.618 + zone.length * 0.137 + x * 0.013) % 1 + 1) % 1);
-        this.camps.push({ id, zone, x, z, level, state: this.cleared.has(id) ? 'cleared' : 'idle', foes: [], props: null, seen: false, clearedAt: -1e9 });
+        drawn.push({ id, zone, x, z, level, state: this.cleared.has(id) ? 'cleared' : 'idle', foes: [], props: null, seen: false, clearedAt: -1e9 });
+        if (!made) this.camps.push(drawn[drawn.length - 1]);
         made++;
       };
       for (let k = 0; k < 3000 && made < 2; k++) tryAt(Math.floor(m.X0 + r() * m.W) + 0.5, Math.floor(m.Z0 + r() * m.H) + 0.5);
@@ -102,7 +104,7 @@ export class Encounters {
     if (this.bloomT > 0) return;
     this.bloomT = rand(8, 14);
     const shore = P.players.filter((p) => p.connected && p.fighter && !p.swimming && !p.vehicle && !p.indoors && B.tileAt(p.pos.x, p.pos.z) === TT.SAND && !B.inValley(p.pos.x, p.pos.z) && WARM.has((B.zoneAt(p.pos.x, p.pos.z) || {}).id));
-    if (!shore.length || Math.random() > 0.35) return;
+    if (!shore.length || Math.random() > 0.2) return;
     const p = pick(shore);
     if (C.enemies.some((e) => e.alive && e.state !== 'sleep' && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 18)) return;
     // the nearest open water, a few tiles off the beach
@@ -117,7 +119,7 @@ export class Encounters {
       const e = C.spawn('jelly', spot.x + rand(-1.6, 1.6), spot.z + rand(-1.6, 1.6), { level: rollLevel(levelAt(B, p.pos.x, p.pos.z)) });
       this.bloom.push(e);
     }
-    this.bloomT = rand(70, 110);
+    this.bloomT = rand(300, 480);
     P.toast(t('Gloom jellyfish rise from the sea!'), '#b88cf0');
     audio.sfx('blub', { volume: 0.7 });
   }
@@ -159,21 +161,19 @@ export class Encounters {
   spawn(c) {
     const P = this.party, C = P.combat;
     const lv = c.level || 1, n = C.heroesNear(c.x, c.z, 34);
-    const pool = c.pool || ZONE_FOES[c.zone];
-    // bigger camps further out, and more of them for every two heroes around
-    const count = c.saga && c.saga.n ? c.saga.n + Math.floor(n / 2) : Math.min(12, 3 + Math.min(3, Math.floor(lv / 8)) + Math.floor(n / 2));
+    const pool = c.pool || ZONE_FOES[c.zone], land = this.big && this.big.zoneAt(c.x, c.z);
+    // small camps: a place or two more further out, and one for every two heroes around — a
+    // brute takes two of them, a second brute four (bestiary.js `pickFoes`)
+    const places = Math.min(8, (c.saga && c.saga.n ? c.saga.n : 2 + Math.min(2, Math.floor(lv / 12))) + Math.floor(n / 2));
     const types = [];
-    for (let i = 0; i < count; i++) {
-      const ty = pick(pool);
+    for (const ty of pickFoes(pool, places, n, { spare: land && ZONE_FOES[land.id], named: !!c.pool })) {
       types.push(ty);
       // (little ones come in swarms)
       for (let k = 1; k < ((NEW_ENEMIES[ty] && NEW_ENEMIES[ty].swarm) || 1); k++) types.push(ty);
     }
     if (c.pool) { if (c.big) types.push(c.big); }
-    else if (lv >= 4 && ZONE_BIG[c.zone] && Math.random() < 0.5) types[0] = ZONE_BIG[c.zone];
-    const h = P.state ? P.state.hour : 12;
-    if (NIGHT_BATS.has(c.zone) && (h >= 20 || h < 5)) for (let i = 0; i < 3 + Math.floor(n / 3); i++) types.push('bat');
-    if (!c.pool && Math.random() < 0.45) types.push('totem');
+    else if (lv >= 4 && ZONE_BIG[c.zone] && !types.some(isBrute) && Math.random() < 0.35) types[0] = ZONE_BIG[c.zone];
+    if (!c.pool && Math.random() < 0.25) types.push('totem');
     c.foes = [];
     types.forEach((ty, i) => {
       const a = (i / types.length) * Math.PI * 2 + rand(-0.3, 0.3), rr = ty === 'totem' ? 0.8 : rand(1.6, 3.2);
@@ -182,9 +182,10 @@ export class Encounters {
       e.camp = c;
       c.foes.push(e);
     });
-    // an elite past the first lands, and one more for every three heroes around
-    const elites = lv >= 3 && !c.saga ? (Math.random() < 0.55 ? 1 : 0) + Math.floor(n / 3) : c.saga ? Math.floor(n / 3) : 0;
-    for (let k = 0; k < elites; k++) { const e = c.foes.find((q) => q.type !== 'totem' && !q.elite); if (e) { makeElite(e); e.level++; } }
+    // an elite now and then past the first lands, and one more for every four heroes around
+    // (never the brute: it is quite enough as it is)
+    const elites = lv >= 3 && !c.saga ? (Math.random() < 0.3 ? 1 : 0) + Math.floor(n / 4) : c.saga ? Math.floor(n / 4) : 0;
+    for (let k = 0; k < elites; k++) { const e = c.foes.find((q) => q.alive && q.type !== 'totem' && !q.elite && !q.def.brute); if (e) { makeElite(e); e.level++; } }
     c.state = 'camp';
   }
 
@@ -209,16 +210,19 @@ export class Encounters {
     this.relight(c, true);
     if (c.saga && P.saga) P.saga.onCampCleared(c);
     if (c.saga) P.showBanner(t(c.saga.done || 'The gloom is gone!'), '');
-    else P.showBanner(t('Gloom camp cleared!'), t('Camps: {n} of {total}', { n: this.camps.filter((q) => q.state === 'cleared' && !q.saga).length, total: this.camps.filter((q) => !q.saga).length }));
+    else P.showBanner(t('Gloom camp cleared!'), t('Camps: {n} of {total}', this.tally()));
     audio.jingle('questDone');
     // (now and then, once you’ve cleared a camp or two, the chest bites back)
-    if (P.act && P.act.dropChest) P.act.dropChest(c.x, c.z + 0.6, { mimic: this.cleared.size > 1 && Math.random() < 0.2 });
+    if (P.act && P.act.dropChest) P.act.dropChest(c.x, c.z + 0.6, { mimic: this.tally().n > 1 && Math.random() < 0.2 });
     for (const p of P.players) if (p.fighter && P.combat && Math.hypot(p.pos.x - c.x, p.pos.z - c.z) < 20) P.combat.gainXp(p, killXp(c.level || 1, p.fighter.level) * 3);
     P.world.fx.emit('sparkle', c.x, 1, c.z, 24, { color: '#fff3a6' });
     if (P.act && P.act.stat) for (const p of P.players) if (Math.hypot(p.pos.x - c.x, p.pos.z - c.z) < 20) P.act.stat(p, 'camps');
   }
 
   store() { this.party.writeSave('camps', [...this.cleared]); }
+
+  // how many of the lands’ camps are cleared, and of how many (the story’s own don’t count)
+  tally() { const own = this.camps.filter((c) => !c.saga); return { n: own.filter((c) => c.state === 'cleared').length, total: own.length }; }
 
   // ------------------------------------------------------------------ the camp itself
   build(c) {

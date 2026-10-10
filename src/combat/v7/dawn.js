@@ -42,8 +42,8 @@ export const DAWN_ENEMIES = {
 // which gloom lives in the Dawnlands (the Explore camps pick from these)
 export const DAWN_ZONE_FOES = {
   whale: ['murkmoth', 'reefcrab', 'jelly', 'murkmoth'],
-  harbor: ['murkmoth', 'inkimp', 'ghost', 'crow', 'murkmoth'],
-  jade: ['inkimp', 'paperlantern', 'harpy', 'paperbat', 'kite'],
+  harbor: ['murkmoth', 'inkimp', 'ghost', 'reefcrab', 'murkmoth'],
+  jade: ['inkimp', 'paperlantern', 'ogre', 'paperbat', 'gustbelly'],
   salt: ['burrower', 'murkmoth', 'slinger', 'beetle', 'paperlantern'],
 };
 

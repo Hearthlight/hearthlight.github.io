@@ -208,7 +208,7 @@ and a boss in each:
   the Gloomiest Hen, drops a hen to wear).
 - Monsters keep their land's level and grow with the heroes around them — a camp takes about as
   long to clear alone as with eight friends (a foe more for every two heroes, an elite for every
-  three, shields that grow too), and bosses get tougher still; the phones show quests, the map
+  four, shields that grow too), and bosses get tougher still; the phones show quests, the map
   and the Murk.
 
 | | |
@@ -374,9 +374,12 @@ Heroes grow to level 20. **Weapons** come in four kinds per hero, each with its 
 rolling pin's four-hit combo, a mallet that quakes, a bow, a returning boomerang, a crystal orb's
 chaining sparks, a drum's beats…), from common to legendary, with traits and legendary effects;
 **gear** adds a rune for your weapon's element and two charms, upgraded with stardust.
-Seventeen new gloom creatures each ask something different of you (burrowers, kamikaze imps,
-healers to interrupt, shield bearers, rolling beetles, sneaky ghosts…), with elites and
-**gloom camps** in every land — and five **guardians** in their lairs (the Sand Queen, the Frost
+Fifteen new gloom creatures each ask something different of you (burrowers, kamikaze imps,
+healers to interrupt, shield bearers, rolling beetles, sneaky ghosts…) and four big **brutes**
+can each be caught out (the Gloom Boar charges straight: step aside and it runs itself dizzy; pop
+the Gustbelly while it breathes in; hop the Storm Ram's rings until its wool is spent; dodge the
+Gloom Ogre's tree trunk and it sticks in the ground), with elites and a sleeping
+**gloom camp** in every land — and five **guardians** in their lairs (the Sand Queen, the Frost
 Colossus, the Frog King, the Magma Golem, the Tyrant King), three phases each, every attack
 telegraphed. They meet the party's level and size.
 
@@ -423,16 +426,15 @@ own jungle music, tropical showers, morning mist and fireflies. In solo and in P
 - **Dinosaurs to ride**: a triceratops (bring it a fern frond; its *Stampede* is a thundering
   charge) and a raptor (a fresh fish; *Pounce* leaps at the nearest gloom).
 - **Gloomy dinosaurs** guard the island's camps: raptor packs that circle and pounce, a
-  venom-spitting dilophosaurus, diving pteranodons, a club-spinning ankylosaurus, compsognathus
+  venom-spitting dilophosaurus, a club-spinning ankylosaurus, compsognathus
   swarms and a charging triceratops. Freed, they run off in their own colours — a freed
   triceratops even lets you ride it.
 - **The Tyrant King**, the island's guardian, sleeps by his nest: a crowned T-rex with three
   phases — chomps, tail sweeps (jump!), lane charges that leave him dizzy if he rams a rock, a
   bellow that calls his raptor pack and a quake that brings rocks down on everyone. Freed, he
   stomps home and dozes in his nest, where you can pat him.
-- **New gloom elsewhere**: gloom jellyfish rise from the warm seas when you walk their shores,
-  bat swarms join the woods', the canyon's and the bog's camps at night, and now and then a
-  camp's reward chest turns out to be a **mimic**.
+- **New gloom elsewhere**: now and then gloom jellyfish rise from the warm seas when you walk
+  their shores, and a camp's reward chest turns out to be a **mimic**.
 - **Companions**: a gloomy animal you free may become your friend for good — a fox, a fawn, a
   crab, a young raptor, a compy. Choose who trots along with you (or send them home) from the
   phone's **My companions** menu, in Party Mode and in solo, or on the solo Hero page; your

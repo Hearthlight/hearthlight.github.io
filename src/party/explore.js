@@ -33,14 +33,14 @@ const GOAL = 5;                                  // nests before the Grumbleclou
 const NESTS = [
   { id: 'pasture', at: [15, 44], mob: ['gloomling', 'gloomling', 'biggloom', 'gloomling'] },
   { id: 'maple', at: [24, 21], mob: ['stag', 'fox', 'gloomling', 'gloomling'] },
-  { id: 'shrine', at: [52, 25], mob: ['gloomling', 'crow', 'gloomling', 'crow'] },
+  { id: 'shrine', at: [52, 25], mob: ['gloomling', 'fox', 'gloomling', 'gloomling'] },
   { id: 'camp', at: [80, 31], mob: ['fox', 'fox', 'gloomling', 'gloomling'] },
   { id: 'grove', at: [140, 39], mob: ['puffcap', 'puffcap', 'gloomling', 'gloomling', 'gloomling'] },
   { id: 'frost', at: [205, 28], mob: ['stag', 'biggloom', 'gloomling', 'gloomling'] },
-  { id: 'blossom', at: [199, 55], mob: ['fox', 'crow', 'fox', 'gloomling'] },
-  { id: 'marsh', at: [196, 83], mob: ['shellback', 'puffcap', 'crow', 'gloomling'] },
+  { id: 'blossom', at: [199, 55], mob: ['fox', 'gloomling', 'fox', 'gloomling'] },
+  { id: 'marsh', at: [196, 83], mob: ['shellback', 'puffcap', 'gloomling', 'gloomling'] },
   { id: 'beach', at: [100, 98], mob: ['shellback', 'shellback', 'gloomling', 'gloomling'] },
-  { id: 'bluffs', at: [24, 94], mob: ['crow', 'crow', 'biggloom', 'gloomling'] },
+  { id: 'bluffs', at: [24, 94], mob: ['boar', 'biggloom', 'gloomling'] },
 ];
 // buried treasure: the storm scattered some very special hats
 const DIGS = [
@@ -498,7 +498,7 @@ export class ExploreAct {
     const cand = P.players.filter((p) => p.connected && p.fighter && !p.fighter.down && !this.nests.some((n) => n.state === 'awake' && Math.hypot(n.x - p.pos.x, n.z - p.pos.z) < 18));
     if (!cand.length) return;
     const p = pick(cand);
-    const types = night ? ['gloomling', 'gloomling', 'crow', pick(['biggloom', 'fox', 'gloomling'])] : ['gloomling', 'gloomling', pick(['fox', 'gloomling', 'crow'])];
+    const types = night ? ['gloomling', 'gloomling', 'fox', pick(['biggloom', 'fox', 'gloomling'])] : ['gloomling', 'gloomling', pick(['fox', 'gloomling'])];
     const n = P.players.filter((q) => q.connected).length;
     for (let i = 3; i < n; i += 2) types.push('gloomling');
     let spawned = 0;
@@ -840,9 +840,9 @@ export class ExploreAct {
     if (this.stage === 'gather') return t('Everyone to Starfall Hill!');
     if (this.stage === 'boss') return t('Calm the Grumblecloud!');
     if (this.inWild()) {
-      const P = this.party, E = P.encounters, L = P.lairs, S = P.secrets;
+      const P = this.party, E = P.encounters ? P.encounters.tally() : { n: 0, total: 0 }, L = P.lairs, S = P.secrets;
       return t('Wild lands: camps {a}/{b} · guardians {c}/{d} · secrets {e}/{f}', {
-        a: E ? E.cleared.size : 0, b: E ? E.camps.length : 0,
+        a: E.n, b: E.total,
         c: L ? L.list.filter((q) => q.state === 'beaten').length : 0, d: L ? L.list.length : 0,
         e: S ? Object.keys(S.save.solved).length : 0, f: S ? S.list.length + S.digs.length : 0,
       });

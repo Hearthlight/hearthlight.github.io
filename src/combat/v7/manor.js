@@ -29,9 +29,9 @@ export const MANOR_ENEMIES = {
 };
 
 export const MANOR_ZONE_FOES = {
-  moor: ['wisp', 'bogling', 'wisp', 'crow', 'bogling'],
-  prism: ['bogling', 'wisp', 'slinger', 'beetle', 'harpy'],
-  clock: ['clockwork', 'clockwork', 'knight', 'stormcrow', 'harpy'],
+  moor: ['wisp', 'bogling', 'wisp', 'boar', 'bogling'],
+  prism: ['bogling', 'wisp', 'slinger', 'beetle', 'ogre'],
+  clock: ['clockwork', 'clockwork', 'knight', 'stormram', 'ogre'],
   tundra: ['yeti', 'wisp', 'frostimp', 'clockwork', 'yeti'],
 };
 

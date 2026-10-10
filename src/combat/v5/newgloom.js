@@ -1,8 +1,6 @@
 // New gloom out in the wide world (Adventure v5):
 //   jelly    gloom jellyfish drifting over the warm coasts (Coral Lagoon, the
 //            Sunken City); it glows, then pulses an electric ring — step out
-//   bat      bat swarms that join the camps of the woods, the canyon and the
-//            bog at night: erratic loops round you, then a dive along a line
 //   mimic    now and then a camp's reward chest bites back: it hops after you,
 //            chomps and spits coins — beat it and it coughs up a rich chest
 // Freed, a jellyfish turns sea-glass blue and floats off into the sky.
@@ -14,7 +12,6 @@ const rand = (a, b) => a + Math.random() * (b - a);
 
 export const NEWGLOOM_ENEMIES = {
   jelly: { name: 'Gloom Jellyfish', hp: 30, speed: 1.2, r: 0.42, h: 1.2, dmg: 11, xp: 11, cost: 2, flying: true, elem: 'shock', knockRes: 0.3, swarm: 2 },
-  bat: { name: 'Gloom Bat', hp: 16, speed: 5, r: 0.28, h: 0.4, dmg: 7, xp: 5, cost: 1, flying: true, knockRes: 0, swarm: 4 },
   mimic: { name: 'Mimic', hp: 110, speed: 2.6, r: 0.5, h: 0.9, dmg: 16, xp: 30, cost: 5, knockRes: 0.6 },
 };
 
@@ -50,29 +47,6 @@ export const NEWGLOOM_MODELS = {
     }
     const eyes = glowEyes(r3d, body, 0.4, 0.33, 0.1, 0.07);
     g.userData = { body, bell, tendrils, eyes, animal: body };
-    return own(g);
-  },
-  bat(r3d) {
-    const g = new THREE.Group(), size = grp(g), body = grp(size);
-    size.scale.setScalar(1.35);
-    // (it's out at night: its wings glow faintly, its eyes burn)
-    const fur = mat(r3d, '#5a3a78', '#2a1048', 0.6), skin = mat(r3d, '#8a5ab8', '#4a1a7a', 0.8);
-    ball(body, 0.14, fur, 0, 0, 0, 1, 1, 1.15);
-    const head = grp(body, 0, 0.06, 0.14);
-    ball(head, 0.1, fur, 0, 0, 0);
-    for (const sx of [-0.06, 0.06]) { const ear = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.12, 4), skin); ear.position.set(sx, 0.11, -0.02); head.add(ear); }
-    glowEyes(r3d, head, 0.02, 0.09, 0.045, 0.055, '#ffb0bc', '#ff3a5a');
-    box(head, 0.025, 0.04, 0.02, mat(r3d, '#fff6e0'), 0.03, -0.06, 0.08);
-    const wings = [];
-    for (const s of [-1, 1]) {
-      const w = grp(body, s * 0.1, 0.03, 0);
-      box(w, 0.26, 0.03, 0.2, skin, s * 0.14, 0, 0);
-      const tip = grp(w, s * 0.27, 0, 0);
-      box(tip, 0.24, 0.025, 0.24, skin, s * 0.12, 0, -0.02);
-      box(tip, 0.03, 0.03, 0.26, fur, s * 0.02, 0.01, 0);
-      wings.push({ w, tip, s });
-    }
-    g.userData = { body, head, wings };
     return own(g);
   },
   mimic(r3d) {
@@ -141,50 +115,6 @@ export const NEWGLOOM_BRAINS = {
       u.body.scale.set(1 + pulse * 0.07, 1 - pulse * 0.1, 1 + pulse * 0.07);
       u.tendrils.forEach((t, i) => { t.rotation.x = Math.sin(e.bob * 2 + i) * 0.35; t.rotation.z = Math.cos(e.bob * 1.7 + i * 1.3) * 0.3; });
       if (e.alive) u.bell.material.emissiveIntensity = 0.7 + (e.glow || 0) * 1.6;
-    },
-  },
-
-  // ---- a bat: erratic loops round you, a screech, a dive
-  bat: {
-    init(e) { e.y = 1.6; e.ang = Math.random() * 6; e.dir = Math.random() < 0.5 ? 1 : -1; e.timer = rand(1.2, 3); },
-    think(e, dt, tgt, C) {
-      if (e.state === 'chase') {
-        e.ang += dt * (1.7 + Math.sin(e.t * 3) * 0.9) * e.dir;
-        const rr = 2.5 + Math.sin(e.t * 2.3) * 0.8;
-        const tx = tgt.pos.x + Math.cos(e.ang) * rr + Math.sin(e.t * 9) * 0.4, tz = tgt.pos.z + Math.sin(e.ang) * rr * 0.8;
-        C.moveEnemy(e, (tx - e.x) * dt * 3.2, (tz - e.z) * dt * 3.2, false, true);
-        e.y += (1.5 + Math.sin(e.t * 7) * 0.3 - e.y) * dt * 5;
-        e.faceTo(tx, tz);
-        if (e.timer <= 0) {
-          const D = dirTo(e, tgt.pos.x, tgt.pos.z);
-          e.aim = { x: D.x, z: D.z }; e.dist = D.d + 2;
-          C.telegraphLine(e, e.aim, e.dist, 0.5);
-          C.sfx('screech', e);
-          C.vfx.shockwave(e.x, e.z, { r: 0.9, color: '#d8a0ff', life: 0.3, wall: 0.4, y: e.y });
-          e.state = 'mark'; e.timer = 0.5;
-        }
-      } else if (e.state === 'mark') {
-        e.face = e.aim;
-        e.y += (1.9 - e.y) * dt * 5;
-        if (e.timer <= 0) { e.state = 'dive'; e.timer = e.dist / 11; e.hitOnce.clear(); }
-      } else if (e.state === 'dive') {
-        C.moveEnemy(e, e.aim.x * 11 * dt, e.aim.z * 11 * dt, false, true);
-        e.y += (0.55 - e.y) * dt * 12;
-        if (e.y < 1.1) C.enemyTouch(e, e.def.dmg * (e.dmgMul || 1), 2, 0.4);
-        if (e.timer <= 0) { e.state = 'chase'; e.timer = rand(1.8, 3.2); e.dir = -e.dir; }
-      }
-    },
-    // (a hit knocks it out of its dive)
-    onHit(e) { if (e.state === 'dive' || e.state === 'mark') { e.state = 'chase'; e.timer = rand(0.9, 1.5); } },
-    pose(e, dt) {
-      const u = e.obj.userData;
-      e.obj.rotation.y = Math.atan2(e.face.x, e.face.z);
-      // (a faint trail of gloom sparks: you can follow it in the dark)
-      if (e.alive && Math.random() < (dt || 1 / 60) * 7) e.combat.world.fx.emit('sparkle', e.x, e.y + 0.1, e.z, 1, { color: '#c89aff' });
-      const fast = e.state === 'mark' ? 40 : e.state === 'dive' ? 0 : 26;
-      const flap = e.state === 'dive' ? -0.2 : Math.sin(e.t * fast);
-      for (const W of u.wings) { W.w.rotation.z = W.s * flap * 0.8; W.tip.rotation.z = W.s * flap * 0.5; }
-      u.body.rotation.x = e.state === 'dive' ? 0.6 : Math.sin(e.t * 13) * 0.08;
     },
   },
 

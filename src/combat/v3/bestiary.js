@@ -9,12 +9,10 @@
 //   mender    heals its friends with a green beam (interrupt it!)
 //   knight    shield up front (flank it, or break it with heavy hits)
 //   beetle    armour shrugs off light hits; curls up and rolls, bouncing off walls
-//   harpy     high circles, a long telegraphed dive, feather fans
 //   slinger   keeps its distance and lobs bombs; runs if you close in
 //   reefcrab  scuttles sideways round you, blocks from the front, bubbles
 //   ghost     fades away and reappears behind someone
 //   slug      slow, leaves a burning trail, spits lava
-//   stormcrow dive-bombs with a thunderclap
 //   totem     shields everyone around it — topple it first
 //   worm      a big one: travels under the sand and erupts along a line
 //   yeti      snowballs from afar, a chilling ground pound up close
@@ -40,6 +38,7 @@ import { MANOR_ENEMIES, MANOR_BRAINS, MANOR_MODELS, MANOR_ZONE_FOES } from '../v
 import { FINALE_ENEMIES, FINALE_BRAINS, FINALE_MODELS } from '../v7/finale.js';
 import { WORLD_BOSSES, WORLD_BRAINS, WORLD_MODELS } from '../v7/world.js';
 import { GRANDMA_ENEMIES, GRANDMA_BRAINS, GRANDMA_MODELS } from '../v9/grandma.js';
+import { BRUTE_ENEMIES, BRUTE_BRAINS, BRUTE_MODELS } from '../v11/brutes.js';
 import { toward, hover, speedOf, beam, lob, hazard } from './ai.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -55,35 +54,59 @@ export const NEW_ENEMIES = {
   mender: { name: 'Gloom Mender', hp: 40, speed: 2.6, r: 0.3, h: 0.9, dmg: 0, xp: 14, cost: 3, knockRes: 0.1 },
   knight: { name: 'Shieldbearer', hp: 70, speed: 1.5, r: 0.42, h: 1.1, dmg: 16, xp: 18, cost: 4, knockRes: 0.6, shield: 60, armorPts: 0.25 },
   beetle: { name: 'Armour Beetle', hp: 80, speed: 1.6, r: 0.5, h: 0.8, dmg: 16, xp: 16, cost: 4, knockRes: 0.8, armorPts: 0.6 },
-  harpy: { name: 'Cloud Harpy', hp: 48, speed: 3.2, r: 0.4, h: 0.8, dmg: 12, xp: 14, cost: 3, flying: true, knockRes: 0.2 },
   slinger: { name: 'Canyon Slinger', hp: 34, speed: 2.8, r: 0.32, h: 0.7, dmg: 14, xp: 12, cost: 3, knockRes: 0.1 },
   reefcrab: { name: 'Reef Crab', hp: 60, speed: 2.4, r: 0.45, h: 0.7, dmg: 11, xp: 13, cost: 3, armor: 'front', knockRes: 0.6 },
   ghost: { name: 'Drowned Sailor', hp: 50, speed: 2.2, r: 0.36, h: 1.3, dmg: 15, xp: 16, cost: 3, knockRes: 0.3 },
   slug: { name: 'Lava Slug', hp: 90, speed: 0.9, r: 0.45, h: 0.6, dmg: 12, xp: 15, cost: 3, elem: 'fire', knockRes: 0.7 },
-  stormcrow: { name: 'Storm Crow', hp: 30, speed: 3.4, r: 0.32, h: 0.5, dmg: 13, xp: 11, cost: 2, flying: true, elem: 'shock', knockRes: 0 },
   totem: { name: 'Gloom Totem', hp: 90, speed: 0, r: 0.4, h: 1.5, dmg: 0, xp: 20, cost: 4, knockRes: 1 },
   worm: { name: 'Sandworm', hp: 280, speed: 2.4, r: 0.8, h: 1.2, dmg: 22, xp: 45, cost: 8, knockRes: 0.9 },
   yeti: { name: 'Frost Yeti', hp: 160, speed: 1.7, r: 0.6, h: 1.7, dmg: 20, xp: 32, cost: 6, elem: 'ice', knockRes: 0.8 },
 };
 
-// which gloom lives where (the Explore camps pick from these)
+// which gloom lives where (the Explore camps pick from these: two brutes a land at most)
 export const ZONE_FOES = {
-  deepwood: ['gloomling', 'fox', 'stag', 'crow', 'mender', 'biggloom', 'rootling'],
-  heights: ['wisp', 'harpy', 'stormcrow', 'knight', 'mender', 'kite', 'kite'],
+  deepwood: ['gloomling', 'fox', 'stag', 'boar', 'mender', 'biggloom', 'rootling'],
+  heights: ['wisp', 'wisp', 'knight', 'mender', 'biggloom', 'gustbelly', 'stormram'],
   bouncecap: ['shaman', 'puffcap', 'gloomling', 'biggloom'],
   glacier: ['wisp', 'yeti', 'knight', 'gloomling', 'frostimp', 'frostimp'],
-  cloud: ['harpy', 'stormcrow', 'wisp'],
+  cloud: ['wisp', 'wisp', 'mender', 'knight', 'stormram', 'ogre'],
   steppe: ['slinger', 'beetle', 'knight', 'fox', 'mender', 'tumble', 'tumble'],
-  canyon: ['slinger', 'beetle', 'knight', 'stormcrow', 'mole', 'mole', 'fuse'],
+  canyon: ['slinger', 'beetle', 'knight', 'stormram', 'mole', 'mole', 'fuse'],
   dunes: ['burrower', 'slinger', 'beetle'],
   sunken: ['ghost', 'reefcrab', 'mender', 'jelly'],
-  lagoon: ['reefcrab', 'slinger', 'crow', 'jelly', 'jelly'],
+  lagoon: ['reefcrab', 'slinger', 'shellback', 'jelly', 'jelly'],
   marsh: ['toad', 'shaman', 'mender', 'gloomling'],
   volcano: ['imp', 'slug', 'knight', 'imp'],
-  dino: ['raptor', 'raptor', 'dilo', 'ptera', 'ankylo', 'compy', 'raptor'],
+  dino: ['raptor', 'raptor', 'dilo', 'dilo', 'ankylo', 'compy', 'raptor'],
 };
 export const ZONE_BIG = { dunes: 'worm', glacier: 'yeti', volcano: 'slug', marsh: 'toad', canyon: 'beetle', heights: 'knight', dino: 'trike' };
 export const AFFIXES = ['swift', 'bulwark', 'vampiric', 'splitter'];
+
+// foes that have left the game — a chapter, a tool or an old list may still name them: their
+// heirs come instead (and nobody, for the two that have none)
+const GONE = { crow: 'boar', kite: 'gustbelly', stormcrow: 'stormram', harpy: 'ogre', bat: null, ptera: null };
+export const heir = (ty) => (ty in GONE ? GONE[ty] : ty);
+export const isBrute = (ty) => !!(NEW_ENEMIES[ty] && NEW_ENEMIES[ty].brute);
+// who comes to a fight: `places` picks from a land’s table. A brute takes two of them (or the
+// only one there is) and a second brute four: there is one at most, two from four heroes up.
+// The other places go to the smaller gloom of the table — or of `spare`, when it has none.
+// `named`: a camp of the story — the brutes it lists come first, as far as there is room
+export function pickFoes(pool, places, heroes = 1, { spare = null, named = false } = {}) {
+  pool = pool.map(heir).filter(Boolean);
+  let small = pool.filter((ty) => !isBrute(ty));
+  if (!small.length) small = (spare || []).filter((ty) => !isBrute(ty));
+  if (!small.length) small = ['gloomling'];
+  const out = [], cap = heroes >= 4 ? 2 : 1;
+  let big = 0;
+  const room = () => big < cap && (!out.length || places >= (big ? 4 : 2));
+  const take = (ty) => { out.push(ty); places -= isBrute(ty) ? (big++ ? 4 : 2) : 1; };
+  if (named) for (const ty of new Set(pool.filter(isBrute))) if (places > 0 && room()) take(ty);
+  while (places > 0) {
+    const ty = pick(pool.length ? pool : small);
+    take(isBrute(ty) && !room() ? pick(small) : ty);
+  }
+  return out;
+}
 
 // ------------------------------------------------------------------ brains
 export const BRAINS = {
@@ -373,49 +396,6 @@ export const BRAINS = {
     },
   },
 
-  harpy: {
-    init(e) { e.y = 2.6; },
-    think(e, dt, tgt, C) {
-      if (!tgt) return;
-      if (e.state === 'chase') {
-        e.ang = (e.ang ?? Math.random() * 6) + dt * 1.1;
-        const tx = tgt.pos.x + Math.cos(e.ang) * 4.2, tz = tgt.pos.z + Math.sin(e.ang) * 3;
-        C.moveEnemy(e, (tx - e.x) * dt * 2, (tz - e.z) * dt * 2, false, true);
-        e.faceTo(tx, tz);
-        e.y += (2.6 - e.y) * dt * 3;
-        if (e.timer <= 0) {
-          e.cycle = (e.cycle || 0) + 1;
-          if (e.cycle % 3 === 0) {
-            for (const k of [-0.3, 0, 0.3]) { const a = Math.atan2(tgt.pos.z - e.z, tgt.pos.x - e.x) + k; C.enemyShot(e, { pos: { x: e.x + Math.cos(a) * 6, z: e.z + Math.sin(a) * 6 }, vel: { x: 0, z: 0 } }, { speed: 7, r: 0.18, dmg: e.def.dmg * 0.7 * (e.dmgMul || 1), life: 1.4, look: 'feather' }); }
-            e.timer = rand(1.6, 2.2);
-          } else {
-            const dx = tgt.pos.x - e.x, dz = tgt.pos.z - e.z, d = Math.hypot(dx, dz) || 1;
-            e.aim = { x: dx / d, z: dz / d }; e.dist = d + 3;
-            e.state = 'mark'; e.timer = 0.7;
-            C.telegraphLine(e, e.aim, e.dist, 0.7);
-            C.sfx('caw', e);
-          }
-        }
-      } else if (e.state === 'mark') {
-        e.face = e.aim;
-        e.y += (3.1 - e.y) * dt * 4;
-        if (e.timer <= 0) { e.state = 'dive'; e.timer = e.dist / 12; e.hitOnce.clear(); }
-      } else if (e.state === 'dive') {
-        C.moveEnemy(e, e.aim.x * 12 * dt, e.aim.z * 12 * dt, false, true);
-        e.y += (0.6 - e.y) * dt * 10;
-        if (e.y < 1.3) C.enemyTouch(e, e.def.dmg * (e.dmgMul || 1), 3.5, 0.6);
-        if (e.timer <= 0) { e.state = 'chase'; e.timer = rand(2.4, 3.4); }
-      }
-    },
-    pose(e) {
-      const u = e.obj.userData;
-      e.obj.rotation.y = Math.atan2(e.face.x, e.face.z);
-      const f = e.state === 'dive' ? 0.9 : Math.sin(e.t * 9);
-      u.wings[0].rotation.z = f * 0.6; u.wings[1].rotation.z = -f * 0.6;
-      u.body.rotation.x = e.state === 'dive' ? 0.6 : 0;
-    },
-  },
-
   slinger: {
     think(e, dt, tgt, C) {
       if (!tgt) return;
@@ -520,42 +500,6 @@ export const BRAINS = {
       const u = e.obj.userData;
       e.obj.rotation.y = Math.atan2(e.face.x, e.face.z);
       u.body.scale.set(1 + Math.sin(e.t * 4) * 0.05, 1 - Math.sin(e.t * 4) * 0.05, 1 + Math.sin(e.t * 4 + 1) * 0.06);
-    },
-  },
-
-  stormcrow: {
-    init(e) { e.y = 2.3; },
-    think(e, dt, tgt, C) {
-      if (!tgt) return;
-      if (e.state === 'chase') {
-        e.ang = (e.ang ?? Math.random() * 6) + dt * 1.5;
-        const tx = tgt.pos.x + Math.cos(e.ang) * 3.2, tz = tgt.pos.z + Math.sin(e.ang) * 2.4;
-        C.moveEnemy(e, (tx - e.x) * dt * 2.2, (tz - e.z) * dt * 2.2, false, true);
-        e.faceTo(tx, tz);
-        e.y += (2.4 - e.y) * dt * 3;
-        if (e.timer <= 0) { e.state = 'mark'; e.timer = 0.6; e.at = { x: tgt.pos.x, z: tgt.pos.z }; C.telegraphCircle(e.at.x, e.at.z, 1.3, 0.6); C.sfx('caw', e); }
-      } else if (e.state === 'mark') {
-        e.faceTo(e.at.x, e.at.z);
-        if (Math.random() < dt * 20) C.world.fx.emit('sparkle', e.x, e.y, e.z, 1, { color: '#ffe066' });
-        if (e.timer <= 0) { e.state = 'dive'; e.timer = 0.4; e.from = { x: e.x, z: e.z, y: e.y }; }
-      } else if (e.state === 'dive') {
-        const k = 1 - Math.max(0, e.timer) / 0.4;
-        e.x = e.from.x + (e.at.x - e.from.x) * k; e.z = e.from.z + (e.at.z - e.from.z) * k; e.y = e.from.y * (1 - k) + 0.3;
-        if (e.timer <= 0) {
-          // thunderclap!
-          C.blast(e.at.x, e.at.z, 1.3, e.def.dmg * (e.dmgMul || 1), 3, { gloom: true, elem: 'shock', color: '#ffe066' });
-          C.vfx.lightning(e.at.x, e.at.z, { color: '#ffe066' });
-          C.sfx('zap', e);
-          e.state = 'chase'; e.timer = rand(2.6, 3.8);
-        }
-      }
-    },
-    pose(e) {
-      const u = e.obj.userData;
-      e.obj.rotation.y = Math.atan2(e.face.x, e.face.z);
-      const f = e.state === 'dive' ? 0.8 : Math.sin(e.t * 15);
-      u.wings[0].rotation.z = f * 0.7; u.wings[1].rotation.z = -f * 0.7;
-      u.body.rotation.x = e.state === 'dive' ? 0.8 : 0;
     },
   },
 
@@ -701,9 +645,9 @@ export function onEnemyDeath(C, e, p) {
 }
 
 // the zone bosses live in bosses.js but fight through the same machinery
-Object.assign(NEW_ENEMIES, BOSS_ENEMIES, DINO_ENEMIES, TYRANT_ENEMIES, NEWGLOOM_ENEMIES, TROUPE_ENEMIES, WOODS_ENEMIES, CANYON_ENEMIES, FROST_ENEMIES, SEA_ENEMIES, DUCHESS_ENEMIES, DAWN_ENEMIES, MOTH_ENEMIES, MANOR_ENEMIES, FINALE_ENEMIES, WORLD_BOSSES, GRANDMA_ENEMIES);
-Object.assign(BRAINS, BOSS_BRAINS, DINO_BRAINS, TYRANT_BRAINS, NEWGLOOM_BRAINS, TROUPE_BRAINS, WOODS_BRAINS, CANYON_BRAINS, FROST_BRAINS, SEA_BRAINS, DUCHESS_BRAINS, DAWN_BRAINS, MOTH_BRAINS, MANOR_BRAINS, FINALE_BRAINS, WORLD_BRAINS, GRANDMA_BRAINS);
-Object.assign(MODELS, BOSS_MODELS, DINO_MODELS, TYRANT_MODELS, NEWGLOOM_MODELS, TROUPE_MODELS, WOODS_MODELS, CANYON_MODELS, FROST_MODELS, SEA_MODELS, DUCHESS_MODELS, DAWN_MODELS, MOTH_MODELS, MANOR_MODELS, FINALE_MODELS, WORLD_MODELS, GRANDMA_MODELS);
+Object.assign(NEW_ENEMIES, BOSS_ENEMIES, DINO_ENEMIES, TYRANT_ENEMIES, NEWGLOOM_ENEMIES, TROUPE_ENEMIES, WOODS_ENEMIES, CANYON_ENEMIES, FROST_ENEMIES, SEA_ENEMIES, DUCHESS_ENEMIES, DAWN_ENEMIES, MOTH_ENEMIES, MANOR_ENEMIES, FINALE_ENEMIES, WORLD_BOSSES, GRANDMA_ENEMIES, BRUTE_ENEMIES);
+Object.assign(BRAINS, BOSS_BRAINS, DINO_BRAINS, TYRANT_BRAINS, NEWGLOOM_BRAINS, TROUPE_BRAINS, WOODS_BRAINS, CANYON_BRAINS, FROST_BRAINS, SEA_BRAINS, DUCHESS_BRAINS, DAWN_BRAINS, MOTH_BRAINS, MANOR_BRAINS, FINALE_BRAINS, WORLD_BRAINS, GRANDMA_BRAINS, BRUTE_BRAINS);
+Object.assign(MODELS, BOSS_MODELS, DINO_MODELS, TYRANT_MODELS, NEWGLOOM_MODELS, TROUPE_MODELS, WOODS_MODELS, CANYON_MODELS, FROST_MODELS, SEA_MODELS, DUCHESS_MODELS, DAWN_MODELS, MOTH_MODELS, MANOR_MODELS, FINALE_MODELS, WORLD_MODELS, GRANDMA_MODELS, BRUTE_MODELS);
 Object.assign(ZONE_FOES, DAWN_ZONE_FOES, MOTH_ZONE_FOES, MANOR_ZONE_FOES);
 // (the fuse imp thinks like the ember imp: run up, light up, go off)
 BRAINS.fuse = BRAINS.imp;

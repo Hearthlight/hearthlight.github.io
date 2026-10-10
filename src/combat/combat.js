@@ -9,9 +9,10 @@ import { CLASSES } from './classes.js';
 import { ENEMIES, Enemy } from './enemies.js';
 import { applyBlessings } from './blessings.js';
 import { applyElement, guard, comboHit, tickCombo, drawCombo, tickPlayer, applyToPlayer, drawEnemyMarks, thaw, freezeNow, PARRY_WINDOW } from './v3/status.js';
-import { tickHazards, drawBubbles, onEnemyDeath } from './v3/bestiary.js';
+import { tickHazards, drawBubbles, onEnemyDeath, heir } from './v3/bestiary.js';
 import { bossDamageMul } from './v3/bosses.js';
 import { worldBossMul } from './v7/world.js';
+import { bruteMul, bruteHit, bruteFall, drawBruteMarks, BRUTE_FALL } from './v11/brutes.js';
 import { talentMods, buildMoves, picksOf, ultOf, ULTS, MAX_LEVEL } from './v4/talents.js';
 import { gearMods } from './v3/gear.js';
 import { Vfx, VFX_COL, BLASTS } from './v4/vfx.js';
@@ -28,7 +29,7 @@ import { LevelUps } from '../party/levelups.js';
 const rand = (a, b) => a + Math.random() * (b - a);
 const WHITE = new THREE.Color('#ffffff');
 // the glow a projectile leaves behind it (null: none)
-const TRAIL = { seed: '#c8e07a', pod: '#6fc05a', tea: '#f4e8d0', wisp: '#ffb040', beam: '#fff3c4', pepper: '#c8b8a0', rivet: '#c8c4d0', tool: '#a8a4b0', star: '#fff3a6', comet: '#ffb040', ice: '#9fdcff', note: '#f59ac8', note2: '#c9a2ff', spore: '#b58ae8', lava: '#ff8a3a', bubble: '#bfe8ff', bomb: '#a86ae0', feather: '#b88cf0', acorn: '#e8dcc0', pinecone: '#c8a070', snowball: '#ffffff', arrow: '#e8dcc0', dynamite: '#ffd23a', dart: '#8fdc5a', boomerang: '#e0b070', orb: '#9fdcff', zap: '#ffe066', page: '#c9a2ff' };
+const TRAIL = { seed: '#c8e07a', pod: '#6fc05a', tea: '#f4e8d0', wisp: '#ffb040', beam: '#fff3c4', pepper: '#c8b8a0', rivet: '#c8c4d0', tool: '#a8a4b0', star: '#fff3a6', comet: '#ffb040', ice: '#9fdcff', note: '#f59ac8', note2: '#c9a2ff', spore: '#b58ae8', lava: '#ff8a3a', bubble: '#bfe8ff', bomb: '#a86ae0', acorn: '#e8dcc0', pinecone: '#c8a070', snowball: '#ffffff', arrow: '#e8dcc0', dynamite: '#ffd23a', dart: '#8fdc5a', boomerang: '#e0b070', orb: '#9fdcff', zap: '#ffe066', page: '#c9a2ff' };
 const SWUNG = new Set(['pan', 'rollingpin', 'mallet', 'sword', 'lanternpole', 'torch', 'stormlamp', 'whisk', 'ladle', 'spatula', 'wrench', 'shears', 'rake']);      // weapons raised overhead to charge
 const GLOOM = '#b06ae0';
 export { XP_NEED };
@@ -516,7 +517,6 @@ export class Combat {
     else if (look === 'bubble') { m = new THREE.Mesh(this.geo.spore, new THREE.MeshBasicMaterial({ color: 0xbfe8ff, transparent: true, opacity: 0.6, depthWrite: false })); m.scale.setScalar(1.7); }
     else if (look === 'lava') { m = new THREE.Mesh(this.geo.spore, this.mat(0xffb040, 0xff6a1a)); m.scale.setScalar(1.3); }
     else if (look === 'snowball') { m = new THREE.Mesh(this.geo.spore, this.mat(0xf4f8ff)); m.scale.setScalar(2.2); }
-    else if (look === 'feather') { m = new THREE.Mesh(this.geo.acorn, this.mat(0x8a5ab0)); m.scale.set(0.4, 0.3, 1.8); }
     else if (look === 'venom') { m = new THREE.Mesh(this.geo.spore, this.mat(0x8ae05a, 0x3a9a2a)); m.scale.setScalar(1.4); }
     else if (look === 'bomb') { m = new THREE.Mesh(this.geo.spore, this.mat(0x3a2450, 0x6a3a8e)); m.scale.setScalar(1.5); }
     else if (look === 'rock') { m = new THREE.Mesh(this.geo.spore, this.mat(0x8a8290)); m.scale.set(2.6, 2.1, 2.3); }
@@ -1038,7 +1038,7 @@ export class Combat {
     // Frostbite: chilled gloom takes more
     if (p && p.fighter && p.fighter.mods.chillMul && e.st && e.st.chill > 0 && !dot) dmg *= 1 + p.fighter.mods.chillMul;
     // juggling: hits in the air keep it up there
-    const air = e.y > 0.35 && !e.def.flying && !e.def.boss && !dot;
+    const air = e.y > 0.35 && !e.def.flying && !e.def.boss && !e.def.brute && !dot;
     if (air) { dmg *= 1.15 + ((p && p.fighter && p.fighter.mods.juggle) || 0); e.vy = Math.max(e.vy, 3.4); }
     // a heavy hit on a staggered foe: FINISHER
     const finisher = !!(e.stagger > 0 && heavy && p && !dot);
@@ -1056,6 +1056,7 @@ export class Combat {
     if (e.def.boss && e.state === 'tired') dmg *= 1.5;
     if (p && p.fighter && e.level && !this.pvp) dmg *= gapDealt(e.level - (p.fighter.eff || p.fighter.level));
     if (!dot) dmg *= K9.litMul(e);
+    if (e.def.brute) dmg *= bruteMul(e);
     dmg = Math.max(1, Math.round(dmg));
     e.hp -= dmg;
     if (!dot) e.flash = 0.08;
@@ -1092,6 +1093,7 @@ export class Combat {
       if (!quiet) this.party.buzz(p, heavy ? 22 : 10);
     }
     if (crit) this.sfx('crit'); else if (heavy) this.sfx('bonk');
+    if (e.def.brute && !dot) bruteHit(this, e, dmg, { heavy, dir });
     if (e.hp <= 0) this.kill(e, p);
   }
 
@@ -1127,7 +1129,7 @@ export class Combat {
     else if (r < 0.09) this.drop('tart', e.x, e.z);
     else if (r < 0.13) this.drop('coffee', e.x, e.z);
     if (e.cleanse()) { e.freed = true; this.popText(e.x, 1.6, e.z, t('Freed!'), '#8fd6b4'); this.world.fx.emit('heart', e.x, 1.2, e.z, 1); }
-    e.fading = e.freed ? 1.8 : 0.7;
+    e.fading = e.freed ? 1.8 : d.brute ? BRUTE_FALL : 0.7;
     if (e.onDeath) e.onDeath(p);
     if (d.boss && e.type !== 'boss') {
       // a zone boss: a big poof of gloom, and it’s itself again (the Tyrant King walks off, roaring)
@@ -1166,13 +1168,14 @@ export class Combat {
       if (W && !e.roared) { e.roared = true; this.sfx('roar', e); }
       if (!roar) { e.x += run.x * sp * dt; e.z += run.z * sp * dt; }
       const rig = e.obj.userData.rig;
-      // (a dinosaur faces +z and runs on its own legs; a pteranodon flies off)
+      // (a dinosaur faces +z and runs on its own legs; a jellyfish floats off)
       e.obj.rotation.y = rig ? Math.atan2(run.x, run.z) : Math.atan2(-run.z, run.x);
-      if (rig) animDino(rig, dt, { speed: roar ? 0 : sp, air: !!e.def.flying, roar });
+      if (rig) animDino(rig, dt, { speed: roar ? 0 : sp, roar });
       if (e.def.flying) e.y += dt * 1.6;
       e.obj.position.set(e.x, e.def.flying ? e.y : rig ? 0 : Math.abs(Math.sin(e.fading * 18)) * 0.12, e.z);
       if (e.fading < 0.4) e.obj.scale.setScalar(Math.max(0.01, e.fading / 0.4));
-    } else {
+    } else if (e.def.brute) bruteFall(this, e);
+    else {
       const k = Math.max(0, e.fading / 0.7);
       e.obj.scale.set(1 + (1 - k) * 0.5, Math.max(0.01, k), 1 + (1 - k) * 0.5);
     }
@@ -1291,6 +1294,9 @@ export class Combat {
   spawn(type, x, z, opts = {}) {
     // World v7: a monster keeps its level (its land’s, unless told), and grows
     // with the heroes standing near the fight (bosses a little more)
+    // (a foe that has left the game: its heir comes — or nobody, a stand-in already gone)
+    type = heir(type);
+    if (!type) return { alive: false, fading: 0, def: {}, x, z, remove() {} };
     const def = ENEMIES[type];
     const lv = Math.max(1, Math.round(opts.level || rollLevel(levelAt(this.party.big, x, z))));
     const n = this.heroesNear(x, z);
@@ -1355,7 +1361,7 @@ export class Combat {
 
   wake(e) {
     if (e.state !== 'sleep') return;
-    e.state = e.type === 'puffcap' ? 'pop' : 'chase';
+    e.state = e.type === 'puffcap' ? 'pop' : e.wakeTo || 'chase';
     e.timer = rand(0.3, 1);
     this.bubble(e, '!');
     this.sfx('growl', e);
@@ -1404,13 +1410,16 @@ export class Combat {
       const a = es[i], b = es[j];
       const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz), min = a.r + b.r;
       if (d >= min || d < 1e-4) continue;
-      const push = (min - d) / 2, nx = dx / d, nz = dz / d;
-      a.x -= nx * push; a.z -= nz * push; b.x += nx * push; b.z += nz * push;
+      // (a brute stands its ground: the little ones make room)
+      const ka = !a.def.brute === !b.def.brute ? 0.5 : a.def.brute ? 0 : 1, nx = dx / d, nz = dz / d;
+      a.x -= nx * (min - d) * ka; a.z -= nz * (min - d) * ka; b.x += nx * (min - d) * (1 - ka); b.z += nz * (min - d) * (1 - ka);
     }
-    // and they don’t stand inside the heroes
+    // and they don’t stand inside the heroes (nobody shoves a brute: the hero steps back)
     for (const e of es) for (const p of this.players) {
       const dx = e.x - p.pos.x, dz = e.z - p.pos.z, d = Math.hypot(dx, dz), min = e.r + 0.26;
-      if (d < min && d > 1e-4) { e.x = p.pos.x + (dx / d) * min; e.z = p.pos.z + (dz / d) * min; }
+      if (d >= min || d < 1e-4) continue;
+      if (e.def.brute && p.fighter && !p.fighter.down) this.world.overCol.move(p.actor.pos, -(dx / d) * (min - d), -(dz / d) * (min - d), p.actor.radius);
+      else { e.x = p.pos.x + (dx / d) * min; e.z = p.pos.z + (dz / d) * min; }
     }
   }
 
@@ -1628,15 +1637,16 @@ export class Combat {
   drawLabels(ctx, v) {
     const P = this.party;
     drawEnemyMarks(ctx, this, v);
-    // enemy health bars (once hurt; always for elites & rares) with the level in
+    drawBruteMarks(ctx, this, v);
+    // enemy health bars (once hurt; always for elites, rares & brutes) with the level in
     // WoW colours next to them — the boss has its own bar
     const ref = this.refLevel();
     for (const e of this.enemies) {
       if (!e.alive || e.def.boss || e.state === 'sleep') continue;
       const special = e.elite || e.rare;
-      if (e.hp >= e.maxHp && !special) continue;
+      if (e.hp >= e.maxHp && !special && !e.def.brute) continue;
       const u = P.toUi(v, e.x, e.y + e.def.h + 0.25, e.z);
-      const w = e.def.r > 0.45 || special ? 22 : 16, x0 = Math.round(u.x - w / 2), y0 = Math.round(u.y);
+      const w = e.def.brute ? 30 : e.def.r > 0.45 || special ? 22 : 16, x0 = Math.round(u.x - w / 2), y0 = Math.round(u.y);
       ctx.fillStyle = special ? (e.rare ? '#dfe4ee' : '#ffd66b') : '#241a2e'; ctx.fillRect(x0 - 1, y0 - 1, w + 2, 4);
       ctx.fillStyle = '#6a4a8e'; ctx.fillRect(x0, y0, w, 2);
       ctx.fillStyle = '#c9a2f0'; ctx.fillRect(x0, y0, Math.round(w * Math.max(0, e.hp / e.maxHp)), 2);

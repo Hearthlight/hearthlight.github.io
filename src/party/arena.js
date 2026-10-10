@@ -243,16 +243,19 @@ function waveList(n, players) {
   const pool = ['gloomling'];
   if (n >= 2) pool.push('fox');
   if (n >= 3) pool.push('puffcap');
-  if (n >= 4) pool.push('crow');
+  if (n >= 4) pool.push('boar');
   if (n >= 6) pool.push('stag', 'biggloom');
   if (n >= 7) pool.push('shellback');
   let budget = 2 + n * 2 + players * (0.6 + n * 0.45);
   const out = [];
   // each new kind shows up at least once the wave it arrives
-  const fresh = { 2: 'fox', 3: 'puffcap', 4: 'crow', 6: 'stag', 7: 'shellback' }[n];
+  const fresh = { 2: 'fox', 3: 'puffcap', 4: 'boar', 6: 'stag', 7: 'shellback' }[n];
   if (fresh) { out.push({ type: fresh }); budget -= ENEMIES[fresh].cost; }
+  // (a brute a wave, two from four heroes up)
+  let brutes = (players >= 4 ? 2 : 1) - (fresh && ENEMIES[fresh].brute ? 1 : 0);
   while (budget > 0.5) {
-    const ty = Math.random() < 0.35 ? 'gloomling' : pick(pool);
+    let ty = Math.random() < 0.35 ? 'gloomling' : pick(pool);
+    if (ENEMIES[ty].brute && --brutes < 0) ty = 'gloomling';
     out.push({ type: ty });
     budget -= ENEMIES[ty].cost;
   }

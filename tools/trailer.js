@@ -276,8 +276,9 @@ export function resetLair(type) {
 }
 
 export const calm = () => { for (const L of P().lairs.list) resetLair(L.type); };
-export const camp = () => { calm(); resetCamp(-43, 71); return fight('camp', {
-  x: -38, z: 71, hour: 15.5, zoom: 4, ults: [[1.6, 'Mia'], [3.0, 'Ben']],
+// (the Golden Steppe’s gloom camp: the party walks up from the east)
+export const camp = () => { calm(); const c = P().encounters.camps.find((q) => q.zone === 'steppe' && !q.saga); resetCamp(c.x, c.z); return fight('camp', {
+  x: c.x + 5, z: c.z, hour: 15.5, zoom: 4, ults: [[1.6, 'Mia'], [3.0, 'Ben']],
   captions: [{ text: 'Fight the gloom together', at: 0.4, dur: BAR * 2 - 0.2 }],
 }); };
 export const boss = (type = 'golem', hour = 18.6) => { calm(); const L = resetLair(type); return fight('boss', {

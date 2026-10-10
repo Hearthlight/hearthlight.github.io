@@ -110,11 +110,13 @@ function escape(C, x, z) {
   }
   return null;
 }
-export const dodgeStats = { seen: 0, ignored: 0, stepped: 0, rolled: 0 };
+export const dodgeStats = { seen: 0, ignored: 0, stepped: 0, rolled: 0, hopped: 0 };
+const hops = new WeakMap();
 
 // bots chase the nearest gloom (or each other in a brawl) and swing; X now and then
 // (Release v9) and they dodge what's telegraphed, like a fair player: they notice it after a
-// short reaction (0.2–0.4 s), miss one in six, step out, and roll when it's about to land
+// short reaction (0.2–0.4 s), miss one in six, step out, and roll when it's about to land —
+// and they hop over a ring racing along the ground (a Storm Ram's stomp), five times in six
 export async function fight(frames = 240, { special = 0.12, dodge = true } = {}) {
   const P = g().party;
   for (let f = 0; f < frames; f += 6) {
@@ -122,6 +124,15 @@ export async function fight(frames = 240, { special = 0.12, dodge = true } = {})
     if (C) for (const b of bots) {
       const p = me(b);
       if (!p || !p.fighter || p.fighter.down) continue;
+      if (dodge && !C.pvp) for (const e of C.enemies) {
+        if (!e.alive || !e.rings) continue;
+        // (right under its nose, the hop goes with the stomp: the ring would be past before it shows)
+        const near = e.state === 'rear' && e.timer < 0.12 && Math.hypot(p.pos.x - e.x, p.pos.z - e.z) < e.r + 1.8;
+        for (const R of near ? [e] : e.rings) {
+          const gap = near ? 0.1 : Math.hypot(p.pos.x - R.x, p.pos.z - R.z) - R.r, S = hops.get(R) || hops.set(R, new Map()).get(R);
+          if (gap > 0 && gap < 7 * 0.2 && S.get(p) !== (near ? e.n : -1)) { S.set(p, near ? e.n : -1); if (Math.random() > 1 / 6) { dodgeStats.hopped++; tap(b, 'b'); } }
+        }
+      }
       const left = dodge && !C.pvp ? danger(C, p.pos.x, p.pos.z) : null;
       if (left === null) b.alarm = null;
       else {

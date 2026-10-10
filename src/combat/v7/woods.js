@@ -1,6 +1,4 @@
 // World v7, chapter 2: the gloom of the Whispering Woods, as foes.
-//   kite         gloom kites (the Heights): Crumble’s kites, come alive. They
-//                circle high, mark a line, then dive down it.
 //   rootling     a knot of roots that scuttles close, marks a short lunge, lunges.
 //   kit          a badger kit, all teeth: quick little bites.
 //   sapling      a gloomy sprout that keeps its distance and spits seeds.
@@ -23,7 +21,6 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 export const WOODS_ENEMIES = {
-  kite: { name: 'Gloom Kite', hp: 34, speed: 3.0, r: 0.4, h: 0.7, dmg: 12, xp: 12, cost: 3, flying: true, knockRes: 0.1 },
   rootling: { name: 'Rootling', hp: 44, speed: 2.6, r: 0.34, h: 0.7, dmg: 10, xp: 11, cost: 2, knockRes: 0.3 },
   kit: { name: 'Gloom Kit', hp: 26, speed: 3.6, r: 0.3, h: 0.5, dmg: 8, xp: 6, cost: 1, knockRes: 0 },
   sapling: { name: 'Gloom Sapling', hp: 30, speed: 1.6, r: 0.32, h: 0.9, dmg: 9, xp: 6, cost: 1, knockRes: 0.2 },
@@ -58,28 +55,6 @@ export const WOODS_MODELS = {
     for (const [x, z] of [[-0.13, -0.13], [0.13, -0.13], [-0.13, 0.13], [0.13, 0.13]]) box(cage, 0.03, 0.36, 0.03, iron, x, 0, z);
     const f = ball(cage, 0.11, flame, 0, 0, 0); f.castShadow = false;
     g.userData = { body, flame: f };
-    return own(g);
-  },
-  // a diamond kite of gloomy cloth with a cross face, a tail of bows
-  kite(r3d) {
-    const g = new THREE.Group(), body = grp(g, 0, 0.1, 0);
-    const cloth = mat(r3d, '#5a3a7a'), cloth2 = mat(r3d, '#7a4a9a'), stick = mat(r3d, '#8a6a4a'), eye = mat(r3d, '#fff0a0', '#ffd66b', 1.3);
-    const sail = grp(body, 0, 0, 0);
-    const d = box(sail, 0.62, 0.62, 0.04, cloth, 0, 0, 0); d.rotation.z = Math.PI / 4; d.scale.set(1, 1.35, 1);
-    const d2 = box(sail, 0.3, 0.3, 0.05, cloth2, 0, 0.12, 0.01); d2.rotation.z = Math.PI / 4;
-    box(sail, 0.04, 1.2, 0.03, stick, 0, 0, 0.03); box(sail, 0.86, 0.04, 0.03, stick, 0, 0.08, 0.03);
-    for (const s of [-1, 1]) { const e = box(sail, 0.12, 0.07, 0.02, eye, s * 0.13, 0.02, 0.05); e.rotation.z = s * -0.35; }
-    box(sail, 0.16, 0.04, 0.02, mat(r3d, '#241a2e'), 0, -0.16, 0.05);
-    const tail = [];
-    let prev = grp(sail, 0, -0.58, 0);
-    for (let i = 0; i < 5; i++) {
-      const s = grp(prev, 0, i ? -0.22 : 0, 0);
-      box(s, 0.02, 0.22, 0.02, stick, 0, -0.11, 0);
-      const bow = box(s, 0.16, 0.08, 0.03, i % 2 ? mat(r3d, '#c8454f') : mat(r3d, '#f4d04a'), 0, -0.22, 0);
-      bow.rotation.z = 0.4;
-      tail.push(s); prev = s;
-    }
-    g.userData = { body, sail, tail };
     return own(g);
   },
   // a knot of roots on root legs, two violet eyes, a sprout on top
@@ -222,41 +197,6 @@ export const WOODS_BRAINS = {
     init(e) { e.state = 'idle'; },
     think(e, dt, tgt, C) { if (Math.random() < dt * 3) C.world.fx.emit('sparkle', e.x + 0.28, 1.2, e.z, 1, { color: '#c8a8ff' }); },
     pose(e) { const u = e.obj.userData; u.flame.scale.setScalar(1 + Math.sin(e.t * 11) * 0.15); },
-  },
-  kite: {
-    init(e) { e.y = 2.4; e.state = 'chase'; e.timer = rand(1.4, 2.4); },
-    think(e, dt, tgt, C) {
-      if (!tgt) return;
-      if (e.state === 'chase') {
-        e.ang = (e.ang ?? Math.random() * 6) + dt * 0.9;
-        const tx = tgt.pos.x + Math.cos(e.ang) * 4.6, tz = tgt.pos.z + Math.sin(e.ang) * 3.2;
-        C.moveEnemy(e, (tx - e.x) * dt * 1.8, (tz - e.z) * dt * 1.8, false, true);
-        e.faceTo(tgt.pos.x, tgt.pos.z);
-        e.y += (2.4 + Math.sin(e.t * 2) * 0.3 - e.y) * dt * 3;
-        if (e.timer <= 0) {
-          const dx = tgt.pos.x - e.x, dz = tgt.pos.z - e.z, d = Math.hypot(dx, dz) || 1;
-          e.aim = { x: dx / d, z: dz / d }; e.dist = d + 4;
-          e.state = 'mark'; e.timer = 0.8;
-          C.telegraphLine(e, e.aim, e.dist, 0.8);
-          C.sfx('whoosh', e);
-        }
-      } else if (e.state === 'mark') {
-        e.face = e.aim; e.y += (3 - e.y) * dt * 4;
-        if (e.timer <= 0) { e.state = 'dive'; e.timer = e.dist / 11; e.hitOnce.clear(); }
-      } else if (e.state === 'dive') {
-        C.moveEnemy(e, e.aim.x * 11 * dt, e.aim.z * 11 * dt, false, true);
-        e.y += (0.5 - e.y) * dt * 10;
-        if (e.y < 1.2) C.enemyTouch(e, e.def.dmg, 3, 0.6);
-        if (e.timer <= 0) { e.state = 'chase'; e.timer = rand(2.6, 3.6); }
-      }
-    },
-    pose(e) {
-      const u = e.obj.userData;
-      e.obj.rotation.y = Math.atan2(e.face.x, e.face.z);
-      u.sail.rotation.x = e.state === 'dive' ? -1.1 : -0.35 + Math.sin(e.t * 3) * 0.12;
-      u.sail.rotation.z = Math.sin(e.t * 2.3) * 0.2;
-      u.tail.forEach((s, i) => { s.rotation.z = Math.sin(e.t * 5 - i * 0.8) * 0.35; s.rotation.x = Math.sin(e.t * 4 - i) * 0.2; });
-    },
   },
   rootling: {
     init(e) { e.state = 'chase'; e.timer = 1; },

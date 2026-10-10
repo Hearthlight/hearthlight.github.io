@@ -27,7 +27,8 @@ export function stOf(e) { return e.st || (e.st = { burn: 0, burnDps: 0, burnBy: 
 // an element lands on an enemy (power ~ the attacker's damage multiplier)
 export function applyElement(C, e, elem, { p = null, power = 1, strong = false } = {}) {
   if (!e.alive || !elem) return;
-  const s = stOf(e), boss = !!e.def.boss;
+  // (a brute shrugs off a freeze or a jolt like a boss does: its own meter is the way to stop it)
+  const s = stOf(e), boss = !!(e.def.boss || e.def.brute);
   if (elem === 'fire') {
     s.burn = boss ? 2 : 3.2; s.burnDps = 4.5 * power * (strong ? 1.5 : 1) * (p && p.fighter ? p.fighter.mods.burnMul || 1 : 1); s.burnBy = p;
   } else if (elem === 'ice') {

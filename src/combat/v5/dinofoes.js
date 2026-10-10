@@ -3,7 +3,6 @@
 //   raptor   a pack circles you at a distance, then one pounces along a line
 //   dilo     flares its frill and spits a venom glob (a poison puddle where it
 //            lands); too close, and it screeches you back
-//   ptera    wheels overhead, then dives along the line its shadow draws
 //   ankylo   armoured in front; spins round with its club tail (a ring: jump it)
 //   compy    little swarms: quick nips, and they scatter when hit
 //   trike    lowers its horns and charges down a lane (its frill blocks hits
@@ -20,7 +19,6 @@ const rand = (a, b) => a + Math.random() * (b - a);
 export const DINO_ENEMIES = {
   raptor: { name: 'Gloom Raptor', hp: 42, speed: 4.3, r: 0.42, h: 1.3, dmg: 12, xp: 12, cost: 2, knockRes: 0.2, animal: 'raptor' },
   dilo: { name: 'Gloom Dilophosaur', hp: 62, speed: 2.4, r: 0.5, h: 1.7, dmg: 13, xp: 15, cost: 3, knockRes: 0.3, elem: 'poison' },
-  ptera: { name: 'Gloom Pteranodon', hp: 38, speed: 3.6, r: 0.55, h: 0.8, dmg: 13, xp: 13, cost: 3, flying: true, knockRes: 0.2 },
   ankylo: { name: 'Gloom Ankylosaur', hp: 150, speed: 1.35, r: 0.85, h: 1.3, dmg: 18, xp: 28, cost: 5, knockRes: 0.85, armor: 'front' },
   compy: { name: 'Compsognathus', hp: 12, speed: 4.8, r: 0.26, h: 0.55, dmg: 5, xp: 3, cost: 0.5, knockRes: 0, swarm: 3, animal: 'compy' },
   trike: { name: 'Gloom Triceratops', hp: 200, speed: 1.9, r: 1.0, h: 1.9, dmg: 24, xp: 38, cost: 7, knockRes: 0.9, armor: 'front', mount: 'trike' },
@@ -41,7 +39,7 @@ function model(kind, scale = 1) {
   };
 }
 export const DINO_MODELS = {
-  raptor: model('raptor'), dilo: model('dilo'), ptera: model('ptera', 1.2), ankylo: model('ankylo', 1.1),
+  raptor: model('raptor'), dilo: model('dilo'), ankylo: model('ankylo', 1.1),
   compy: model('compy', 1.25), trike: model('trike', 1.15),
 };
 
@@ -122,41 +120,6 @@ export const DINO_BRAINS = {
       }
     },
     pose(e, dt) { pose(e, dt, { speed: e.sp, act: e.state === 'flare' ? Math.min(1, (0.65 - e.timer) / 0.3) : e.state === 'screech' ? 1 : 0, roar: e.state === 'screech' ? 1 : 0 }); },
-  },
-
-  // ---- the pteranodon: wheels high, then dives down its line
-  ptera: {
-    init(e) { e.y = 2.9; },
-    think(e, dt, tgt, C) {
-      if (e.state === 'chase') {
-        e.ang = (e.ang ?? Math.random() * 6) + dt * 1.0;
-        const tx = tgt.pos.x + Math.cos(e.ang) * 4.6, tz = tgt.pos.z + Math.sin(e.ang) * 3.2;
-        C.moveEnemy(e, (tx - e.x) * dt * 2, (tz - e.z) * dt * 2, false, true);
-        e.faceTo(tx, tz);
-        e.y += (2.9 - e.y) * dt * 3;
-        if (e.timer <= 0) {
-          const D = dirTo(e, tgt.pos.x, tgt.pos.z);
-          e.aim = { x: D.x, z: D.z }; e.dist = D.d + 3;
-          e.state = 'mark'; e.timer = 0.75;
-          C.telegraphLine(e, e.aim, e.dist, 0.75);
-          C.sfx('screech', e);
-        }
-      } else if (e.state === 'mark') {
-        e.face = e.aim;
-        e.y += (3.3 - e.y) * dt * 4;
-        if (e.timer <= 0) { e.state = 'dive'; e.timer = e.dist / 13; e.hitOnce.clear(); }
-      } else if (e.state === 'dive') {
-        C.moveEnemy(e, e.aim.x * 13 * dt, e.aim.z * 13 * dt, false, true);
-        e.y += (0.55 - e.y) * dt * 10;
-        if (e.y < 1.3) C.enemyTouch(e, e.def.dmg * (e.dmgMul || 1), 3.6, 0.6);
-        if (e.timer <= 0) { e.state = 'chase'; e.timer = rand(2.4, 3.4); }
-      }
-    },
-    pose(e, dt) {
-      const u = e.obj.userData;
-      pose(e, dt, { air: e.state !== 'dive', glide: e.state === 'dive' });
-      if (u.rig) u.rig.body.rotation.z = e.state === 'dive' ? -0.55 : e.state === 'mark' ? 0.25 : 0;
-    },
   },
 
   // ---- the ankylosaurus: armoured in front, a club tail swung all round
