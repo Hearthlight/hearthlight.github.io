@@ -122,9 +122,12 @@ export class PartyChat {
   draw(ctx) {
     const P = this.P, d = P.display;
     for (const [p, o] of this.open) {
-      const v = P.cam.views.find((q) => q.members && q.members.includes(p)) || P.cam.views[0];
+      const v = P.cam.viewOf(p);
       if (!v) continue;
-      const a = d.worldToUi(v.rect.x, v.rect.y), b = d.worldToUi(v.rect.x + v.rect.w, v.rect.y + v.rect.h);
+      // (the screen split in fixed places: a line or a keyboard in the player’s own place, whoever
+      // shares the picture; the wheel by their hero, anywhere in it)
+      const typed = o.line || o.osk, R = (typed && P.cam.homeRect(p)) || v.rect;
+      const a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h);
       const vw = b.x - a.x, vh = b.y - a.y;
       if (o.line) { const w = Math.min(vw - 12, 300); o.line.draw(ctx, Math.round(a.x + (vw - w) / 2), Math.round(b.y - 44), w, p.color); continue; }
       if (o.osk) { o.osk.draw(ctx, vw, vh, a.x, a.y); continue; }

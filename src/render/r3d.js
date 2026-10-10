@@ -90,6 +90,9 @@ export class R3D {
         splitN: { value: new THREE.Vector2(1, 0) },
         splitA: { value: 0 },
         cells: { value: new THREE.Vector2(1, 1) },
+        // …or views of their own shapes (uv rectangles: x, y, w, h), each with its own vignette
+        vrects: { value: Array.from({ length: 8 }, () => new THREE.Vector4(0, 0, 1, 1)) },
+        vrectN: { value: 0 },
       },
       vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
       fragmentShader: /* glsl */`
@@ -98,6 +101,7 @@ export class R3D {
         uniform vec2 res; uniform float edgeThr; uniform vec3 outline; uniform float outlineMix;
         uniform vec3 shadowTint; uniform vec3 lightTint; uniform float sat; uniform vec3 grade; uniform float vignette;
         uniform float splitOn; uniform vec2 splitN; uniform float splitA; uniform vec2 cells;
+        uniform vec4 vrects[8]; uniform int vrectN;
         varying vec2 vUv;
         float D(vec2 o){ return texture2D(tDepth, vUv + o).x; }
         float DB(vec2 o){ return texture2D(tDepthB, vUv + o).x; }
@@ -126,6 +130,11 @@ export class R3D {
           c = mix(c, c * lightTint, smoothstep(0.62, 1.0, l));
           c *= grade;
           vec2 q = fract(vUv * cells) - 0.5;
+          for (int i = 0; i < 8; i++) {
+            if (i >= vrectN) break;
+            vec2 p = (vUv - vrects[i].xy) / vrects[i].zw;
+            if (p.x >= 0.0 && p.x < 1.0 && p.y >= 0.0 && p.y < 1.0) q = p - 0.5;
+          }
           c *= 1.0 - dot(q, q) * vignette;
           // the split line: a dark seam with a cream core
           if (splitOn > 0.5) {
@@ -234,10 +243,13 @@ export class R3D {
   //  grid:  views[i] = { cam, rect: {x, y, w, h} } drawn side by side
   //  split: two full-screen views composited along a line through the
   //         centre with normal `split.n` (pixels), seam opacity `split.a`
-  // `prep(view)` runs before each view (lights, shadows).
-  renderViews(views, { split = null, cells = [1, 1], prep = null } = {}) {
+  // `prep(view)` runs before each view (lights, shadows). `cells`: the grid’s columns and rows,
+  // for a vignette in each cell — or `rects`: each view’s own rectangle, when their sizes differ.
+  renderViews(views, { split = null, cells = [1, 1], rects = false, prep = null } = {}) {
     const r = this.renderer;
     const u = this.post.uniforms;
+    u.vrectN.value = rects ? Math.min(8, views.length) : 0;
+    if (rects) views.slice(0, 8).forEach((v, i) => u.vrects.value[i].set(v.rect.x / this.w, 1 - (v.rect.y + v.rect.h) / this.h, v.rect.w / this.w, v.rect.h / this.h));
     // (the world's matrices once for all the views — only the lights move between them)
     const sc = this.scene;
     sc.updateMatrixWorld();
@@ -249,6 +261,7 @@ export class R3D {
     r.render(this.postScene, this.postCam);
     u.splitOn.value = 0;
     u.cells.value.set(1, 1);
+    u.vrectN.value = 0;
   }
 
   drawViews(views, split, cells, prep) {

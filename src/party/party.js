@@ -10,7 +10,8 @@ import { RemoteHost } from './remote-host.js';
 import { RemoteInput, KeyInput, PadInput, KEY_LAYOUTS } from './inputs.js';
 import { TvMenus, keyOf } from './tvmenu.js';
 import { SplitCam, Zoom } from './camera.js';
-import { Host, crown, copyText } from './host.js';
+import { drawPlates } from './plates.js';
+import { Host, crown, copyText, splitOf } from './host.js';
 import { BigWorld } from '../world/big/bigworld.js';
 import { ZONES } from '../world/big/layout.js';
 import { ZoneRuntime } from './zones.js';
@@ -1135,6 +1136,9 @@ export class Party {
     const tv = this.tvmenus.shiftTiles();
     this.cam.shift = this.phase === 'lobby' ? { x: -((card * this.display.scale) / this.display.wscale) / 2 / this.cam.ppu, z: 0.6 } : tv ? { x: -tv, z: 0 } : null;
     this.cam.focus = this.phase !== 'lobby' && this.act && this.act.camFocus ? this.act.camFocus() : null;
+    this.cam.style = splitOf(this.settings);            // (the Settings’ Split screen: fixed places, or by groups)
+    // (the lobby’s join card: fixed places share the screen beside it)
+    this.cam.inset = this.phase === 'lobby' ? this.display.uiToWorld(Math.min(196, Math.round(this.display.w * 0.38)) + 12, 0).x : 0;
     if (cp.length) this.cam.update(dt, cp);
     else this.cam.update(dt, [{ pos: LOBBY, vel: { x: 0, z: 0 } }]);
     // each friend at home: a camera of their own (a scene's camera is everyone's)
@@ -1569,6 +1573,7 @@ export class Party {
     r3d.renderViews(cam.views, {
       split: cam.layout.type === 'split' ? cam.split : null,
       cells: cam.layout.type === 'grid' ? [cam.layout.cols, cam.layout.rows] : [1, 1],
+      rects: !!cam.layout.seats,            // (fixed places: pictures of one place, or of several)
       prep: (v) => {
         const inRoom = RM && RM.light(v), ppu = v.ppu || cam.ppu;
         r3d.aimShadow(v.cx, v.cz, v.rect.w, v.rect.h, ppu);
@@ -1596,6 +1601,8 @@ export class Party {
     // falling snow / petals / leaves where the first group is
     const drift = cam.views.length === 1 ? this.driftAt(v0) : null;
     if (drift) w.fx.drawDrift(wctx, d.ww, d.wh, 1 / 60, drift.kind, drift.level);
+    // (a picture that has just been cut blinks, alone)
+    for (const v of cam.views) if (v.flash > 0) { wctx.fillStyle = `rgba(255,248,230,${v.flash * 0.35})`; wctx.fillRect(v.rect.x, v.rect.y, v.rect.w, v.rect.h); }
     this.drawSeams(wctx);
     if (cam.flash > 0) { wctx.fillStyle = `rgba(255,248,230,${cam.flash * 0.35})`; wctx.fillRect(0, 0, d.ww, d.wh); }
     if (this.fade > 0) { wctx.fillStyle = `rgba(20,14,28,${this.fade})`; wctx.fillRect(0, 0, d.ww, d.wh); }
@@ -1614,15 +1621,8 @@ export class Party {
         ctx.restore();
       }
       for (const cell of cam.spare) this.drawMapPanel(ctx, cell);
-      // grid panels: whose view is this? a row of colour chips in the corner
-      if (cam.layout.type === 'grid') for (const v of cam.views) {
-        const a = d.worldToUi(v.rect.x, v.rect.y);
-        let x = Math.round(a.x) + 4, y = Math.round(a.y) + 4;
-        if (y < 30) y = 30;
-        const O = this.objectiveRect();
-        if (O && x < O.x + O.w + 2 && y < O.y + O.h + 3) y = O.y + O.h + 3;
-        for (const m of v.members) { ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, 8, 8); ctx.fillStyle = m.color; ctx.fillRect(x, y, 6, 6); x += 9; }
-      }
+      // whose picture is this? each player’s plate (their face, their name) in its corner
+      drawPlates(this, ctx);
     }
     // (a scene clears the screen for itself: bars, title cards, the dialogue)
     const scene = this.stage && (this.stage.active || this.stage.barK > 0);
@@ -1840,6 +1840,8 @@ export class Party {
       const dx = u.x - cx, dy = u.y - cy, k = Math.min(dx ? ((dx > 0 ? x1 : x0) - cx) / dx : 1e9, dy ? ((dy > 0 ? y1 : y0) - cy) / dy : 1e9);
       let X = Math.round(cx + dx * k), Y = Math.round(cy + dy * k);
       if (M && X > M.x - 10 && Y > M.y - 16) { if (X >= x1 - 1) Y = M.y - 16; else X = M.x - 12; }
+      // (nor over a player’s plate: under it on a side edge, beside it along the top)
+      for (const q of this.plateRects || []) if (X > q.x - 10 && X < q.x + q.w + 10 && Y > q.y - 10 && Y < q.y + q.h + 10) { if (Y > y0 + 1) Y = q.y + q.h + 10; else X = q.x + q.w / 2 < (a.x + b.x) / 2 ? q.x + q.w + 12 : q.x - 12; }
       if (v.half) { const q = d.uiToWorld(X, Y); if (!v.owns(q.x, q.y)) continue; }
       const L = Math.hypot(dx, dy) || 1, dist = Math.round(Math.hypot(pos.x - (m0 ? m0.pos.x : v.cx), pos.z - (m0 ? m0.pos.z : v.cz)));
       const g = groups.find((q) => Math.abs(q.X - X) < 16 && Math.abs(q.Y - Y) < 16);
@@ -1866,8 +1868,10 @@ export class Party {
   drawMapPanel(ctx, cell) {
     const d = this.display;
     const a = d.worldToUi(cell.x, cell.y), b = d.worldToUi(cell.x + cell.w, cell.y + cell.h);
-    const x = Math.round(a.x), y = Math.round(a.y), pw = Math.round(b.x - a.x), ph = Math.round(b.y - a.y);
-    ctx.fillStyle = '#2a1d34'; ctx.fillRect(x, y, pw, ph);
+    const x = Math.round(a.x), pw = Math.round(b.x - a.x);
+    // (the screen’s top right corner is the clock’s: the map starts under it)
+    const drop = a.y <= 2 && x + pw >= d.w - 2 && this.phase !== 'lobby' ? 24 : 0, y = Math.round(a.y) + drop, ph = Math.round(b.y - a.y) - drop;
+    ctx.fillStyle = '#2a1d34'; ctx.fillRect(x, y - drop, pw, ph + drop);
     drawText(ctx, t('Where is everyone?'), x + pw / 2, y + 4, { color: '#f6d38f', align: 'center' });
     // frame everyone (and the goal), as close as the panel allows
     const pts = this.players.map((p) => (this.rooms ? this.rooms.mapPos(p) : p.pos)), tgt = this.act && this.act.target;
@@ -1915,7 +1919,7 @@ export class Party {
     this.lane.draw(ctx, W, this.display.h);
     if (this.toastsHeld()) return;
     const avoid = [];
-    for (const rc of [this.lane.rect, this.races && this.races.cardRect, this.events && this.events.cardRect, this.camp && this.camp.cardRect, this.combat && this.combat.barRect, this.objectiveRect && this.objectiveRect(), this.noteRect]) if (rc) avoid.push({ x0: rc.x - 2, x1: rc.x + rc.w + 2, y0: rc.y - 2, y1: rc.y + rc.h + 2 });
+    for (const rc of [this.lane.rect, this.races && this.races.cardRect, this.events && this.events.cardRect, this.camp && this.camp.cardRect, this.combat && this.combat.barRect, this.objectiveRect && this.objectiveRect(), this.noteRect, ...(this.plateRects || [])]) if (rc) avoid.push({ x0: rc.x - 2, x1: rc.x + rc.w + 2, y0: rc.y - 2, y1: rc.y + rc.h + 2 });
     if (this.phase === 'lobby' && this.storyRect) avoid.push({ x0: this.storyRect.x - 2, x1: this.storyRect.x + this.storyRect.w + 2, y0: this.storyRect.y - 2, y1: this.storyRect.y + this.storyRect.h + 2 });
     avoid.sort((p, q) => p.y0 - q.y0);
     let y = this.phase === 'lobby' ? 56 : this.clockRect ? this.clockRect.y + this.clockRect.h + 4 : 4;

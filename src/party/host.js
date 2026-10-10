@@ -22,6 +22,12 @@ export const DIFFS = {
   heroic: { name: 'Heroic', hp: 1.7, dmg: 1.8, speed: 1.12 },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'heroic'];
+// how the big screen splits when the party spreads out (the Settings’ Split screen; camera.js)
+export const SPLITS = {
+  seats: { name: 'Fixed places', sub: 'everyone keeps their own place on the screen, always the same' },
+  groups: { name: 'By groups', sub: 'the screen is cut around the groups, as they come and go' },
+};
+export const splitOf = (st) => (st.split === 'groups' ? 'groups' : 'seats');
 const ACTS = [
   { id: 'explore', label: 'The Adventure', color: '#ffd66b' },
   { id: 'story', label: 'The Starfall Festival', color: '#8fd67a' },
@@ -145,6 +151,7 @@ export class Host {
     const camera = [
       { id: 'zoom', kind: 'choice', label: 'Zoom', value: Z.describe(), bar: [lv.findIndex((l) => l.ws === zoomWs), lv.length], auto: Z.mode === 'auto' },
       { id: 'zauto', kind: 'button', label: Z.mode === 'auto' ? 'Auto zoom is on' : 'Back to auto zoom', hot: Z.mode === 'auto' },
+      { id: 'split', kind: 'choice', label: 'Split screen', value: t(SPLITS[splitOf(P.game.settings)].name), sub: SPLITS[splitOf(P.game.settings)].sub },
     ];
     if (P.big) camera.push({ id: 'map', kind: 'button', label: P.bigMapOpen ? 'Hide the world map' : 'Show the world map' });
     // (how much the big screen shows — the solo game’s three displays: party.js `hudMode`)
@@ -205,6 +212,12 @@ export class Host {
     if (id === 'zoom' && P.bigMapOpen && dir) { P.mapView.step(dir > 0 ? 1 : -1, null, null, P.centroid()); return; }
     if (id === 'zoom') { if (dir) Z.step(dir > 0 ? 1 : -1); else Z.set('auto'); Z.flashT = 1.8; P.note = null; this.opts.zoom = Z.mode; this.saveOpts(); return; }
     if (id === 'zauto') { Z.set('auto'); Z.flashT = 1.8; P.note = null; this.opts.zoom = 'auto'; this.saveOpts(); return; }
+    if (id === 'split') {
+      g.settings.split = splitOf(g.settings) === 'seats' ? 'groups' : 'seats';
+      saveSettings(g.settings);
+      P.toast(t('Split screen: {mode}', { mode: t(SPLITS[g.settings.split].name) }), '#8fd6e0');
+      return;
+    }
     if (id === 'map') { P.bigMapOpen = !P.bigMapOpen; return; }
     if (id === 'hud') { P.cycleHud(dir || 1); return; }
     if (id.startsWith('inv:')) { const it = P.inviteItems().find((x) => x.id === id); if (it && it.url) copyText(it.url).then((ok) => P.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a')); return; }

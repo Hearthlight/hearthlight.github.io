@@ -1,8 +1,12 @@
-// Party Mode camera. One shared view while the whole party fits on screen;
-// when it drifts apart the screen splits along the line between the two
-// groups (each camera slides towards its group, so the split opens and closes
-// smoothly); three or more groups get a grid of panels, and a spare panel
-// shows the valley map so everyone can find each other again.
+// Party Mode camera. One shared view while the whole party fits on screen. When it
+// drifts apart the screen splits, in one of two styles (`style`, the Settings’ Split screen):
+// - `seats`, fixed places: a grid by the number of players, each of its cells the home of
+//   one player by seat — always the same — and friends who walk together share the picture
+//   their places make (two side by side: a wide one), so nobody looks for themselves;
+// - `groups`: along the line between two groups (each camera slides towards its group, so
+//   the split opens and closes smoothly), a grid of panels for three or more, the groups
+//   taking cells by where they stand.
+// A cell nobody has shows the valley map, so everyone can find each other again.
 
 import { THREE } from '../render/r3d.js';
 import { t } from '../i18n.js';
@@ -19,6 +23,15 @@ export const LAYOUTS = [
   { i: 3, k: 6, type: 'grid', cols: 3, rows: 2 },
   { i: 4, k: 8, type: 'grid', cols: 4, rows: 2 },
 ];
+
+// The fixed places: the grid for n players (2: left | right · 3–4: 2×2 · 5–6: 3×2 · 7–8: 4×2)
+const SEAT_GRIDS = [[1, 1], [1, 1], [2, 1], [2, 2], [2, 2], [3, 2], [3, 2], [4, 2], [4, 2]];
+const seatGrids = new Map();
+function seatLayout(cols, rows) {
+  const id = cols + 'x' + rows;
+  if (!seatGrids.has(id)) seatGrids.set(id, { i: LAYOUTS.length, k: cols * rows, type: 'grid', seats: true, cols, rows });
+  return seatGrids.get(id);
+}
 
 let nextId = 1;
 
@@ -60,8 +73,7 @@ const union = (a, b) => ({ x0: Math.min(a.x0, b.x0), x1: Math.max(a.x1, b.x1), z
 
 // Greedy complete-linkage clustering: keep merging the pair whose combined
 // footprint is smallest, as long as it still fits a fw×fh panel.
-export function clusterize(players, fw, fh) {
-  const cl = players.map((p) => ({ members: [p], box: playerBox(p) }));
+function link(cl, fw, fh) {
   for (;;) {
     let best = null;
     for (let i = 0; i < cl.length; i++) for (let j = i + 1; j < cl.length; j++) {
@@ -72,10 +84,36 @@ export function clusterize(players, fw, fh) {
     if (!best) break;
     const a = cl[best.i], b = cl[best.j];
     cl.splice(best.j, 1);
-    cl[best.i] = { members: a.members.concat(b.members), box: best.b };
+    cl[best.i] = { members: a.members.concat(b.members), box: best.b, n: (a.n || 1) + (b.n || 1) };
   }
+  return cl;
+}
+export function clusterize(players, fw, fh) {
+  const cl = link(players.map((p) => ({ members: [p], box: playerBox(p) })), fw, fh);
   for (const c of cl) { c.cx = (c.box.x0 + c.box.x1) / 2; c.cz = (c.box.z0 + c.box.z1) / 2 + (EXT.top - EXT.bottom) / 2 * 0.5; }
   return cl;
+}
+
+// The rectangles a set of cells makes in a cols-wide grid: the biggest first (a wide one
+// before a tall one, the top left before the others), then what is left, the same way.
+function cellRects(cells, cols, rows) {
+  const left = new Set(cells), out = [];
+  while (left.size) {
+    let best = null;
+    for (const c of left) {
+      const x0 = c % cols, y0 = (c - x0) / cols;
+      for (let w = 1; x0 + w <= cols && left.has(c + w - 1); w++) for (let h = 1; y0 + h <= rows; h++) {
+        let full = true;
+        for (let x = 0; x < w && full; x++) full = left.has(c + (h - 1) * cols + x);
+        if (!full) break;
+        const a = w * h;
+        if (!best || a > best.a || (a === best.a && (w > best.w || (w === best.w && c < best.c)))) best = { c, w, h, a };
+      }
+    }
+    for (let y = 0; y < best.h; y++) for (let x = 0; x < best.w; x++) left.delete(best.c + y * cols + x);
+    out.push(best);
+  }
+  return out;
 }
 
 export class SplitCam {
@@ -92,6 +130,12 @@ export class SplitCam {
     this.n = { x: 1, z: 0 };       // smoothed split direction
     this.roomOf = null;            // (members) → the room frame they're all in (rooms.js)
     this.bossNear = null;          // (x, z) → a boss close by (party.js), for the view to lean its way
+    this.style = 'groups';         // how the screen splits: `seats` (fixed places) or `groups`
+    this.homes = new Map();        // fixed places: player → their cell (kept for the session)
+    this.grid = null;              // …in a grid of [cols, rows]
+    this.kept = new Map();         // …the cell of each seat that had one (a phone that comes back)
+    this.parts = null;             // …and who walks with whom while the screen is split
+    this.joins = [];               // …friends about to share a picture: { members, t }
   }
 
   get W() { return this.r3d.w; }
@@ -132,10 +176,34 @@ export class SplitCam {
   }
 
   update(dt, players, instant = false) {
-    const W = this.W, H = this.H;
     // a scene holds the camera (saga/stage.js): one full-screen view where it says
     if (this.director) { this.directed(dt, players); return; }
     if (!players.length) return;
+    // (the split’s style changed: everything framed afresh)
+    if (this.style !== this.styled) { this.styled = this.style; this.layout = null; instant = true; }
+    for (const v of this.views) if (v.flash > 0) v.flash = Math.max(0, v.flash - dt * 5);
+    if (this.style === 'seats') this.seatViews(dt, players, instant);
+    else this.groupViews(dt, players, instant);
+    // the views glide to where they want to be
+    const k = instant ? 1 : 1 - Math.exp(-dt * 5);
+    for (const v of this.views) {
+      // (a jump across the world — into a room, back out — cuts rather than glides)
+      if (Math.abs(v.tx - v.cx) > 90 || Math.abs(v.tz - v.cz) > 90) { v.cx = v.tx; v.cz = v.tz; }
+      else { v.cx += (v.tx - v.cx) * k; v.cz += (v.tz - v.cz) * k; }
+    }
+    if (instant) for (const v of this.views) { v.cx = v.tx; v.cz = v.tz; }
+    // screen shake (big hits, thunder): a few pixels, decaying fast
+    let sx = 0, sz = 0;
+    if (this.shake > 0) {
+      sx = (Math.random() - 0.5) * this.shake * 0.8; sz = (Math.random() - 0.5) * this.shake * 0.6;
+      this.shake = Math.max(0, this.shake - dt * 1.6);
+    }
+    for (const v of this.views) this.r3d.aimCamera(v.cam, v.cx + sx, v.cz + sz, v.ppu || this.ppu, v.rect.w, v.rect.h);
+  }
+
+  // ---- `groups`: the screen is cut around the groups, as they form and break
+  groupViews(dt, players, instant) {
+    const W = this.W, H = this.H;
     // 1) which layout? (the smallest that fits; shrink back only after a
     //    moment of comfortable fit, so the screen doesn't flicker)
     let need = LAYOUTS.length - 1, clusters = null;
@@ -252,21 +320,143 @@ export class SplitCam {
       });
       this.split = null;
     }
-    // 3) glide
-    const k = instant ? 1 : 1 - Math.exp(-dt * 5);
-    for (const v of this.views) {
-      // (a jump across the world — into a room, back out — cuts rather than glides)
-      if (Math.abs(v.tx - v.cx) > 90 || Math.abs(v.tz - v.cz) > 90) { v.cx = v.tx; v.cz = v.tz; }
-      else { v.cx += (v.tx - v.cx) * k; v.cz += (v.tz - v.cz) * k; }
+  }
+
+  // ---- `seats`: everyone’s picture stays where their seat puts it
+  seatViews(dt, players, instant) {
+    const W = this.W, H = this.H, prev = this.layout, old = this.views;
+    // 1) one view while the party fits; back to it only after a moment of comfortable fit
+    let one = !!this.forceSingle || players.length < 2;
+    if (!one && !(prev && prev.seats)) one = !!this.tryLayout(LAYOUTS[0], players);
+    else if (!one) { this.fitDown = this.tryLayout(LAYOUTS[0], players, 0.8) ? this.fitDown + dt : 0; one = this.fitDown > 0.9; }
+    const G = this.seat(players, one);
+    const L = one ? LAYOUTS[0] : seatLayout(G[0], G[1]), changed = L !== prev;
+    this.layout = L;
+    this.split = null;
+    if (changed) this.fitDown = 0;
+    if (changed && prev && !instant) this.flash = 1;
+    if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 5);
+    if (one) {
+      const v = changed ? new View() : old[0], all = clusterize(players, 1e9, 1e9)[0];
+      v.members = all.members;
+      v.rect = { x: 0, y: 0, w: W, h: H };
+      v.half = null;
+      this.aimAt(v, all.cx, all.cz, all.members);
+      if (changed) { v.cx = v.tx; v.cz = v.tz; }
+      this.views = [v];
+      this.spare = [];
+      this.parts = null;
+      return;
     }
-    if (instant) for (const v of this.views) { v.cx = v.tx; v.cz = v.tz; }
-    // screen shake (big hits, thunder): a few pixels, decaying fast
-    let sx = 0, sz = 0;
-    if (this.shake > 0) {
-      sx = (Math.random() - 0.5) * this.shake * 0.8; sz = (Math.random() - 0.5) * this.shake * 0.6;
-      this.shake = Math.max(0, this.shake - dt * 1.6);
+    // 2) who walks with whom: friends who fit a frame the size of one place. Someone who no
+    //    longer fits is apart at once; friends share a picture after most of a second of
+    //    comfortable fit, so the screen doesn’t flicker
+    const [fw, fh] = this.fit(Math.floor((W - this.hid()) / L.cols / 2) * 2, Math.floor(H / L.rows / 2) * 2);
+    let parts = this.parts;
+    if (!parts || changed || instant) { parts = clusterize(players, fw, fh).map((c) => c.members); this.joins = []; }
+    else {
+      parts = parts.map((g) => g.filter((p) => players.includes(p))).filter((g) => g.length);
+      for (const p of players) if (!parts.some((g) => g.includes(p))) parts.push([p]);
+      parts = parts.flatMap((g) => (g.length > 1 ? clusterize(g, fw, fh).map((c) => c.members) : [g]));
+      const joins = [];
+      for (const c of link(parts.map((g) => ({ members: g, box: g.map(playerBox).reduce(union) })), fw * 0.8, fh * 0.8)) {
+        if (!(c.n > 1)) continue;
+        // (a friend more coming close doesn’t start the wait again)
+        let wait = dt;
+        for (const j of this.joins) if (j.members.every((p) => c.members.includes(p))) wait = Math.max(wait, j.t + dt);
+        if (wait > 0.9) parts = parts.filter((g) => !c.members.includes(g[0])).concat([c.members]);
+        else joins.push({ members: c.members, t: wait });
+      }
+      this.joins = joins;
     }
-    for (const v of this.views) this.r3d.aimCamera(v.cam, v.cx + sx, v.cz + sz, v.ppu || this.ppu, v.rect.w, v.rect.h);
+    for (const g of parts) g.sort((a, b) => a.slot - b.slot);
+    this.parts = parts;
+    // 3) each group’s places: those that touch make one picture, the others one each — all
+    //    framed on the group. A picture whose places stay keeps its camera (it glides); a new
+    //    one is a cut, with a blink
+    const views = [];
+    for (const g of parts) {
+      const c = clusterize(g, 1e9, 1e9)[0];
+      for (const r of cellRects(g.map((p) => this.homes.get(p)), L.cols, L.rows)) {
+        const id = r.c + ':' + r.w + 'x' + r.h;
+        let v = changed ? null : old.find((q) => q.span === id);
+        const fresh = !v;
+        if (fresh) v = new View();
+        v.span = id; v.cell = r.c;
+        v.rect = this.cellRect(r.c, r.w, r.h);
+        v.half = null;
+        v.members = g;
+        this.aimAt(v, c.cx, c.cz, g);
+        if (fresh) { v.cx = v.tx; v.cz = v.tz; if (!changed && !instant) v.flash = 1; }
+        views.push(v);
+      }
+    }
+    this.views = views.sort((a, b) => a.cell - b.cell);
+    // (the places nobody has: the map, one panel where they touch)
+    const taken = new Set(this.homes.values()), free = [];
+    for (let i = 0; i < L.cols * L.rows; i++) if (!taken.has(i)) free.push(i);
+    this.spare = cellRects(free, L.cols, L.rows).map((r) => this.cellRect(r.c, r.w, r.h));
+  }
+
+  // Who has which place. A place is kept for the session: a player who leaves frees theirs,
+  // a newcomer takes a free one, and while the screen is split nobody moves — the grid only
+  // grows, by a row or a column. With everyone in one view (`together`) the places are dealt
+  // again by seat when the grid changes shape or the seats are out of order.
+  seat(players, together) {
+    const H = this.homes, want = SEAT_GRIDS[Math.min(8, players.length)];
+    const bySeat = (a, b) => (a.slot || 0) - (b.slot || 0);
+    for (const p of [...H.keys()]) if (!players.includes(p)) H.delete(p);
+    let G = this.grid;
+    const news = players.filter((p) => !H.has(p)).sort(bySeat);
+    const inOrder = () => { const o = [...H].sort((a, b) => a[1] - b[1]); return o.every((e, i) => !i || bySeat(o[i - 1][0], e[0]) < 0); };
+    if (!G || G[0] < 2 || (together && (G[0] !== want[0] || G[1] !== want[1] || !inOrder()))) {
+      G = this.grid = want;
+      H.clear();
+      this.kept.clear();
+      players.slice().sort(bySeat).forEach((p, i) => H.set(p, i));
+      for (const [p, i] of H) this.kept.set(p.slot, i);
+      return G;
+    }
+    while (H.size + news.length > G[0] * G[1] && G[0] * G[1] < 8) {
+      // (no place left: a row under a single one, else a column — the cells stay where they are)
+      const from = G[0], to = G[1] < 2 ? [from, 2] : [from + 1, 2], move = (i) => Math.floor(i / from) * to[0] + (i % from);
+      for (const [p, i] of H) H.set(p, move(i));
+      this.kept = new Map([...this.kept].map(([slot, i]) => [slot, move(i)]));
+      G = this.grid = to;
+    }
+    for (const p of news) {
+      // (back after a moment away: their own place if it’s still free; else the first free one
+      // that keeps the seats in order, else the first free one)
+      const taken = new Set(H.values()), free = [];
+      for (let i = 0; i < G[0] * G[1]; i++) if (!taken.has(i)) free.push(i);
+      let lo = -1, hi = 1e9;
+      for (const [q, i] of H) { if (bySeat(q, p) < 0) lo = Math.max(lo, i); else hi = Math.min(hi, i); }
+      const mine = this.kept.get(p.slot), fits = free.filter((i) => i > lo && i < hi);
+      H.set(p, free.includes(mine) ? mine : fits.length ? fits[0] : free[0]);
+      this.kept.set(p.slot, H.get(p));
+    }
+    return G;
+  }
+
+  // What a card hides on the left of the screen (`inset`, world px — the lobby’s): the places
+  // share the rest; the first column runs under the card and frames its heroes beside it.
+  hid() { return Math.floor(Math.min(this.inset || 0, this.W * 0.5) / 2) * 2; }
+
+  // a place’s rectangle on the world canvas (w × h places from cell i, for a picture they share)
+  cellRect(i, w = 1, h = 1) {
+    const L = this.layout, W = this.W, H = this.H, x0 = this.hid(), cw = Math.floor((W - x0) / L.cols / 2) * 2, ch = Math.floor(H / L.rows / 2) * 2;
+    const cx = i % L.cols, cy = (i - cx) / L.cols, x = cx ? x0 + cx * cw : 0, y = cy * ch;
+    return { x, y, w: (cx + w >= L.cols ? W : x0 + (cx + w) * cw) - x, h: cy + h >= L.rows ? H - y : h * ch };
+  }
+
+  // a player’s own place while the screen is split in fixed places (else null)
+  homeRect(p) { return this.layout && this.layout.seats && this.homes.has(p) ? this.cellRect(this.homes.get(p)) : null; }
+
+  // the view a player looks at: the one over their own place, else the first that shows them
+  viewOf(p) {
+    const R = this.homeRect(p);
+    return (R && this.views.find((v) => R.x >= v.rect.x && R.y >= v.rect.y && R.x < v.rect.x + v.rect.w && R.y < v.rect.y + v.rect.h))
+      || this.views.find((v) => v.members.includes(p)) || this.views[0];
   }
 
   directed(dt, players) {
@@ -274,7 +464,7 @@ export class SplitCam {
     let v = this.views.length === 1 && this.layout === LAYOUTS[0] ? this.views[0] : null;
     if (!v) { v = new View(); this.flash = 0; }
     this.layout = LAYOUTS[0];
-    v.members = players; v.rect = { x: 0, y: 0, w: W, h: H }; v.half = null; v.cell = undefined;
+    v.members = players; v.rect = { x: 0, y: 0, w: W, h: H }; v.half = null; v.cell = undefined; v.span = null;
     v.cx = v.tx = D.x; v.cz = v.tz = D.z; v.ppu = D.ppu || this.ppu;
     this.views = [v]; this.spare = []; this.split = null;
     let sx = 0, sz = 0;
@@ -293,6 +483,7 @@ export class SplitCam {
     vx /= members.length || 1; vz /= members.length || 1;
     x += vx * 0.22; z += vz * 0.18;
     if (this.shift && this.layout && this.layout.type === 'single') { x += this.shift.x; z += this.shift.z; }
+    if (this.layout && this.layout.seats && v.rect.x <= 0) x -= this.hid() / 2 / this.ppu;     // (beside the lobby’s card)
     const hw = v.rect.w / 2 / this.ppu, hh = v.rect.h / 2 / this.ppu;
     // (a boss close by: the view leans towards its middle, as in solo — a big one isn't
     // cut off at the top of a wide screen — but never so far that a hero leaves it)
@@ -452,9 +643,11 @@ export class Zoom {
     if (this.split ? !fits(far, 0.85) : !fits(far, 1)) {
       this.split = true;
       this.inT = 0;
-      const groups = cam.groupsFor(players, d.devW / normal, d.devH / normal, 16);
+      // (small pictures — three groups or more, the fixed places of three players or more —
+      // are looked at from a little further)
+      const small = cam.style === 'seats' ? players.length > 2 : cam.groupsFor(players, d.devW / normal, d.devH / normal, 16) > 2;
       const out = this.levels().filter((l) => l.ws < normal).pop();
-      return groups > 2 && out ? out.ws : normal;
+      return small && out ? out.ws : normal;
     }
     this.split = false;
     let best = far;

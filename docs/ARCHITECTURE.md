@@ -91,8 +91,10 @@ Coordinates: 1 unit = 1 tile = 16 texels; x runs east, z south.
 - **Party Mode** (`party/party.js`): 1 to 8 players on one screen — phones (through a relay),
   one keyboard, gamepads — and friends at home (remote play). The host wears a crown
   (`party/host.js`: the host menu); keyboard and gamepad players have their own menu on the big
-  screen (`party/tvmenu.js`); `party/camera.js` splits the screen when players wander apart. The
-  activities: the story, the Starfall Festival's games, free exploration and the Festival Ring.
+  screen (`party/tvmenu.js`); `party/camera.js` splits the screen when players wander apart — in
+  fixed places by seat (`party/plates.js` marks whose picture is whose) or around the groups
+  (`settings.split`). The activities: the story, the Starfall Festival's games, free exploration
+  and the Festival Ring.
 - **What a player's buttons do right now** is one context (`P.ctxOf(p)`, from each system's
   `ctxFor`): phones show it as labels, keyboard and gamepad players as chips under their hero. A
   hint never names a key: `ctl('interact')` names it on the device in hand.

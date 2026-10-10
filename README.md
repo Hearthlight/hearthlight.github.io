@@ -337,9 +337,11 @@ a one-tap rocker right on the controller. The big screen has the same menu (Esc,
 gamepad).
 
 **The camera** keeps pixels crisp at every zoom level; Auto picks the level from how spread out
-everyone is. While the party fits on screen it shares one view; when groups drift apart the
-screen splits along the line between them, and three or more groups get a grid of panels (a map
-fills any spare one). Tree crowns thin out wherever they hide someone, so forests stay playable.
+everyone is. While the party fits on screen it shares one view; when it drifts apart the screen
+splits into **fixed places**: each player keeps the same corner, with their face and name on it,
+and friends who walk together share a bigger picture (a map fills a place nobody has). The other
+style, a screen cut around the groups as they form, is one setting away. Tree crowns thin out
+wherever they hide someone, so forests stay playable.
 
 **A whole world.** The valley is now the heart of an 800 × 400-tile world streamed around the
 cameras: Deep Whisperwood, the Windy Heights and their windmills, Bouncecap Woods, the Frostpeak
