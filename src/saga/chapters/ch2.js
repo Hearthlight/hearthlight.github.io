@@ -1,9 +1,9 @@
 // Chapter 2 — The Whispering Woods. Deep Whisperwood & the Windy Heights,
 // levels 4–11. The foresters’ trees are sick with gloom; Old Rowan listens to
 // them, Tansy wants to be a Lamplighter. Perkins opens the Pelican Post (the
-// first flight: up onto the Heights, slightly off). Crumble’s gloom kites have
-// stopped Barley’s mills — and without their wind the Rootway stays hidden
-// behind the falls. Down in the roots: Grumbleclaw’s burrow, and Barkbeard, the
+// first flight: up onto the Heights, slightly off). Crumble’s Gustbellies blow
+// against the sails of Barley’s mills — and without their wind the Rootway stays
+// hidden behind the falls. Down in the roots: Grumbleclaw’s burrow, and Barkbeard, the
 // Elder of the Deepwood, asleep in the gloom. His Great Hearth relit, the Murk
 // rolls back from the Steppe, the Canyon and Bouncecap Woods.
 
@@ -30,22 +30,14 @@ async function foresters(S) {
     st.actor('rowan', CAMP.x - 0.6, CAMP.z + 0.6, { face: { x: -0.3, z: 1 } });
     st.actor('tansy', CAMP.x + 2.2, CAMP.z + 1.4, { face: { x: -1, z: 0.4 } });
     await st.cam(CAMP.x - 1, CAMP.z + 1, { dur: 0, ppu: st.basePpu() });
-    await st.say('narrator', 'The trees of Deep Whisperwood are whispering.{p} Not the friendly kind of whispering.');
     st.sfx('whoosh', { volume: 0.4, pitch: -16 });
-    await st.say('narrator', '“…cold… so cold…{p} …the dark…{p} …the dark came down…”', { speed: 0.7 });
-    await st.say('rowan', 'Hush now, old girl. Hush. I know.', { expr: 'sad' });
+    await st.say('narrator', 'The trees of Deep Whisperwood are whispering:{p} “…cold… so cold… the dark came down…”');
     st.heroesFace(CAMP.x - 0.6, CAMP.z + 0.6);
-    await st.say('rowan', 'Ah.{p} A lantern. A real Lamplighter’s lantern — I’d know that brass anywhere.', { expr: 'shock' });
+    await st.say('rowan', 'A real Lamplighter’s lantern! I’m Old Rowan, the head forester.', { expr: 'shock' });
     st.hop('tansy'); st.emote('tansy', 'exclaim');
-    await st.say('tansy', 'A LAMPLIGHTER?!{p} Can I hold it? I won’t drop it.{pp} Probably.', { expr: 'happy' });
-    await st.say('rowan', 'Tansy.', { expr: 'neutral' });
-    await st.say('tansy', 'Sorry! Hello! I’m Tansy — apprentice forester, future Lamplighter, and I do a {wave}very{/} good owl.', { expr: 'happy' });
-    await st.say('rowan', 'The trees talk to us, friend. They have since before the Lamplighters. Since the Murk came, they only say the one thing.', { expr: 'worried' });
-    st.shake(0.2);
-    await st.say('narrator', 'The whole wood sighs at once:{p} “…dark…”');
-    await st.say('rowan', 'Barkbeard — the Elder of the Deepwood — has gone quiet. He keeps our Great Hearth, deep in his roots. If he’s gone quiet…', { expr: 'sad' });
-    await st.say('tansy', 'Then the Hearth’s gone out! Duh!{p} Um. Sorry. Sad duh.', { expr: 'worried' });
-    await st.say('rowan', 'Three of my trees are sick with gloom. Heal them, and they might tell us what became of the old fellow.', { expr: 'neutral' });
+    await st.say('tansy', 'A REAL ONE?! I’m Tansy, future Lamplighter. And I do a {wave}very{/} good owl.', { expr: 'happy' });
+    await st.say('rowan', '{key}Barkbeard{/}, the oldest tree of all, keeps our Great Hearth in his roots. And he has gone silent.', { expr: 'sad' });
+    await st.say('rowan', '{key}Three of my trees{/} are sick with gloom. {key}Chase it away{/}: they will tell us what happened to Barkbeard.', { expr: 'neutral' });
   });
 }
 
@@ -58,10 +50,10 @@ async function thePost(S) {
     st.actor('rowan', rx - 2.6, rz + 2.4, { face: { x: 0.5, z: -0.4 } });
     st.actor('tansy', rx + 3.8, rz + 2.4, { face: { x: -0.6, z: -0.4 } });
     await st.cam(rx, rz + 1.6, { dur: 0, ppu: st.basePpu() });
-    await st.say('rowan', 'The trees say the Duchess’s folk marched up to Breezy Hill with sacks full of kites. The mills stopped the same night.', { expr: 'worried' });
-    await st.say('rowan', 'And they say the Rootway — the old way down into Barkbeard’s roots — opens behind the falls in the gorge…{p} but only when the mills turn.', { expr: 'neutral' });
-    await st.say('tansy', 'The Lamplighters built the mills to blow the Murk out of the gorge! I read it in a book. The book had pictures.', { expr: 'happy' });
-    await st.say('rowan', 'It’s a long climb up to the Heights, mind.', { expr: 'neutral' });
+    await st.say('rowan', 'So the Duchess’s brutes climbed Breezy Hill, and the windmills stopped.', { expr: 'worried' });
+    await st.say('rowan', 'The way down to Barkbeard is {key}the Rootway{/}. It hides in the mist, behind the falls.', { expr: 'neutral' });
+    await st.say('rowan', 'Only the wind from the mills can blow that mist away. Go and see {key}Barley the miller{/}, up on {key}Breezy Hill{/}.', { expr: 'neutral' });
+    await st.say('tansy', 'It’s a long climb, though!', { expr: 'worried' });
     // a shape comes down out of the sky, far too fast
     const p = st.actor('perkins', rx + 7, rz - 4, { face: { x: -1, z: 0.4 } });
     p.n.seatY = 7;
@@ -73,12 +65,7 @@ async function thePost(S) {
     st.fx('dust', rx + 1.4, 0.3, rz + 1.2, 14);
     st.heroesEmote('exclaim');
     await st.say('perkins', 'PELICAN POST!{p} Did somebody say “long climb”?', { expr: 'happy', hop: true });
-    await st.say('perkins', 'Behold: Deep Whisperwood’s very own roost! Built it on the way down. Mostly out of your laundry line.', { expr: 'smug' });
-    await st.say('rowan', 'That was my laundry line.', { expr: 'angry' });
-    await st.say('perkins', 'Hop in the pouch! First flight’s free.{p} All flights are free. We’re not very good at money.', { expr: 'happy' });
-    await st.say('tansy', 'Ooooh. Can I—', { expr: 'love' });
-    await st.say('rowan', 'No.', { expr: 'neutral' });
-    await st.say('tansy', 'Aw.', { expr: 'sad' });
+    await st.say('perkins', 'Hop in the pouch! Next stop: Breezy Hill!', { expr: 'happy' });
     S.flag('post');
     st.mark('post');
   });
@@ -87,7 +74,7 @@ async function thePost(S) {
     if (from && to) { S.post.find(from, true); await S.post.fly(from, to, { quip: false }); }
   }
   S.banner('The Pelican Post', 'Find a roost by every town — then press {a} at any of them to fly', { a: S.P.keyName('a') });
-  await S.say('narrator', 'You land in a haystack.{p} The pelican looks very pleased with itself.');
+  await S.say('narrator', 'You land in a haystack on Breezy Hill.{p} {key}Barley’s mills{/} stand just to the north.');
 }
 
 // ------------------------------------------------------------------ the mills turn again
@@ -98,17 +85,17 @@ async function theWind(S) {
     st.actor('barley', mx - 1, mz + 1.2, { face: { x: 0.3, z: 1 } });
     await st.cam(56, -108, { dur: 0, ppu: Math.max(8, st.basePpu() / 2) });
     st.sfx('whoosh', { volume: 0.8, pitch: 6 });
-    await st.say('barley', 'Listen to that! Round and round and round!{p} That’s the sound of breakfast, that is.', { expr: 'love' });
+    await st.say('barley', 'Listen to that! All three mills are turning again!', { expr: 'love' });
     // a gust rolls off the Heights, down into the gorge
     st.shake(0.3);
     for (let k = 0; k < 16; k++) st.fx('leaf', 50 + Math.random() * 20, 2 + Math.random() * 2, -110 + Math.random() * 12, 1);
     await st.cam(FALLS.x - 3, FALLS.z + 1, { dur: 1.8, ppu: st.basePpu() });
-    // Crumble, hanging off an enormous kite, blown right past
+    // Crumble, swept off the hill by the mills’ wind, blown right past
     const c = st.actor('crumble', FALLS.x - 22, FALLS.z - 4, { face: { x: 1, z: 0 } });
     c.n.seatY = 4.5;
     st.walk('crumble', FALLS.x + 20, FALLS.z - 8, { speed: 9 });
     await st.say('crumble', 'Operation Wind-Down has… wound…{p} {shake}DOWNNN!{/}', { expr: 'shock', shake: 1 });
-    await st.say('crumble', 'You’ll never wake the old tree! Her Radiance put him to sleep FOR EVER! Probably!', { expr: 'worried' });
+    await st.say('crumble', 'You’ll never wake the old tree! The Duchess put him to sleep FOR EVER!', { expr: 'worried' });
     st.hide('crumble');
     st.sfx('boing', { volume: 0.6 });
     S.flag('millsTurn');
@@ -116,7 +103,7 @@ async function theWind(S) {
     await st.wait(0.4);
     st.mark('door');
     await st.cam(ROOTWAY_DOOR[0], ROOTWAY_DOOR[1], { dur: 0.8 });
-    await st.say('narrator', 'Down in the gorge, the mist behind the falls blows away — and there, among the roots, is a door.');
+    await st.say('narrator', 'The wind blows the mist off the falls: {key}the Rootway{/} is open! Go through the {key}door behind the falls{/}, north-east of the foresters’ camp.');
   });
 }
 
@@ -140,9 +127,8 @@ R('den').run = async (S, d, r) => {
     await st.cam(c.x, c.z, { dur: 0.8 });
     st.sfx('dig', { volume: 0.8 });
     await st.say('narrator', 'Something very large, very grumpy and very furry turns round.');
-    await st.say('narrator', '“WHO’S THAT? Who’s stomping about on my ceiling?”');
     await st.title('Grumbleclaw', 'the gloom badger', 2);
-    await st.say('narrator', '“This is MY burrow, and that is MY gloom, and — is that a LANTERN?{p} {shake}PUT IT OUT!{/}”');
+    await st.say('narrator', '“This is MY burrow! And — is that a LANTERN?{p} {shake}PUT IT OUT!{/}”');
   });
   e.state = 'chase'; e.timer = 1.2;
 };
@@ -154,8 +140,8 @@ R('den').tick = (S, d, r) => {
   if (C) { C.bounds = null; for (const q of C.enemies) if (q.alive && q.summoner === e) { q.alive = false; q.fading = 0; q.remove(); } }
   (async () => {
     await S.P.wait(1.2);
-    await S.say('narrator', '“Fine! FINE! Take the silly tunnel. I’m moving to the canyon. Nobody shines lanterns at you in a canyon.”');
-    await S.say('narrator', 'Grumbleclaw digs away through the wall, muttering, and the roots at the back of the den draw aside.');
+    await S.say('narrator', '“Fine! FINE! Keep your silly lantern. I’m moving to the canyon!”');
+    await S.say('narrator', 'Grumbleclaw digs away through the wall. At the back of his den, {key}the roots draw aside{/}.');
     const G5 = d.gate('g5');
     if (G5) d.setGate(G5, true);
   })();
@@ -182,7 +168,7 @@ R('heart').run = async (S, d, r) => {
     st.flash('#b88aff', 0.3);
     await st.wait(0.5);
     st.mark('barkbeard');
-    await st.say('barkbeard', '{big}…WHO…{/}{p} {big}…TRESPASSES…{/}{p} {big}…IN THE HEARTWOOD…{/}', { shake: 1, speed: 0.6 });
+    await st.say('barkbeard', '{big}…WHO TRESPASSES…{/}{p} {big}…IN THE HEARTWOOD…{/}', { shake: 1, speed: 0.6 });
     await st.title('Barkbeard', 'the Elder of the Deepwood, lost in the gloom', 2.6);
   });
   e.state = 'chase'; e.timer = 1.4;
@@ -211,10 +197,10 @@ R('heart').tick = (S, d, r) => {
       if (st.vfx) st.vfx.pillar(bx, bz, { r: 1.4, h: 7, color: '#8ff0c0', life: 1.4 });
       for (let k = 0; k < 16; k++) st.fx('sparkle', bx + (Math.random() - 0.5) * 3, 1 + Math.random() * 4, bz, 2, { color: '#b88aff' });
       void c;
-      await st.say('narrator', 'The gloom snaps like old string. It unwinds from the great trunk and blows away into nothing.');
-      await st.say('barkbeard', 'Hmmm.{p} Hmmmm.{pp} That was… a very long, very bad dream.', { expr: 'sleepy' });
+      await st.say('narrator', 'The gloom snaps like old string and blows away.');
+      await st.say('barkbeard', 'Hmmm…{p} That was a very long, very bad dream.', { expr: 'sleepy' });
       await st.say('barkbeard', 'Little Lamplighter. You have June’s lantern…{p} and her stubbornness, I think.', { expr: 'happy' });
-      await st.say('barkbeard', 'The Hearth sleeps under my roots. Wake it. It has been waiting for you.', { expr: 'neutral' });
+      await st.say('barkbeard', 'The {key}Great Hearth{/} sleeps under my roots, right behind me. {key}Wake it{/}: it has been waiting for you.', { expr: 'neutral' });
       const G6 = d.gate('g6');
       if (G6) d.setGate(G6, true);
       const rr = d.rooms.find((q) => q.id === 'hearth');
@@ -233,7 +219,7 @@ R('hearth').take = async (S, d, r) => {
     if (st.vfx) st.vfx.pillar(x, z, { r: 0.9, h: 6, color: '#8ff0c0', life: 1.4 });
     st.sfx('shard', { volume: 0.9 });
     S.flag('hearthDeepwood');
-    await st.say('narrator', 'The Deepwood’s flame leaps into the lantern: green and gold, smelling of moss and rain.{p} Two flames dance in the lantern now.');
+    await st.say('narrator', 'The Deepwood’s flame leaps into the lantern, green and gold.{p} {key}Two flames{/} dance in it now.');
   });
   await d.D.exit({ done: true });
 };
@@ -248,8 +234,7 @@ async function dawnInTheWoods(S) {
     tree.rotation.y = 0.6;
     st.prop('barkbeard', tree, x - 4.4, 0, z + 5);
     st.heroesFace(x - 4.4, z + 5);
-    await st.say('barkbeard', 'Hmmm. Daylight. I had forgotten how it tickles.', { expr: 'happy' });
-    await st.say('barkbeard', 'Stand back, little ones. This old tree has some catching up to do.', { expr: 'neutral' });
+    await st.say('barkbeard', 'Hmmm. Daylight, at last.{p} Stand back, little ones: this old tree has work to do.', { expr: 'happy' });
     st.sfx('chime', { volume: 0.9 });
     st.flash('#c8ffd8', 0.6);
     st.shake(0.5);
@@ -266,15 +251,16 @@ async function dawnInTheWoods(S) {
     await st.title('The Deepwood breathes again', 'The Murk rolls back from the Golden Steppe, the Red Canyon and Bouncecap Woods', 4);
     await st.say('narrator', 'Back in Marigold Cove, a certain mayor drops his tea.{p} He has started buying cheaper cups.');
     await st.cam(x, z + 1.2, { dur: 1.4, ppu: st.basePpu() });
-    await st.say('barkbeard', 'The Steppe’s Great Hearth burns beneath the old Festival Ring, where the travelling players pitch their tents.', { expr: 'worried' });
-    await st.say('barkbeard', 'I hear the Duchess’s players have pitched a tent there. A striped one.{p} And a cannon. Hmmm. Trees do not care for cannons.', { expr: 'neutral' });
-    await st.say('barkbeard', 'Go west, little Lamplighter. And mind the cannon.', { expr: 'happy' });
+    await st.say('barkbeard', 'The next Great Hearth burns out west, in the {key}Golden Steppe{/}, under the old Festival Ring.', { expr: 'worried' });
+    await st.say('barkbeard', 'Go {key}west{/}, little Lamplighter, to the {key}Festival Ring{/}.', { expr: 'happy' });
   });
 }
 
 // ------------------------------------------------------------------ the chapter
 export const CH2 = {
-  id: 2, title: 'The Whispering Woods', lv: 5, zones: ['deepwood', 'heights'], opens: ['steppe', 'canyon', 'bouncecap'],
+  id: 2, title: 'The Whispering Woods',
+  recap: 'The Duchess snuffed out the lighthouse of Marigold Cove, and you relit it with Nana June’s lantern. Her letter sends you north, to {key}Deep Whisperwood{/}. Find its Great Hearth, kept by the old tree Barkbeard, and {key}relight it{/}.',
+  lv: 5, zones: ['deepwood', 'heights'], opens: ['steppe', 'canyon', 'bouncecap'],
   props: [
     ...TREES.map(([x, z], k) => ({ id: 'tree' + k, at: [x, z], r: 0.9, build: (r3d) => buildSickTree(r3d, 'tree' + k) })),
     { id: 'rootDoor', at: [ROOTWAY_DOOR[0], ROOTWAY_DOOR[1] - 1.4], build: (r3d) => buildRootDoor(r3d), when: (S) => S.has('millsTurn') },
@@ -284,13 +270,13 @@ export const CH2 = {
   ],
   npcs: [
     { id: 'rowan', at: [CAMP.x - 0.6, CAMP.z + 0.6], face: { x: -0.3, z: 1 }, when: (S) => S.done('c1_relight'),
-      lines: ['Hush now. Listen. Even the moss has something to say.', 'The old oaks say you walk too fast. I told them you’re young. They said: so were we.'] },
+      lines: ['Listen. Even the moss has something to say.', 'The trees see everything that walks in this wood.'] },
     { id: 'tansy', at: [CAMP.x + 2.2, CAMP.z + 1.4], face: { x: -1, z: 0.4 }, when: (S) => S.done('c1_relight'),
-      lines: ['Hoo-hoo! That was my owl. Good, right?', 'When I’m a Lamplighter I’ll have TWO lanterns. One for each hand.'] },
+      lines: ['Hoo-hoo! That was my owl. Good, right?', 'When I’m a Lamplighter, I’ll have TWO lanterns.'] },
     { id: 'barley', at: MILLER, face: { x: 0.3, z: 1 }, when: (S) => S.has('post'),
-      lines: ['A mill that doesn’t turn is just a very tall shed.', 'Flour on my nose? Oh, always.'] },
+      lines: ['A mill that doesn’t turn is just a very tall shed.', 'No wind, no flour. No flour, no bread!'] },
   ],
-  // (Breezy Hill’s mills stand still from the day the Duchess came until their kites are gone)
+  // (Breezy Hill’s mills stand still from the day the Duchess came until their Gustbellies are gone)
   update(S, dt) {
     S.millT = (S.millT || 0) - dt;
     if (S.millT > 0) return;
@@ -305,49 +291,55 @@ export const CH2 = {
   quests: {
     c2_road: {
       title: 'The Lamplighters’ Road', auto: true, lv: 5,
+      brief: 'Nana June’s letter says the foresters of Deep Whisperwood keep the next Great Hearth. Take the old road north to their camp.',
       steps: [
-        { do: 'go', text: 'Follow the old road north to the foresters’ camp in Deep Whisperwood', at: [CAMP.x, CAMP.z + 2], r: 7, run: foresters },
+        { do: 'go', text: 'Follow the old road north to the {key}foresters’ camp{/}', at: [CAMP.x, CAMP.z + 2], r: 7, run: foresters },
       ],
     },
     c2_trees: {
       title: 'The Whispering Trees', auto: true, after: 'c2_road', lv: 6,
+      brief: 'Barkbeard, the old tree who keeps the Great Hearth, has gone silent. Three sick trees saw what happened: chase the gloom off each of them.',
       steps: [
-        ...TREES.map(([x, z], k) => ({ do: 'camp', text: ['Heal the whispering tree in the west clearing', 'Heal the whispering tree in the hidden glade', 'Heal the whispering tree by the old trail'][k],
-          camp: { id: 'c2_tree' + k, at: [x, z + 3], level: 5 + k, foes: [['gloomling', 'crow', 'rootling'], ['rootling', 'rootling', 'fox'], ['gloomling', 'rootling', 'crow', 'stag']][k], n: 3 + (k === 2 ? 1 : 0), done: 'The gloom lets go of the old tree!' },
+        // (a Gloom Boar leads the first and the last tree’s camps: one brute, and a small foe or two)
+        ...TREES.map(([x, z], k) => ({ do: 'camp', text: ['Chase the gloom from the {key}sick tree{/}, far west of the camp', 'Chase the gloom from the {key}sick tree{/} in the Hidden Glade, far to the east', 'Chase the gloom from the {key}sick tree{/} on the trail, west of the camp'][k],
+          camp: { id: 'c2_tree' + k, at: [x, z + 3], level: 5 + k, foes: [['gloomling', 'rootling'], ['rootling', 'rootling', 'fox'], ['gloomling', 'rootling', 'stag']][k], n: [1, 3, 2][k], big: ['boar', null, 'boar'][k], done: 'The gloom lets go of the old tree!' },
           run: async (S) => {
             S.flag('tree' + k);
             S.P.world.fx.emit('sparkle', x, 2.4, z, 20, { color: '#8ff0c0' });
-            await S.say('narrator', ['“…warm… thank you, little light…{p} …kites… they carried kites up the hill…”', '“…ahh… the dark is gone…{p} …the mills… the mills stopped turning…”', '“…the old one sleeps… deep… under the falls… the falls…”'][k]);
+            await S.say('narrator', ['“…warm… thank you…{p} …big round brutes went {key}up the hill{/}… blowing…”', '“…{key}the mills{/}… the mills have stopped…”', '“…Barkbeard sleeps… deep… {key}under the falls{/}…”'][k]);
           } })),
-        { do: 'talk', npc: 'rowan', text: 'Tell Old Rowan what the trees said', run: thePost },
+        { do: 'talk', npc: 'rowan', text: 'Go back to {key}Old Rowan{/} at the foresters’ camp', run: thePost },
       ],
     },
     c2_mills: {
       title: 'Gone With the Wind', auto: true, after: 'c2_trees', lv: 8,
+      brief: 'The door to Barkbeard only shows when the windmills of Breezy Hill turn. A Gustbelly blows against each of Barley’s three mills: chase them off.',
       steps: [
-        { do: 'talk', npc: 'barley', text: 'Talk to Barley the Miller on Breezy Hill',
+        { do: 'talk', npc: 'barley', text: 'Talk to {key}Barley the miller{/}, among his mills on Breezy Hill',
           run: async (S) => {
-            await S.say('barley', 'Kites! Nasty grinning gloom kites, tangled in my sails! Three mills stopped dead!', { expr: 'angry' });
-            await S.say('barley', 'A little red fellow flew them in. Said he was “winding down the operation”. Then he laughed for a very long time.', { expr: 'worried' });
-            await S.say('barley', 'Chase them out of my sails, would you? There’s a loaf in it for you. A big one.', { expr: 'happy' });
+            await S.say('barley', 'Gustbellies! Big round brutes, one at each mill, blowing my sails backwards!', { expr: 'angry' });
+            await S.say('barley', 'Chase them off my {key}three mills{/}, would you? West, high and east.', { expr: 'happy' });
           } },
-        ...MILLS.map(([x, z], k) => ({ do: 'camp', text: ['Free the west mill from the gloom kites', 'Free the high mill from the gloom kites', 'Free the east mill from the gloom kites'][k],
-          camp: { id: 'c2_mill' + k, at: [x, z + 3.5], level: 8 + (k === 1 ? 1 : 0), foes: [['kite', 'kite', 'wisp'], ['kite', 'kite', 'kite', 'harpy'], ['kite', 'kite', 'stormcrow']][k], n: 3 + (k === 1 ? 1 : 0), done: 'The sails creak — and turn!' },
+        // (a Gustbelly at each mill, blowing against its sails; the high mill’s has a Storm Ram beside it)
+        ...MILLS.map(([x, z], k) => ({ do: 'camp', text: ['Chase the Gustbelly from the {key}west mill{/}, west of Barley', 'Chase the Gustbelly from the {key}high mill{/}, north of Barley', 'Chase the Gustbelly from the {key}east mill{/}, east of Barley'][k],
+          camp: { id: 'c2_mill' + k, at: [x, z + 3.5], level: 8 + (k === 1 ? 1 : 0), foes: [['wisp', 'gloomling'], ['stormram'], ['wisp', 'gloomling']][k], n: [1, 1, 2][k], big: 'gustbelly', done: 'The sails creak — and turn!' },
           run: async (S) => { S.flag('mill' + k); audio.sfx('whoosh', { volume: 0.6 }); } })),
-        { do: 'scene', text: '…', run: theWind },
+        { do: 'scene', text: 'Watch the wind come back to {key}Breezy Hill{/}', run: theWind },
       ],
     },
     c2_rootway: {
       title: 'The Rootway', auto: true, after: 'c2_mills', lv: 9,
+      brief: 'The mills turn, and the door behind the falls is open. Cross the Rootway to Barkbeard, then relight the Deepwood’s Great Hearth.',
       steps: [
-        { do: 'go', text: 'Go down into the gorge and through the door behind the falls', at: ROOTWAY_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('rootway'); else S.flag('rootwayDone'); } },
-        { do: 'dungeon', id: 'rootway', text: 'Find the Deepwood’s Great Hearth in the Rootway' },
+        { do: 'go', text: 'Go through the {key}door behind the falls{/}, north-east of the foresters’ camp', at: ROOTWAY_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('rootway'); else S.flag('rootwayDone'); } },
+        { do: 'dungeon', id: 'rootway', text: 'Cross the Rootway to the Deepwood’s {key}Great Hearth{/}' },
       ],
     },
     c2_relight: {
       title: 'The Deepwood Breathes Again', auto: true, after: 'c2_rootway', lv: 10,
+      brief: 'The Deepwood’s flame burns in the lantern. Outside the Rootway, Barkbeard chases the Murk from the lands to the west.',
       steps: [
-        { do: 'scene', text: '…', run: dawnInTheWoods },
+        { do: 'scene', text: 'Watch the {key}Deepwood{/} wake up, outside the Rootway', run: dawnInTheWoods },
       ],
       done: async (S) => { if (!S.st.lit.includes('deepwood')) S.st.lit.push('deepwood'); S.save(); },
       next: 3,
@@ -355,11 +347,12 @@ export const CH2 = {
     // ---- side quests
     c2_lamps: {
       title: 'Lamplighter in Training', kind: 'side', giver: 'tansy', lv: 5, when: (S) => S.done('c2_road'), dust: 25,
+      brief: 'Tansy dreams of being a Lamplighter. Walk the lantern up to her three lamp posts, along the trail south-west of the camp, to light them.',
       offer: async (S) => {
-        await S.say('tansy', 'I put up lamp posts all along the camp trail! For practice. For when I’m a Lamplighter.', { expr: 'happy' });
-        await S.say('tansy', 'Only… they need a real Lamplighter’s spark to light. Will you? Pleeease? I’ll do my owl.', { expr: 'love' });
+        await S.say('tansy', 'I put up lamp posts along the camp trail! For practice.', { expr: 'happy' });
+        await S.say('tansy', 'Only a real lantern can light them. Pleeease, go and light my {key}three lamp posts{/}!', { expr: 'love' });
       },
-      steps: LAMPS.map(([x, z], k) => ({ do: 'go', text: ['Light Tansy’s first lamp post, by the trail’s start', 'Light Tansy’s second lamp post', 'Light Tansy’s last lamp post, near the camp'][k], at: [x, z + 1], r: 2,
+      steps: LAMPS.map(([x, z], k) => ({ do: 'go', text: ['Light Tansy’s {key}first lamp post{/}, at the south end of the trail', 'Light Tansy’s {key}second lamp post{/}, further north on the trail', 'Light Tansy’s {key}last lamp post{/}, on the trail west of the camp'][k], at: [x, z + 1], r: 2,
         run: async (S) => {
           S.flag('lamp' + k);
           S.P.world.fx.emit('sparkle', x + 0.4, 1.9, z, 12, { color: '#ffd66b' });
@@ -369,41 +362,43 @@ export const CH2 = {
     },
     c2_owl: {
       title: 'The Owl Who Lost Her Hoot', kind: 'side', giver: 'rowan', lv: 6, when: (S) => S.done('c2_road'), dust: 25,
+      brief: 'Old Hootenanny, the foresters’ owl, has lost her hoot. Catch its three echoes around Deep Whisperwood, then bring them to Old Rowan.',
       offer: async (S) => {
-        await S.say('rowan', 'Old Hootenanny has lost her hoot. Owls do, now and then — it goes off wandering on its own.', { expr: 'neutral' });
-        await S.say('rowan', 'You’ll hear it echoing round the wood, if you listen. Bring it back to her, would you?', { expr: 'happy' });
+        await S.say('rowan', 'Old Hootenanny, our owl, has lost her hoot. It wandered off on its own.', { expr: 'neutral' });
+        await S.say('rowan', '{key}Three echoes{/} of it drift round the wood. {key}Bring them back{/} to me, would you?', { expr: 'happy' });
       },
       steps: [
-        { do: 'collect', text: 'Catch the echoes of Hootenanny’s hoot', item: 'Stray Hoot', n: 3, spots: HOOTS, hint: '“…hoo… hoo…” — a little echo, all on its own' },
-        { do: 'talk', npc: 'rowan', text: 'Bring the hoot back to Old Rowan',
+        { do: 'collect', text: 'Catch the {key}echoes of the hoot{/} around Deep Whisperwood', item: 'Stray Hoot', n: 3, spots: HOOTS, hint: '“…hoo… hoo…” — a little echo, all on its own' },
+        { do: 'talk', npc: 'rowan', text: 'Bring the hoot back to {key}Old Rowan{/}, at the foresters’ camp',
           run: async (S) => {
-            await S.say('narrator', 'From a branch somewhere above the camp comes a long, delighted “HOOOOO!”');
-            await S.say('rowan', 'There she is. Thank you, friend. The wood sounds right again.', { expr: 'happy' });
+            await S.say('narrator', 'Above the camp, a long, delighted “HOOOOO!”');
+            await S.say('rowan', 'There she is. Thank you, friend.', { expr: 'happy' });
             await S.say('tansy', 'Hmph. Mine’s better.', { expr: 'angry' });
           } },
       ],
     },
     c2_flour: {
       title: 'Flour Power', kind: 'side', giver: 'barley', lv: 8, when: (S) => S.has('mill0') && S.has('mill1') && S.has('mill2'), dust: 30,
+      brief: 'The mills turn again. Barley wants Rosa, the baker of Marigold Cove, to have his first sack of flour: take it down to her.',
       offer: async (S) => {
-        await S.say('barley', 'First flour from the turning mills! Rosa down in Marigold Cove bakes the best bread in the land — she ought to have the first sack.', { expr: 'happy' });
-        await S.say('barley', 'Take it down for me? The pelicans fly to the cove, if you’ve found the roost there.', { expr: 'neutral' });
+        await S.say('barley', 'The first flour from my mills! Take this sack to {key}Rosa{/}, the baker of Marigold Cove, would you?', { expr: 'happy' });
       },
       steps: [
-        { do: 'talk', npc: 'rosa', text: 'Take Barley’s first flour to Rosa in Marigold Cove',
+        { do: 'talk', npc: 'rosa', text: 'Take Barley’s flour to {key}Rosa{/}, the baker of Marigold Cove',
           run: async (S) => {
-            await S.say('rosa', 'Flour from Breezy Hill? The mills are turning again? Oh, you lovely thing.', { expr: 'love' });
-            await S.say('rosa', 'Tell Barley there’ll be a loaf the size of a cartwheel waiting for him. And one for you — here.', { expr: 'happy' });
+            await S.say('rosa', 'Flour from Breezy Hill? So the mills are turning again!', { expr: 'love' });
+            await S.say('rosa', 'Tell Barley a loaf as big as a cartwheel is waiting for him.', { expr: 'happy' });
           } },
       ],
     },
     c2_cairns: {
       title: 'Stack ’Em High', kind: 'side', giver: 'barley', lv: 9, when: (S) => S.done('c2_mills'), dust: 30,
+      brief: 'The Gustbellies blew down the cairns that guide walkers across the Windy Heights. Stack all three back up, along the road east of the mills.',
       offer: async (S) => {
-        await S.say('barley', 'Those kites knocked over the old cairns across the Heights. Walkers use them to find their way in the fog.', { expr: 'worried' });
-        await S.say('barley', 'Stack them back up? Big stones at the bottom, small ones at the top. That’s the whole secret.', { expr: 'happy' });
+        await S.say('barley', 'Those Gustbellies blew down the cairns that guide walkers on the Heights.', { expr: 'worried' });
+        await S.say('barley', 'Stack the {key}three cairns{/} back up, would you? They stand along the road, {key}east of my mills{/}.', { expr: 'happy' });
       },
-      steps: CAIRNS.map(([x, z], k) => ({ do: 'go', text: ['Stack the cairn east of the mills', 'Stack the cairn by the high tarn', 'Stack the far eastern cairn'][k], at: [x, z + 1.2], r: 2,
+      steps: CAIRNS.map(([x, z], k) => ({ do: 'go', text: ['Stack the {key}first cairn{/}, on the road east of the mills', 'Stack the {key}second cairn{/}, north-east of the lake', 'Stack the {key}last cairn{/}, far east along the road'][k], at: [x, z + 1.2], r: 2,
         run: async (S) => { S.P.world.fx.emit('sparkle', x, 1, z, 10, { color: '#e8d6b4' }); audio.sfx('place', { volume: 0.7 }); } })),
     },
   },
