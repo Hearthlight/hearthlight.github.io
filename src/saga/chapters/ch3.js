@@ -1,7 +1,7 @@
 // Chapter 3 — Dust & Spores. The Golden Steppe, the Red Canyon and Bouncecap
 // Woods, levels 9–17. The Duchess’s big top on the Festival Ring and the
 // Understudies’ Human Cannonball; the Steppe’s Hearthstone dug up from under the
-// Ring and sold to Foreman Grubb; the nomads’ lost fluffhorns; Dusty Gulch, its
+// Ring and carried off to Foreman Grubb; the nomads’ lost fluffhorns; Dusty Gulch, its
 // sheriff and Old Boom, the retired cannonball whose cannon Big Bertha was; the
 // ore cart chase up the Canyon Railway; Professor Hazel and the old quarry road;
 // the Old Mine (the Mole Brothers, Grubb’s Drillosaur). The Hearthstone back
@@ -45,20 +45,17 @@ async function bigTop(S) {
     st.actor('fidget', sx - 2.2, sz + 0.5, { face: { x: 0.3, z: 1 } });
     st.actor('brick', sx + 2.3, sz + 0.5, { face: { x: -0.3, z: 1 } });
     await st.cam(BIGTOP[0], BIGTOP[1], { dur: 0, ppu: st.basePpu() });
-    await st.say('narrator', 'The Festival Ring is packed to the rafters. Somebody has pitched a great striped tent on the sand…{p} and wheeled in a cannon the size of a hay cart.');
+    await st.say('narrator', 'The Festival Ring is packed. Somebody has pitched a striped big top on the sand… and rolled in a giant cannon.');
     await st.cam(sx, sz + 2, { dur: 1.4 });
     for (let k = 0; k < 8; k++) { st.sfx('tick', { volume: 0.5, pitch: k }); await st.wait(0.07); }
     st.music('bigtop');
     st.sfx('cheer', { volume: 0.7 });
     st.hop('minnow');
-    await st.say('minnow', 'LADIES! GENTLEMEN! And… whoever you are!', { expr: 'happy' });
-    await st.say('minnow', 'The Understudies proudly present — for one night only — {big}THE HUMAN CANNONBALL!{/}', { expr: 'smug', shake: 1 });
-    await st.say('fidget', 'We’ve rehearsed it twice. Once it went well.', { expr: 'worried' });
+    await st.say('minnow', 'LADIES! GENTLEMEN! The Understudies present… {big}THE HUMAN CANNONBALL!{/}', { expr: 'smug', shake: 1 });
     st.hop('brick');
     await st.say('brick', 'Brick… is cannonball.', { expr: 'happy' });
-    await st.say('minnow', 'Her Radiance says if this act goes well, we get REAL PARTS. With LINES.', { expr: 'love' });
     st.heroesFace(sx, sz);
-    await st.say('fidget', 'Oh — and if you’re in the audience, you’re part of the act. Sorry. Union rules.', { expr: 'neutral' });
+    await st.say('fidget', 'And you, in the audience: you are {key}part of the act{/}. Sorry.', { expr: 'neutral' });
     await st.say('minnow', '{shake}FIRE… THE… BRICK!{/}', { expr: 'angry', shake: 1 });
     st.sfx('boom', { volume: 0.8 }); st.shake(0.4);
     st.mark('bigTop');
@@ -100,19 +97,15 @@ async function afterAct(S) {
     st.actor('fidget', sx + 0.4, sz + 3.3, { face: { x: -0.4, z: 1 } });
     st.actor('brick', sx + 2, sz + 3.1, { face: { x: -0.3, z: 1 } });
     await st.cam(A.x, A.z - 2, { dur: 0.8 });
-    await st.say('minnow', 'That… was NOT in the script.', { expr: 'shock' });
-    await st.say('brick', 'Brick saw stars. Nice stars.', { expr: 'sleepy' });
-    await st.say('fidget', 'She’s going to fire us. She’s going to fire us out of the CANNON.', { expr: 'cry' });
     st.sfx('page', { volume: 0.7 });
-    await st.say('narrator', 'Something flutters out of Minnow’s costume: a note, sealed in violet wax.');
-    await st.say('narrator', '“Understudies — once the act is over, carry the Steppe’s Hearthstone to Foreman Grubb at the Old Mine. He pays in gloom. Do NOT drop it. — Her Radiance”');
-    await st.say('minnow', 'The HEARTHSTONE? We only dug up the dressing-room floor!', { expr: 'worried' });
-    await st.say('fidget', 'Minnow. The dressing room is UNDER THE RING.', { expr: 'angry' });
+    await st.say('narrator', 'A note falls out of Minnow’s costume.');
+    await st.say('narrator', '“Understudies — after the act, carry {key}the Steppe’s Hearthstone{/} to Foreman Grubb, at {key}the Old Mine{/}. — Her Radiance, the Duchess”');
+    await st.say('minnow', 'The Hearthstone? …That big stone we dug up under the Ring!', { expr: 'worried' });
     // where the Steppe’s Great Hearth burned: a cold, empty hollow under the star
     await st.cam(A.x, A.z, { dur: 0.9 });
     st.flash('#2a1a3a', 0.4);
     st.mark('emptyHearth');
-    await st.say('narrator', 'Beneath the star in the sand, where the Great Hearth of the Steppe should burn, there is only a cold, empty hollow.');
+    await st.say('narrator', 'Under the star in the sand, the Steppe’s Great Hearth is gone. Only a cold, empty hollow is left.');
     // Her Radiance, on the line
     // (it rises from a trapdoor at the front of the stage, big and brassy, and hums)
     const horn = buildGloomophone(P.r3d);
@@ -131,16 +124,13 @@ async function afterAct(S) {
     for (const id of ['minnow', 'fidget', 'brick']) st.emote(id, 'exclaim');
     blare();
     await st.say('duchess', 'I asked for a SPECTACLE. I got… a brick in a bucket.', { expr: 'angry' });
-    await st.say('minnow', 'He’s a very GOOD brick, Your Radiance!', { expr: 'worried' });
     blare();
-    await st.say('duchess', 'And who is THIS? The Wick Brigade? The Lamp-lickers? Come to sniff about my Hearthstone?', { expr: 'smug' });
-    blare();
-    await st.say('duchess', 'Light all the little flames you like, darlings. Every Hearth you light, I shall simply snuff again.{p} I have a very large snuffer. It is in the programme.', { expr: 'smug' });
+    await st.say('duchess', 'Ah. The Lamp-lickers. Light all the flames you like: I shall snuff them all again.', { expr: 'smug' });
     blare(12);
-    await st.say('duchess', 'Understudies — the Hearthstone. The MINE. Now. And do try to make it… {wave}dramatic{/}.', { expr: 'angry' });
+    await st.say('duchess', 'Understudies! The Hearthstone. {key}To the mine{/}. NOW!', { expr: 'angry' });
     st.dropProp('horn');
     st.sfx('poof', { volume: 0.6 });
-    await st.say('minnow', 'Understudies! Exit… stage… LEFT!', { expr: 'shock', hop: true });
+    await st.say('minnow', 'Understudies! Exit… stage… WEST!', { expr: 'shock', hop: true });
     for (const id of ['minnow', 'fidget', 'brick']) st.walk(id, A.x - A.rx - 3, A.z, { speed: 7 });
     await st.wait(1.3);
     for (const id of ['minnow', 'fidget', 'brick']) st.hide(id);
@@ -148,23 +138,22 @@ async function afterAct(S) {
     st.actor('tuya', A.x + 5, A.z - 3, { face: { x: -1, z: 0.5 } });
     st.walk('tuya', A.x + 2, A.z + 0.2, { speed: 2 });
     await st.cam(A.x + 1, A.z + 1, { dur: 0.8 });
-    await st.say('tuya', 'Hmph. Circus folk. I’ve seen better tricks from a goat.', { expr: 'neutral' });
-    await st.say('tuya', 'Carts full of gloom rattle across my steppe every night, west, to the canyon. Come to the Nomad Camp, little lantern. We should talk.', { expr: 'worried' });
+    await st.say('tuya', 'Hmph. Off they run with our Hearthstone: west, to the canyon.', { expr: 'neutral' });
+    await st.say('tuya', 'I am Tuya, of the nomads. Come to {key}the Nomad Camp{/}, north-west of here: we must talk.', { expr: 'worried' });
   });
 }
 
 // ------------------------------------------------------------------ the nomads
 async function tuyaTalk(S) {
-  await S.say('tuya', 'Welcome to the Nomad Camp. Sit. Drink. Don’t pet the fluffhorns — they bite.', { expr: 'happy' });
+  await S.say('tuya', 'Welcome, little lantern. Last night the gloom took our grazing ground and scattered our fluffhorns.', { expr: 'worried' });
+  await S.say('tuya', 'Don’t pet them, by the way. They bite.', { expr: 'happy' });
   await S.say('temur', 'They don’t BITE. They nibble. Enthusiastically.', { expr: 'happy' });
-  await S.say('tuya', 'Last night the gloom stampeded the whole herd. Three are still out on the steppe, sulking behind rocks.', { expr: 'worried' });
-  await S.say('temur', 'Bring them home, and I’ll ride you to Dusty Gulch myself — that’s where the carts go. Where the rails end!', { expr: 'love' });
+  await S.say('tuya', '{key}Three{/} are still lost on the steppe. Bring them home, and I’ll show you the road to {key}the Old Mine{/}.', { expr: 'neutral' });
 }
 async function tuyaThanks(S) {
-  await S.say('tuya', 'All home, and the grass is quiet again. You have a way with frightened things, little lantern.', { expr: 'happy' });
-  await S.say('tuya', 'Follow the canyon road west. Where the rails end, you’ll find Dusty Gulch — and, I’d wager, whoever is buying all that gloom.', { expr: 'neutral' });
-  await S.say('temur', 'I’ll ride ahead and tell the sheriff you’re coming! She LOVES visitors!', { expr: 'happy', hop: true });
-  await S.say('tuya', 'She does not.', { expr: 'neutral' });
+  await S.say('tuya', 'All home, and the grass is quiet again. Thank you, little lantern.', { expr: 'happy' });
+  await S.say('temur', 'I’ll ride ahead to Dusty Gulch and tell the sheriff you’re coming!', { expr: 'happy', hop: true });
+  await S.say('tuya', 'Follow the canyon road {key}west{/} to {key}Dusty Gulch{/}. From there, the rails climb to the Old Mine.', { expr: 'neutral' });
 }
 
 // ------------------------------------------------------------------ Dusty Gulch
@@ -182,19 +171,18 @@ async function gulchArrival(S) {
     st.walk('dolly', x - 2.4, z + 1.8, { speed: 3 });
     await st.wait(0.9);
     st.heroesFace(x - 2.4, z + 1.8);
-    await st.say('dolly', 'Hold it right there, strangers. Temur says you’re Lamplighters.', { expr: 'neutral' });
+    await st.say('dolly', 'Hold it, strangers. I’m Sheriff Dolly. Temur says you’re Lamplighters.', { expr: 'neutral' });
     await st.say('temur', 'I did! Twice! Loudly!', { expr: 'happy' });
-    await st.say('dolly', 'Well, the Gulch could use a light. Grubb’s moles took the Old Mine, and now they’ve drilled into the town spring. The water tower’s gone bone dry.', { expr: 'worried' });
-    await st.say('dolly', 'Chase those varmints off the tower and I’ll owe you one. I don’t owe folks often. I keep a list.', { expr: 'neutral' });
+    await st.say('dolly', 'Foreman Grubb’s moles took {key}the Old Mine{/}. Now they’ve drilled into our spring: the water tower is dry.', { expr: 'worried' });
+    await st.say('dolly', 'Chase those varmints off {key}the water tower{/}, and I’ll owe you one.', { expr: 'neutral' });
   });
 }
 async function boomTalk(S) {
-  await S.say('boom', 'Ha! Nice work, youngsters. Haven’t seen digging like that since… well, since the moles.', { expr: 'happy' });
-  await S.say('boom', 'They call me Old Boom. Sixty years a Human Cannonball, at every Starfall Festival there ever was.', { expr: 'smug' });
-  await S.say('boom', 'Wait. A red cannon at the Festival Ring, with gold stars on it? That’s BIG BERTHA! That’s MY cannon!', { expr: 'shock' });
-  await S.say('boom', 'Got her the year of the Hen, you know. Thirty years back, at the Starfall Festival.', { expr: 'neutral' });
-  await S.say('boom', 'Young soprano on the big stage, a voice like a bell. Then a hen got loose, right in the middle of her aria. She tripped. Folk laughed.{p} I laughed. Wasn’t kind of us.', { expr: 'sad' });
-  await S.say('boom', 'Never heard her sing again. Funny, the things you remember.{p} …Anyway! That old rock-sniffer Grubb — his crew’s loading something at the station right now. Something green and gold.', { expr: 'worried' });
+  await S.say('boom', 'Nice work, youngsters! I’m Old Boom: sixty years a Human Cannonball.', { expr: 'smug' });
+  await S.say('boom', 'That red cannon at the Festival Ring is BIG BERTHA. MY cannon!', { expr: 'shock' });
+  await S.say('boom', 'I got her thirty years ago, at the Starfall Festival. That night, a hen ran on stage and tripped a young opera singer.', { expr: 'neutral' });
+  await S.say('boom', 'We all laughed. Me too.{p} She never sang here again.', { expr: 'sad' });
+  await S.say('boom', '…Anyway! Grubb’s crew is loading something {key}green and gold{/} at {key}the station{/}. Right now!', { expr: 'worried' });
 }
 
 // ------------------------------------------------------------------ the ore cart chase
@@ -215,11 +203,11 @@ async function theChase(S) {
       const moles = [0, 1].map((i) => { const m = CANYON_MODELS.mole(P.r3d); m.rotation.y = i ? -0.6 : 0.5; st.prop('mole' + i, m, x0 + (i ? 1.4 : -2.2), 0, z0 + (i ? -0.8 : -0.4)); return m; });
       void moles;
       await st.cam(x0, z0 + 1.2, { dur: 0, ppu: st.basePpu() });
-      await st.say('grubb', 'Oi! This here’s company property! Property of Her Radiance’s Gloom Works, that is!', { expr: 'angry' });
+      await st.say('grubb', 'Oi! Hands off! This {key}Hearthstone{/} belongs to the mine now!', { expr: 'angry' });
       st.actor('dolly', x0 + 6, z0 + 3, { face: { x: -1, z: -0.3 } });
       st.walk('dolly', x0 + 3.8, z0 + 2.2, { speed: 5 });
       await st.say('dolly', '{shake}GRUBB!{/} Put that stone DOWN!', { expr: 'angry' });
-      await st.say('grubb', 'Not today, Sheriff! Next stop: the Old Mine! Mind the doors!', { expr: 'smug', hop: true });
+      await st.say('grubb', 'Not today, Sheriff! Next stop: {key}the Old Mine{/}! Mind the doors!', { expr: 'smug', hop: true });
       // (he jumps in, the moles give it a shove)
       st.hide('grubb');
       for (let i = 0; i < 2; i++) st.dropProp('mole' + i);
@@ -273,22 +261,22 @@ async function theChase(S) {
       if (!P.solo && P.cam) P.cam.snap(P.camPlayers());
       await st.cam(YARD[0], YARD[1] - 2, { dur: 0.6 });
       st.music(null);
-      await st.say('narrator', 'From somewhere behind the rubble, a muffled voice:{p} “Ha-HA! Tunnel’s shut, Lamplighters! Go home and eat your vegetables!”');
+      await st.say('narrator', 'Grubb has blown the tunnel shut behind him. From under the rubble: “Ha-HA! Go home!”');
       st.actor('hazel', YARD[0] - 5, YARD[1] - 3, { face: { x: 1, z: 0.5 } });
       st.hop('hazel'); st.emote('hazel', 'exclaim');
       st.sfx('boing', { volume: 0.6 });
-      await st.say('hazel', 'Oh my. Oh my, oh MY! Was that a real ore cart chase? I must write this down!', { expr: 'love' });
-      await st.say('hazel', 'Professor Hazel Burrows, Lamplighter studies. I’ve been mapping this canyon for weeks, and I KNOW there’s another way in…', { expr: 'happy' });
+      await st.say('hazel', 'Oh my, a real ore cart chase! I am Professor Hazel.', { expr: 'love' });
+      await st.say('hazel', 'I have mapped this whole canyon: there is {key}another way in{/}. Come and see!', { expr: 'happy' });
     }, { bars: true });
   } finally { for (const p of heroes) hide(p, false); }
 }
 async function hazelTalk(S) {
-  await S.say('hazel', 'Here! The Lamplighters dug an open quarry long before anyone dug a mine. The old quarry road — behind that boarded gate in the rock.', { expr: 'happy' });
+  await S.say('hazel', 'Long before the mine, the Lamplighters dug a quarry here. Its old road is behind that gate.', { expr: 'happy' });
   await S.say('hazel', 'Let me just… hnnng… there!', { expr: 'angry' });
   S.flag('quarryOpen');
   audio.sfx('slam', { volume: 0.7 });
   S.P.world.fx.emit('dust', QUARRY_GATE[0] + 0.6, 1, QUARRY_GATE[1], 14, { color: '#b8704a' });
-  await S.say('hazel', 'Grubb has turned the quarry into his gloom works, I’m afraid. Watch out for moles. (Footnote: and dynamite. Footnote to the footnote: and moles WITH dynamite.)', { expr: 'worried' });
+  await S.say('hazel', 'Mind Grubb’s moles: they have dynamite. Take {key}the old quarry road{/} into {key}the Old Mine{/}!', { expr: 'worried' });
 }
 
 // ------------------------------------------------------------------ the Old Mine’s scripts
@@ -311,9 +299,9 @@ R('brothers').run = async (S, d, r) => {
   await S.scene(async (st) => {
     await st.cam(c.x, c.z, { dur: 0.8 });
     st.sfx('dig', { volume: 0.8 });
-    await st.say('narrator', 'Three mounds of earth come tunnelling across the floor, fast.');
+    await st.wait(0.5);
     for (const [i, e] of r.foes.entries()) { e.obj.visible = true; pose(e); st.fx('dust', e.x, 0.3, e.z, 12, { color: '#a86a4a' }); st.sfx('slam', { volume: 0.5, pitch: i * 3 }); await st.wait(0.35); }
-    await st.say('narrator', '“Pick!”{p} “Shovel!”{p} “…and Doug.”');
+    await st.say('narrator', '“Pick!” “Shovel!”{p} “…and Doug.”');
     await st.say('narrator', '“We’re the {shake}MOLE BROTHERS!{/}”');
     await st.title('The Mole Brothers', 'Pick, Shovel & Doug', 2.2);
   });
@@ -351,7 +339,7 @@ R('pit').run = async (S, d, r) => {
     await st.wait(0.6);
     st.mark('drillosaur');
     await st.say('grubb', 'Welcome to the Old Mine, Lamplighters! Hard hats are {shake}MANDATORY!{/}', { expr: 'smug', shake: 1 });
-    await st.say('grubb', 'Her Radiance wants gloom by the ton, and the Drillosaur digs by the ton. Nothing personal. Just business.', { expr: 'neutral' });
+    await st.say('grubb', 'The Duchess wants gloom by the ton, and my Drillosaur digs it by the ton. Nothing personal!', { expr: 'neutral' });
     await st.title('Foreman Grubb', 'and his Drillosaur', 2.4);
   });
   e.state = 'chase'; e.timer = 1.2;
@@ -370,9 +358,8 @@ R('pit').tick = (S, d, r) => {
       st.fx('smoke', x, 1.5, z, 30, { color: '#f4f0ec' });
       st.sfx('crackle', { volume: 0.8 });
       st.actor('grubb', x + 1.6, z + 1.4, { face: { x: -0.6, z: 1 } });
-      await st.say('grubb', 'Alright! ALRIGHT! Take your precious rock! The Duchess can dig her own coal!', { expr: 'angry' });
-      await st.say('grubb', 'She pays in IOUs anyway. Signed with a flourish. Very pretty. Completely useless.', { expr: 'sad' });
-      await st.say('grubb', 'Right. I’m off to find honest work. Something with fewer Lamplighters in it.', { expr: 'neutral' });
+      await st.say('grubb', 'Alright, ALRIGHT! I quit! I’m off to find honest work, with fewer Lamplighters in it.', { expr: 'angry' });
+      await st.say('grubb', 'Your precious {key}Hearthstone{/} is behind {key}that gate{/}. Take it!', { expr: 'neutral' });
       st.walk('grubb', x + 12, z + 2, { speed: 5 });
       await st.wait(1.2);
       st.hide('grubb');
@@ -394,7 +381,7 @@ R('vault').take = async (S, d, r) => {
     if (st.vfx) st.vfx.pillar(x, z, { r: 0.9, h: 6, color: '#b8ffb0', life: 1.4 });
     st.sfx('shard', { volume: 0.9 });
     S.flag('hearthstone');
-    await st.say('narrator', 'The Hearthstone is warm, and hums like a summer field.{p} It wants to go home.');
+    await st.say('narrator', 'The Hearthstone is warm, and hums like a summer field.{p} It wants to go home: to {key}the Festival Ring{/}.');
   });
   await d.D.exit({ done: true });
 };
@@ -408,7 +395,7 @@ async function relight(S) {
     await st.cam(A.x, A.z + 1, { dur: 0, ppu: st.basePpu() });
     const stone = buildOreCart(P.r3d, { stone: true });
     st.prop('stone', stone, A.x, 0, A.z - 1.6);
-    await st.say('narrator', 'The Hearthstone slides back into its hollow beneath the star, as if it had never left.');
+    await st.say('narrator', 'The Hearthstone slides back into its hollow under the star.');
     st.dropProp('stone');
     st.sfx('chime', { volume: 0.9 });
     st.flash('#e8ffc8', 0.6);
@@ -426,10 +413,9 @@ async function relight(S) {
     st.mark('murkBack3');
     await st.wait(0.8);
     await st.title('The Steppe sings again', 'The Murk rolls back from Croakmire, Frostpeak Glacier and the Cloud Isles', 4);
-    await st.say('narrator', 'Back in Marigold Cove, the mayor reaches for his teacup. It isn’t there.{p} Rosa has hidden it. Just in case.');
     await st.cam(A.x, A.z + 1, { dur: 1.4, ppu: st.basePpu() });
-    await st.say('tuya', 'Three flames in your lantern now. The old Lamplighters rode this road too, you know. They always stopped for tea.', { expr: 'happy' });
-    await st.say('boom', 'And I’m taking Bertha home. She deserves a quiet retirement. Like me.{p} BOOM.', { expr: 'happy' });
+    await st.say('tuya', 'The Steppe’s Great Hearth burns again. {key}Three flames{/} in your lantern now!', { expr: 'happy' });
+    await st.say('boom', 'And I’m taking Big Bertha home.{p} BOOM.', { expr: 'happy' });
     // Perkins, with a letter that smells like a pond
     const p = st.actor('perkins', A.x + 7, A.z - 4, { face: { x: -1, z: 0.4 } });
     p.n.seatY = 6;
@@ -437,16 +423,18 @@ async function relight(S) {
     for (let k = 0; k < 12; k++) { p.n.seatY = Math.max(0, 6 - k * 0.55); await st.wait(0.05); }
     p.n.seatY = undefined;
     st.sfx('thud', { volume: 0.8 }); st.shake(0.3);
-    await st.say('perkins', 'PELICAN POST! Urgent letter for the Lamplighter! From a… king? It smells like a pond.', { expr: 'happy', hop: true });
+    await st.say('perkins', 'PELICAN POST! An urgent letter, from a king… It smells like a pond.', { expr: 'happy', hop: true });
     await st.say('narrator', '“HELP. CROWN. GONE. RIBBIT. — His Majesty King Croakington of Croakmire”');
-    await st.say('hazel', 'Croakmire! The marsh keeps a Great Hearth of its own — under the king’s throne, if my maps are right.', { expr: 'happy' });
+    await st.say('hazel', 'The marsh of {key}Croakmire{/} has a Great Hearth too, under the king’s throne. Go there: it lies east of the valley!', { expr: 'happy' });
   });
 }
 
 // ------------------------------------------------------------------ the chapter
 const fluffWant = (S, k) => { const q = S.st.q.c3_nomads; return !!q && !q.done && !S.st.got['c3_nomads:1:' + k]; };
 export const CH3 = {
-  id: 3, title: 'Dust & Spores', lv: 10, zones: ['steppe', 'canyon', 'bouncecap'], opens: ['marsh', 'glacier', 'cloud'],
+  id: 3, title: 'Dust & Spores',
+  recap: 'Two Great Hearths burn again: Old Glimmer and the Deepwood’s. The Duchess has had the Steppe’s stolen: its stone, {key}the Hearthstone{/}, has gone west, to the Old Mine. Take it back and set it under the star of {key}the Festival Ring{/}.',
+  lv: 10, zones: ['steppe', 'canyon', 'bouncecap'], opens: ['marsh', 'glacier', 'cloud'],
   props: [
     { id: 'bigtop', at: BIGTOP, r: 3, build: (r3d) => buildBigTop(r3d), when: (S) => !S.done('c3_relight') },
     { id: 'stage', at: STAGE, build: (r3d) => buildShowStage(r3d), when: (S) => !S.done('c3_relight') },
@@ -461,21 +449,21 @@ export const CH3 = {
   ],
   npcs: [
     { id: 'tuya', at: [NOMAD.x, NOMAD.z], face: { x: 0.3, z: 1 }, when: (S) => S.done('c3_west'),
-      lines: ['The steppe is wide, little lantern. Wide enough for everyone’s troubles.', 'Temur rides like the wind. Talks like it, too.'] },
+      lines: ['The Steppe’s Great Hearth belongs under the star of the Festival Ring.', 'Temur rides like the wind, and makes as much noise.'] },
     { id: 'temur', at: [NOMAD.x + 2.6, NOMAD.z + 0.8], face: { x: -0.5, z: 1 }, when: (S) => S.done('c3_west') && !S.st.q.c3_gulch,
-      lines: ['Race you to the baobab! …Later. After the gloom.', 'Grandmother says I’m too loud. I say the steppe is too quiet!'] },
+      lines: ['A scared fluffhorn hides behind a rock and sulks.', 'Grandmother says I’m too loud. I say the steppe is too quiet!'] },
     { id: 'temur', at: [-201.5, 91.2], face: { x: 0.6, z: 1 }, when: (S) => !!S.st.q.c3_gulch,
-      lines: ['The Gulch! So many walls! How do they see the sky?', 'Grandmother says to be polite. I AM being polite. LOUDLY.'] },
+      lines: ['So many walls in Dusty Gulch! How do they see the sky?', 'From here, the rails climb north to the Old Mine.'] },
     { id: 'dolly', at: [-213.5, 91.2], face: { x: 0.4, z: 1 }, when: (S) => S.done('c2_relight'),
-      lines: ['Dusty Gulch: population forty-two. Forty-three, if you count the goat.', 'Keep your boots clean and your nose cleaner.'] },
+      lines: ['Dusty Gulch: population forty-two. Forty-three with the goat.', 'Nobody goes thirsty in my town. Not while I’m sheriff.'] },
     { id: 'boom', at: [-203.3, 84.6], face: { x: 0, z: 1 }, when: (S) => S.done('c2_relight'),
-      lines: ['Sixty years a Human Cannonball. Never once landed where I aimed.', 'Big Bertha… she was a beauty. Still is.'] },
+      lines: ['Sixty years a Human Cannonball, and I never once landed where I aimed.', 'Big Bertha was a beauty. She still is.'] },
     { id: 'nell', at: [-184.2, 88.6], face: { x: 1, z: 0.3 }, when: (S) => S.done('c2_relight'),
-      lines: ['There’s gold in them there hills! Probably. Possibly. Once.', 'Panning’s all about patience. And wet socks.'] },
+      lines: ['There’s gold in them there hills! Well… there was.', 'Panning for gold takes patience, and wet socks.'] },
     { id: 'hazel', at: [YARD[0] - 4.5, YARD[1] - 1], face: { x: 1, z: 0.5 }, when: (S) => S.has('mineShut') && !S.done('c3_relight'),
-      lines: ['The Lamplighters mapped every hearth in the world. I’m mapping their maps.', 'Did you know the Lamplighters signed their maps with a little flame? I have eleven. (Footnote: twelve, counting the burnt one.)'] },
+      lines: ['The old quarry road is through the gate, west of the yard.', 'The Lamplighters signed their maps with a little flame. (Footnote: I have eleven.)'] },
     { id: 'morel', at: MOREL, face: { x: 0, z: 1 }, when: (S) => S.done('c2_relight'),
-      lines: ['Big ones! Hello! Mind your big feet.', 'We Sporefolk bounce back. It’s in our nature.'] },
+      lines: ['Hello, big ones! Mind your big feet.', 'We Sporefolk always bounce back.'] },
   ],
   // (the Human Cannonball’s act keeps its cast on stage while it lasts)
   update(S, dt) {
@@ -487,73 +475,89 @@ export const CH3 = {
   quests: {
     // ---- a mini-game, to play again and again (World v7 M13)
     c3_minecart: {
-      title: 'The Minecart Rush', kind: 'side', repeat: true, giver: 'nell', after: 'c3_relight', lv: 14, dust: 15,
+      title: 'The Minecart Rush',
+      brief: 'Nugget Nell’s ore cart keeps slipping its brake and rolling round Dusty Gulch. {key}Catch it{/} for a nugget, as many times as you like.',
+      kind: 'side', repeat: true, giver: 'nell', after: 'c3_relight', lv: 14, dust: 15,
       offer: async (S) => {
-        await S.say('nell', 'Dagnabbit — the ore cart’s slipped its brake again. It’ll roll round Dusty Gulch till it runs out of hill. There IS no end to the hill.', { expr: 'angry' });
-        await S.say('nell', 'Catch it for me, would you? It slows at the corners. Every time you do, it’s a nugget in your pocket.', { expr: 'happy' });
+        await S.say('nell', 'Dagnabbit! My ore cart has slipped its brake again!', { expr: 'angry' });
+        await S.say('nell', '{key}Catch it{/} as it rolls round Dusty Gulch: it slows at the corners. A nugget each time!', { expr: 'happy' });
       },
       steps: [
-        { do: 'chase', text: 'Catch the runaway ore cart round Dusty Gulch', area: [-196, 86, 6], speed: 6.2, tire: 18, model: (r3d) => buildOreCart(r3d), sound: 'thud', caught: 'Gotcha, cart!' },
-        { do: 'talk', npc: 'nell', text: 'Give Nugget Nell her cart back', run: async (S) => {
-          if (S.plays('c3_minecart')) await S.say('nell', 'Again! That cart likes you. It only runs off when YOU’RE in town, I’ve noticed.', { expr: 'smug' });
-          else await S.say('nell', 'Whoa there, Bessie! Caught fair and square. Here — a nugget for your trouble. Don’t spend it all on sarsaparilla.', { expr: 'love' });
+        { do: 'chase', text: 'Catch {key}the runaway ore cart{/} in the streets of Dusty Gulch', area: [-196, 86, 6], speed: 6.2, tire: 18, model: (r3d) => buildOreCart(r3d), sound: 'thud', caught: 'Gotcha, cart!' },
+        { do: 'talk', npc: 'nell', text: 'Bring her cart back to {key}Nugget Nell{/}', run: async (S) => {
+          if (S.plays('c3_minecart')) await S.say('nell', 'Again! That cart only runs off when YOU are in town.', { expr: 'smug' });
+          else await S.say('nell', 'Whoa there! Caught fair and square. Here’s your nugget.', { expr: 'love' });
         } },
       ],
     },
     c3_west: {
-      title: 'The Big Top', auto: true, lv: 10,
+      title: 'The Big Top',
+      brief: 'The Steppe’s Great Hearth lies under the Festival Ring. The Duchess’s three Understudies have set up a circus right on top of it: go and {key}stop their act{/}.',
+      auto: true, lv: 10,
       steps: [
-        { do: 'go', text: 'Head west to the Festival Ring', at: RING_LANE, r: 7, run: bigTop },
-        { do: 'kill', text: 'Stop the Understudies’ act', tag: 'cannonball', n: 3, at: [A.x, A.z], r: 30, run: afterAct },
+        { do: 'go', text: 'Go west of the valley, to {key}the Festival Ring{/}', at: RING_LANE, r: 7, run: bigTop },
+        { do: 'kill', text: 'Stop the act: beat {key}the three Understudies{/} in the Festival Ring', tag: 'cannonball', n: 3, at: [A.x, A.z], r: 30, run: afterAct },
       ],
     },
     c3_nomads: {
-      title: 'Riders of the Steppe', auto: true, after: 'c3_west', lv: 11,
+      title: 'Riders of the Steppe',
+      brief: 'The Understudies ran west with the Hearthstone. The nomads know the road: first bring back their {key}three lost fluffhorns{/} and clear their grazing ground.',
+      auto: true, after: 'c3_west', lv: 11,
       steps: [
-        { do: 'talk', npc: 'tuya', text: 'Talk to Grandmother Tuya at the Nomad Camp', run: tuyaTalk },
-        { do: 'collect', text: 'Find the three lost fluffhorns', item: 'Lost Fluffhorn', n: 3, spots: FLUFF, hint: 'A fluffhorn, sulking behind a rock' },
-        { do: 'camp', text: 'Clear the gloom from the grazing ground', camp: { id: 'c3_graze', at: GRAZE, level: 11, foes: ['tumble', 'tumble', 'fox', 'tumble'], n: 4, done: 'The grazing ground is quiet again!' } },
-        { do: 'talk', npc: 'tuya', text: 'Bring the good news to Grandmother Tuya', run: tuyaThanks },
+        { do: 'talk', npc: 'tuya', text: 'Talk to {key}Grandmother Tuya{/} at the Nomad Camp, north-west of the Ring', run: tuyaTalk },
+        { do: 'collect', text: 'Find the {key}three lost fluffhorns{/} on the steppe around the camp', item: 'Lost Fluffhorn', n: 3, spots: FLUFF, hint: 'A fluffhorn, sulking behind a rock' },
+        { do: 'camp', text: 'Chase the gloom off {key}the grazing ground{/}, west of the camp', camp: { id: 'c3_graze', at: GRAZE, level: 11, foes: ['tumble', 'tumble', 'fox', 'tumble'], n: 4, done: 'The grazing ground is quiet again!' } },
+        { do: 'talk', npc: 'tuya', text: 'Go back to {key}Grandmother Tuya{/} at the Nomad Camp', run: tuyaThanks },
       ],
     },
     c3_gulch: {
-      title: 'Dusty Gulch', auto: true, after: 'c3_nomads', lv: 12,
+      title: 'Dusty Gulch',
+      brief: 'The Hearthstone is on its way to the Old Mine, above {key}Dusty Gulch{/}. Grubb’s moles have dried up the town: help Sheriff Dolly, then talk to Old Boom.',
+      auto: true, after: 'c3_nomads', lv: 12,
       steps: [
-        { do: 'go', text: 'Ride west to Dusty Gulch, where the rails end', at: STATION, r: 6, run: gulchArrival },
-        { do: 'camp', text: 'Chase the mole miners off the water tower', camp: { id: 'c3_tower', at: [TOWER[0], TOWER[1] + 3], level: 12, foes: ['mole', 'mole', 'fuse', 'mole'], n: 4, done: 'Water gushes back into the tower!' } },
-        { do: 'talk', npc: 'boom', text: 'Talk to Old Boom on the saloon porch', run: boomTalk },
+        { do: 'go', text: 'Follow the canyon road west to {key}Dusty Gulch{/}', at: STATION, r: 6, run: gulchArrival },
+        { do: 'camp', text: 'Chase the mole miners off {key}the water tower{/} of Dusty Gulch', camp: { id: 'c3_tower', at: [TOWER[0], TOWER[1] + 3], level: 12, foes: ['mole', 'mole', 'fuse', 'mole'], n: 4, done: 'Water gushes back into the tower!' } },
+        { do: 'talk', npc: 'boom', text: 'Talk to {key}Old Boom{/} on the saloon porch, in Dusty Gulch', run: boomTalk },
       ],
     },
     c3_chase: {
-      title: 'Runaway Cart', auto: true, after: 'c3_gulch', lv: 13,
+      title: 'Runaway Cart',
+      brief: 'Foreman Grubb fled up the rails with the Hearthstone and blew the mine’s tunnel shut. Professor Hazel knows {key}another way in{/}.',
+      auto: true, after: 'c3_gulch', lv: 13,
       steps: [
-        { do: 'scene', text: '…', run: theChase },
-        { do: 'talk', npc: 'hazel', text: 'Talk to Professor Hazel in the mine yard', run: hazelTalk },
+        { do: 'scene', text: 'Stop {key}Foreman Grubb{/} at the station in Dusty Gulch', run: theChase },
+        { do: 'talk', npc: 'hazel', text: 'Talk to {key}Professor Hazel{/} in the mine yard', run: hazelTalk },
       ],
     },
     c3_mine: {
-      title: 'The Old Mine', auto: true, after: 'c3_chase', lv: 14,
+      title: 'The Old Mine',
+      brief: 'The Hearthstone is at the far end of {key}the Old Mine{/}, guarded by Foreman Grubb and his moles. Go in by the old quarry road and take it back.',
+      auto: true, after: 'c3_chase', lv: 14,
       steps: [
-        { do: 'go', text: 'Take the old quarry road into the Old Mine', at: QUARRY_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('oldmine'); else S.flag('hearthstone'); } },
-        { do: 'dungeon', id: 'oldmine', text: 'Find the Steppe’s Hearthstone in the Old Mine' },
+        { do: 'go', text: 'Enter the Old Mine by {key}the old quarry road{/}, west of the yard', at: QUARRY_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('oldmine'); else S.flag('hearthstone'); } },
+        { do: 'dungeon', id: 'oldmine', text: 'Find {key}the Steppe’s Hearthstone{/} at the far end of the Old Mine' },
       ],
     },
     c3_relight: {
-      title: 'The Steppe Sings Again', auto: true, after: 'c3_mine', lv: 15,
+      title: 'The Steppe Sings Again',
+      brief: 'You have the Hearthstone! Carry it back east to {key}the Festival Ring{/} and set it under the star in the sand: the Steppe’s Great Hearth will burn again.',
+      auto: true, after: 'c3_mine', lv: 15,
       steps: [
-        { do: 'go', text: 'Bring the Hearthstone home, under the Festival Ring’s star', at: [A.x, A.z], r: 3.5, run: relight },
+        { do: 'go', text: 'Set {key}the Hearthstone{/} under the star of {key}the Festival Ring{/}, to the east', at: [A.x, A.z], r: 3.5, run: relight },
       ],
       done: async (S) => { if (!S.st.lit.includes('steppe')) S.st.lit.push('steppe'); S.save(); },
       next: 4,
     },
     // ---- side quests
     c3_chimes: {
-      title: 'Songs of the Wind', kind: 'side', giver: 'temur', lv: 10, when: (S) => S.done('c3_west'), dust: 25,
+      title: 'Songs of the Wind',
+      brief: 'The wind of the steppe forgot its songs when the Murk came. Hang Temur’s wind chimes on the {key}three old posts{/} around the Nomad Camp.',
+      kind: 'side', giver: 'temur', lv: 10, when: (S) => S.done('c3_west'), dust: 25,
       offer: async (S) => {
-        await S.say('temur', 'Grandmother says the wind forgot its songs when the Murk came. I say we remind it!', { expr: 'happy' });
-        await S.say('temur', 'Help me hang the chimes on the three old posts? One by the spring, one by the road, one on the hill.', { expr: 'love' });
+        await S.say('temur', 'The wind forgot its songs when the Murk came. Let’s remind it!', { expr: 'happy' });
+        await S.say('temur', 'Hang my chimes on the {key}three old posts{/}: by the spring, by the road, and on the hill.', { expr: 'love' });
       },
-      steps: CHIMES.map(([x, z], k) => ({ do: 'go', text: ['Hang a wind chime on the post by the spring', 'Hang a wind chime on the post by the road', 'Hang a wind chime on the post on the hill'][k], at: [x, z + 1], r: 2,
+      steps: CHIMES.map(([x, z], k) => ({ do: 'go', text: ['Hang a wind chime on the post {key}by the spring{/}, south of the camp', 'Hang a wind chime on the post {key}by the road{/}, east of the camp', 'Hang a wind chime on the post {key}on the hill{/}, west of the Festival Ring'][k], at: [x, z + 1], r: 2,
         run: async (S) => {
           S.flag('chime' + k);
           S.P.world.fx.emit('sparkle', x, 2.2, z, 12, { color: '#c8e8ff' });
@@ -562,51 +566,56 @@ export const CH3 = {
         } })),
     },
     c3_boom: {
-      title: 'One Last Boom', kind: 'side', giver: 'boom', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
+      title: 'One Last Boom',
+      brief: 'The moles took Old Boom’s lucky helmet up to {key}the mine yard{/}. Bring it back, and he will show you a real cannonball jump.',
+      kind: 'side', giver: 'boom', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
       offer: async (S) => {
-        await S.say('boom', 'Those moles pinched my old helmet when they cleared out the mine yard. Lucky helmet. Sixty years, not one dent. Well. One dent.', { expr: 'sad' });
-        await S.say('boom', 'Fetch it back, and I’ll show you a REAL cannonball.', { expr: 'smug' });
+        await S.say('boom', 'Those moles pinched my lucky helmet! Sixty years on my head, and only one dent.', { expr: 'sad' });
+        await S.say('boom', 'It must be up in {key}the mine yard{/}. Fetch it, and I’ll show you a REAL cannonball!', { expr: 'smug' });
       },
       steps: [
-        { do: 'collect', text: 'Find Old Boom’s helmet in the mine yard', item: 'Old Boom’s Helmet', n: 1, spots: [HELMET], hint: 'A dented silver helmet, stars painted on it' },
-        { do: 'talk', npc: 'boom', text: 'Bring the helmet back to Old Boom',
+        { do: 'collect', text: 'Find Old Boom’s helmet in {key}the mine yard{/}, north of Dusty Gulch', item: 'Old Boom’s Helmet', n: 1, spots: [HELMET], hint: 'A dented silver helmet, stars painted on it' },
+        { do: 'talk', npc: 'boom', text: 'Bring the helmet back to {key}Old Boom{/} in Dusty Gulch',
           run: async (S) => {
-            await S.say('boom', 'My helmet! Stand back, youngsters. Stand WAY back.', { expr: 'love' });
+            await S.say('boom', 'My helmet! Stand back, youngsters. WAY back.', { expr: 'love' });
             audio.sfx('whoosh', { volume: 0.7 });
-            await S.say('narrator', 'Old Boom takes a run-up, leaps off the saloon porch, spins three times in the air…{p} and lands head-first in the water trough.');
+            await S.say('narrator', 'Old Boom leaps off the saloon porch, spins three times…{p} and lands head-first in the water trough.');
             audio.sfx('splash', { volume: 0.8 });
             await S.say('boom', '{shake}TA-DAAAA!{/}{p} …I’ll need a hand getting out.', { expr: 'happy' });
           } },
       ],
     },
     c3_nell: {
-      title: 'Gold Fever', kind: 'side', giver: 'nell', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
+      title: 'Gold Fever',
+      brief: 'The spring runs again, and the river carries gold. Nugget Nell’s back won’t bend: pan {key}three nuggets{/} for her, and she will share.',
+      kind: 'side', giver: 'nell', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
       offer: async (S) => {
-        await S.say('nell', 'Now that the spring runs again, the river’s washing gold down from the hills! I can feel it in my socks!', { expr: 'love' });
-        await S.say('nell', 'My back’s no good for bending. Pan three nuggets for me? We’ll split it. Fifty–fifty. Sixty–forty. We’ll talk.', { expr: 'happy' });
+        await S.say('nell', 'The river is washing gold down from the hills again! I can feel it in my socks!', { expr: 'love' });
+        await S.say('nell', 'My back won’t bend any more. Pan {key}three nuggets{/} for me in the river, and we’ll share!', { expr: 'happy' });
       },
       steps: [
-        { do: 'collect', text: 'Pan three gold nuggets from the canyon river', item: 'Gold Nugget', n: 3, spots: NUGGETS, hint: 'Something gleams in the shallows' },
-        { do: 'talk', npc: 'nell', text: 'Bring the nuggets to Nugget Nell',
+        { do: 'collect', text: 'Pan {key}three gold nuggets{/} in the river, east of Dusty Gulch', item: 'Gold Nugget', n: 3, spots: NUGGETS, hint: 'Something gleams in the shallows' },
+        { do: 'talk', npc: 'nell', text: 'Bring the nuggets to {key}Nugget Nell{/} in Dusty Gulch',
           run: async (S) => {
-            await S.say('nell', 'NUGGETS! Real ones! We’re RICH!{p} …We’re slightly less poor!', { expr: 'love' });
-            await S.say('nell', 'Here — your share. I rounded up. Don’t tell anybody. Especially me.', { expr: 'happy' });
+            await S.say('nell', 'NUGGETS! Real ones! We’re RICH!{p} …Well, slightly less poor.', { expr: 'love' });
           } },
       ],
     },
     c3_spores: {
-      title: 'Achoo!', kind: 'side', giver: 'morel', lv: 14, when: (S) => S.done('c2_relight'), dust: 30,
+      title: 'Achoo!',
+      brief: 'The Mother Cap of the Sporefolk has a cold, and her sneezes spread gloom spores. Bring Old Morel {key}three sprigs of sneezewort{/} from the fairy rings.',
+      kind: 'side', giver: 'morel', lv: 14, when: (S) => S.done('c2_relight'), dust: 30,
       offer: async (S) => {
-        await S.say('morel', 'Big ones! The Mother Cap has caught a cold, and every sneeze puffs gloom spores all over the woods!', { expr: 'worried' });
-        await S.say('morel', 'Sneezewort grows by the fairy rings. Three sprigs should do it. We would fetch it ourselves, but we are very short.', { expr: 'happy' });
+        await S.say('morel', 'Big ones! The Mother Cap has a cold, and every sneeze puffs gloom spores over the woods!', { expr: 'worried' });
+        await S.say('morel', 'We are too short to fetch her cure. Pick us {key}three sprigs of sneezewort{/} by the fairy rings!', { expr: 'happy' });
       },
       steps: [
-        { do: 'collect', text: 'Pick three sprigs of sneezewort by the fairy rings', item: 'Sneezewort', n: 3, spots: SNEEZE, hint: 'A sprig of sneezewort, tickling the air' },
-        { do: 'talk', npc: 'morel', text: 'Bring the sneezewort to Old Morel',
+        { do: 'collect', text: 'Pick {key}three sprigs of sneezewort{/} by the fairy rings of Bouncecap Woods', item: 'Sneezewort', n: 3, spots: SNEEZE, hint: 'A sprig of sneezewort, tickling the air' },
+        { do: 'talk', npc: 'morel', text: 'Bring the sneezewort to {key}Old Morel{/} in Bouncecap Woods',
           run: async (S) => {
-            await S.say('narrator', 'Old Morel stuffs the sneezewort under the Mother Cap’s gills.{p} The whole wood holds its breath.');
-            await S.say('narrator', '“…Aaah… AAAH…{p} …”{p} Nothing. The Mother Cap wobbles, happily.');
-            await S.say('morel', 'It passed! Thank you, big ones! Here — a little something, from all of us.', { expr: 'love' });
+            await S.say('narrator', 'Old Morel tucks the sneezewort under the Mother Cap’s gills.');
+            await S.say('narrator', '“…Aaah… AAAH…”{p} Nothing. The Mother Cap wobbles, happily.');
+            await S.say('morel', 'It passed! Thank you, big ones!', { expr: 'love' });
           } },
       ],
     },

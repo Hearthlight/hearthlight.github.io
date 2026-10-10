@@ -24,7 +24,7 @@ export const OLDMINE = {
   door: QUARRY_DOOR,
   start: [28, 189],
   rooms: [
-    { id: 'gate', x: 20, z: 180, w: 16, h: 14, kind: 'start', said: 'The old quarry: the Lamplighters dug it long before the mine. Grubb’s gloom works fill it now.',
+    { id: 'gate', x: 20, z: 180, w: 16, h: 14, kind: 'start', said: 'The old quarry is Grubb’s gloom works now. The Hearthstone is at the far end.',
       props: [['timber', 28, 193.4], ['crates', 22.5, 183], ['lampost', 33.5, 186], ['cactus', 21.5, 189, 0.8], ['rails', 28, 186]] },
     { id: 'yard', x: 10, z: 156, w: 36, h: 18, kind: 'fight', foesList: ['mole', 'mole', 'fuse', 'fuse', 'slinger', 'mole'], shout: 'Mole miners! And they’ve brought dynamite.', chest: [37, 162],
       props: [['orecart', 16, 162], ['orecart', 40, 168, 0.9], ['derrick', 14, 170.5], ['crates', 38, 159], ['tnt', 20, 171], ['lampost', 28, 158], ['shack', 36.5, 169.5, 0.9],
