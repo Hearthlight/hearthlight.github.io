@@ -1,6 +1,7 @@
 // A saved story of Party Mode in the players’ words — what slots.mjs keeps of it, said the same
 // way on the Play card, in the lobby and on the Saves page: its chapter, who played, how far the
 // heroes are, when it was last played.
+import { shownLevel } from '../saga/levels.js';
 import { t, getLang } from '../i18n.js';
 import { CHAPTERS } from '../saga/chapters/index.js';
 
@@ -20,7 +21,7 @@ export function storyWho(s, fits = null) {
   return '';
 }
 // how far its heroes are: the highest level among them
-export const storyLevel = (s) => t('Level {n}', { n: s.level });
+export const storyLevel = (s) => t('Level {n}', { n: shownLevel(s.level) });
 // when it was last played, in plain words: today, yesterday, 3 days ago; a date beyond a month
 export function storyWhen(s, now = Date.now()) {
   const day = (ms) => { const d = new Date(ms); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000); };
