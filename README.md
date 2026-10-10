@@ -180,7 +180,7 @@ runs through all of them, in solo and in Party Mode (1–8 players) alike:
 **Duchess Gloria Gloomsworth**, a failed opera diva booed off the Starfall Festival's stage thirty
 years ago (a hen walked on during her aria), is stealing the world's Great Hearths from her
 flying opera house, **the Gloomstage**, and the grey **Murk** rolls over every land she darkens.
-You carry Nana June's lantern from hearth to hearth — levels 1 to 40, ten chapters, a dungeon
+You carry Nana June's lantern from hearth to hearth — levels 1 to 20, ten chapters, a dungeon
 and a boss in each:
 
 - **Scenes** (the camera, actors, title cards, a sepia flashback, full-screen letters), skippable
@@ -319,7 +319,8 @@ the address phones should use (on macOS, allow Python through the firewall the f
 thumb-stick with four buttons whose labels and **icons** follow what you're doing — A (talk,
 open, ride… or attack), B (jump), X (your hero's special) and Y (dodge in a fight, whistle for
 your mount otherwise) — a **U** button that fills up and glows when your ultimate is ready, plus
-your health, level and a hint line; a Map button and, in the evening, a Campfire button. Its
+your health, your level over its experience bar and a hint line; a Map button and, in the
+evening, a Campfire button. Its
 menu is a grid of illustrated tiles: your **talent trees**, your **gear** and weapon, your mounts
 and companions, your hero, the map, your look, a campfire (and, for the host, the crown's menu).
 The **map** is drawn on the phone itself: pinch or double-tap to zoom, drag (and flick) to move
@@ -369,7 +370,7 @@ meteors with trails. Each hero has **three talent trees** in the spirit of WoW �
 Scout*, Bard *Hearthsong / Symphony / Rhythm* — five rows of illustrated, ranked talents that open
 as you spend points (shields, crits, execute-style finishers, chains, auras, cooldown refunds…),
 crowned by an **ultimate** (Bulwark, Meteor Storm, Absolute Zero, Deadeye, Hymn of the Hearth…).
-Heroes grow to level 30. **Weapons** come in four kinds per hero, each with its own moves (a
+Heroes grow to level 20. **Weapons** come in four kinds per hero, each with its own moves (a
 rolling pin's four-hit combo, a mallet that quakes, a bow, a returning boomerang, a crystal orb's
 chaining sparks, a drum's beats…), from common to legendary, with traits and legendary effects;
 **gear** adds a rune for your weapon's element and two charms, upgraded with stardust.

@@ -19,6 +19,8 @@ import { Collision } from '../world/collision.js';
 import { Painter } from '../art/surfaces.js';
 import { kit } from '../models/v7/kit.js';
 import { setRegion } from './levels.js';
+import { levelsText } from '../ui/levelbar.js';
+import { partyLevel } from '../party/levelups.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { drawText } from '../engine/font.js';
@@ -87,7 +89,7 @@ export class Dungeons {
     if (this.cur && this.cur.def.id !== id) { this.cur.dispose(); this.cur = null; }
     if (!this.cur) this.cur = new Dungeon(this, def, DUN_X + (def.slot || 0) * SLOT_W, 0);
     const d = this.cur;
-    setRegion('dungeon', { x0: d.ox, z0: d.oz, x1: d.ox + d.W, z1: d.oz + d.H }, def.lv);
+    setRegion('dungeon', { x0: d.ox, z0: d.oz, x1: d.ox + d.W, z1: d.oz + d.H }, def.lv, def.name);
     // everyone comes along (off their mounts and boats)
     const heroes = P.players.filter((p) => p.connected || P.solo);
     heroes.forEach((p, i) => {
@@ -106,7 +108,7 @@ export class Dungeons {
     await P.fadeTo(0, 0.6);
     P.busy = Math.max(0, P.busy - 1);
     this.entering = false;
-    P.showBanner(t(def.name), t('Level {a}–{b}', { a: def.lv[0], b: def.lv[1] }));
+    P.showBanner(t(def.name), levelsText(def.lv, partyLevel(P)));
     audio.sfx('door', { volume: 0.7 });
     if (def.onEnter) def.onEnter(this.saga, d);
   }

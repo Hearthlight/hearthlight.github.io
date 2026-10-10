@@ -7,6 +7,8 @@
 import { TT } from '../world/tiles.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
+import { levelsText } from '../ui/levelbar.js';
+import { partyLevel } from './levelups.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const NIGHT = (h) => h >= 20 || h < 5.5;
@@ -90,7 +92,7 @@ export class ZoneRuntime {
       if (!this.save.zones.includes(id)) {
         this.save.zones.push(id);
         this.store();
-        P.showBanner(t(zone.name), t('★ New place discovered ★'));
+        P.showBanner(t(zone.name), t('★ New place discovered ★') + (zone.lv ? '  ' + levelsText(zone.lv, partyLevel(P)) : ''));
         audio.jingle('questStart');
         P.world.fx.emit('sparkle', p.pos.x, 1.4, p.pos.z, 14, { color: '#fff3a6' });
       } else if (!(P.travel && P.travel.going)) {       // (a waystone trip has its own banner)
@@ -100,11 +102,12 @@ export class ZoneRuntime {
     }
     const here = P.players.filter((p) => p.connected).length;
     for (const { zone, ps } of arrivals.values()) {
-      const place = t(zone.name);
-      if (P.solo) { P.showBanner(place, ''); continue; }      // (the solo game names places with a banner)
-      if (ps.length === 1) P.toast(t('{name} reached {place}', { name: ps[0].name, place }), ps[0].color);
-      else if (ps.length === here) P.toast(t('Everyone reached {place}', { place }), '#fff3c4');
-      else P.toast(t('{names} reached {place}', { names: ps.map((p) => p.name).join(', '), place }), ps[0].color);
+      // (with the land’s levels, in the colour of how they sit next to the heroes’ own)
+      const place = t(zone.name), lv = zone.lv ? levelsText(zone.lv, partyLevel(P)) : '', its = lv && ' · ' + lv;
+      if (P.solo) { P.showBanner(place, lv); continue; }      // (the solo game names places with a banner)
+      if (ps.length === 1) P.toast(t('{name} reached {place}', { name: ps[0].name, place }) + its, ps[0].color);
+      else if (ps.length === here) P.toast(t('Everyone reached {place}', { place }) + its, '#fff3c4');
+      else P.toast(t('{names} reached {place}', { names: ps.map((p) => p.name).join(', '), place }) + its, ps[0].color);
     }
     // weather events per zone that has someone in it
     const occupied = new Set(P.players.filter((p) => p.connected).map((p) => this.zoneIdAt(p.pos.x, p.pos.z)));

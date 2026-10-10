@@ -301,7 +301,7 @@ export class ArenaAct {
     // (World v7: the Ring fights at the heroes' own level, whatever the land around it)
     const lvs = P.players.filter((p) => p.connected).map((p) => (p.fighter ? p.fighter.level : P.profileOf(p).level || 1));
     this.ringLv = Math.max(1, Math.round(lvs.reduce((a, b) => a + b, 0) / Math.max(1, lvs.length)));
-    setRegion('ring', { x0: ARENA.x - ARENA.rx - 8, z0: ARENA.z - ARENA.rz - 8, x1: ARENA.x + ARENA.rx + 8, z1: ARENA.z + ARENA.rz + 8 }, [this.ringLv, this.ringLv]);
+    setRegion('ring', { x0: ARENA.x - ARENA.rx - 8, z0: ARENA.z - ARENA.rz - 8, x1: ARENA.x + ARENA.rx + 8, z1: ARENA.z + ARENA.rz + 8 }, [this.ringLv, this.ringLv], 'Festival Ring');
     await P.fadeTo(1, 0.45);
     // everyone steps into the ring
     const n = P.players.length;
@@ -935,6 +935,6 @@ export class ArenaAct {
     if (P.dialogue.active || (this.overlay && this.overlay.kind !== 'count')) return;
     if (this.mode === 'king') P.drawBadges(ctx, (p) => t('{n} pts', { n: p.kingPts || 0 }), '#ffd66b');
     else if (this.mode === 'brawl') P.drawBadges(ctx, (p) => t('{n} K.O.', { n: p.brawlKos || 0 }), '#fff3c4');
-    else P.drawBadges(ctx, (p) => (p.fighter ? t('Lv{n}', { n: p.fighter.level }) : ''));
+    else P.drawBadges(ctx, 'level');
   }
 }

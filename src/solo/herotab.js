@@ -12,7 +12,8 @@ import { drawIcon, drawGlyph } from '../combat/v4/icons.js';
 import { itemName, itemDesc, UPGRADE, ROMAN, LEVEL_COLOR, BAG, itemBorder, itemTag, itemUpgrade, meltValue, isWorn, weaponLines } from '../combat/v3/gear.js';
 import { MOUNTS, MOUNT_ORDER, FOODS, foodIcon } from '../party/mounts.js';
 import { BUDDY_KINDS, BUDDY_ORDER } from '../party/buddies.js';
-import { XP_NEED } from '../combat/combat.js';
+import { shownLevel, xpBar } from '../saga/levels.js';
+import { drawXpBar, levelsText, nextSteps, levelLine, liftWords, liftInk, drawLines, XP_PAPER } from '../ui/levelbar.js';
 import { ZONES } from '../world/big/layout.js';
 import { audio } from '../engine/audio.js';
 import { t, num } from '../i18n.js';
@@ -183,7 +184,8 @@ export class HeroTab {
     this.item(id, x, y, w, h, fn);
   }
 
-  // ---- your hero: who you are, how strong, and the four heroes to pick from
+  // ---- your hero: who you are, your level (how far the next one is, what it will bring, the
+  // land you stand in), how strong, and the heroes to pick from
   drawHero(ctx, A) {
     const W = this.wild, f = W.me.fighter, cls = CLASSES[f.clsId];
     const lw = 116;
@@ -192,16 +194,23 @@ export class HeroTab {
     ctx.fillStyle = '#fff7e6'; ctx.fillRect(A.x + 3, A.y + 3, 38, 38);
     ctx.fillStyle = 'rgba(0,0,0,0.06)'; ctx.fillRect(A.x + 3, A.y + 30, 38, 11);
     drawClassIcon(ctx, f.clsId, A.x + 4, A.y + 5, 3);
-    const nx = A.x + 50;
-    drawText(ctx, fitText(t(cls.name), lw - 50), nx, A.y + 2, { color: BROWN });
-    drawText(ctx, t('Level {n}', { n: f.level }), nx, A.y + 13, { color: UI.ink });
-    const need = XP_NEED(f.level), k = Math.min(1, f.xp / need);
-    ctx.fillStyle = '#3b2a22'; ctx.fillRect(nx, A.y + 25, lw - 50, 5);
-    ctx.fillStyle = '#e6d6b6'; ctx.fillRect(nx + 1, A.y + 26, lw - 52, 3);
-    ctx.fillStyle = '#e0a526'; ctx.fillRect(nx + 1, A.y + 26, Math.round((lw - 52) * k), 3);
-    drawText(ctx, t('{n}/{max} xp', { n: f.xp, max: need }), nx, A.y + 33, { color: UI.inkSoft });
+    // "Mage · level 5 — 340 / 900" over the bar (its notch: a talent point), the land's own
+    // levels on the right, then what comes next
+    const nx = A.x + 50, nw = A.w - 50, bar = xpBar(f.level, f.xp), n = shownLevel(f.level);
+    const place = W.combat.ups.place(W.me), lift = Math.sign(shownLevel(f.eff || f.level) - n);
+    const here = t('Here: {levels}', { levels: levelsText(place.lv, f.level, true) }), who = fitText(t('{hero} · level {n}', { hero: t(cls.name), n }), nw - measure(here) - 70);
+    drawText(ctx, here, A.x + A.w, A.y + 1, { color: UI.inkSoft, align: 'right' });
+    drawText(ctx, who, nx, A.y + 1, { color: BROWN });
+    drawText(ctx, bar.max ? '— ' + t('max') : `— ${bar.have} / ${bar.need}`, nx + measure(who) + 5, A.y + 1, { color: UI.inkSoft });
+    drawXpBar(ctx, nx, A.y + 12, nw, 7, bar, XP_PAPER);
+    let y = drawLines(ctx, [nextSteps(f.level, f.xp).join(' ')], nx, A.y + 23, nw, UI.ink, 9, 3);
+    // (the land lifts you, or holds you down — and what levels are for, in a line)
+    y = Math.max(y, A.y + 46) + 2;
+    if (lift) y = drawLines(ctx, [liftWords(lift, shownLevel(f.eff), !!W.solo)], A.x, y, A.w, liftInk(lift, !!W.solo), 9, 2);
+    y = drawLines(ctx, [levelLine()], A.x, y, A.w, '#b8a080', 9, 2);
+    const top = y + 2;
     // numbers
-    let y = A.y + 52;
+    y = top + 2;
     const row = (label, val, color = UI.ink) => {
       drawText(ctx, fitText(label, lw - measure(val) - 6), A.x, y, { color: UI.inkSoft });
       drawText(ctx, val, A.x + lw, y, { color, align: 'right' });
@@ -220,14 +229,14 @@ export class HeroTab {
     if (worn.length) worn.forEach((it, i) => drawGearIcon(ctx, it, A.x + lw - 12 - (worn.length - 1 - i) * 15, y - 2));
     else drawText(ctx, '—', A.x + lw, y, { color: UI.inkSoft, align: 'right' });
     y += 14;
-    // the eight heroes, two columns: the picture, the name, the role — and what the one
-    // under the cursor does, in full, underneath
-    const rx = A.x + lw + 12, rw = A.w - lw - 12, n = CLASS_ORDER.length, cols = 2, rows = Math.ceil(n / cols);
-    drawText(ctx, t('Choose your hero'), rx, A.y + 2, { color: BROWN });
-    const cw = Math.floor((rw - 4) / cols), ch = Math.max(22, Math.min(30, Math.floor((A.h - 46) / rows) - 3));
+    // the eight heroes, two columns: the picture, the name, the role where there's room — and
+    // what the one under the cursor does, in full, underneath (three lines of it at least)
+    const rx = A.x + lw + 12, rw = A.w - lw - 12, cols = 2, rows = Math.ceil(CLASS_ORDER.length / cols);
+    drawText(ctx, t('Choose your hero'), rx, top + 2, { color: BROWN });
+    const cw = Math.floor((rw - 4) / cols), ch = Math.max(20, Math.min(30, Math.floor((A.y + A.h - top - 43) / rows) - 3));
     const hov = (this.focus || '').startsWith('cls:') ? this.focus.slice(4) : f.clsId;
     CLASS_ORDER.forEach((id, i) => {
-      const C = CLASSES[id], cx = rx + (i % cols) * (cw + 4), cy = A.y + 14 + Math.floor(i / cols) * (ch + 3), on = f.clsId === id;
+      const C = CLASSES[id], cx = rx + (i % cols) * (cw + 4), cy = top + 14 + Math.floor(i / cols) * (ch + 3), on = f.clsId === id;
       this.card(ctx, cx, cy, cw, ch, on ? '#fff3c4' : '#f3e3c3', '#3b2a22', on);
       ctx.fillStyle = C.color; ctx.fillRect(cx + 2, cy + 2, 18, ch - 4);
       ctx.fillStyle = '#fff7e6'; ctx.fillRect(cx + 3, cy + 3, 16, ch - 6);
@@ -237,7 +246,7 @@ export class HeroTab {
       this.item('cls:' + id, cx, cy, cw, ch, () => { if (this.wild.chooseClass(id)) audio.sfx('confirm'); });
       if (on) this.home = 'cls:' + id;
     });
-    const dy = A.y + 16 + rows * (ch + 3), dl = wrap(t(CLASSES[hov].desc), rw).slice(0, Math.max(1, Math.floor((A.y + A.h - dy) / 9)));
+    const dy = top + 16 + rows * (ch + 3), dl = wrap(t(CLASSES[hov].desc), rw).slice(0, Math.max(0, Math.floor((A.y + A.h + 4 - dy) / 9)));
     dl.forEach((l, j) => drawText(ctx, l, rx, dy + j * 9, { color: UI.inkSoft }));
     // how to fight, on this device
     const kn = (k) => W.keyName(k);
@@ -253,7 +262,7 @@ export class HeroTab {
     const W = this.wild, f = W.me.fighter, cls = f.clsId, trees = TREES[cls];
     const picks = picksOf(this.prof(), cls), pts = this.points();
     const treeW = Math.floor(A.w * 0.64), colW = Math.floor(treeW / 3);
-    drawText(ctx, fitText(t('{hero} · level {n}', { hero: t(CLASSES[cls].name), n: f.level }), treeW - 60), A.x, A.y, { color: BROWN });
+    drawText(ctx, fitText(t('{hero} · level {n}', { hero: t(CLASSES[cls].name), n: shownLevel(f.level) }), treeW - 60), A.x, A.y, { color: BROWN });
     drawText(ctx, t('Points: {n}', { n: pts }), A.x + treeW - 4, A.y, { color: pts ? '#4f955a' : UI.inkSoft, align: 'right' });
     const top = A.y + 34, rowH = Math.max(22, Math.min(34, Math.floor((A.h - 36) / 5)));
     let firstCan = null;

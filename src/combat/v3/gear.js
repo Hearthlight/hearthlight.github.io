@@ -5,6 +5,7 @@
 // Three levels: I (common), II (rare), III (epic). Pure data — the phone reads it too.
 
 import { WEAPONS, RARITY, TRAITS, LEGENDS, weaponName } from '../v4/weapons.js';
+import { shownLevel } from '../../saga/levels.js';
 
 export const RUNES = {
   fire: { name: 'Fire Rune', elem: 'fire', color: '#ff8a3a', desc: 'Your hits often burn · +{n}% damage' },
@@ -54,9 +55,9 @@ export function itemColor(it) {
   if (it.kind === 'weapon') return RARITY[it.rarity] ? RARITY[it.rarity].color : '#fff';
   const D = it.kind === 'rune' ? RUNES[it.type] : CHARMS[it.type]; return D ? D.color : '#fff';
 }
-// the frame colour, the little tag (I, II, III — a weapon's item level), what melting gives
+// the frame colour, the little tag (I, II, III — a weapon's level, as heroes' are read), what melting gives
 export const itemBorder = (it) => (it.kind === 'weapon' ? itemColor(it) : LEVEL_COLOR[it.lv]);
-export const itemTag = (it) => (it.kind === 'weapon' ? String(it.lv) : ROMAN[it.lv]);
+export const itemTag = (it) => (it.kind === 'weapon' ? String(shownLevel(it.lv)) : ROMAN[it.lv]);
 export const itemUpgrade = (it) => (it.kind === 'weapon' ? 0 : UPGRADE[it.lv] || 0);
 export const meltValue = (it) => (it.kind === 'weapon' ? 20 * it.rarity : 15 * it.lv);
 export function isWorn(G, it) { return G.rune === it.id || (G.charms || []).includes(it.id) || !!(G.weapons && G.weapons[it.cls] === it.id); }
@@ -64,7 +65,7 @@ export function isWorn(G, it) { return G.rune === it.id || (G.charms || []).incl
 // a weapon's lines, for the screens: [English key, vars, colour]
 export function weaponLines(it) {
   const W = WEAPONS[it.type], out = [];
-  out.push(['{rarity} {kind} · level {lv}', { rarity: RARITY[it.rarity].name, kind: W.name, lv: it.lv }, RARITY[it.rarity].color]);
+  out.push(['{rarity} {kind} · level {lv}', { rarity: RARITY[it.rarity].name, kind: W.name, lv: shownLevel(it.lv) }, RARITY[it.rarity].color]);
   if (it.legend) out.push([LEGENDS[it.legend].desc, null, '#b86a1a']);
   for (const tr of it.traits || []) if (TRAITS[tr]) out.push(['{trait}: {what}', { trait: TRAITS[tr].name, what: TRAITS[tr].desc }, '#4f7fb8']);
   out.push([W.desc, null, null]);

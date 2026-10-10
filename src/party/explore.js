@@ -939,7 +939,7 @@ export class ExploreAct {
   drawBadges(ctx) {
     const P = this.party;
     if (P.dialogue.active || this.overlay) return;
-    P.drawBadges(ctx, (p) => (p.fighter ? t('Lv{n}', { n: p.fighter.level }) : ''));
+    P.drawBadges(ctx, 'level');
   }
 
 

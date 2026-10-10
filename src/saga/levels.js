@@ -6,15 +6,41 @@
 // plays at once). Pure helpers — combat.js, encounters, lairs & the saga use them.
 
 import { ZONES } from '../world/big/layout.js';
+import { MAX_LEVEL } from '../combat/v4/talents.js';
 
-export { MAX_LEVEL } from '../combat/v4/talents.js';
+export { MAX_LEVEL };
 export const XP_NEED = (lv) => 40 + 30 * lv + lv * lv;
 
-// places with a level of their own that aren't lands (dungeons, the Ring…): { x0, z0, x1, z1, lv }
+// ---- what players read: twenty levels, two of the game’s own each (1–2 → 1 … 39–40 → 20).
+// Lands, monsters, quests and every formula keep the scale of forty; a level becomes a shown
+// one only where it reaches somebody’s eyes (never the other way round).
+export const shownLevel = (lv) => Math.max(1, Math.ceil((lv || 1) / 2));
+export const shownRange = (lv) => [shownLevel(lv[0]), shownLevel(lv[1])];
+
+// the experience bar of a shown level: its two levels end to end — `k` how full, `mid` where
+// the first one ends (the notch: a talent point there, the level-up at the end; 0 = no notch,
+// the last stretch before the cap), `have`/`need` the numbers, `half` once the notch is passed
+export function xpBar(level, xp = 0) {
+  if (level >= MAX_LEVEL) return { k: 1, mid: 0, have: 0, need: 0, half: false, max: true };
+  const half = level % 2 === 0, a = half ? level - 1 : level;
+  const n1 = XP_NEED(a), n2 = a + 1 < MAX_LEVEL ? XP_NEED(a + 1) : 0;
+  const have = (half ? n1 : 0) + Math.max(0, Math.min(xp, XP_NEED(level))), need = n1 + n2;
+  return { k: have / need, mid: n2 ? n1 / need : 0, have, need, half, max: false };
+}
+
+// how a place’s levels sit next to a hero’s own: 0 nothing left to learn there · 1 easy ·
+// 2 just right · 3 a challenge · 4 too strong — judged on the levels as they are read, so
+// that a hero of level 4 never sees « levels 4–5 » marked as beyond them
+export function landFit(lv, own) {
+  const [a, b] = shownRange(lv), n = shownLevel(own);
+  return n > b + 2 ? 0 : n > b ? 1 : n >= a ? 2 : n >= a - 1 ? 3 : 4;
+}
+
+// places with a level of their own that aren't lands (dungeons, the Ring…): { x0, z0, x1, z1, lv, name }
 export const REGIONS = [];
-export function setRegion(id, rect, lv) {
+export function setRegion(id, rect, lv, name = '') {
   const i = REGIONS.findIndex((r) => r.id === id);
-  const r = { id, ...rect, lv };
+  const r = { id, ...rect, lv, name };
   if (i >= 0) REGIONS[i] = r; else REGIONS.push(r);
 }
 
@@ -26,6 +52,12 @@ export function levelAt(big, x, z) {
   for (const r of REGIONS) if (x >= r.x0 && x < r.x1 && z >= r.z0 && z < r.z1) return r.lv;
   if (!big) return ZLV.valley;
   return big.zoneAt(x, z).lv || ZLV.valley;
+}
+// …and the place itself, for the words about it: { id, name, lv }
+export function placeAt(big, x, z) {
+  for (const r of REGIONS) if (x >= r.x0 && x < r.x1 && z >= r.z0 && z < r.z1) return r;
+  const zone = big ? big.zoneAt(x, z) : ZONES[0];
+  return { id: zone.id, name: zone.name, lv: zone.lv || ZLV.valley };
 }
 
 // a monster's level in a range (steady for a given seed)

@@ -7,6 +7,8 @@ import { drawText, measure } from '../engine/font.js';
 import { makeCanvas } from '../engine/gfx.js';
 import { ZONES, C1, C2 } from '../world/big/layout.js';
 import { collectMarks, drawMarks, drawMark } from './mapmarks.js';
+import { levelsTag } from '../ui/levelbar.js';
+import { partyLevel } from './levelups.js';
 import { t } from '../i18n.js';
 
 // the map around (cx, cz) at k screen pixels per tile, with everyone's marks;
@@ -142,10 +144,12 @@ export function mapUpdate(P, me) {
   // (the marks — a named one is a place you can be guided to: its last 1 — and an act's own places)
   const own = P.guides ? P.guides.places().filter((q) => q.own) : [];
   const way = P.guides && me ? P.guides.padWay(me) : null;
+  // (each land's levels after its name, in the colour of how they sit next to this hero's own)
+  const mine = me && me.fighter ? me.fighter.level : partyLevel(P);
   return {
     t: 'wmap', fog: WM.fogBits(), r: [R.x0, R.z0, R.x1 - R.x0, R.z1 - R.z0],
     m: collectMarks(P).concat(own).map((m) => [m.k, r1(m.x), r1(m.z), m.on ? 1 : 0, m.name || '', m.st || '', m.a ? 1 : 0, m.name && P.guides ? 1 : 0]),
-    z: lands ? WM.zoneCentres().map((c) => [t(c.zone.name), r1(c.x), r1(c.z), c.n, here && here.id === c.zone.id ? 1 : 0]) : [],
+    z: lands ? WM.zoneCentres().map((c) => [t(c.zone.name) + (c.zone.lv ? ' ' + levelsTag(c.zone.lv, mine) : ''), r1(c.x), r1(c.z), c.n, here && here.id === c.zone.id ? 1 : 0]) : [],
     p: P.players.filter((p) => p.connected !== false).map((p) => [r1(at(p).x), r1(at(p).z), p.color, p.name, p === me ? 1 : 0]),
     k: legendKeys(P).map((q) => [q.k, q.name, q.n, q.total]),
     s: lands ? [found, land.length, Math.round(WM.explored() * 100)] : null,
@@ -179,9 +183,11 @@ export function drawWorldPanel(P, ctx, x, y, w, h, { counts = true, view = null 
   const M = drawWorldMap(P, ctx, mx, my, mw, mh, zoomed ? view.cx : (R.x0 + R.x1) / 2, zoomed ? view.cz : (R.z0 + R.z1) / 2, k);
   if (view) { const o = M(WM.X0, WM.Z0); view.frame = { x: mx, y: my, w: mw, h: mh, k, ox: o.x, oy: o.y, fit, X0: WM.X0, Z0: WM.Z0 }; }
   // names of the places you've found, nudged up or down off the marks (and each other)
-  const marks = P.mapPts || [], placed = [], lands = P.big.map.lands !== false;
+  // (a full map — one you can zoom — has room for each land's levels after its name, in the
+  // colour of how they sit next to the heroes' own)
+  const marks = P.mapPts || [], placed = [], lands = P.big.map.lands !== false, own = view ? partyLevel(P) : 0;
   for (const c of lands ? WM.zoneCentres() : []) {
-    const q = M(c.x, c.z), name = t(c.zone.name), nw = measure(name) + 4;
+    const q = M(c.x, c.z), name = t(c.zone.name) + (own && c.zone.lv ? ' ' + levelsTag(c.zone.lv, own) : ''), nw = measure(name) + 4;
     if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) continue;               // (the other continent's lands: off this map)
     let best = null;
     for (const dy of [0, -9, 9, -18, 18, -27, 27]) {

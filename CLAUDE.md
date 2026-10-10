@@ -158,6 +158,13 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   (`players`, `act`, `host`, `net`, `ask`, `say`, `spawnNpc`, `loadSave`/`writeSave` → the solo
   save, `keyName`…). A change to one of them must keep working in both modes: test both.
   Party-only wording goes through `P.solo ? … : …`.
+- **Levels**: the game counts forty (lands, monsters, quests, every formula); players read twenty,
+  two of the game's each — `shownLevel(lv)` / `shownRange(lv)` (`src/saga/levels.js`) wherever a
+  level reaches the screen (heroes, monsters' plates, lands, dungeons, weapons, toasts, the phone):
+  never the game's scale on screen, never the shown one in a formula. The experience bar runs over
+  a shown level (`xpBar`, drawn by `src/ui/levelbar.js`: a notch half-way, where a talent point
+  waits); the level-up — one banner for all who rose together, a card on each phone, a panel in
+  solo — and the word when a land lifts a hero are `src/party/levelups.js` (owned by `Combat`).
 - Match the surrounding code: dense, lightly commented, small helpers, no framework.
 
 ## Layout

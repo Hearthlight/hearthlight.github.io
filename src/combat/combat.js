@@ -22,7 +22,8 @@ import { TT } from '../world/tiles.js';
 import { animDino } from '../models/dinos3d.js';
 import { t } from '../i18n.js';
 import * as K9 from './v9/kit9.js';
-import { XP_NEED, levelAt, rollLevel, hpL, dmgL, groupHp, groupDmg, gapDealt, gapTaken, effLevel, killXp, levelColor } from '../saga/levels.js';
+import { XP_NEED, levelAt, rollLevel, hpL, dmgL, groupHp, groupDmg, gapDealt, gapTaken, effLevel, killXp, levelColor, shownLevel } from '../saga/levels.js';
+import { LevelUps } from '../party/levelups.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const WHITE = new THREE.Color('#ffffff');
@@ -76,6 +77,7 @@ export class Combat {
     };
     this.noteTex = noteTexture();
     this.vfx = new Vfx(this.root, { lighting: party.lighting, shake: (s) => { party.cam.shake = Math.max(party.cam.shake || 0, s); } });
+    this.ups = new LevelUps(this);          // the level-up moment, the lands that lift a hero
     for (const p of party.players) this.equip(p);
   }
 
@@ -112,6 +114,7 @@ export class Combat {
     p.fighter = f;
     f.eff = this.effOf(p);
     this.refreshStats(p, true);
+    this.ups.synced(p);
     p.actor.model.setProp(f.prop || cls.weapon);
     p.actor.doubleJump = f.mods.doubleJump;
   }
@@ -144,38 +147,37 @@ export class Combat {
     f.ultId = ultOf(f.clsId, picks);
     f.ult = f.ultId ? f.ult || 0 : 0;
     f.elem = f.mods.elem; f.elemChance = f.mods.elemChance;
-    const lv = (f.eff || f.level) - 1;
     const old = f.maxHp;
-    f.maxHp = Math.round((f.cls.hp + f.mods.hp) * (1 + lv * 0.08) * (1 + f.mods.hpPct));
+    f.maxHp = this.hpAt(f, f.eff || f.level);
     f.hp = heal ? f.maxHp : Math.min(f.maxHp, f.hp + Math.max(0, f.maxHp - old));
     f.secondWind = f.mods.secondWind;
     p.actor.doubleJump = f.mods.doubleJump;
   }
 
+  // a hero’s health and strength at a level (their gear and talents as they are)
+  hpAt(f, lv) { return Math.round((f.cls.hp + f.mods.hp) * (1 + (lv - 1) * 0.08) * (1 + f.mods.hpPct)); }
+  strAt(f, lv) { return (1 + (lv - 1) * 0.06) * f.mods.dmg; }
+
   dmgMul(p) {
     const f = p.fighter;
     let aura = 0;
     for (const q of this.players) if (q !== p && q.fighter && q.fighter.mods.aura > aura && !q.fighter.down && Math.hypot(q.pos.x - p.pos.x, q.pos.z - p.pos.z) < 5) aura = q.fighter.mods.aura;
-    return (1 + ((f.eff || f.level) - 1) * 0.06) * f.mods.dmg * (f.buffT > 0 ? 1 + f.buff : 1) * (1 + aura);
+    return this.strAt(f, f.eff || f.level) * (f.buffT > 0 ? 1 + f.buff : 1) * (1 + aura);
   }
 
+  // experience: every level heals and strengthens the hero; what the players see of it —
+  // a talent point half-way, the level-up at the end — is party/levelups.js
   gainXp(p, n) {
     const f = p.fighter;
     if (!f) return;
+    const was = f.level;
     f.xp += Math.round(n * f.mods.xp);
+    while (f.xp >= XP_NEED(f.level) && f.level < MAX_LEVEL) { f.xp -= XP_NEED(f.level); f.level++; }
     if (f.level >= MAX_LEVEL) f.xp = 0;
-    while (f.xp >= XP_NEED(f.level) && f.level < MAX_LEVEL) {
-      f.xp -= XP_NEED(f.level);
-      f.level++;
+    if (f.level > was) {
       f.eff = this.effOf(p);
       this.refreshStats(p, true);
-      this.vfx.pillar(p.pos.x, p.pos.z, { r: 0.75, h: 5, color: '#ffd66b', life: 1.1 });
-      this.vfx.star(p.pos.x, 1.3, p.pos.z, { size: 2, kind: 'rays', color: '#ffd66b', life: 0.5 });
-      this.popText(p.pos.x, 2.4, p.pos.z, t('LEVEL UP!'), '#ffd66b', true);
-      audio.sfx('levelup', { volume: 0.7 });
-      this.party.buzz(p, [40, 30, 40, 30, 90]);
-      this.party.toast(t('{name} reached level {n}!', { name: p.name, n: f.level }), p.color);
-      this.party.flashTag(p, 3);
+      this.ups.gained(p, was);
       if (this.party.progress) this.party.progress.onLevel(p);
     }
     this.party.saveProfile(p);
@@ -214,7 +216,12 @@ export class Combat {
   }
 
   // ------------------------------------------------------------------ frame
+  // (frozen for a scene or a talk: the floating numbers and barks still fade away, a level
+  // just gained still gets its banner)
+  idle(dt) { this.ups.update(dt); this.updateNums(dt); }
+
   update(dt) {
+    this.ups.update(dt);
     if (this.hitstop > 0) { this.hitstop -= dt; this.updateNums(dt); return; }
     tickCombo(this, dt);
     tickHazards(this, dt);
@@ -1334,7 +1341,7 @@ export class Combat {
       const f = p.fighter;
       if (!f || !p.connected) continue;
       const eff = this.effOf(p);
-      if (eff !== f.eff) { const was = f.eff; f.eff = eff; const hp = f.hp / (f.maxHp || 1); this.refreshStats(p); f.hp = Math.max(1, Math.round(f.maxHp * hp)); if (was && this.party.onSync) this.party.onSync(p, eff, was); }
+      if (eff !== f.eff) { f.eff = eff; const hp = f.hp / (f.maxHp || 1); this.refreshStats(p); f.hp = Math.max(1, Math.round(f.maxHp * hp)); this.ups.synced(p); }
     }
   }
 
@@ -1633,7 +1640,7 @@ export class Combat {
       ctx.fillStyle = special ? (e.rare ? '#dfe4ee' : '#ffd66b') : '#241a2e'; ctx.fillRect(x0 - 1, y0 - 1, w + 2, 4);
       ctx.fillStyle = '#6a4a8e'; ctx.fillRect(x0, y0, w, 2);
       ctx.fillStyle = '#c9a2f0'; ctx.fillRect(x0, y0, Math.round(w * Math.max(0, e.hp / e.maxHp)), 2);
-      if (e.level) drawText(ctx, (special ? '★' : '') + e.level, x0 - 2, y0 - 3, { color: special ? (e.rare ? '#dfe4ee' : '#ffd66b') : levelColor(e.level, ref), align: 'right', outline: '#241a2e' });
+      if (e.level) drawText(ctx, (special ? '★' : '') + shownLevel(e.level), x0 - 2, y0 - 3, { color: special ? (e.rare ? '#dfe4ee' : '#ffd66b') : levelColor(e.level, ref), align: 'right', outline: '#241a2e' });
       // (a rare’s name over its silver bar)
       if (e.rareName) drawText(ctx, t(e.rareName), u.x, y0 + 5, { color: '#dfe4ee', align: 'center', outline: '#241a2e' });
     }

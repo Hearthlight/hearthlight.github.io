@@ -66,6 +66,8 @@ import { drawSpeech, drawBubbles } from '../ui/chat.js';
 import { STORIES_KEY, stories, touchStory, playing } from './slots.mjs';
 import { storyName, storyWho, storyLevel, storyWhen } from './stories.js';
 import { Announcer, noteTime } from './announce.js';
+import { shownLevel, xpBar } from '../saga/levels.js';
+import { drawLevelTag, liftMark } from '../ui/levelbar.js';
 
 export const PARTY_COLORS = [
   { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
@@ -690,7 +692,7 @@ export class Party {
     const f = p.fighter;
     if (f) {
       ctx.hp = Math.max(0, Math.round((f.hp / f.maxHp) * 20)) * 5;
-      ctx.lv = f.level;
+      ctx.lv = shownLevel(f.level);
       ctx.cd = f.cd > 0 ? Math.ceil((f.cd / (f.cls.special.cd * f.mods.cdr)) * 10) * 10 : 0;
       ctx.cls = f.clsId;
       if (f.ultId && !f.down && !p.mount && !p.vehicle) { ctx.ult = Math.floor(f.ult); ctx.uic = ULTS[f.ultId].icon; }
@@ -1084,8 +1086,7 @@ export class Party {
     if (this.progress) this.progress.update(dt);
     if (this.zones && !frozenAll) this.zones.update(dt);
     this.lastDt = dt;
-    // (frozen for a scene or a talk: the floating numbers and barks still fade away)
-    if (this.combat && !frozenAll) this.combat.update(dt); else if (this.combat) this.combat.updateNums(dt);
+    if (this.combat && !frozenAll) this.combat.update(dt); else if (this.combat) this.combat.idle(dt);
     this.buddies.update(sdt, frozenAll);
     // footprints in the snow
     for (const p of this.players) {
@@ -2188,25 +2189,35 @@ export class Party {
     if (R) drawTracker(ctx, R);
   }
 
-  // everyone along the bottom: colour, name, a value (stars, level, K.O.s…)
-  // and, when fighting, a health bar with the special’s gauge on top
+  // everyone along the bottom: colour, name, a value (stars, K.O.s… — or 'level': the hero’s
+  // level over its experience bar, a notch where a talent point waits, an arrow when the land
+  // lifts them to its level or holds them down to it) and, when fighting, a health bar with
+  // the special’s gauge on top
   drawBadges(ctx, value, valueColor = '#ffd66b') {
     const W = this.display.w, H = this.display.h, now = this.t;
     const ps = this.players;
     if (!ps.length) return;
-    const fighting = ps.some((p) => p.fighter);
-    const bh = fighting ? 17 : 14;
-    const bw = Math.min(62, Math.floor((W - 12) / ps.length) - 3);
+    const fighting = ps.some((p) => p.fighter), levels = value === 'level';
+    const bh = fighting ? (levels ? 22 : 17) : 14;
+    const bw = Math.min(levels ? 76 : 62, Math.floor((W - 12) / ps.length) - 3);
     let x = Math.round(W / 2 - (ps.length * (bw + 3) - 3) / 2);
     const y = H - bh - 3;
     for (const p of ps) {
-      const f = p.fighter;
+      const f = p.fighter, lv = levels && f;
       ctx.fillStyle = 'rgba(30,20,40,0.82)'; ctx.fillRect(x, y, bw, bh);
       ctx.fillStyle = p.color; ctx.fillRect(x, y, 3, bh);
-      const v = value ? String(value(p)) : '';
-      const vw = v ? measure(v) + 4 : 0;
-      drawText(ctx, p.name, x + 6, y + 3, { color: !p.connected ? '#8a7a98' : f && f.down ? '#b9a2e3' : '#fff7e6', maxChars: Math.max(3, Math.floor((bw - 10 - vw) / 5)) });
+      const v = levels ? '' : value ? String(value(p)) : '';
+      let vw = v ? measure(v) : 0;
       if (v) drawText(ctx, v, x + bw - 3, y + 3, { color: valueColor, align: 'right' });
+      if (lv) {
+        // (eight badges across the screen: the bar no wider than the level, the name keeps its room)
+        vw = drawLevelTag(ctx, x + bw - 3, y + 3, shownLevel(f.level), xpBar(f.level, f.xp), valueColor, bw < 64 ? 0 : 30);
+        const lift = Math.sign(shownLevel(f.eff || f.level) - shownLevel(f.level));
+        if (lift) liftMark(ctx, x + bw - 10 - vw, y + 12, lift);
+      }
+      let name = p.name;
+      while (name.length > 3 && measure(name) > bw - 9 - (vw ? vw + 2 : 0)) name = name.slice(0, -1);
+      drawText(ctx, name, x + 6, y + 3, { color: !p.connected ? '#8a7a98' : f && f.down ? '#b9a2e3' : '#fff7e6' });
       if (f) {
         const hx = x + 5, hw = bw - 8, hy = y + bh - 4;
         ctx.fillStyle = '#3a2a3a'; ctx.fillRect(hx, hy, hw, 2);
@@ -2226,8 +2237,11 @@ export class Party {
         }
       }
       if (this.buddies && this.buddies.of(p)) heart(ctx, x + bw - 7, y - 5);
+      const own = p.kind !== 'phone' && p.connected, cap = own && !this.host.isHost(p);
       if (this.host.isHost(p)) crown(ctx, x + 3, y - 6);
-      else if (p.kind !== 'phone' && p.connected) menuCap(ctx, x + 3, y - 9, keyOf(p, 'm'), this.tvmenus.isOpen?.(p));
+      else if (cap) menuCap(ctx, x + 3, y - 9, keyOf(p, 'm'), this.tvmenus.isOpen?.(p));
+      // (no phone to tell them: a red dot by their menu’s key while a talent point waits there)
+      if (own && f && this.combat && this.combat.ups.points(p)) redDot(ctx, x + (cap ? measure(keyOf(p, 'm')) + 17 : 14), y - (cap ? 11 : 8));
       x += bw + 3;
     }
   }
@@ -2286,6 +2300,12 @@ function menuCap(ctx, x, y, key, open) {
   ctx.fillStyle = open ? '#e0a526' : '#5a3b2a'; ctx.fillRect(x, y, w, 9);
   ctx.fillStyle = '#fff7e6'; for (const k of [2, 4, 6]) ctx.fillRect(x + 2, y + k, 5, 1);
   drawText(ctx, key, x + 10, y + 1, { color: '#fff7e6' });
+}
+// …and the red dot beside it (the phone’s own: something waits in your menu)
+function redDot(ctx, x, y) {
+  ctx.fillStyle = '#241a2e'; ctx.fillRect(x, y, 6, 6);
+  ctx.fillStyle = '#e04848'; ctx.fillRect(x + 1, y + 1, 4, 4);
+  ctx.fillStyle = '#ff9a9a'; ctx.fillRect(x + 1, y + 1, 2, 1);
 }
 
 // a row of chips under a hero: each a key (a gamepad's A B X Y as its round button) and what it

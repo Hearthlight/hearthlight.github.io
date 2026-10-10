@@ -16,6 +16,7 @@ import { ULTS } from '../combat/v4/talents.js';
 import { audio } from '../engine/audio.js';
 import { t, getLang } from '../i18n.js';
 import { cleanName } from '../data/nicknames.js';
+import { shownLevel } from '../saga/levels.js';
 
 // the phone's buttons → the solo game's actions (B also backs out of menus)
 const BTN = { a: ['interact'], b: ['jump', 'cancel'], x: ['special'], y: ['dodge'], u: ['ult'] };
@@ -217,7 +218,7 @@ export class SoloPhone {
     if (ic) c.ic = ic;
     if (f && (W.armed() || f.hp < f.maxHp)) {
       c.hp = Math.round((100 * Math.max(0, f.hp)) / f.maxHp);
-      c.lv = f.level;
+      c.lv = shownLevel(f.level);
       if (f.ultId && !f.down && W.armed() && !W.me.mount && !W.me.vehicle) { c.ult = Math.floor(f.ult); c.uic = ULTS[f.ultId].icon; }
       const full = (f.moves ? f.moves.special.cd : f.cls.special.cd) * (f.mods.cdr || 1);
       if (c.x && f.cd > 0) c.cd = Math.round((100 * f.cd) / full);

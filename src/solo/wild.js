@@ -27,7 +27,7 @@ import { WANDERERS } from './wanderers.js';
 import { DIFFS } from '../party/host.js';
 import { Combat } from '../combat/combat.js';
 import { CLASSES, CLASS_ORDER, DODGE_ICON } from '../combat/classes.js';
-import { drawIcon } from '../combat/v4/icons.js';
+import { drawIcon, drawGlyph } from '../combat/v4/icons.js';
 import { spent, picksOf, pointsFor, ULTS } from '../combat/v4/talents.js';
 import { Campfires } from '../party/camp.js';
 import { DinoLife } from '../party/dinos.js';
@@ -47,6 +47,8 @@ import { drawMarks, collectMarks } from '../party/mapmarks.js';
 import { Guides } from '../party/guide.js';
 import { Stage } from '../saga/stage.js';
 import { Saga } from '../saga/saga.js';
+import { shownLevel, xpBar } from '../saga/levels.js';
+import { drawXpBar, liftMark, liftInk, levelWords, XP_PAPER } from '../ui/levelbar.js';
 
 // ------------------------------------------------------------------ the hero's controls
 // Party Mode's systems read a player's input as A / B / X / Y (+ 'interact',
@@ -231,9 +233,6 @@ export class Wild {
     this.world.over.root.add(this.root);
     this.chests = new Chests(this, this.root, (c, p) => this.onChestOpen(c, p));
     this.progress = new Progress(this);
-    // (a new level: a talent point to spend on the Hero page)
-    const onLevel = this.progress.onLevel.bind(this.progress);
-    this.progress.onLevel = (p) => { onLevel(p); this.nudgeTalents(); };
     this.me.cls = CLASSES[this.profileOf().cls] ? this.profileOf().cls : 'knight';
     this.startCombat();
     // (health & the ultimate's gauge as they were when the game was saved)
@@ -566,8 +565,7 @@ export class Wild {
     }
     if (this.zones && !w.cinematic) this.zones.update(dt);
     if (this.saga) this.saga.update(dt);
-    // (frozen for a scene or a talk: the floating numbers and barks still fade away)
-    if (C && !frozen) C.update(dt); else if (C) C.updateNums(dt);
+    if (C && !frozen) C.update(dt); else if (C) C.idle(dt);
     this.guardValley();
     w.player.model.root.visible = !this.me.hidden;
   }
@@ -1008,13 +1006,20 @@ export class Wild {
     }
   }
 
-  // the hero's health, level & special under the clock (out in the wild, or hurt)
+  // the hero's health, special & level (over its experience bar) under the clock (out in the
+  // wild, or hurt) — and, under them, the panel of a level just gained
   // (`minimal`: the HUD's smallest display — only while hurt or in a fight)
   drawHero(ctx, x, y, minimal = false) {
+    const h = this.drawHeroPanel(ctx, x, y, minimal);
+    this.drawLevelCard(ctx, x, y + h);
+    return h;
+  }
+
+  drawHeroPanel(ctx, x, y, minimal) {
     const f = this.me.fighter, w = this.world;
     if (!f || !this.big || w.mapId !== 'overworld' || w.cinematic || (!this.armed() && f.hp >= f.maxHp)) return 0;
     if (minimal && f.hp >= f.maxHp && !this.fighting()) return 0;
-    const pw = 78, ph = 23, bx = x + 20, bw = pw - 25;
+    const pw = 78, ph = 29, bx = x + 20, bw = pw - 25;
     panel(ctx, x, y, pw, ph);
     drawClassIcon(ctx, f.clsId, x + 5, y + 5);
     // health (it blinks when it's low)
@@ -1023,13 +1028,45 @@ export class Wild {
     ctx.fillStyle = '#7a3442'; ctx.fillRect(bx + 1, y + 5, bw - 2, 4);
     ctx.fillStyle = low ? '#ffd0d8' : '#ec5f73'; ctx.fillRect(bx + 1, y + 5, Math.round((bw - 2) * k), 4);
     ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(bx + 1, y + 5, Math.round((bw - 2) * k), 1);
-    // the special's gauge (in the hero's colour once it's ready), and the level
+    // the special's gauge (in the hero's colour once it's ready)
     const full = (f.moves ? f.moves.special.cd : f.cls.special.cd) * (f.mods.cdr || 1), g = f.cd > 0 ? Math.max(0, 1 - f.cd / full) : 1;
     ctx.fillStyle = '#3b2a2e'; ctx.fillRect(bx, y + 13, 26, 5);
     ctx.fillStyle = g >= 1 ? f.cls.color : '#8a7aa0'; ctx.fillRect(bx + 1, y + 14, Math.round(24 * g), 3);
     if (g >= 1 && Math.floor(this.t * 3) % 3 === 0) { ctx.fillStyle = '#fff7e6'; ctx.fillRect(bx + 1 + Math.floor(this.t * 20) % 24, y + 14, 2, 1); }
-    drawText(ctx, t('Lv.{n}', { n: f.level }), x + pw - 5, y + 11, { color: UI.inkSoft, align: 'right' });
+    // the level, and its experience bar along the bottom (an arrow by it: the land is above
+    // the hero and lifts them a little, or holds them down to it)
+    drawText(ctx, t('Lv{n}', { n: shownLevel(f.level) }), x + pw - 5, y + 11, { color: '#8a5234', align: 'right' });
+    drawXpBar(ctx, bx, y + 21, bw, 4, xpBar(f.level, f.xp), XP_PAPER);
+    const lift = Math.sign(shownLevel(f.eff || f.level) - shownLevel(f.level));
+    if (lift) liftMark(ctx, x + 10, y + 22, lift, liftInk(lift, true));
     return ph + 3;
+  }
+
+  // The level-up panel: the new level, what it brought in plain numbers, the way to the
+  // talents and, the first time, what a level is for (the Hero page says the rest). It stays
+  // a few seconds (its time runs only while it shows: a talk or a menu hides it).
+  drawLevelCard(ctx, x, y) {
+    const U = this.combat && this.combat.ups, c = U && U.card, w = this.world;
+    if (!c || !this.big || w.mapId !== 'overworld' || w.dialogue.active || w.menu.open || w.shop.open_ || w.cinematic) return;
+    c.shown = true;
+    const words = c.tell ? levelWords().slice(0, 1) : [], pw = words.length ? 190 : 148, tw = pw - 16, f2 = (v) => (v / 100).toFixed(2);
+    const same = c.hp[0] === c.hp[1] && c.str[0] === c.str[1];
+    const rows = same ? [] : [[t('Health'), `${c.hp[0]} → ${c.hp[1]}`, UI.ink], [t('Strength'), `×${f2(c.str[0])} → ×${f2(c.str[1])}`, UI.ink]];
+    rows.push([t('Talent points'), '+' + c.got, '#4f955a']);
+    const lines = [];
+    if (same) lines.push([t('Health and strength: no change here, where the land sets the level you fight at ({n}). The gain will show in other lands.', { n: c.eff }), '#4f73b6']);
+    if (c.pts && this.me.kind !== 'phone') lines.push([t('{key}: your Hero page, to spend them', { key: this.heroKey() }), '#8a5234']);
+    for (const l of words) lines.push([l, '#5a4a5a']);
+    const wl = lines.map(([l, color]) => [wrap(l, tw), color]);
+    const ph = 22 + rows.length * 11 + wl.reduce((a, [l]) => a + l.length * 10 + 3, 0) + 4;
+    ctx.globalAlpha = Math.max(0, Math.min(1, c.t * 5, (c.life - c.t) * 2));
+    panel(ctx, x, y, pw, ph);
+    drawGlyph(ctx, 'star', x + 5, y + 3);
+    drawText(ctx, c.top ? t('Level {n}: the highest!', { n: c.lv }) : t('Level {n}!', { n: c.lv }), x + 24, y + 7, { color: '#8a5234' });
+    let ly = y + 21;
+    for (const [label, val, color] of rows) { drawText(ctx, label, x + 8, ly, { color: UI.inkSoft }); drawText(ctx, val, x + pw - 8, ly, { color, align: 'right' }); ly += 11; }
+    for (const [l, color] of wl) { ly += 3; for (const s of l) { drawText(ctx, s, x + 8, ly, { color }); ly += 10; } }
+    ctx.globalAlpha = 1;
   }
 
   // "[E] Row  [Space] Get out  [F] Dash" above the hotbar (and the tip), and a short hint

@@ -123,15 +123,9 @@ export class Progress {
   // stardust picked up counts towards upgrades
   addDust(p, n = 1) { const pr = this.prof(p); pr.dust += n; this.party.profileDirty = true; }
 
-  // a new level: tell the phone there's a point to spend
-  onLevel(p) {
-    const pr = this.prof(p), cls = p.cls || 'knight';
-    const left = pointsFor(this.level(p)) - spent(picksOf(pr, cls));
-    if (left > 0 && p.kind === 'phone') this.party.toast(t('{name} has a talent point to spend!', { name: p.name }), p.color);
-    // (no phone: their menu on the big screen — solo nudges on its own)
-    else if (left > 0 && !this.party.solo && this.party.keyOf) this.party.toast(t('{name} has a talent point to spend! ({key}: the menu)', { name: p.name, key: this.party.keyOf(p, 'm') }), p.color);
-    this.sync(p);
-  }
+  // a new level: the phone's Talents screen has a point more to spend (the moment itself — the
+  // chime, the banner, the card — is party/levelups.js)
+  onLevel(p) { this.sync(p); }
 
   update(dt) { this.t = (this.t || 0) - dt; if (this.t > 0) return; this.t = 0.5; for (const p of this.party.players) this.sync(p); }
 }

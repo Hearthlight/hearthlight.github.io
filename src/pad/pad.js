@@ -16,6 +16,8 @@ import { roundIcon, drawIcon, drawGlyph } from '../combat/v4/icons.js';
 import { TREES, TALENT, ROW_NEED, canLearn, whyNot, rankOf, spentIn, valueAt } from '../combat/v4/talents.js';
 import { itemName, itemDesc, UPGRADE, ROMAN, LEVEL_COLOR, BAG, itemBorder, itemTag, itemUpgrade, meltValue, isWorn, weaponLines } from '../combat/v3/gear.js';
 import { t, setLang, getLang, detectLang, onLang } from '../i18n.js';
+import { shownLevel, xpBar } from '../saga/levels.js';
+import { drawXpBar, drawLevelTag, liftMark, levelsText, nextSteps, levelWords, levelLine, liftWords, liftInk, drawLines as drawWrapped, XP_PAPER } from '../ui/levelbar.js';
 import { relayUrl } from '../party/net.js';
 import { PadMap } from './padmap.js';
 import { RemoteGuest } from './remote.js';
@@ -208,6 +210,9 @@ function onMessage(m) {
       if (!S.quest && S.menu === 'quest') S.menu = false;
       break;
     }
+    // (your hero's level: its experience, the level they fight at here, the land's own)
+    case 'lv': S.lv = typeof m.lv === 'number' ? { lv: m.lv, xp: +m.xp || 0, eff: +m.eff || m.lv, land: Array.isArray(m.land) ? m.land.map(Number) : null, place: typeof m.place === 'string' ? m.place : '', solo: !!m.solo } : null; break;
+    case 'lvup': levelCard(m); break;
     case 'lobby': S.lobby = { ready: m.ready || 0, total: m.total || 0, host: m.host || '' }; break;
     // (the chat: every line said, and why one of ours didn't go)
     case 'chat': if (m.l && typeof m.l === 'object') { S.chat.push(m.l); if (S.chat.length > 50) S.chat.splice(0, S.chat.length - 50); if (S.menu !== 'chat' && !(S.me && m.l.n === S.me.name)) S.chatNew = true; } break;
@@ -543,11 +548,16 @@ function header(title, right = W - 28, hb = 20) {
     const tw = measure(tag) + 8;
     ctx.fillStyle = col; ctx.fillRect(4, 6 + o, tw, 11);
     drawText(ctx, tag, 4 + tw / 2, 8 + o, { color: '#241a2e', align: 'center' });
-    const room = right - 12 - tw - (S.me && S.ctx.lv && S.phase !== 'lobby' ? 30 : 0);
+    const room = right - 12 - tw - (S.me && S.ctx.lv && S.phase !== 'lobby' ? 52 : 0);
     drawText(ctx, fitText(S.me.name, room), 8 + tw, 8 + o, { color: '#fff7e6' });
     if (S.host && measure(S.me.name) < room - 10) drawText(ctx, '♛', 12 + tw + measure(S.me.name), 8 + o, { color: '#f6c65b' });
   } else drawText(ctx, title || 'Hearthlight', 6, 8 + o, { color: '#fff7e6' });
-  if (S.me && S.ctx.lv && S.phase !== 'lobby') drawText(ctx, t('Lv{n}', { n: S.ctx.lv }), right - 4, 8 + o, { color: '#ffd66b', align: 'right' });
+  // your level over its experience bar (an arrow: the land lifts you, or holds you down)
+  if (S.me && S.ctx.lv && S.phase !== 'lobby') {
+    const L = S.lv, w = drawLevelTag(ctx, right - 4, 6 + o, L ? shownLevel(L.lv) : S.ctx.lv, L ? xpBar(L.lv, L.xp) : null, '#ffd66b', 42);
+    const lift = L ? Math.sign(shownLevel(L.eff) - shownLevel(L.lv)) : 0;
+    if (lift) liftMark(ctx, right - 11 - w, 15 + o, lift);
+  }
 }
 function portraitBox(x, y, size) {
   const col = S.me ? S.me.color : '#e0a526';
@@ -889,7 +899,9 @@ function drawControls(zoneY, lobby) {
     const yx = S.ctx.x && !lobby ? bx2 + 2 : xx, yy = S.ctx.x && !lobby ? Math.round((xy + by2) / 2) - 6 : xy;
     bigButton(yx, yy, rY, 'Y', S.ctx.y, '#e8b83a', 'y', 0, S.ctx.x && !lobby ? 'left' : 'top', ic.y);
   }
-  return { ay, rA, rB, xy };
+  // (and what stays free of them: the gap between the stick and the buttons, from side to
+  // side, and how far down a card may come over the buttons)
+  return { ay, rA, rB, xy, gap: [restX + R + 10, bx2 - rB - 10], top: xy - rB - 24 };
 }
 
 // ------------------------------------------------------------------ the solo game
@@ -1059,7 +1071,8 @@ function drawPad() {
   // the host zooms the big screen's camera right from here: a row under the card (in the
   // header when the phone lies on its side)
   if (S.host && !S.menu && zoomItem()) { if (land) zoomBar(W / 2, 5, 18); else { zoomBar(W / 2, zoneY, 20); zoneY += 26; } }
-  drawControls(zoneY, lobby);
+  const K = drawControls(zoneY, lobby);
+  if (S.lvCard && !S.menu && !lobby) drawLevelCard(zoneY, K);
   if (S.paused && S.menu !== 'host') drawPausedCard();
   if (S.menu === 'main') drawMenu();
   else if (S.menu === 'cls') drawHeroMenu();
@@ -2030,15 +2043,104 @@ function animalList(title, rows, foot, note = '') {
   });
 }
 
+// The Hero page: your level (how far the next one is, what it will bring, the land's own
+// levels, what levels are for) and the heroes to choose from — side by side on a phone
+// lying down, one over the other on a phone held up.
 function drawHeroMenu() {
   ctx.fillStyle = 'rgba(15,10,22,0.7)'; ctx.fillRect(0, 0, W, H);
   regions.push({ kind: 'tap', id: 'scrim', x: 0, y: 0, w: W, h: H, fn: () => {} });
-  const pw = Math.min(W - 16, 300), ph = Math.min(H - 40, 200);
-  const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
-  ctx.fillStyle = '#20172a'; ctx.fillRect(0, py - 16, W, 14);
-  drawText(ctx, t('Choose your hero'), W / 2, py - 13, { color: '#fff3c4', align: 'center' });
+  const L = S.phase !== 'lobby' && S.lv, land = W > H;
+  const ph = Math.min(H - 40, 200), side = L && land ? Math.min(190, W - 300 - 18) : 0, lw = side >= 120 ? side : 0;
+  const pw = Math.min(W - 16 - (lw ? lw + 6 : 0), 300);
+  const lh = L && !lw ? Math.min(levelBlock(0, 0, pw, 400, true), H - ph - 30) : 0, over = lh >= 40 ? lh + 20 : 0;
+  const px = Math.round((W - pw - (lw ? lw + 6 : 0)) / 2) + (lw ? lw + 6 : 0), py = Math.round((H - ph - over) / 2) + over;
+  if (lw) levelBlock(px - lw - 6, py, lw, ph);
+  else if (over) levelBlock(px, py - over, pw, lh);
+  ctx.fillStyle = '#20172a'; ctx.fillRect(lw ? px : 0, py - 16, lw ? pw : W, 14);
+  drawText(ctx, t('Choose your hero'), lw ? px + pw / 2 : W / 2, py - 13, { color: '#fff3c4', align: 'center' });
   drawHeroes(px, py, pw, ph - 26);
   pill(px + 8, py + ph - 20, pw - 16, 18, t('Done'), 'herodone', () => { S.menu = false; }, { color: '#4f955a' });
+}
+
+// your level on a paper card: "Level 5 — 340 / 900", the bar, what comes next, the land you
+// stand in, a line on what levels are for (`sizing`: only how tall it would be)
+function levelBlock(x, y, w, h, sizing = false) {
+  const L = S.lv, bar = xpBar(L.lv, L.xp), n = shownLevel(L.lv), tw = w - 16;
+  const lift = Math.sign(shownLevel(L.eff) - n);
+  const lines = nextSteps(L.lv, L.xp).map((l) => [l, INK]);
+  if (L.land) lines.push([t('Here: {levels}', { levels: levelsText(L.land, L.lv, true) }) + (L.place ? ' · ' + L.place : ''), '#5a4a5a']);
+  if (lift) lines.push([liftWords(lift, shownLevel(L.eff), L.solo), liftInk(lift, L.solo)]);
+  lines.push([levelLine(), UI.inkSoft]);
+  const tall = 34 + lines.reduce((a, [l]) => a + wrap(l, tw).length * 10 + 2, 0) + 4;
+  if (sizing) return tall;
+  h = Math.min(h, tall);
+  panel(ctx, x, y, w, h);
+  tapArea('lvblock', x, y, w, h, () => {});
+  drawText(ctx, t('Level {n}', { n }), x + 8, y + 7, { color: '#8a5234' });
+  drawText(ctx, bar.max ? t('max') : `${bar.have} / ${bar.need}`, x + w - 8, y + 7, { color: UI.inkSoft, align: 'right' });
+  drawXpBar(ctx, x + 8, y + 19, tw, 7, bar, XP_PAPER);
+  let ly = y + 32;
+  for (const [l, color] of lines) {
+    if (ly + wrap(l, tw).length * 10 > y + h - 2) break;
+    ly = drawWrapped(ctx, [l], x + 8, ly, tw, color) + 2;
+  }
+  return tall;
+}
+
+// The level-up card, between the info strip and the controls — never over the stick or the
+// buttons (a phone held up: under the info card; lying down: in the gap between the stick and
+// the buttons): the new level, what it brought in plain numbers, the way to the Talents and,
+// the first time, what levels are for. A tap puts it away. Half-way through a level it's a
+// single line: a talent point.
+// (a hero rising again before it's read: one card, from the first numbers to the last)
+function levelCard(m) {
+  const n = (v) => (typeof v === 'number' && isFinite(v) ? v : 0), c = S.lvCard && !S.lvCard.half ? S.lvCard : null;
+  if (m.half) { if (c) c.pts = n(m.pts); else S.lvCard = { half: 1, pts: n(m.pts), life: 7 }; return; }
+  const two = (a) => (Array.isArray(a) ? [n(a[0]), n(a[1])] : [0, 0]), hp = two(m.hp), str = two(m.str), tell = !!(m.tell || (c && c.tell));
+  S.lvCard = { lv: n(m.lv), hp: [c ? c.hp[0] : hp[0], hp[1]], str: [c ? c.str[0] : str[0], str[1]], got: (c ? c.got : 0) + n(m.got), pts: n(m.pts), top: !!m.top, eff: n(m.eff), tell, life: tell ? 45 : 12 };
+}
+// (K: where the controls are — drawControls)
+function drawLevelCard(zoneY, K) {
+  const c = S.lvCard, land = W > H;
+  // (its time runs only while it shows)
+  if (c.seen !== undefined && S.t - c.seen < 0.3) c.age = (c.age || 0) + S.t - c.seen;
+  c.seen = S.t;
+  if (c.age > c.life) { S.lvCard = null; return; }
+  const x = land ? K.gap[0] : 6, w = land ? K.gap[1] - K.gap[0] : W - 12, y = zoneY + (land ? 2 : 0), tw = w - 16;
+  const room = (land ? H - 4 : K.top) - y;
+  const close = () => { S.lvCard = null; }, talents = () => { S.lvCard = null; S.menu = 'talents'; S.talSel = null; };
+  const btn = t('Talents') + (c.pts ? ' +' + c.pts : '');
+  if (c.half) {
+    // (the word and the button side by side when they fit, else one over the other)
+    const word = t('A talent point!'), bw = Math.min(w - 16, measure(btn) + 22), wide = measure(word) + bw + 40 <= w, h = wide ? 26 : 44;
+    panel(ctx, x, y, w, h);
+    tapArea('lvcard', x, y, w, h, close);
+    drawGlyph(ctx, 'star', x + 6, y + 5, 1);
+    drawText(ctx, fitText(word, w - 34), x + 26, y + 9, { color: INK });
+    pill(wide ? x + w - bw - 6 : x + 8, wide ? y + 5 : y + 23, wide ? bw : w - 16, 16, btn, 'lvtal', talents, { color: '#4f955a' });
+    return;
+  }
+  // what it brought: health and strength where you stand (the land may already hold them), talent points
+  const same = c.hp[0] === c.hp[1] && c.str[0] === c.str[1], f2 = (v) => (v / 100).toFixed(2);
+  const rows = same ? [] : [[t('Health'), `${c.hp[0]} → ${c.hp[1]}`, INK], [t('Strength'), `×${f2(c.str[0])} → ×${f2(c.str[1])}`, INK]];
+  rows.push([t('Talent points'), '+' + c.got, '#4f955a']);
+  const noteL = same ? wrap(t('Health and strength: no change here, where the land sets the level you fight at ({n}). The gain will show in other lands.', { n: c.eff }), tw) : [];
+  const base = 24 + rows.length * 11 + (noteL.length ? noteL.length * 10 + 2 : 0) + 24;
+  // (what levels are for: as many of its sentences as there is room for)
+  const words = [];
+  let h = base;
+  for (const l of c.tell ? levelWords() : []) { const wl = wrap(l, tw), more = wl.length * 10 + 4; if (h + more > room) break; words.push(wl); h += more; }
+  if (words.length) h += 2;
+  panel(ctx, x, y, w, h);
+  tapArea('lvcard', x, y, w, h, close);
+  drawGlyph(ctx, 'star', x + 6, y + 4, 1);
+  drawText(ctx, fitText(c.top ? t('Level {n}: the highest!', { n: c.lv }) : t('Level {n}!', { n: c.lv }), w - 34), x + 26, y + 8, { color: '#8a5234' });
+  let ly = y + 24;
+  for (const [label, val, color] of rows) { drawText(ctx, fitText(label, tw - measure(val) - 6), x + 8, ly, { color: UI.inkSoft }); drawText(ctx, val, x + w - 8, ly, { color, align: 'right' }); ly += 11; }
+  noteL.forEach((l) => { drawText(ctx, l, x + 8, ly, { color: '#4f73b6' }); ly += 10; });
+  pill(x + 8, y + base - 22, w - 16, 16, btn, 'lvtal', talents, { color: '#4f955a' });
+  ly = y + base + 1;
+  for (const wl of words) { wl.forEach((l) => { drawText(ctx, l, x + 8, ly, { color: '#5a4a5a' }); ly += 10; }); ly += 4; }
 }
 
 function leave() {

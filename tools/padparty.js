@@ -42,9 +42,9 @@ export async function run(bots = 2, shots = '') {
   for (let k = 0; k < 6; k++) { await D.step(10); await sleep(60); }
   const p0 = pads()[0], p1 = pads()[1];
   res.fighters = [!!p0.fighter, !!p1.fighter];
-  // a few levels for pad 0: points to spend (the toast names its menu button)
+  // a few levels for pad 0: points to spend (a red dot by its menu's key, on its badge)
   if (p0.fighter) { p0.fighter.level = 9; P.progress.onLevel(p0); }
-  res.toast = (P.toasts.find((q) => /talent/i.test(q.text)) || {}).text || null;
+  res.points = P.combat.ups.points(p0);
   const before = spent(picksOf(P.progress.prof(p0), p0.cls || 'knight'));
   await F.press(0, 'select'); await D.step(8);
   const c = P.tvmenus.cur;

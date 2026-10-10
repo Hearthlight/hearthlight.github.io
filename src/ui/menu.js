@@ -21,6 +21,7 @@ import { questRows, rowsHeight, drawRows, fitRich, wrapFit, tailed, OPEN } from 
 import { drawWorldPanel, MapView } from '../party/worldmap.js';
 import { MapPick } from '../party/guide.js';
 import { HeroTab } from '../solo/herotab.js';
+import { shownLevel } from '../saga/levels.js';
 import { DIFFS, SPLITS, splitOf } from '../party/host.js';
 import { CHAT_MODES } from './chatdata.js';
 
@@ -432,7 +433,7 @@ export class Menu {
     ctx.drawImage(w.portraitOf('player', 'happy'), 8, 4, 28, 26, cx, cy - 1, 26, 24);
     const tx = cx + 33, tw2 = px + pw - 10 - tx;
     const f = w.wild && w.wild.me.fighter, cls = w.wild && CLASSES[w.wild.me.cls];
-    const who = cls ? t('{name} · {cls}, level {n}', { name: s.player.name, cls: t(cls.name), n: f ? f.level : (w.wild.profileOf().level || 1) }) : s.player.name;
+    const who = cls ? t('{name} · {cls}, level {n}', { name: s.player.name, cls: t(cls.name), n: shownLevel(f ? f.level : w.wild.profileOf().level) }) : s.player.name;
     drawText(ctx, fitText(who, tw2), tx, cy, { color: UI.ink });
     drawText(ctx, fitText([dayLabel(s.day), timeLabel(s.hour), this.placeNow()].filter(Boolean).join(' · '), tw2), tx, cy + 10, { color: UI.inkSoft });
     const q = w.trackedQuest();
