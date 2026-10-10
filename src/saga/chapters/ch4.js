@@ -43,21 +43,20 @@ async function croakton(S) {
     st.actor('newton', NEWTON[0], NEWTON[1], { face: { x: 0.2, z: 1 } });
     await st.cam(THRONE[0] - 2, THRONE[1] + 2, { dur: 0, ppu: st.basePpu() });
     for (let k = 0; k < 16; k++) st.fx('sparkle', THRONE[0] - 8 + Math.random() * 14, 3, THRONE[1] - 3 + Math.random() * 8, 1, { color: '#ffffff' });
-    await st.say('narrator', 'Croakmire is cold. Not damp-cold, the way a marsh should be — cold-cold.{p} Snow is falling on the lily pads.');
+    await st.say('narrator', 'Croakmire, the frogs’ marsh. Snow is falling on the lily pads.');
     st.hop('newton');
-    await st.say('newton', '{big}HEAR YE!{/} Presenting His Royal Highness, Sovereign of the Swamp, Baron of the Bog — King Croakington the Third!', { expr: 'happy' });
+    await st.say('newton', '{big}HEAR YE!{/} His Majesty King Croakington the Third!', { expr: 'happy' });
     st.sfx('croak', { volume: 0.8 });
     await st.say('croakington', 'RIBBIT— {shake}ACHOO!{/}', { expr: 'shock', shake: 1 });
-    await st.say('croakington', 'Forgive us. Since our crown was stolen, the marsh has gone cold. And so have we.', { expr: 'sad' });
-    await st.say('croakington', 'The Ember Pearl in our crown keeps the Great Hearth warm, deep beneath this very throne. Without it… brrr.', { expr: 'worried' });
-    await st.say('newton', 'A little red fellow on a gloom balloon, Your Majesty! He snatched it right off your head, mid-sneeze!', { expr: 'angry' });
-    await st.say('croakington', 'He flew north, towards the glacier. And the gloom he left behind has taken our royal lily pads.', { expr: 'sad' });
+    await st.say('croakington', 'Someone stole {key}our crown{/}! Without its Ember Pearl, our Great Hearth has gone cold.', { expr: 'sad' });
+    await st.say('newton', 'The thief flew north, to the glacier: a little red fellow on a gloom balloon!', { expr: 'angry' });
+    await st.say('croakington', 'But first, his gloom has taken our {key}royal lily pads{/}, south-west of here. Chase it off!', { expr: 'sad' });
   });
 }
 async function kingDecree(S) {
-  await S.say('croakington', 'Magnificent! The lily pads thank you. We thank you. Our nose would thank you, if it could stop running.', { expr: 'happy' });
-  await S.say('croakington', 'Take this royal seal. Show it at the Balloon Station, and they’ll fly you anywhere.{p} Well — anywhere with clouds.', { expr: 'smug' });
-  await S.say('newton', 'The glacier camp lies to the north. Wrap up warm! That’s a royal order!', { expr: 'happy' });
+  await S.say('croakington', 'Magnificent! Our lily pads thank you. So would our nose, if it stopped running.', { expr: 'happy' });
+  await S.say('croakington', 'Take this royal seal: balloon pilots will fly you anywhere with it.', { expr: 'smug' });
+  await S.say('newton', 'Now follow the thief north, to {key}Frostpeak Camp{/}, on the glacier!', { expr: 'happy' });
 }
 
 // ------------------------------------------------------------------ the shadow on the ice
@@ -66,7 +65,6 @@ async function shadowOnIce(S) {
     const P = S.P, [x, z] = FROSTCAMP;
     P.gatherAt(x + 2, z + 2, 1.5);
     await st.cam(x + 4, z - 5, { dur: 0, ppu: Math.max(8, st.basePpu() / 2) });
-    await st.say('narrator', 'Frostpeak Camp: igloos, cocoa, and a view all the way to the clouds.');
     // the Gloomstage sails in over the camp and stops there, its great shadow on the snow
     const ship = buildGloomstage(P.r3d, { fx: (sx, sy, sz) => P.world.fx.emit('smoke', sx, sy, sz, 1, { color: '#6a4a8e' }) });
     const s = 0.8, SX = x + 2, SY = 6.5, SZ = z - 13;
@@ -82,16 +80,16 @@ async function shadowOnIce(S) {
     st.heroesEmote('exclaim');
     for (let k = 0; k < 24; k++) st.fx('sparkle', x - 8 + Math.random() * 16, 4, z - 6 + Math.random() * 10, 1, { color: '#c8a8ff' });
     st.mark('shadowOnIce');
-    await st.say('narrator', 'A shadow slides across the glacier — huge, and shaped exactly like a theatre.');
+    await st.say('narrator', 'A huge shadow slides over Frostpeak Camp: the Gloomstage, the Duchess’s flying theatre!');
     await arrive;
     // Her Radiance on the balcony, practising her scales
     const bx = SX + BALCONY.x * s, by = SY + BALCONY.y * s, bz = SZ + BALCONY.z * s;
     st.actor('duchess', bx, bz, { face: { x: 0, z: 1 } }).n.seatY = by;
     await st.cam(bx, bz - by + 2.5, { dur: 1, ppu: st.basePpu() });
     st.mark('balcony');
-    await st.say('narrator', '“♪ Mi-mi-mi-miiii… ♪”{p} A voice floats down from its balcony, practising scales.');
-    await st.say('duchess', 'Oh! The Wick Brigade, down in the snow! How DO you like my weather? I ordered it specially.', { expr: 'smug' });
-    await st.say('duchess', 'Do come up to the Frostbell Halls, darlings. My leading man is SO looking forward to an audience.{p} Front-row seats. Ha! Ha-ha! {shake}HA!{/}', { expr: 'happy' });
+    await st.say('duchess', '♪ Mi-mi-mi-miiii… ♪{p} Oh! The Wick Brigade, down in the snow!', { expr: 'happy' });
+    await st.say('duchess', 'Do you like my weather? I ordered it specially.', { expr: 'smug' });
+    await st.say('duchess', 'Do come up to the Frostbell Halls, darlings. My leading man is longing for an audience.{p} Ha! Ha-ha! {shake}HA!{/}', { expr: 'happy' });
     st.hide('duchess');
     // and away it sails, north-west, towards the peaks
     st.sfx('whoosh', { volume: 0.5, pitch: -14 });
@@ -103,20 +101,18 @@ async function shadowOnIce(S) {
     st.actor('yuki', YUKI[0] - 20, YUKI[1] - 17, { face: { x: -1, z: 0.3 } });
     st.walk('yuki', x + 4, z + 1.4, { speed: 4 });
     await st.cam(x + 3, z + 1, { dur: 1, ppu: st.basePpu() });
-    await st.say('yuki', 'There it goes again. Every evening that flying opera house sails over — and every evening, the ice up the pass starts singing back.', { expr: 'worried' });
+    await st.say('yuki', 'That flying theatre again! Come to {key}my igloos{/}, dears, {key}south-east of the camp{/}: we must talk.', { expr: 'worried' });
   });
 }
 async function yukiTalk(S) {
-  await S.say('yuki', 'Welcome to Frostpeak Camp, dears. Cocoa? It’s mostly marshmallow. Tobi ate the cocoa.', { expr: 'happy' });
-  await S.say('tobi', 'Did NOT.{p} …Some.', { expr: 'smug' });
-  await S.say('tobi', 'A little red fellow crashed a balloon on the Cloud Isles yesterday! I saw it with my OWN EYES. Both of them!', { expr: 'happy' });
-  await S.say('yuki', 'The Balloon Station is all iced over, though. Ice imps. They love a nice cold balloon.', { expr: 'worried' });
+  await S.say('yuki', 'A little red fellow on a balloon? My Tobi saw him, dears.', { expr: 'happy' });
+  await S.say('tobi', 'He crashed on the {key}Cloud Isles{/}! I saw it with my OWN EYES. Both of them!', { expr: 'happy' });
+  await S.say('yuki', 'Only a balloon flies up there. Chase the ice imps off the {key}Balloon Station{/}, {key}far to the east{/}!', { expr: 'worried' });
 }
 async function wendyTalk(S) {
-  await S.say('wendy', 'Thanks, chums! Captain Wendeline Gale, at your service — Wendy to friends. My airship’s in the shop, so I’m flying balloons!', { expr: 'happy' });
-  await S.say('wendy', 'Why is she in the shop? A great flying THEATRE rammed her last week, that’s why. Knocked my Dauntless Teacup clean out of the sky.', { expr: 'angry' });
-  await S.say('wendy', 'Next time I see that opera house, I’m giving it a piece of my mind. And a broadside. Now — a royal seal? From a frog? Hop in! Nibs, cast off!', { expr: 'love' });
-  await S.say('narrator', 'Nibs the albatross peers over the edge of the basket, whimpers, and puts a wing over his eyes.');
+  await S.say('wendy', 'Thanks, chums! Captain Wendy, at your service.', { expr: 'happy' });
+  await S.say('wendy', 'I fly balloons since a great flying THEATRE knocked my airship out of the sky!', { expr: 'angry' });
+  await S.say('wendy', 'A royal seal? From a frog? Hop in: next stop, the {key}Cloud Isles{/}!', { expr: 'love' });
 }
 
 // ------------------------------------------------------------------ the balloon over the clouds
@@ -154,6 +150,7 @@ async function balloonFlight(S) {
       if (!P.solo && P.cam) P.cam.snap(P.camPlayers());
       st.sfx('thud', { volume: 0.5 });
       await st.say('wendy', 'Cloud Harbour! Mind the gap.{p} The gap is the sky.', { expr: 'happy' });
+      await st.say('wendy', 'Look for your thief near the {key}Cloud Temple{/}, {key}to the north-east{/}.', { expr: 'happy' });
       st.dropProp('balloon');
     }, { bars: true });
   } finally { for (const p of heroes) hide(p, false); }
@@ -167,8 +164,7 @@ async function crumbleStuck(S) {
     const puff = buildCloudPuff(P.r3d, { legs: true });
     st.prop('puff', puff, x, 0, z);
     await st.cam(x, z + 1, { dur: 0.6, ppu: st.basePpu() });
-    await st.say('narrator', 'A pair of small red boots stick out of a cloud, kicking furiously.');
-    await st.say('crumble', '“Mmmf! MMMF! Is somebody there? Your Radiance? A pelican? ANYBODY?”', { expr: 'worried' });
+    await st.say('narrator', 'Two small red boots stick out of a cloud, kicking. “Mmmf! MMMF!”');
     st.heroesFace(x, z);
     for (let k = 0; k < 3; k++) { st.shake(0.2 + k * 0.1); st.sfx('thud', { volume: 0.4 + k * 0.1 }); await st.wait(0.35); }
     st.sfx('poof', { volume: 0.9 });
@@ -177,10 +173,8 @@ async function crumbleStuck(S) {
     st.actor('crumble', x, z + 0.5, { face: { x: 0, z: 1 } });
     st.hop('crumble'); st.emote('crumble', 'exclaim');
     st.mark('crumbleFreed');
-    await st.say('crumble', 'FREE! Thank you, kind stran— {shake}LAMP-LICKERS!{/} Curse you!{p} …And also, thank you.', { expr: 'shock' });
-    await st.say('crumble', 'The crown? Ha! I delivered it hours ago, like a PROFESSIONAL. To the Frost Tenor — Her Radiance’s leading man!', { expr: 'smug' });
-    await st.say('crumble', 'He sings in the Frostbell Halls, up the pass above Frostpeak. His high C can shatter a glacier. Or a teacup. He’s very proud of it.', { expr: 'happy' });
-    await st.say('crumble', 'Now, if you’ll excuse me, I have a very dignified exit to make.', { expr: 'smug' });
+    await st.say('crumble', 'FREE! Thank you, kind stran— {shake}LAMP-LICKERS!{/}', { expr: 'shock' });
+    await st.say('crumble', 'The crown? Too late! {key}The Frost Tenor{/} has it: Her Radiance’s leading man, in his Frostbell Halls!', { expr: 'smug' });
     const K = kit(P.r3d), um = new THREE.Group();
     K.put(um, K.box(0.04, 1, 0.04), K.c('#3a3844'), 0, 0.5, 0);
     const top = K.put(um, K.ball(0.55, 10, 6), K.c('#c8383e'), 0, 1.05, 0); top.scale.y = 0.4;
@@ -190,7 +184,8 @@ async function crumbleStuck(S) {
     await st.wait(1.4);
     st.hide('crumble');
     st.move('umbrella', { x: x + 8, y: -4, z: z + 4 }, 2.4);
-    await st.say('narrator', 'He opens a tiny umbrella, steps off the edge of the cloud, and floats away. Very slowly. With great dignity.');
+    await st.say('narrator', 'He opens a tiny umbrella, steps off the cloud and floats away.{p} Very slowly. With great dignity.');
+    await st.say('narrator', 'Back to the glacier! Climb to the {key}Frostbell Halls{/}, {key}north-east{/} of Frostpeak Camp.');
   });
   S.flag('crumbleFreed');
 }
@@ -212,7 +207,6 @@ R('chief').run = async (S, d, r) => {
     await st.cam(c.x, c.z, { dur: 0.8 });
     st.sfx('whoosh', { volume: 0.7 });
     for (let k = 0; k <= 12; k++) { e.x = c.x + 6 - k * 0.5; pose(e); st.fx('sparkle', e.x, 0.2, e.z, 1, { color: '#dff4ff' }); await st.wait(0.04); }
-    await st.say('narrator', 'Something round and blue comes belly-sliding across the ice, spins twice, and stops with a flourish.');
     await st.say('narrator', '“HALT! Nobody gets past Chief Frostbite without a TICKET!”{p} “…No ticket? Then you get FROSTBITE!”');
     await st.title('Chief Frostbite', 'of the ice imps', 2.2);
   });
@@ -263,12 +257,11 @@ R('hall').run = async (S, d, r) => {
   await S.scene(async (st) => {
     await st.cam(c.x, c.z - 3, { dur: 0.9 });
     st.sfx('tone', { volume: 0.6, pitch: 12 });
-    await st.say('narrator', 'At the far end of the hall, on a stage of ice, a tall figure holds one long, sad note.');
+    await st.say('narrator', 'On a stage of ice, a tall figure holds one long, sad note.');
     st.mark('tenor');
     await st.say('tenor', '{big}♪ AAAAAAAAH… ♪{/}', { expr: 'love', shake: 1 });
-    await st.say('tenor', 'An audience! At LAST! Her Radiance promised me a full house!', { expr: 'happy' });
-    await st.say('tenor', 'The crown? A mere prop. Tonight the star is ME. And my voice. Which is magnificent.', { expr: 'smug' });
-    await st.say('tenor', 'Do stay for the finale — my HIGH C. It brings the house down.{p} Literally.', { expr: 'smug' });
+    await st.say('tenor', 'An audience, at LAST! The crown? A mere prop. Tonight the star is ME.', { expr: 'smug' });
+    await st.say('tenor', 'My HIGH C knocks everyone flat.{p} Well… everyone who isn’t hiding behind an {key}ice pillar{/}.', { expr: 'smug' });
     await st.title('The Frost Tenor', 'Her Radiance’s leading man', 2.4);
   });
   e.state = 'chase'; e.timer = 1.2;
@@ -285,16 +278,16 @@ R('hall').tick = (S, d, r) => {
       await st.cam(e.x, e.z + 1, { dur: 0.7 });
       st.fx('sparkle', e.x, 1, e.z, 30, { color: '#dff4ff' });
       st.sfx('shard', { volume: 0.8 });
-      await st.say('narrator', 'The Frost Tenor cracks from head to toe, sighs, and melts into a small puddle — holding his note to the very last drop.');
-      await st.say('narrator', '“Brava… bravo… thank you… you’ve been… a wonderful… audience…”');
+      await st.say('narrator', 'The Frost Tenor cracks, and melts into a puddle, holding his note to the last drop.');
       // (a quiet beat, and a first glimpse of who she was)
-      await st.say('narrator', '“Have a little pity for Gloria… Nobody ever stayed… for her finale…”');
+      await st.say('narrator', '“Have pity on Gloria, my Duchess… Nobody ever stayed… for her finale…”');
       st.heroesEmote('dots');
       await st.say('narrator', 'The puddle freezes over, very neatly. It looks almost like a bow.');
       const G = d.gate('g6');
       if (G) d.setGate(G, true);
       const rr = d.rooms.find((q) => q.id === 'crown');
       if (rr) rr.ready = true;
+      await st.say('narrator', 'Behind the stage, the ice wall sinks: {key}the king’s crown{/} is there!');
     });
     audio.jingle('festival');
   })();
@@ -309,7 +302,7 @@ R('crown').take = async (S, d, r) => {
     if (st.vfx) st.vfx.pillar(x, z, { r: 0.9, h: 6, color: '#ffc890', life: 1.4 });
     st.sfx('shard', { volume: 0.9 });
     S.flag('crown');
-    await st.say('narrator', 'King Croakington’s crown is heavy, and warm. The Ember Pearl glows like a coal in a hearth.');
+    await st.say('narrator', 'The crown is warm: its Ember Pearl glows like a coal.{p} Take it home to {key}King Croakington{/}!');
   });
   await d.D.exit({ done: true });
 };
@@ -344,20 +337,21 @@ async function crownHome(S) {
     st.mark('murkBack4');
     await st.wait(0.8);
     await st.title('Croakmire warms up', 'The Murk rolls back from Sunscorch Dunes, the Coral Lagoon and the Sunken City', 4);
-    await st.say('narrator', 'Back in Marigold Cove, the mayor has a new teacup.{p} It is attached to his waistcoat with a chain.');
     await st.cam(KING[0], KING[1] + 0.5, { dur: 1.4, ppu: st.basePpu() });
-    await st.say('croakington', '{big}RIBBIT!{/}{p} Ahh. No sneeze. Four flames in your lantern now, little heroes — and the whole marsh in your debt.', { expr: 'happy' });
-    await st.say('newton', 'Hear ye! The royal choir will now perform in your honour!', { expr: 'love' });
-    for (let k = 0; k < 8; k++) { st.sfx('croak', { volume: 0.5, pitch: (k % 4) * 3 }); await st.wait(0.16); }
-    await st.say('narrator', 'Something bobs in the water by the throne: a bottle, with a letter rolled up inside.');
-    await st.say('narrator', '“Dear Whoever — the Sunken City’s bell has stopped ringing, and the sea has gone very dark. Also, three strangers are doing synchronised swimming in our lagoon. Please advise. — The Turtles of Turtle Nest”');
+    await st.say('croakington', '{big}RIBBIT!{/}{p} No sneeze! Our Great Hearth burns again: {key}four flames{/} in your lantern!', { expr: 'happy' });
+    await st.say('narrator', 'A bottle bobs by the throne, with a letter from the turtles inside.');
+    await st.say('narrator', '“The Sunken City’s bell has stopped ringing, and the sea has gone very dark.”');
+    await st.say('narrator', '“P.S. Three strangers are doing synchronised swimming in our lagoon. Please advise.”');
+    await st.say('croakington', 'The turtles need your lantern! The way there starts in the {key}Sunscorch Dunes{/}, to the {key}south-west{/}.', { expr: 'happy' });
   });
 }
 
 // ------------------------------------------------------------------ the chapter
 const frogWant = (S, k) => { const q = S.st.q.c4_choir; return !!q && !q.done && !S.st.got['c4_choir:0:' + k]; };
 export const CH4 = {
-  id: 4, title: 'Mire & Frost', lv: 17, zones: ['marsh', 'glacier', 'cloud'], opens: ['dunes', 'lagoon', 'sunken'],
+  id: 4, title: 'Mire & Frost',
+  recap: 'Three Great Hearths burn again. But Croakmire, the frogs’ marsh, is freezing: someone stole {key}the king’s crown{/}, which keeps its Great Hearth warm. Follow the thief north, onto the glacier and up into the clouds, and bring the crown home.',
+  lv: 17, zones: ['marsh', 'glacier', 'cloud'], opens: ['dunes', 'lagoon', 'sunken'],
   props: [
     { id: 'lilyThrone', at: THRONE, r: 1.1, build: (r3d, S) => buildLilyThrone(r3d, S) },
     { id: 'frostGate', at: [FROST_DOOR[0], FROST_DOOR[1] - 2.2], build: (r3d) => buildFrostGate(r3d) },
@@ -367,87 +361,100 @@ export const CH4 = {
   ],
   npcs: [
     { id: 'croakington', at: KING, face: { x: -0.2, z: 1 }, when: (S) => S.done('c3_relight'),
-      lines: ['A king must be warm, wise, and regal. We manage two out of three. On good days.', 'Ribbit. Pardon us. It slips out when we are happy.'] },
+      lines: ['A king must be warm, wise and regal. Two out of three!', 'Ribbit. Pardon us. It slips out when we are happy.'] },
     { id: 'newton', at: NEWTON, face: { x: 0.3, z: 1 }, when: (S) => S.done('c3_relight'),
-      lines: ['Hear ye! …Sorry. Force of habit.', 'I have announced forty thousand things. My favourite was lunch.'] },
+      lines: ['North to the glacier? Wrap up warm: royal order!', 'I have announced forty thousand things. My favourite was lunch.'] },
     { id: 'yuki', at: YUKI, face: { x: -0.5, z: 1 }, when: (S) => S.done('c3_relight'),
-      lines: ['Wrap up warm, dears. The glacier bites.', 'More cocoa? It’s ALL marshmallow now. I gave up.'] },
+      lines: ['Wrap up warm, dears. The glacier bites.', 'Cocoa, dears? It’s mostly marshmallow: Tobi ate the cocoa.'] },
     { id: 'tobi', at: TOBI, face: { x: 0.4, z: 1 }, when: (S) => S.done('c3_relight'),
       lines: ['Fastest sled on the glacier! Ask anyone! Ask me!', 'Mama Yuki says no sledding after dark. It’s ALWAYS nearly dark.'] },
     { id: 'wendy', at: WENDY, face: { x: -0.4, z: 1 }, when: (S) => S.done('c3_relight'),
-      lines: ['Up, up and away! Mostly up.', 'Nibs is afraid of heights. He’s an albatross. It’s complicated.'] },
+      lines: ['Up to the Cloud Isles? Only by balloon!', 'Nibs is afraid of heights. He’s an albatross. It’s complicated.'] },
     { id: 'nimbus', at: NIMBUS, face: { x: -0.3, z: 1 }, when: (S) => S.done('c3_relight'),
       lines: ['The clouds remember every song ever sung beneath them.', 'A cloud never hurries, and yet it is never late.'] },
   ],
   quests: {
     c4_croak: {
-      title: 'The Frog King’s Cold', auto: true, lv: 16,
+      title: 'The Frog King’s Cold',
+      brief: 'King Croakington’s crown was stolen, and his marsh is freezing. First, chase the gloom the thief left on the {key}royal lily pads{/}.',
+      auto: true, lv: 16,
       steps: [
-        { do: 'go', text: 'Go to Croakton, in the heart of Croakmire', at: CROAK, r: 7, run: croakton },
-        { do: 'camp', text: 'Chase the gloom off the royal lily pads', camp: { id: 'c4_lilies', at: LILIES, level: 16, foes: ['toad', 'toad', 'shaman', 'gloomling'], n: 4, done: 'The royal lily pads are clear!' } },
-        { do: 'talk', npc: 'croakington', text: 'Return to King Croakington', run: kingDecree },
+        { do: 'go', text: 'Go to {key}Croakton{/}, in the marsh east of the valley', at: CROAK, r: 7, run: croakton },
+        { do: 'camp', text: 'Chase the gloom off the {key}royal lily pads{/}, south-west of the throne', camp: { id: 'c4_lilies', at: LILIES, level: 16, foes: ['toad', 'toad', 'shaman', 'gloomling'], n: 4, done: 'The royal lily pads are clear!' } },
+        { do: 'talk', npc: 'croakington', text: 'Return to {key}King Croakington{/}, on his throne in Croakton', run: kingDecree },
       ],
     },
     c4_frost: {
-      title: 'The Shadow on the Ice', auto: true, after: 'c4_croak', lv: 18,
+      title: 'The Shadow on the Ice',
+      brief: 'The thief flew north, to the glacier. Ask at Frostpeak Camp where he went, then free the {key}Balloon Station{/} to follow him.',
+      auto: true, after: 'c4_croak', lv: 18,
       steps: [
-        { do: 'go', text: 'Head north to Frostpeak Camp', at: FROSTCAMP, r: 7, run: shadowOnIce },
-        { do: 'talk', npc: 'yuki', text: 'Talk to Mama Yuki by the igloos', run: yukiTalk },
-        { do: 'camp', text: 'Chase the ice imps off the Balloon Station', camp: { id: 'c4_station', at: [STATION[0], STATION[1] + 2], level: 19, foes: ['frostimp', 'frostimp', 'frostimp', 'wisp'], n: 4, done: 'The balloons shake off their ice!' } },
-        { do: 'talk', npc: 'wendy', text: 'Talk to the balloon captain', run: wendyTalk },
+        { do: 'go', text: 'Head north to {key}Frostpeak Camp{/}, on the glacier', at: FROSTCAMP, r: 7, run: shadowOnIce },
+        { do: 'talk', npc: 'yuki', text: 'Talk to {key}Mama Yuki{/} at the igloos, south-east of the camp', run: yukiTalk },
+        { do: 'camp', text: 'Chase the ice imps off the {key}Balloon Station{/}, far to the east', camp: { id: 'c4_station', at: [STATION[0], STATION[1] + 2], level: 19, foes: ['frostimp', 'frostimp', 'frostimp', 'wisp'], n: 4, done: 'The balloons shake off their ice!' } },
+        { do: 'talk', npc: 'wendy', text: 'Talk to {key}Captain Wendy{/} at the Balloon Station', run: wendyTalk },
       ],
     },
     c4_cloud: {
-      title: 'Crumble in the Clouds', auto: true, after: 'c4_frost', lv: 20,
+      title: 'Crumble in the Clouds',
+      brief: 'The thief crashed his balloon on the {key}Cloud Isles{/}. Fly there with Captain Wendy and find him: he knows where the crown is.',
+      auto: true, after: 'c4_frost', lv: 20,
       steps: [
-        { do: 'scene', text: '…', run: balloonFlight },
-        { do: 'go', text: 'Find the little red fellow’s crash on the Cloud Isles', at: CRUMBLE, r: 3.5, run: crumbleStuck },
+        { do: 'scene', text: 'Fly to the {key}Cloud Isles{/} in Captain Wendy’s balloon', run: balloonFlight },
+        { do: 'go', text: 'Find the thief near the {key}Cloud Temple{/}, north-east of Cloud Harbour', at: CRUMBLE, r: 3.5, run: crumbleStuck },
       ],
     },
     c4_halls: {
-      title: 'The Frostbell Halls', auto: true, after: 'c4_cloud', lv: 21,
+      title: 'The Frostbell Halls',
+      brief: 'Crumble gave the crown to {key}the Frost Tenor{/}, the Duchess’s singer. Climb to his palace of ice, on the glacier, and take it back.',
+      auto: true, after: 'c4_cloud', lv: 21,
       steps: [
-        { do: 'go', text: 'Climb to the Frostbell Halls, at the foot of the peaks north of Frostpeak Camp', at: FROST_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('frostbell'); else S.flag('crown'); } },
-        { do: 'dungeon', id: 'frostbell', text: 'Take back King Croakington’s crown from the Frost Tenor' },
+        { do: 'go', text: 'Climb to the {key}Frostbell Halls{/}, north-east of Frostpeak Camp', at: FROST_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('frostbell'); else S.flag('crown'); } },
+        { do: 'dungeon', id: 'frostbell', text: 'Take {key}the king’s crown{/} back from {key}the Frost Tenor{/}' },
       ],
     },
     c4_relight: {
-      title: 'Croakmire Warms Up', auto: true, after: 'c4_halls', lv: 22,
+      title: 'Croakmire Warms Up',
+      brief: 'You have the crown! Bring it back to {key}King Croakington{/}, on his throne in Croakton, to warm the marsh again.',
+      auto: true, after: 'c4_halls', lv: 22,
       steps: [
-        { do: 'go', text: 'Bring the crown home to King Croakington', at: KING, r: 3.5, run: crownHome },
+        { do: 'go', text: 'Bring {key}the crown{/} home to King Croakington, in {key}Croakton{/}', at: KING, r: 3.5, run: crownHome },
       ],
       done: async (S) => { if (!S.st.lit.includes('marsh')) S.st.lit.push('marsh'); S.save(); },
       next: 5,
     },
     // ---- side quests
     c4_hanky: {
-      title: 'A Royal Handkerchief', kind: 'side', giver: 'croakington', lv: 16, when: (S) => S.done('c4_croak'), dust: 30,
+      title: 'A Royal Handkerchief',
+      brief: 'The king is cold until his crown comes home. {key}Mama Yuki{/}, at the igloos of Frostpeak Camp, knits the warmest scarves: ask her for one.',
+      kind: 'side', giver: 'croakington', lv: 16, when: (S) => S.done('c4_croak'), dust: 30,
       offer: async (S) => {
-        await S.say('croakington', 'Until our crown comes home, we shall need something warm. And something to sneeze into. Preferably not the same thing.', { expr: 'sad' });
-        await S.say('croakington', 'They say the woman at the glacier camp knits the warmest scarves in the world. Would you ask her for one?', { expr: 'happy' });
+        await S.say('croakington', 'We need something warm. And something to sneeze into.{p} Not the same thing.', { expr: 'sad' });
+        await S.say('croakington', '{key}Mama Yuki{/}, at the glacier camp, knits the warmest scarves. Would you ask her for one?', { expr: 'happy' });
       },
       steps: [
-        { do: 'talk', npc: 'yuki', text: 'Ask Mama Yuki for a warm scarf for the king',
+        { do: 'talk', npc: 'yuki', text: 'Ask {key}Mama Yuki{/} for a scarf, at the igloos of Frostpeak Camp',
           run: async (S) => {
-            await S.say('yuki', 'A scarf for a frog king? Oh, how lovely. Green, I think. With little flies on it.', { expr: 'love' });
-            await S.say('narrator', 'Mama Yuki knits so fast her needles whistle. In no time at all, there is a scarf.');
+            await S.say('yuki', 'A scarf for a frog king? How lovely! Green, with little flies on it.', { expr: 'love' });
+            await S.say('narrator', 'Her needles whistle. There: take the scarf to {key}King Croakington{/}!');
           } },
-        { do: 'talk', npc: 'croakington', text: 'Bring the scarf to King Croakington',
+        { do: 'talk', npc: 'croakington', text: 'Bring the scarf to {key}King Croakington{/}, in Croakton',
           run: async (S) => {
-            await S.say('croakington', 'Little flies! She KNEW! Oh, it is perfect. We are never taking it off.', { expr: 'love' });
-            await S.say('newton', 'Hear ye! His Majesty is never taking it off!', { expr: 'happy' });
+            await S.say('croakington', 'Little flies! She KNEW! We are never taking it off.', { expr: 'love' });
           } },
       ],
     },
     c4_choir: {
-      title: 'The Royal Choir', kind: 'side', giver: 'newton', lv: 16, when: (S) => S.done('c4_croak'), dust: 30,
+      title: 'The Royal Choir',
+      brief: 'Three frogs of the royal choir hopped off when it snowed. Find them in the reeds around Croakton and bring them back to {key}Sir Newton{/}.',
+      kind: 'side', giver: 'newton', lv: 16, when: (S) => S.done('c4_croak'), dust: 30,
       offer: async (S) => {
-        await S.say('newton', 'A disaster! Three of the royal choir hopped off when it snowed. The choir can’t sing without its basses!', { expr: 'worried' });
-        await S.say('newton', 'They’ll be hiding in the reeds, humming to keep warm. Would you bring them home?', { expr: 'happy' });
+        await S.say('newton', 'A disaster! Three frogs of the royal choir hopped off in the snow!', { expr: 'worried' });
+        await S.say('newton', 'They are humming in {key}the reeds{/} around the village. Bring them home!', { expr: 'happy' });
       },
       steps: [
-        { do: 'collect', text: 'Find the three runaway choir frogs in the reeds — follow their humming', item: 'Choir Frog', n: 3, spots: FROGS, sound: 'croak', near: FROG_REEDS, hint: 'A frog, humming quietly in the reeds' },
-        { do: 'talk', npc: 'newton', text: 'Bring the choir frogs back to Sir Newton',
+        { do: 'collect', text: 'Find the {key}three choir frogs{/} in the reeds around Croakton: follow their humming', item: 'Choir Frog', n: 3, spots: FROGS, sound: 'croak', near: FROG_REEDS, hint: 'A frog, humming quietly in the reeds' },
+        { do: 'talk', npc: 'newton', text: 'Bring the choir frogs back to {key}Sir Newton{/}, by the throne',
           run: async (S) => {
             await S.say('newton', 'The basses! All present! Choir — from the top!', { expr: 'love' });
             for (let k = 0; k < 6; k++) audio.sfx('croak', { volume: 0.5, pitch: k * 2 });
@@ -456,33 +463,36 @@ export const CH4 = {
       ],
     },
     c4_sled: {
-      title: 'Downhill Dash', kind: 'side', giver: 'tobi', lv: 18, when: (S) => S.done('c4_frost'), dust: 30,
+      title: 'Downhill Dash',
+      brief: 'Tobi dares you to beat him on the {key}Glacier Run{/}, north of Frostpeak Camp: sled from the top, past both flags, to the bottom in ten seconds.',
+      kind: 'side', giver: 'tobi', lv: 18, when: (S) => S.done('c4_frost'), dust: 30,
       offer: async (S) => {
-        await S.say('tobi', 'Bet you can’t beat my record on the Glacier Run! Grab a sled at the top, past both flags and down to the bottom in ten seconds. I did it in FIVE. With my eyes shut. Backwards.', { expr: 'smug' });
-        await S.say('tobi', 'Ready? Steady? I already started!', { expr: 'happy' });
+        await S.say('tobi', 'Bet you can’t beat my record! FIVE seconds. Eyes shut. Backwards.', { expr: 'smug' });
+        await S.say('tobi', 'Sled down the {key}Glacier Run{/}, past both flags, in {key}ten seconds{/}!', { expr: 'happy' });
       },
       steps: [
-        { do: 'race', text: 'Sled down the Glacier Run: past both flags to the bottom before the clock runs out', points: SLED, time: 10, r: 3.4, go: 'Go! Go! GO!', fail: 'Too slow! Tobi’s laughing. Back to the top and try again!' },
-        { do: 'talk', npc: 'tobi', text: 'Tell Tobi how the race went',
+        { do: 'race', text: 'Sled down the {key}Glacier Run{/}, north of the camp: pass both flags in time', points: SLED, time: 10, r: 3.4, go: 'Go! Go! GO!', fail: 'Too slow! Tobi’s laughing. Back to the top and try again!' },
+        { do: 'talk', npc: 'tobi', text: 'Tell {key}Tobi{/} how the race went, at Frostpeak Camp',
           run: async (S) => {
-            await S.say('tobi', 'You beat me?! That’s impossible! I was going SO fast!{p} …I fell off at the first flag.', { expr: 'shock' });
-            await S.say('tobi', 'Rematch tomorrow. And the day after. And the day after that.', { expr: 'happy' });
+            await S.say('tobi', 'You beat me?! Impossible!{p} …I fell off at the first flag.', { expr: 'shock' });
           } },
       ],
     },
     c4_bells: {
-      title: 'The Silent Bells', kind: 'side', giver: 'nimbus', lv: 20, when: (S) => S.has('crumbleFreed'), dust: 30,
+      title: 'The Silent Bells',
+      brief: 'The Cloud Temple’s {key}three bells{/} have fallen silent, and the clouds no longer drift. Ring one on each isle for Sister Nimbus.',
+      kind: 'side', giver: 'nimbus', lv: 20, when: (S) => S.has('crumbleFreed'), dust: 30,
       offer: async (S) => {
-        await S.say('nimbus', 'The temple’s three bells have fallen silent since the gloom came. The clouds have forgotten how to drift.', { expr: 'sad' });
+        await S.say('nimbus', 'The temple’s {key}three bells{/} are silent, and the clouds no longer drift.', { expr: 'sad' });
         await S.say('nimbus', 'One stands on each isle. Would you ring them for me?', { expr: 'neutral' });
       },
       steps: [
-        ...BELLS.map(([x, z], k) => ({ do: 'go', text: ['Ring the bell on the northern isle', 'Ring the bell on the eastern isle', 'Ring the bell by the harbour'][k], at: [x, z + 1], r: 2.2,
+        ...BELLS.map(([x, z], k) => ({ do: 'go', text: ['Ring the bell on the {key}northern isle{/}', 'Ring the bell on the {key}eastern isle{/}', 'Ring the bell by {key}Cloud Harbour{/}'][k], at: [x, z + 1], r: 2.2,
           run: async (S) => { S.flag('cbell' + k); audio.sfx('bell', { volume: 0.8, pitch: k * 4 }); S.P.world.fx.emit('sparkle', x, 2, z, 12, { color: '#ffe8a0' }); } })),
-        { do: 'talk', npc: 'nimbus', text: 'Return to Sister Nimbus at the Cloud Temple',
+        { do: 'talk', npc: 'nimbus', text: 'Return to {key}Sister Nimbus{/} at the Cloud Temple',
           run: async (S) => {
             await S.say('nimbus', 'Listen. The clouds are moving again. Thank you, travellers.', { expr: 'happy' });
-            await S.say('nimbus', 'A blessing for your road: may the wind always be at your back, and never in your tea.', { expr: 'love' });
+            await S.say('nimbus', 'May the wind always be at your back, and never in your tea.', { expr: 'love' });
           } },
       ],
     },
