@@ -1,5 +1,48 @@
 // French: several saved stories in Party Mode: continue one or begin anew (src/party/slots.mjs).
 export const STORIES11_FR = {
   __group: {
+    "Your story:": "Votre histoire :",
+    "Another tab of the game changed stories: nothing more is saved here. Close this tab.": "Un autre onglet du jeu a changé d’histoire : plus rien n’est sauvegardé ici. Fermez cet onglet.",
   },
+  // the Play card (src/game.js)
+  "{n} saved stories": "{n} histoires sauvegardées",
+  "last played: {story}": "la dernière : {story}",
+  "Continue a story, or begin a new one": "Continuer une histoire, ou en commencer une nouvelle",
+  "New story": "Nouvelle histoire",
+  "The adventure from the very start, with new heroes": "L’aventure depuis le début, avec de nouveaux héros",
+  "Four stories at most: delete one first": "Quatre histoires au plus : supprimes-en une d’abord",
+  "Delete": "Supprimer",
+  "Delete this story?": "Supprimer cette histoire ?",
+  "last played: {when}": "dernière partie : {when}",
+  "It cannot be recovered.": "Elle ne pourra pas être récupérée.",
+  "Keep this story": "Garder cette histoire",
+  // a story in words (src/party/stories.js)
+  "The story has not begun": "L’histoire n’a pas commencé",
+  "today": "aujourd’hui",
+  "yesterday": "hier",
+  "{n} days ago": "il y a {n} jours",
+  "This version of the game cannot read the saved stories. Nothing was changed.": "Cette version du jeu ne sait pas lire les histoires sauvegardées. Rien n’a été modifié.",
+  "A story could not be put back in its place: this browser’s storage is full. Free some room and come back — nothing is lost.": "Une histoire n’a pas pu être remise en place : le stockage de ce navigateur est plein. Libère de la place et reviens — rien n’est perdu.",
+  "This story is no longer here.": "Cette histoire n’est plus là.",
+  "There is no story in this backup.": "Cette sauvegarde ne contient aucune histoire.",
+  "This browser has no room left to put a story away. Nothing was changed.": "Ce navigateur n’a plus la place de ranger une histoire. Rien n’a été modifié.",
+  // the lobby, the host menu (src/party/party.js, host.js)
+  "Your story:": "Ton histoire :",
+  "A new story": "Une nouvelle histoire",
+  "It begins in Marigold Cove, with brand-new heroes": "Elle commence à Marigold Cove, avec des héros tout neufs",
+  "Another tab of the game changed stories: nothing more is saved here. Close this tab.": "Un autre onglet du jeu a changé d’histoire : plus rien n’est sauvegardé ici. Ferme cet onglet.",
+  "Change story…": "Changer d’histoire…",
+  "everything is saved; the party closes and everyone joins again": "tout est sauvegardé, la fête se ferme : il faudra la rejoindre",
+  // Saves & backups (src/party/hub.js)
+  "Party Mode’s stories": "Les histoires du mode Fête",
+  "being played": "en cours",
+  "last played": "la dernière jouée",
+  "Four stories at most. An exported file and the online backup hold the marked one, and the solo game.": "Quatre histoires au plus. Un fichier exporté et la sauvegarde en ligne contiennent celle qui est marquée, et la partie solo.",
+  "This backup’s story is already among yours: {story}.": "L’histoire de cette sauvegarde fait déjà partie des tiennes : {story}.",
+  "This backup holds a story: {story}. It takes a free place: none of yours is replaced.": "Cette sauvegarde contient une histoire : {story}. Elle prend une place libre : aucune des tiennes n’est remplacée.",
+  "This backup holds a story: {story}. Your four places are taken: choose the story it replaces.": "Cette sauvegarde contient une histoire : {story}. Tes quatre places sont prises : choisis l’histoire qu’elle remplace.",
+  "Replace “{story}” with this backup’s story? It cannot be recovered.": "Remplacer « {story} » par l’histoire de cette sauvegarde ? Elle ne pourra pas être récupérée.",
+  "Its solo game replaces the one on this device.": "Sa partie solo remplace celle de cet appareil.",
+  "This backup holds a solo game: it replaces the one on this device.": "Cette sauvegarde contient une partie solo : elle remplace celle de cet appareil.",
+  "This backup holds nothing this device does not have already.": "Cette sauvegarde ne contient rien que cet appareil n’ait déjà.",
 };

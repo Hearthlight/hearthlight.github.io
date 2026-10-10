@@ -137,6 +137,8 @@ export class Host {
     if (P.phase !== 'lobby') game.push({ id: 'unstuck', kind: 'button', label: 'Get everyone unstuck', sub: 'anyone stuck in a corner hops to open ground' });
     if (P.camp && P.exploring()) game.push({ id: 'camp', kind: 'button', label: 'Light a campfire', sub: 'by the crowned player: warm up, and sleep there at night' });
     if (P.phase !== 'lobby') game.push({ id: 'lobby', kind: 'button', label: 'Back to the lobby', confirm: true });
+    // (another of the saved stories, or a new one: they change at the title — slots.mjs)
+    game.push({ id: 'story', kind: 'button', label: 'Change story…', sub: 'everything is saved; the party closes and everyone joins again', confirm: true });
     game.push({ id: 'end', kind: 'button', label: 'End the party', confirm: true, danger: true });
     const lv = Z.levels(), zoomWs = Z.mode === 'auto' ? (Z.target || Z.normal()) : Z.mode;
     const camera = [
@@ -193,6 +195,7 @@ export class Host {
     if (id === 'camp') { const q = from || P.players.find((r) => this.isHost(r) && r.connected) || P.players.find((r) => r.connected); this.closeMenu(); if (q && P.camp) P.camp.build(q); return; }
     if (id.startsWith('act:')) { this.setPaused(false); this.closeMenu(); P.switchActivity(id.slice(4)); return; }
     if (id === 'lobby') { this.setPaused(false); this.closeMenu(); if (P.phase !== 'lobby') P.backToLobby(); return; }
+    if (id === 'story') { this.setPaused(false); this.closeMenu(); P.changeStory(); return; }
     if (id === 'end') { this.closeMenu(); P.exit(); return; }
     // (with the world map open, the zoom rocker zooms the map)
     if (id === 'zoom' && P.bigMapOpen && dir) { P.mapView.step(dir > 0 ? 1 : -1, null, null, P.centroid()); return; }

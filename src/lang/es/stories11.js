@@ -1,5 +1,48 @@
 // Spanish: several saved stories in Party Mode: continue one or begin anew (src/party/slots.mjs).
 export const STORIES11_ES = {
   __group: {
+    "Your story:": "La historia de ustedes:",
+    "Another tab of the game changed stories: nothing more is saved here. Close this tab.": "Otra pestaña del juego ha cambiado de historia: aquí ya no se guarda nada. Cierren esta pestaña.",
   },
+  // the Play card (src/game.js)
+  "{n} saved stories": "{n} historias guardadas",
+  "last played: {story}": "la última: {story}",
+  "Continue a story, or begin a new one": "Continuar una historia o empezar una nueva",
+  "New story": "Nueva historia",
+  "The adventure from the very start, with new heroes": "La aventura desde el principio, con héroes nuevos",
+  "Four stories at most: delete one first": "Cuatro historias como máximo: borra una primero",
+  "Delete": "Borrar",
+  "Delete this story?": "¿Borrar esta historia?",
+  "last played: {when}": "última partida: {when}",
+  "It cannot be recovered.": "No se podrá recuperar.",
+  "Keep this story": "Conservar esta historia",
+  // a story in words (src/party/stories.js)
+  "The story has not begun": "La historia no ha empezado",
+  "today": "hoy",
+  "yesterday": "ayer",
+  "{n} days ago": "hace {n} días",
+  "This version of the game cannot read the saved stories. Nothing was changed.": "Esta versión del juego no puede leer las historias guardadas. No se ha cambiado nada.",
+  "A story could not be put back in its place: this browser’s storage is full. Free some room and come back — nothing is lost.": "No se pudo volver a colocar una historia: el almacenamiento de este navegador está lleno. Libera espacio y vuelve: no se ha perdido nada.",
+  "This story is no longer here.": "Esta historia ya no está aquí.",
+  "There is no story in this backup.": "Esta copia no contiene ninguna historia.",
+  "This browser has no room left to put a story away. Nothing was changed.": "A este navegador no le queda sitio para guardar otra historia. No se ha cambiado nada.",
+  // the lobby, the host menu (src/party/party.js, host.js)
+  "Your story:": "Tu historia:",
+  "A new story": "Una historia nueva",
+  "It begins in Marigold Cove, with brand-new heroes": "Empieza en Marigold Cove, con héroes recién estrenados",
+  "Another tab of the game changed stories: nothing more is saved here. Close this tab.": "Otra pestaña del juego ha cambiado de historia: aquí ya no se guarda nada. Cierra esta pestaña.",
+  "Change story…": "Cambiar de historia…",
+  "everything is saved; the party closes and everyone joins again": "todo se guarda; la fiesta se cierra y habrá que volver a unirse",
+  // Saves & backups (src/party/hub.js)
+  "Party Mode’s stories": "Las historias del Modo Fiesta",
+  "being played": "en curso",
+  "last played": "la última jugada",
+  "Four stories at most. An exported file and the online backup hold the marked one, and the solo game.": "Cuatro historias como máximo. Un archivo exportado y la copia en línea contienen la marcada, y la partida individual.",
+  "This backup’s story is already among yours: {story}.": "La historia de esta copia ya está entre las tuyas: {story}.",
+  "This backup holds a story: {story}. It takes a free place: none of yours is replaced.": "Esta copia contiene una historia: {story}. Ocupa un hueco libre: no se reemplaza ninguna de las tuyas.",
+  "This backup holds a story: {story}. Your four places are taken: choose the story it replaces.": "Esta copia contiene una historia: {story}. Tus cuatro huecos están ocupados: elige la historia que reemplaza.",
+  "Replace “{story}” with this backup’s story? It cannot be recovered.": "¿Reemplazar «{story}» por la historia de esta copia? No se podrá recuperar.",
+  "Its solo game replaces the one on this device.": "Su partida individual reemplaza la de este dispositivo.",
+  "This backup holds a solo game: it replaces the one on this device.": "Esta copia contiene una partida individual: reemplaza la de este dispositivo.",
+  "This backup holds nothing this device does not have already.": "Esta copia no contiene nada que este dispositivo no tenga ya.",
 };

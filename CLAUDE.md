@@ -36,6 +36,11 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
 - Solo quick start: `D.pause(true); await D.newGame('Alex'); await D.skip(200);
   game.state.flags.wildIntro = true; game.world.wild.chooseClass('mage'); D.tp(-43, 86)`
   (a steppe camp; `game.world.wild` is the `Wild`, `.combat`, `.encounters`, `.travel`…).
+- Party Mode's saved stories (four at most: `src/party/slots.mjs`, their words in
+  `src/party/stories.js`; the one being played stays in the live `hearthlight.party*.v1` keys, the
+  others wait under `hearthlight.stories.v1`): `node tools/slotstest.mjs` must pass — it proves
+  that no switch, new story, delete or import can lose a key, whatever write fails. `T.boot()`
+  plays the current story; the title's Play → Together chooses one.
 - A phone in solo: `game.phone.start()`, then open `/pad.html#CODE` in another tab; the pad
   records drawing errors in `pad.S.drawError` (its loop never stops on one).
 - The guide (a place picked on a map — M on the big screen, a player's own menu, a phone, the solo

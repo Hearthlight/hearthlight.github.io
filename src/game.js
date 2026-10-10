@@ -11,7 +11,7 @@ import { Portraits } from './render/portrait.js';
 import { World } from './scenes/world.js';
 import { Dialogue } from './ui/dialogue.js';
 import { Creator } from './ui/creator.js';
-import { panel, button, UI, fitText, bindInput, ctl, device, closeButton, tc } from './ui/ui.js';
+import { panel, button, UI, fitText, bindInput, ctl, device, closeButton, tc, keyHint, isFace } from './ui/ui.js';
 import { dayLabel } from './ui/hud.js';
 import { CharModel, PetModel } from './models/chars.js';
 import { newState, loadGame, saveGame, hasSave, loadSettings, saveSettings, hearts } from './state.js';
@@ -23,7 +23,8 @@ import { OX, OZ } from './world/overworld.js';
 import { applyHomeLevel } from './world/interiors.js';
 import { Party } from './party/party.js';
 import { SavesDialog } from './party/hub.js';
-import { partySummary } from './party/saves.mjs';
+import { stories, ensureStory, switchStory, newStory, deleteStory } from './party/slots.mjs';
+import { storyName, storyWho, storyLevel, storyWhen, storyCount, storyError } from './party/stories.js';
 import { SessionRecovery } from './session.mjs';
 import { setLang, loadLang, t, tn, num } from './i18n.js';
 import { SoloPhone } from './solo/phone.js';
@@ -291,22 +292,41 @@ export class Game {
   }
 
   // ---- Play: what (the story, or another way a mode adds), who (alone, or together: phones,
-  // gamepads, the keyboard, friends at home), and for the story alone with a saved cove, back to
-  // it or a new one. The last choices come back preselected: Play, then A, A, A is where you were.
-  openPlay() {
+  // gamepads, the keyboard, friends at home), and for the story, which one: alone with a saved cove,
+  // back to it or a new one; together, one of the saved stories or a new one (`P.S`: slots.mjs).
+  // The last choices come back preselected: Play, then A, A, A is where you were.
+  openPlay(step = null) {
     const last = this.settings.lastPlay || {}, many = this.experiences.length > 1;
     const exp = this.experiences.find((e) => e.id === last.exp) || this.experiences[0];
-    this.play = { step: many ? 'what' : 'who', exp, sel: many ? this.experiences.indexOf(exp) : last.who === 'multi' ? 1 : 0, t: 0 };
+    this.play = { step: many ? 'what' : 'who', exp, sel: many ? this.experiences.indexOf(exp) : last.who === 'multi' ? 1 : 0, t: 0, S: stories() };
+    // (back from a party to change stories: straight to them)
+    if (step === 'story') { Object.assign(this.play, { exp: this.experiences.find((e) => e.id === 'story'), step: 'who', sel: 1 }); this.playStories(); }
+  }
+  // the stories worth a row: one nobody played yet is what « New story » opens
+  playList() { return this.play.S.list.filter((s) => !s.blank); }
+  playStories() {
+    const P = this.play, list = this.playList();
+    if (P.S.error || !list.length) return false;
+    Object.assign(P, { step: 'story', sel: Math.max(0, list.findIndex((s) => s.cur)), del: null });
+    return true;
   }
   playRows() {
     const P = this.play, last = this.settings.lastPlay || {};
     if (P.step === 'what') return this.experiences.map((e) => ({ name: e.name(), sub: e.sub(), go: () => { P.exp = e; P.step = 'who'; P.sel = last.who === 'multi' ? 1 : 0; } }));
     if (P.step === 'who') {
       // (the story's saved games, said under each way: where you'll be back)
-      const story = P.exp.id === 'story', solo = story && this.hasSave ? loadGame() : null, party = story ? partySummary() : null;
+      const story = P.exp.id === 'story', solo = story && this.hasSave ? loadGame() : null, list = story ? this.playList() : [], S = list.find((s) => s.cur) || list[0];
+      const party = S && [S.begun ? t('Chapter {n}', { n: S.ch }) : '', storyWho(S, (x) => measure(x) <= 130)].filter(Boolean).join(' · ');
       return [
         { name: t('Solo'), sub: solo ? [solo.player && solo.player.name, t('Day {n}', { n: solo.day })].filter(Boolean).join(' · ') : P.exp.soloSub ? P.exp.soloSub() : t('Just you — the keyboard, a gamepad or your phone'), go: () => this.playGo('solo') },
-        { name: t('Together'), sub: party ? [t('Chapter {n}', { n: party.chapter }), (party.players || []).filter((n) => typeof n === 'string').slice(0, 3).join(', ')].filter(Boolean).join(' · ') : P.exp.multiSub ? P.exp.multiSub() : t('1 to 8 players: phones, gamepads, the keyboard — friends at home too'), go: () => this.playGo('multi') },
+        { name: t('Together'), sub: party ? (list.length > 1 ? storyCount(list.length) + ' · ' + t('last played: {story}', { story: party }) : party) : P.exp.multiSub ? P.exp.multiSub() : t('1 to 8 players: phones, gamepads, the keyboard — friends at home too'), go: () => this.playGo('multi') },
+      ];
+    }
+    if (P.step === 'story') {
+      const free = P.S.free;
+      return [
+        ...this.playList().map((s) => ({ story: s, name: storyName(s), sub: [storyWho(s), storyLevel(s)].filter(Boolean).join(' · '), when: storyWhen(s), go: () => this.playStory(s.id) })),
+        { name: t('New story'), sub: free ? t('The adventure from the very start, with new heroes') : t('Four stories at most: delete one first'), off: !free, one: true, go: () => { if (free) this.playStory(null); } },
       ];
     }
     const S = P.save;
@@ -320,72 +340,173 @@ export class Game {
     this.settings.lastPlay = { exp: P.exp.id, who };
     saveSettings(this.settings);
     if (who === 'solo' && P.exp.id === 'story' && this.hasSave) { P.save = loadGame(); P.step = 'save'; P.sel = 0; audio.sfx('page'); return; }
+    if (who === 'multi' && P.exp.id === 'story' && this.playStories()) { audio.sfx('page'); return; }
     this.play = null;
     if (who === 'multi') P.exp.multi(); else P.exp.solo();
+  }
+  // a story chosen (null: a new one): its keys take the live ones’ place — all of them or none —,
+  // then the lobby
+  playStory(id) {
+    const P = this.play;
+    try { if (id) switchStory(localStorage, id); else newStory(localStorage); } catch (e) { P.S = stories(); P.error = storyError(e); audio.sfx('cancel'); return; }
+    this.play = null;
+    P.exp.multi();
   }
   // (back: a step back, or out of Play from its first)
   playBack() {
     const P = this.play, many = this.experiences.length > 1;
     audio.sfx('cancel');
+    P.error = null;
     if (P.step === 'save') { P.step = 'who'; P.sel = 0; return; }
+    if (P.step === 'story') { P.step = 'who'; P.sel = 1; return; }
     if (P.step === 'who' && many) { P.step = 'what'; P.sel = Math.max(0, this.experiences.indexOf(P.exp)); return; }
     this.play = null;
   }
   updatePlay(input) {
     const P = this.play, rows = this.playRows();
     P.t += 1 / 60;
+    P.sel = Math.min(P.sel, rows.length - 1);
+    if (P.del) { this.updatePlayDelete(input); return; }
     if (input.pressed('cancel') || input.mouse.rpressed) { input.consume('cancel'); this.playBack(); return; }
+    const pick = (r) => { P.error = null; audio.sfx(r.off ? 'cancel' : 'confirm'); r.go(); };
+    const ask = (r) => { P.error = null; P.del = { story: r.story, sel: 1 }; audio.sfx('select'); };
     if (input.repeat('up') || input.repeat('left')) { P.sel = (P.sel + rows.length - 1) % rows.length; audio.sfx('select'); }
     if (input.repeat('down') || input.repeat('right')) { P.sel = (P.sel + 1) % rows.length; audio.sfx('select'); }
-    for (const r of this.playRects || []) if (input.mouseIn(r.x, r.y, r.w, r.h)) {
-      if (input.mouse.moved && r.i >= 0 && P.sel !== r.i) { P.sel = r.i; audio.sfx('select', { volume: 0.5 }); }
+    // (a story’s ✕ before the row it sits on)
+    const over = (this.playRects || []).filter((r) => input.mouseIn(r.x, r.y, r.w, r.h)), hit = over.find((r) => r.del) || over[0];
+    if (hit) {
+      if (input.mouse.moved && hit.i >= 0 && P.sel !== hit.i) { P.sel = hit.i; audio.sfx('select', { volume: 0.5 }); }
       if (input.mouse.pressed) {
         input.mouse.pressed = false;
-        if (r.i < 0) { this.playBack(); return; }
-        P.sel = r.i; audio.sfx('confirm'); rows[r.i].go(); return;
+        if (hit.i < 0) { this.playBack(); return; }
+        P.sel = hit.i;
+        if (hit.del) ask(rows[hit.i]); else pick(rows[hit.i]);
+        return;
       }
     }
-    if (input.pressed('interact')) { input.consume('interact'); audio.sfx('confirm'); rows[P.sel].go(); }
+    if (input.pressed('interact')) { input.consume('interact'); pick(rows[P.sel]); }
+    else if (input.pressed('special') && rows[P.sel].story) { input.consume('special'); ask(rows[P.sel]); }
   }
-  // the step's choices on a paper card under the logo: a heading, a row each (its name, a line of
-  // what it is), and Back
-  drawPlay(ctx, W, top, bottom) {
-    const P = this.play, rows = this.playRows(), touch = this.input.touchMode;
-    const head = P.step === 'what' ? t('What would you like to play?') : P.step === 'who' ? P.exp.name() : t('Your cove');
-    const back = t('Back'), bw = measure(back) + 14;
-    // (a card no wider than it needs, nor than a comfortable line; each row's line of what it is
-    // wraps to two when it must)
-    const pw = Math.min(W - 16, Math.max(220, Math.min(290, Math.max(measure(head) + 40, ...rows.map((r) => Math.max(measure(r.name), measure(r.sub)) + 44)))));
-    const lines = rows.map((r) => wrap(r.sub, pw - 44).slice(0, 2)), pad = touch ? 8 : 6;
-    const hs = lines.map((l) => 12 + l.length * 9 + pad), ph = 24 + hs.reduce((a, h) => a + h + 4, 0) + 18;
+  // « Delete this story? »: named, said once more that it is for good, keeping it under the hand
+  updatePlayDelete(input) {
+    const P = this.play, D = P.del;
+    if (input.pressed('left') || input.pressed('right')) { D.sel = 1 - D.sel; audio.sfx('select'); }
+    if (input.pressed('cancel') || input.mouse.rpressed) { input.consume('cancel'); P.del = null; audio.sfx('cancel'); return; }
+    const clicked = input.mouse.pressed && D.rects && D.rects.find((r) => input.mouseIn(r.x, r.y, r.w, r.h));
+    input.mouse.pressed = false;
+    if (clicked) D.sel = clicked.i;
+    if (!input.pressed('interact') && !clicked) return;
+    input.consume('interact');
+    P.del = null;
+    if (D.sel !== 0) { audio.sfx('cancel'); return; }
+    try { deleteStory(localStorage, D.story.id); audio.sfx('close'); } catch (e) { P.error = storyError(e); audio.sfx('cancel'); }
+    P.S = stories();
+    // (none left: Together is as it was before any story)
+    if (!this.playList().length) { P.step = 'who'; P.sel = 1; } else P.sel = Math.min(P.sel, this.playList().length);
+  }
+  // the step’s card, measured between `top` and `bottom`: a heading, a row each (its name, a line of
+  // what it is — two when it must), a word when something went wrong, and Back. Rows as roomy as
+  // the height allows; `fits` is false when even the closest don’t
+  playBox(W, top, bottom) {
+    const P = this.play, rows = this.playRows(), touch = this.input.touchMode, story = P.step === 'story';
+    const head = P.step === 'what' ? t('What would you like to play?') : P.step === 'who' ? P.exp.name() : story ? t('Continue a story, or begin a new one') : t('Your cove');
+    // (a card no wider than it needs, nor than a comfortable line: a story’s players and its date
+    // want a longer one)
+    const need = (r) => (r.story ? Math.max(measure(r.name) + measure(r.when) + 30, measure(r.sub) + 18) : Math.max(measure(r.name), measure(r.sub))) + 44;
+    const pw = Math.min(W - 16, Math.max(220, Math.min(story ? 330 : 290, Math.max(measure(head) + 40, ...rows.map(need)))));
+    const lines = rows.map((r) => (r.story || r.one ? [r.sub] : wrap(r.sub, pw - 44).slice(0, 2)));
+    const note = P.error ? wrap(P.error, pw - 20).slice(0, 3) : [];
+    let pad, gap, hs, ph;
+    for (pad of [touch ? 8 : 6, 4, 2, 1]) {
+      gap = pad > 2 ? 4 : 2; hs = lines.map((l) => 12 + l.length * 9 + pad);
+      ph = 22 + hs.reduce((a, h) => a + h + gap, 0) + (note.length ? note.length * 9 + 4 : 0) + 18 + (pad > 2 ? 2 : 0);
+      if (ph <= bottom - top) break;
+    }
     const px = Math.round(W / 2 - pw / 2), py = Math.round(Math.max(top, Math.min(bottom - ph, (top + bottom) / 2 - ph / 2)));
+    return { rows, head, pw, lines, note, hs, gap, ph, px, py, fits: ph <= bottom - top };
+  }
+  drawPlay(ctx, W, box) {
+    const P = this.play, { rows, head, pw, lines, note, hs, gap, ph, px, py } = box, touch = this.input.touchMode;
+    const back = t('Back'), bw = measure(back) + 14;
     panel(ctx, px, py, pw, ph);
     drawText(ctx, fitText(head, pw - 16), W / 2, py + 8, { color: '#8a5234', align: 'center' });
     this.playRects = [];
     let y = py + 22;
     rows.forEach((r, i) => {
-      const on = P.sel === i, h = hs[i];
+      const on = P.sel === i, h = hs[i], right = px + pw - 8;
       ctx.fillStyle = on ? UI.sel : UI.paperShade; ctx.fillRect(px + 8, y, pw - 16, h);
-      ctx.fillStyle = ['#8fd67a', '#ffd66b', '#9fdcff', '#f59ac8'][i % 4]; ctx.fillRect(px + 8, y, 3, h);
-      if (on) drawText(ctx, '♥', px + 17, y + Math.round(h / 2) - 4, { color: '#ec5f73' });
+      ctx.fillStyle = r.off ? '#c9b89a' : ['#8fd67a', '#ffd66b', '#9fdcff', '#f59ac8'][i % 4]; ctx.fillRect(px + 8, y, 3, h);
+      if (on) drawText(ctx, '♥', px + 17, y + Math.round(h / 2) - 4, { color: r.off ? '#b8a48a' : '#ec5f73' });
+      else if (r.one && !r.off) { ctx.fillStyle = '#b8862a'; ctx.fillRect(px + 17, y + Math.round(h / 2) - 1, 7, 1); ctx.fillRect(px + 20, y + Math.round(h / 2) - 4, 1, 7); }
       const ty = y + Math.round((h - 12 - lines[i].length * 9) / 2);
-      drawText(ctx, fitText(r.name, pw - 44), px + 28, ty, { color: UI.ink });
-      lines[i].forEach((l, k) => drawText(ctx, l, px + 28, ty + 11 + k * 9, { color: UI.inkSoft }));
+      if (r.story) {
+        // a saved story: its chapter and when it was last played; who played, how far the heroes
+        // are; a ✕ to delete it (under the pointer or the hand — always, for a finger)
+        const del = on || touch, tw = right - (px + 28) - 20;
+        drawText(ctx, r.when, px + 28 + tw, ty, { color: UI.inkSoft, align: 'right' });
+        drawText(ctx, fitText(r.name, tw - measure(r.when) - 10), px + 28, ty, { color: UI.ink });
+        const lv = storyLevel(r.story);
+        drawText(ctx, [storyWho(r.story, (x) => measure(x) <= tw - measure(' · ' + lv)), lv].filter(Boolean).join(' · '), px + 28, ty + 11, { color: UI.inkSoft });
+        if (del) {
+          const dx = right - 16, dy = y + Math.round(h / 2) - 6, hot = this.input.mouseIn(dx - 5, y, 21, h);
+          ctx.fillStyle = hot ? '#a8483a' : '#c9a77c'; ctx.fillRect(dx, dy, 12, 12);
+          ctx.fillStyle = hot ? '#fff7e6' : '#6b4330';
+          for (let k = -2; k <= 2; k++) for (const o of [5, 6]) { ctx.fillRect(dx + o + k, dy + 6 + k, 1, 1); ctx.fillRect(dx + o + k, dy + 5 - k, 1, 1); }
+          this.playRects.push({ x: dx - 5, y, w: 21, h, i, del: true });
+        }
+      } else {
+        drawText(ctx, fitText(r.name, pw - 44), px + 28, ty, { color: r.off ? UI.inkSoft : UI.ink });
+        lines[i].forEach((l, k) => drawText(ctx, r.one ? fitText(l, pw - 44) : l, px + 28, ty + 11 + k * 9, { color: UI.inkSoft }));
+      }
       this.playRects.push({ x: px + 8, y, w: pw - 16, h, i });
-      y += h + 4;
+      y += h + gap;
     });
+    note.forEach((l, k) => drawText(ctx, l, W / 2, y + 2 + k * 9, { color: '#a8483a', align: 'center' }));
     const bx = Math.round(W / 2 - bw / 2), by = py + ph - 17;
     button(ctx, bx, by, bw, 13, back, {});
     this.playRects.push({ x: bx, y: by, w: bw, h: 13, i: -1 });
+    // (the keyboard, a gamepad: the key that deletes the story under the hand)
+    if (rows[P.sel] && rows[P.sel].story && !touch && !P.del) {
+      const key = ctl('special'), label = t('Delete');
+      keyHint(ctx, px + pw - 9 - (measure(label) + 8 + (isFace(key) && device() !== 'keys' ? 13 : measure(key) + 6)), by, key, label, { center: false });
+    }
+    if (P.del) this.drawPlayDelete(ctx, W, py + Math.round(ph / 2));
+  }
+  drawPlayDelete(ctx, W, cy) {
+    const D = this.play.del, H = this.display.h, yes = t('Delete'), no = t('Keep this story'), bh = this.input.touchMode ? 18 : 14;
+    ctx.fillStyle = 'rgba(20,14,28,0.5)'; ctx.fillRect(0, 0, W, H);
+    const bw = Math.max(70, measure(yes) + 16, measure(no) + 16), pw = Math.min(W - 12, Math.max(250, bw * 2 + 50));
+    const who = [storyWho(D.story, (x) => measure(x) <= pw - 90), storyLevel(D.story)].filter(Boolean).join(' · ');
+    const named = [fitText(storyName(D.story), pw - 24), who, t('last played: {when}', { when: storyWhen(D.story) })].filter(Boolean);
+    const warn = wrap(t('It cannot be recovered.'), pw - 20);
+    const ph = 22 + named.length * 10 + 10 + warn.length * 10 + 10 + bh, px = Math.round(W / 2 - pw / 2), py = Math.round(Math.max(4, Math.min(H - ph - 4, cy - ph / 2)));
+    panel(ctx, px, py, pw, ph);
+    drawText(ctx, fitText(t('Delete this story?'), pw - 16), W / 2, py + 8, { color: '#8a5234', align: 'center' });
+    ctx.fillStyle = UI.paperShade; ctx.fillRect(px + 8, py + 20, pw - 16, named.length * 10 + 5);
+    ctx.fillStyle = '#ffd66b'; ctx.fillRect(px + 8, py + 20, 3, named.length * 10 + 5);
+    named.forEach((l, i) => drawText(ctx, l, W / 2, py + 24 + i * 10, { color: i ? UI.inkSoft : UI.ink, align: 'center' }));
+    let y = py + 31 + named.length * 10;
+    warn.forEach((l, i) => drawText(ctx, l, W / 2, y + i * 10, { color: '#a8483a', align: 'center' }));
+    y += warn.length * 10 + 4;
+    const x0 = px + Math.round(pw / 2 - bw - 8), x1 = px + Math.round(pw / 2 + 8);
+    button(ctx, x0, y, bw, bh, yes, { hot: D.sel === 0, color: D.sel === 0 ? '#c8454f' : null });
+    button(ctx, x1, y, bw, bh, no, { hot: D.sel === 1 });
+    D.rects = [{ x: x0, y, w: bw, h: bh, i: 0 }, { x: x1, y, w: bw, h: bh, i: 1 }];
   }
 
   // ------------------------------------------------------------------ party mode
   toParty(options = {}) {
     if (this.mode === 'party') return;
+    // (a story in the live keys before anything reads them: the one being played, the last one,
+    // or the first of all, begun without a word. Stories that can’t be read: the game plays on the
+    // live keys as it always did — unless they are half-way between two stories)
+    let story = null;
+    try { story = ensureStory(localStorage); } catch (e) { if (e.code === 'stuck') { Object.assign(this, { play: null, titleMessage: storyError(e), titleBad: true, titleMessageT: -8 }); return; } }
     audio.unlock();
     this.overlay = null;
     this.phone.stop();           // (Party Mode hosts its own room)
     this.party = new Party(this, options);
+    this.party.storyId = story;
     this.party.enter();
     this.recovery.ask = true;                // (leaving the tab would end the party for everyone)
     this.recovery.setActive(true);
@@ -422,30 +543,37 @@ export class Game {
     grad.addColorStop(1, 'rgba(26,18,38,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H * 0.4);
+    // Reserve the actual footer height, including wrapped translations and the phone safe area.
+    const footerTop = this.projectLinks && !this.projectLinks.hidden
+      ? this.projectLinks.getBoundingClientRect().top * H / window.innerHeight : H;
+    const hintY = Math.floor(footerTop - 17);
     // logo
     const ly = Math.round(H * 0.15);
     const glow = 0.5 + Math.sin(tt * 1.5) * 0.5;
     const scale = W < 360 ? 3 : 4;
-    drawText(ctx, 'Hearthlight', W / 2 + 8, ly, { color: '#fff3c4', align: 'center', scale, outline: '#3b2a2e' });
-    ctx.globalAlpha = 0.18 + glow * 0.18;
-    drawText(ctx, 'Hearthlight', W / 2 + 8, ly, { color: '#ffd66b', align: 'center', scale });
-    ctx.globalAlpha = 1;
-    this.drawLanternIcon(ctx, Math.round(W / 2 + 8 - measure('Hearthlight', scale) / 2) - 18, ly + 2, tt);
-    drawText(ctx, t('~ a cozy little life in Marigold Cove ~'), W / 2, ly + scale * 9 + 8, { color: '#f6d38f', align: 'center', shadow: '#2a1f33' });
-    if (w.menu.open) { w.menu.draw(ctx); return; }
+    // (Play open: its card in the menu’s place, under the logo — or in the logo’s place too, when a
+    // small screen has four stories to list)
+    const menu = w.menu.open;
+    let box = this.play && !menu ? this.playBox(W, ly + scale * 9 + 24, hintY - 6) : null;
+    const bare = box && !box.fits;
+    if (bare) box = this.playBox(W, 5, hintY - 5);
+    if (!bare) {
+      drawText(ctx, 'Hearthlight', W / 2 + 8, ly, { color: '#fff3c4', align: 'center', scale, outline: '#3b2a2e' });
+      ctx.globalAlpha = 0.18 + glow * 0.18;
+      drawText(ctx, 'Hearthlight', W / 2 + 8, ly, { color: '#ffd66b', align: 'center', scale });
+      ctx.globalAlpha = 1;
+      this.drawLanternIcon(ctx, Math.round(W / 2 + 8 - measure('Hearthlight', scale) / 2) - 18, ly + 2, tt);
+      drawText(ctx, t('~ a cozy little life in Marigold Cove ~'), W / 2, ly + scale * 9 + 8, { color: '#f6d38f', align: 'center', shadow: '#2a1f33' });
+    }
+    if (menu) { w.menu.draw(ctx); return; }
     // menu
     const items = this.titleItems();
     // (a finger wants taller rows)
     const rh = this.input.touchMode ? 21 : 16;
     const mw = Math.max(130, ...items.map(([label]) => measure(label) + 44)), mh = items.length * rh + 10;
-    // Reserve the actual footer height, including wrapped translations and the phone safe area.
-    const footerTop = this.projectLinks && !this.projectLinks.hidden
-      ? this.projectLinks.getBoundingClientRect().top * H / window.innerHeight : H;
-    const hintY = Math.floor(footerTop - 17);
     const mx = Math.round(W / 2 - mw / 2), my = Math.round(Math.min(H * 0.6, hintY - mh - 12));
     this.titleRects = [];
-    // (Play open: its card in the menu's place)
-    if (this.play) { this.drawPlay(ctx, W, ly + scale * 9 + 24, hintY - 6); items.length = 0; }
+    if (box) { this.drawPlay(ctx, W, box); items.length = 0; }
     else {
       ctx.fillStyle = 'rgba(30,20,40,0.55)';
       ctx.fillRect(mx, my, mw, mh);
@@ -474,9 +602,10 @@ export class Game {
       this.confirmRects = [{ x: x0, y: py + 30 + extra, w: bw, h: 14, i: 0 }, { x: x1, y: py + 30 + extra, w: bw, h: 14, i: 1 }];
     }
     if (this.titleMessage) {
+      // (good news in green, four seconds; what went wrong in red, long enough to read)
       this.titleMessageT = (this.titleMessageT || 0) + 1 / 60;
-      if (this.titleMessageT > 4) { this.titleMessage = null; this.titleMessageT = 0; }
-      else drawText(ctx, this.titleMessage, W / 2, Math.round(H * 0.15) + 58, { color: '#aee9bc', align: 'center', outline: '#2a1f33' });
+      if (this.titleMessageT > 4) { this.titleMessage = null; this.titleMessageT = 0; this.titleBad = false; }
+      else wrap(this.titleMessage, W - 40).forEach((l, i) => drawText(ctx, l, W / 2, Math.round(H * 0.15) + 58 + i * 10, { color: this.titleBad ? '#ffb0a0' : '#aee9bc', align: 'center', outline: '#2a1f33' }));
     }
     const how = this.input.touchMode ? t('Tap to choose · best with sound on ♪') : device() === 'pad' ? t('Stick + {a} to choose · best with sound on ♪', { a: ctl('interact') }) : t('Arrows + E, or click · best with sound on ♪');
     drawText(ctx, fitText(how, W - 8), W / 2, hintY, { color: '#d9c8b0', align: 'center', shadow: '#2a1f33' });

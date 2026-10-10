@@ -11,7 +11,15 @@
 .party-dialog button:disabled { opacity: 0.5; cursor: default; }
 .party-dialog label { display: block; margin: 10px 0; color: #3b2a2e; }
 .party-dialog input { display: block; box-sizing: border-box; width: 100%; color: #3b2a2e; background: #fff8ea; border: 2px solid #8e5d3e; border-radius: 0; padding: 9px; margin: 6px 0; font: 14px/1.4 ui-monospace,Menlo,Consolas,monospace; user-select: text; }
+.party-dialog .stories { list-style: none; margin: 8px 0; padding: 0; }
+.party-dialog .story { background: #efdfc0; border-left: 4px solid #c9a77c; padding: 7px 12px; margin: 6px 0; }
+.party-dialog .story.now { background: #f6d38f; border-left-color: #e0a526; }
+.party-dialog .story div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.party-dialog .story em { font-style: normal; font-size: 12px; color: #fff7e6; background: #8e5d3e; padding: 1px 8px; }
+.party-dialog .story span { display: block; color: #7a6060; }
 .hub-notice { color: #3f8a4a !important; min-height: 1.4em; }
+.hub-notice button { display: block; margin: 8px 0 0; }
+.hub-notice button.pick { box-sizing: border-box; width: 100%; text-align: left; }
 .hub-notice.error { color: #a8483a !important; }
 .party-dialog :focus-visible { outline: 3px solid #e0a526; outline-offset: 2px; }
 @media(max-width:600px) { .party-dialog { padding: 12px; } }

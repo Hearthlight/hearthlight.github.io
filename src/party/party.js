@@ -59,6 +59,8 @@ import { ViewCull } from '../render/cull.js';
 import { StuckWatch, nearWater } from '../entities/stuck.js';
 import { PartyChat } from './partychat.js';
 import { drawSpeech, drawBubbles } from '../ui/chat.js';
+import { STORIES_KEY, stories, touchStory, playing } from './slots.mjs';
+import { storyName, storyWho, storyLevel, storyWhen } from './stories.js';
 
 export const PARTY_COLORS = [
   { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
@@ -213,7 +215,31 @@ export class Party {
   writeSave(name, v) {
     const raw = typeof v === 'string' ? v : JSON.stringify(v), key = 'hearthlight.party.' + name + '.v1';
     this.pendingSaves.set(key, raw);
+    if (!this.storyHere()) return false;
     try { localStorage.setItem(key, raw); return true; } catch (e) { this.saveFailed(); return false; }
+  }
+  // this party’s story is one of several (slots.mjs), and stories only change at the title — of
+  // this tab. Another tab of the game changed them: nothing of this party is saved any more, or
+  // its progress would land in another story’s keys
+  storyHere() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORIES_KEY); } catch (e) { /* private mode */ }
+    // (the stories’ list as it was at the last look: nothing to ask again)
+    if (!this.storyGone && raw !== this.storySeen) {
+      if (playing(null, this.storyId ?? null)) this.storySeen = raw;
+      else { this.storyGone = true; this.toast(t('Another tab of the game changed stories: nothing more is saved here. Close this tab.'), '#ef6479'); }
+    }
+    if (this.storyGone) this.saveError = true;
+    return !this.storyGone;
+  }
+  // (what the lobby says of it)
+  readStory() { this.story = stories().list.find((s) => s.cur) || null; }
+  // the host menu’s « Change story… »: everything saved, the party closed, the title’s stories
+  changeStory() {
+    const g = this.game;
+    if (!this.saveNow()) return;
+    this.exit();
+    g.openPlay('story');
   }
   get active() { return this.players.filter((p) => p.connected || this.t - p.goneAt < 1); }
 
@@ -275,6 +301,7 @@ export class Party {
     this.sceneMusic = null;
     this.act = null;
     this.loadProfiles();
+    this.readStory();
     for (const local of this.options.reload?.locals || []) {
       if (local.kind === 'keys') local.layout = 'wasd';      // (one keyboard player now)
       const id = local.kind === 'keys' ? 'keys-' + local.layout : 'pad-' + local.index;
@@ -1248,6 +1275,7 @@ export class Party {
   flushProfiles() {
     this.profileT = 2;
     const raw = JSON.stringify(this.profiles); this.pendingSaves.set('hearthlight.party.v1', raw);
+    if (!this.storyHere()) return false;
     try { localStorage.setItem('hearthlight.party.v1', raw); this.profileDirty = false; return true; } catch (e) { this.saveFailed(); return false; }
   }
 
@@ -1284,6 +1312,8 @@ export class Party {
     }
     // (a lobby opened and closed again isn't a game to continue: only once something was played)
     if (this.actKind || previous.savedAt) this.writeSave('session', { savedAt: Date.now(), players: this.players.map((p) => p.name), positions, activity: this.actKind || previous.activity || 'explore' });
+    // (the stories’ list follows: this one’s chapter, its players, its heroes’ level)
+    if (!this.saveError) touchStory();
     return !this.saveError;
   }
 
@@ -1803,6 +1833,7 @@ export class Party {
       const bw = Math.max(measure(b.title) * (big ? 2 : 1), b.sub ? measure(b.sub) : 0);
       avoid.push({ x0: W / 2 - bw / 2 - 4, x1: W / 2 + bw / 2 + 4, y0: by - 3, y1: by + (b.sub ? 30 : 20) });
     }
+    if (this.phase === 'lobby' && this.storyRect) avoid.push({ x0: this.storyRect.x - 2, x1: this.storyRect.x + this.storyRect.w + 2, y0: this.storyRect.y - 2, y1: this.storyRect.y + this.storyRect.h + 2 });
     const scene = this.stage && (this.stage.active || this.stage.barK > 0);
     for (const rc of [this.races && this.races.cardRect, this.events && this.events.cardRect, this.camp && this.camp.cardRect, !scene && this.combat && this.combat.barRect]) if (rc) avoid.push({ x0: rc.x - 2, x1: rc.x + rc.w + 2, y0: rc.y - 2, y1: rc.y + rc.h + 2 });
     avoid.sort((p, q) => p.y0 - q.y0);
@@ -1929,6 +1960,7 @@ export class Party {
     drawText(ctx, tr('Hearthlight Party'), fx, py, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
     drawText(ctx, tr('stories, adventures & the arena · 1 to 8 players'), fx, py + 20, { color: '#f6d38f', align: 'center', outline: '#3b2a2e' });
     wrap(tr('♛ the first phone is the host · {key}: the menu (invitations, options…)', { key: ctl('pause') }), W - pw - 28).slice(0, 2).forEach((l, i) => drawText(ctx, l, fx, py + 32 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
+    this.drawStoryTag(ctx, fx, py + 55, W - pw - 36);
     const here = this.players.filter((p) => p.connected);
     let msg;
     if (!here.length) msg = tr('Waiting for friends to join…');
@@ -1944,6 +1976,27 @@ export class Party {
     const mw = Math.max(...ml.map((l) => measure(l))) + 16, mx = Math.round(fx - mw / 2), my = cy - 4 - ml.length * 11 - 2;
     ctx.fillStyle = 'rgba(30,20,40,0.8)'; ctx.fillRect(mx, my, mw, ml.length * 11 + 2);
     ml.forEach((l, i) => drawText(ctx, l, mx + mw / 2, my + 3 + i * 11, { color: this.countdown > 0 ? '#ffd66b' : '#fff7e6', align: 'center' }));
+  }
+
+  // which story is loaded, said before anyone starts it — a paper tag under the title: its chapter,
+  // who played it, how far the heroes are, when it was last played (`storyRect`: the toasts keep clear)
+  drawStoryTag(ctx, cx, y, maxW) {
+    const S = this.story;
+    this.storyRect = null;
+    if (!S) return;
+    const head = S.blank ? '' : t('Your story:') + ' ', iw = Math.min(maxW, 300) - 20;
+    const name = fitText(S.blank ? t('A new story') : storyName(S), iw - measure(head));
+    const rest = storyLevel(S) + ' · ' + storyWhen(S), room = iw - measure(' · ' + rest);
+    const sub = S.blank ? fitText(t('It begins in Marigold Cove, with brand-new heroes'), iw) : [storyWho(S, (x) => measure(x) <= room), rest].filter(Boolean).join(' · ');
+    const w = Math.max(measure(head + name), measure(sub)) + 20, x = Math.round(cx - w / 2);
+    this.storyRect = { x, y, w, h: 27 };
+    ctx.fillStyle = 'rgba(30,18,30,0.35)'; ctx.fillRect(x + 1, y + 2, w, 27);
+    ctx.fillStyle = '#3b2a22'; ctx.fillRect(x, y, w, 27);
+    ctx.fillStyle = UI.paper; ctx.fillRect(x + 1, y + 1, w - 2, 25);
+    ctx.fillStyle = '#ffd66b'; ctx.fillRect(x + 1, y + 1, 3, 25);
+    drawText(ctx, head, x + 11, y + 5, { color: '#8a5234' });
+    drawText(ctx, name, x + 11 + measure(head), y + 5, { color: UI.ink });
+    drawText(ctx, sub, x + 11, y + 15, { color: UI.inkSoft });
   }
 
   // the adventure HUD is drawn by the activity (charms, badges…); the
@@ -2070,7 +2123,9 @@ export class Party {
 
   async backToLobby() {
     await this.fadeTo(1, 0.5);
+    this.saveNow();
     this.resetActs();
+    this.readStory();
     this.phase = 'lobby';
     this.countdown = 0;
     for (const p of this.players) { p.ready = p.kind !== 'phone'; this.syncPad(p); }

@@ -1,5 +1,48 @@
 // German: several saved stories in Party Mode: continue one or begin anew (src/party/slots.mjs).
 export const STORIES11_DE = {
   __group: {
+    "Your story:": "Eure Geschichte:",
+    "Another tab of the game changed stories: nothing more is saved here. Close this tab.": "In einem anderen Tab des Spiels wurde die Geschichte gewechselt: Hier wird nichts mehr gespeichert. Schließt diesen Tab.",
   },
+  // the Play card (src/game.js)
+  "{n} saved stories": "{n} gespeicherte Geschichten",
+  "last played: {story}": "zuletzt: {story}",
+  "Continue a story, or begin a new one": "Eine Geschichte fortsetzen – oder eine neue beginnen",
+  "New story": "Neue Geschichte",
+  "The adventure from the very start, with new heroes": "Das Abenteuer ganz von vorn – alle starten auf Stufe 1",
+  "Four stories at most: delete one first": "Höchstens vier Geschichten: Lösch zuerst eine",
+  "Delete": "Löschen",
+  "Delete this story?": "Diese Geschichte löschen?",
+  "last played: {when}": "zuletzt gespielt: {when}",
+  "It cannot be recovered.": "Sie lässt sich nicht wiederherstellen.",
+  "Keep this story": "Geschichte behalten",
+  // a story in words (src/party/stories.js)
+  "The story has not begun": "Die Geschichte hat noch nicht begonnen",
+  "today": "heute",
+  "yesterday": "gestern",
+  "{n} days ago": "vor {n} Tagen",
+  "This version of the game cannot read the saved stories. Nothing was changed.": "Diese Version des Spiels kann die gespeicherten Geschichten nicht lesen. Nichts wurde verändert.",
+  "A story could not be put back in its place: this browser’s storage is full. Free some room and come back — nothing is lost.": "Eine Geschichte ließ sich nicht zurücklegen: Der Speicher dieses Browsers ist voll. Schaff Platz und komm wieder – nichts ist verloren.",
+  "This story is no longer here.": "Diese Geschichte gibt es nicht mehr.",
+  "There is no story in this backup.": "Diese Sicherung enthält keine Geschichte.",
+  "This browser has no room left to put a story away. Nothing was changed.": "Dieser Browser hat keinen Platz mehr, um eine Geschichte abzulegen. Nichts wurde verändert.",
+  // the lobby, the host menu (src/party/party.js, host.js)
+  "Your story:": "Deine Geschichte:",
+  "A new story": "Eine neue Geschichte",
+  "It begins in Marigold Cove, with brand-new heroes": "Sie beginnt in Marigold Cove – alle starten auf Stufe 1",
+  "Another tab of the game changed stories: nothing more is saved here. Close this tab.": "In einem anderen Tab des Spiels wurde die Geschichte gewechselt: Hier wird nichts mehr gespeichert. Schließ diesen Tab.",
+  "Change story…": "Geschichte wechseln …",
+  "everything is saved; the party closes and everyone joins again": "alles wird gespeichert; die Party schließt, alle treten neu bei",
+  // Saves & backups (src/party/hub.js)
+  "Party Mode’s stories": "Die Geschichten im Partymodus",
+  "being played": "läuft gerade",
+  "last played": "zuletzt gespielt",
+  "Four stories at most. An exported file and the online backup hold the marked one, and the solo game.": "Höchstens vier Geschichten. Eine exportierte Datei und die Online-Sicherung enthalten die markierte – und den Einzelspieler-Spielstand.",
+  "This backup’s story is already among yours: {story}.": "Die Geschichte dieser Sicherung hast du schon: {story}.",
+  "This backup holds a story: {story}. It takes a free place: none of yours is replaced.": "Diese Sicherung enthält eine Geschichte: {story}. Sie bekommt einen freien Platz: Keine deiner Geschichten wird ersetzt.",
+  "This backup holds a story: {story}. Your four places are taken: choose the story it replaces.": "Diese Sicherung enthält eine Geschichte: {story}. Deine vier Plätze sind belegt: Wähle die Geschichte, die sie ersetzt.",
+  "Replace “{story}” with this backup’s story? It cannot be recovered.": "„{story}“ durch die Geschichte dieser Sicherung ersetzen? Sie lässt sich nicht wiederherstellen.",
+  "Its solo game replaces the one on this device.": "Ihr Einzelspieler-Spielstand ersetzt den auf diesem Gerät.",
+  "This backup holds a solo game: it replaces the one on this device.": "Diese Sicherung enthält einen Einzelspieler-Spielstand: Er ersetzt den auf diesem Gerät.",
+  "This backup holds nothing this device does not have already.": "Diese Sicherung enthält nichts, was dieses Gerät nicht schon hat.",
 };

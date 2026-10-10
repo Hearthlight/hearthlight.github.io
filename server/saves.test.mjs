@@ -4,7 +4,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { createRelay } from './relay.mjs';
-import { exportSave, importSave, validateSave } from '../src/party/saves.mjs';
+import { exportSave, validateSave } from '../src/party/saves.mjs';
+import { addStory, switchStory, stories } from '../src/party/slots.mjs';
 
 const snapshot = (chapter = 2) => ({ format: 'hearthlight', version: 1, savedAt: Date.now(), data: { 'hearthlight.party.saga.v1': JSON.stringify({ v: 1, ch: chapter, q: {}, f: {} }) } });
 class Storage {
@@ -15,24 +16,30 @@ class Storage {
   setItem(k, v) { this.data.set(k, v); }
   removeItem(k) { this.data.delete(k); }
 }
-test('portable saves keep progress and fog, exclude credentials, and preserve an unrelated solo save', () => {
-  const store = new Storage({ ...snapshot().data, 'hearthlight.party.fog.v1': 'AAABAA==', 'hl.partyToken': 'owner-secret', 'hearthlight.cloud.v1': 'recovery-secret' });
+test('portable saves keep progress and fog, exclude credentials and the other stories, and come back as a story of their own', () => {
+  const store = new Storage({ ...snapshot().data, 'hearthlight.party.fog.v1': 'AAABAA==', 'hl.partyToken': 'owner-secret', 'hearthlight.cloud.v1': 'recovery-secret', 'hearthlight.stories.v1': '{"v":1,"cur":null,"seq":0,"list":[]}' });
   const backup = exportSave(store);
   assert.deepEqual(Object.keys(backup.data).sort(), ['hearthlight.party.fog.v1', 'hearthlight.party.saga.v1']);
   const target = new Storage({ 'hearthlight.save.v1': '{"version":1}', 'hearthlight.party.races.v1': '{}' });
-  importSave(backup, target);
+  const id = addStory(target, backup.data);
+  // (the story being played there is not touched; brought forward, the backup's takes the live keys whole)
+  assert.equal(target.getItem('hearthlight.party.races.v1'), '{}'); assert.equal(target.getItem('hearthlight.party.fog.v1'), null);
+  const mine = stories(target).cur;
+  switchStory(target, id);
   assert.equal(target.getItem('hearthlight.save.v1'), '{"version":1}');
   assert.equal(target.getItem('hearthlight.party.races.v1'), null);
   assert.equal(target.getItem('hearthlight.party.fog.v1'), 'AAABAA==');
+  switchStory(target, mine);
+  assert.equal(target.getItem('hearthlight.party.races.v1'), '{}'); assert.equal(target.getItem('hearthlight.party.fog.v1'), null);
 });
 test('an invalid or oversized backup cannot overwrite storage', () => {
   for (const save of [ { ...snapshot(), version: 9 }, { ...snapshot(), data: { 'hl.partyToken': '"x"' } }, { ...snapshot(), data: { 'hearthlight.party.v1': '{"__proto__":{"polluted":true}}' } }, { ...snapshot(), data: { 'hearthlight.party.v1': '"' + 'x'.repeat(2 * 1024 * 1024) + '"' } } ]) assert.throws(() => validateSave(save));
   assert.equal({}.polluted, undefined);
 });
-test('an import rolls back when a storage write fails', () => {
-  const original = snapshot(1).data, store = new Storage(original), set = store.setItem.bind(store);
-  let failed = false; store.setItem = (k, v) => { if (!failed) { failed = true; throw new Error('quota'); } set(k, v); };
-  assert.throws(() => importSave(snapshot(3), store), /quota/);
+test('a backup that finds no room changes nothing (every write that can fail: tools/slotstest.mjs)', () => {
+  const original = snapshot(1).data, store = new Storage(original);
+  store.setItem = () => { throw new Error('quota'); };
+  assert.throws(() => addStory(store, snapshot(3).data), (e) => e.code === 'storage');
   assert.deepEqual(Object.fromEntries(store.data), original);
 });
 async function fixture(t, opts = {}) {

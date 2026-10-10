@@ -1,4 +1,5 @@
-// Portable saves contain game progress only; relay and recovery credentials stay separate.
+// Portable saves contain game progress only — Party Mode’s current story, its options and the solo
+// game —; relay and recovery credentials stay separate.
 export const SAVE_LIMIT = 2 * 1024 * 1024;
 const PARTY_KEY = /^hearthlight\.party(?:\.[a-zA-Z][a-zA-Z0-9]*\.v1|\.v1)$/;
 const allowed = (key) => PARTY_KEY.test(key) || key === 'hearthlight.save.v1';
@@ -33,29 +34,7 @@ export function exportSave(storage = localStorage) {
   }
   return validateSave({ format: 'hearthlight', version: 1, savedAt: Date.now(), data });
 }
-export function importSave(value, storage = localStorage) {
-  const save = validateSave(value), old = {}, incoming = Object.keys(save.data);
-  // A partial backup replaces only its own mode. Never erase an unrelated solo save.
-  const hasParty = incoming.some((k) => PARTY_KEY.test(k));
-  const keys = new Set(incoming);
-  for (let i = 0; i < storage.length; i++) { const k = storage.key(i); if (hasParty && PARTY_KEY.test(k)) keys.add(k); }
-  for (const key of keys) old[key] = storage.getItem(key);
-  try {
-    for (const key of keys) if (!(key in save.data)) storage.removeItem(key);
-    for (const [key, raw] of Object.entries(save.data)) storage.setItem(key, raw);
-  } catch (error) {
-    for (const [key, raw] of Object.entries(old)) { try { if (raw === null) storage.removeItem(key); else storage.setItem(key, raw); } catch { /* report original failure */ } }
-    throw error;
-  }
-  return save;
-}
-export function partySummary(storage = localStorage) {
-  try {
-    const saga = JSON.parse(storage.getItem('hearthlight.party.saga.v1') || 'null');
-    const session = JSON.parse(storage.getItem('hearthlight.party.session.v1') || 'null');
-    return saga || session?.players?.length ? { chapter: saga?.ch || 1, savedAt: session?.savedAt || null, players: session?.players || [] } : null;
-  } catch { return null; }
-}
+// (what a file or an online backup brings back comes in as a story of its own: slots.mjs)
 export function saveEndpoint() {
   const config = window.HEARTHLIGHT || {};
   if (config.saves) return config.saves.replace(/\/$/, '');
