@@ -1,5 +1,5 @@
 // UI drawing kit: paper panels, tags, buttons, hearts, key hints.
-import { drawText, measure, wrap, LINE_H } from '../engine/font.js';
+import { drawText, measure, wrap, LINE_H, cutRich, carryTags, visibleLength } from '../engine/font.js';
 import { COLORS } from '../art/palette.js';
 import { getLang, t } from '../i18n.js';
 
@@ -82,10 +82,16 @@ export function faceGlyph(ctx, cx, cy, label) {
   g.forEach((r, j) => { for (let i = 0; i < 5; i++) if (r[i] === '#') ctx.fillRect(x0 + 3 + i, y0 + 2 + j, 1, 1); });
 }
 
-// Shorten text with "…" so it fits maxW pixels.
+// Shorten text with "…" so it fits maxW pixels (a rich text is never cut inside a tag, and a
+// colour or a {key} mark left open is closed before the "…").
 export function fitText(text, maxW, scale = 1) {
   text = String(text);
   if (measure(text, scale) <= maxW) return text;
+  if (text.indexOf('{') >= 0) {
+    let n = visibleLength(text) - 1, s = cutRich(text, n);
+    while (n > 1 && measure(s + '…', scale) > maxW) s = cutRich(text, --n);
+    return s.replace(/\s+((\{\/\})*)$/, '$1') + '…';
+  }
   let s = text;
   while (s.length > 1 && measure(s + '…', scale) > maxW) s = s.slice(0, -1);
   return s.trimEnd() + '…';
@@ -99,9 +105,9 @@ export function splitTwo(text, maxW, scale = 1) {
   if (words.length < 2) return [text];
   let best = null;
   for (let i = 1; i < words.length; i++) {
-    const a = words.slice(0, i).join(' '), b = words.slice(i).join(' ');
-    const w = Math.max(measure(a, scale), measure(b, scale));
-    if (!best || w < best.w) best = { w, lines: [a, b] };
+    const lines = carryTags([words.slice(0, i).join(' '), words.slice(i).join(' ')]);
+    const w = Math.max(measure(lines[0], scale), measure(lines[1], scale));
+    if (!best || w < best.w) best = { w, lines };
   }
   return best.lines;
 }

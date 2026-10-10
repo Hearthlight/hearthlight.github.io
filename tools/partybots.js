@@ -44,9 +44,12 @@ export async function boot(n = 6, names = ['Alex', 'Mia', 'Lucas', 'Emma', 'Noah
   return g().party;
 }
 
+// (a page all there stays the time to read it before A can turn it: the bot waits that out)
+async function readOn() { const P = g().party; await D().step(60); for (let k = 0; k < 30 && P.dialogue.reading; k++) await D().step(10); await press(bots[0]); }
+
 export async function skipTalk(max = 40) {
   const P = g().party;
-  for (let i = 0; i < max && P.dialogue.active; i++) { await D().step(60); await press(bots[0]); }
+  for (let i = 0; i < max && P.dialogue.active; i++) await readOn();
 }
 
 export async function readyAll() { await D().step(50); for (const b of bots) await press(b); await D().step(10); }
@@ -234,7 +237,7 @@ export async function autoplay(after = 'lobby', log = [], opts = {}) {
       if (v.options[pickI].id === 'lobby' || v.options[pickI].id === 'again') { await step(120); break; }
       continue;
     }
-    if (P.dialogue.active) { await step(60); await press(bots[0]); continue; }
+    if (P.dialogue.active) { await readOn(); continue; }
     if (s.gatherInfo) { await toSpot(); log.push('arrived'); continue; }
     if (s.overlay && s.overlay.kind === 'rules') { await step(40); for (const b of bots) await press(b); continue; }
     if (s.game && s.game.running) { await step(120); log.push('game:' + s.game.def.id); s.game.left = 0.05; await step(10); continue; }

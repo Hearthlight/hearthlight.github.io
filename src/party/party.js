@@ -34,7 +34,7 @@ import { Events } from './events.js';
 import { Campfires } from './camp.js';
 import { Rooms } from './rooms.js';
 import { DinoLife } from './dinos.js';
-import { weatherIcon, dayLabel, timeLabel } from '../ui/hud.js';
+import { weatherIcon, dayLabel, timeLabel, sunMoon, HUD_MODES, HUD_NAMES } from '../ui/hud.js';
 import { Buddies } from './buddies.js';
 import { ExploreAct } from './explore.js';
 import { Combat } from '../combat/combat.js';
@@ -44,8 +44,9 @@ import { t, tn, onLang, getLang, setAudience } from '../i18n.js';
 import { drawClassIcon } from '../combat/icons.js';
 import { cleanLook, randomLook } from '../data/looks.js';
 import { NPCS } from '../data/npcs.js';
-import { newState } from '../state.js';
-import { drawText, measure, wrap } from '../engine/font.js';
+import { newState, saveSettings } from '../state.js';
+import { drawGlyph } from '../combat/v4/icons.js';
+import { drawText, measure, wrap, stripTags, visibleLength } from '../engine/font.js';
 import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton, button, isFace, faceGlyph } from '../ui/ui.js';
 import { Dialogue } from '../ui/dialogue.js';
 import { audio } from '../engine/audio.js';
@@ -61,6 +62,7 @@ import { PartyChat } from './partychat.js';
 import { drawSpeech, drawBubbles } from '../ui/chat.js';
 import { STORIES_KEY, stories, touchStory, playing } from './slots.mjs';
 import { storyName, storyWho, storyLevel, storyWhen } from './stories.js';
+import { Announcer, noteTime } from './announce.js';
 
 export const PARTY_COLORS = [
   { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
@@ -68,24 +70,21 @@ export const PARTY_COLORS = [
 ];
 const VOICES = [70, 58, 76, 64, 72, 60, 80, 66];
 export const LOBBY = { x: POINTS.fountain[0], z: POINTS.fountain[1] + 3.6 };
-const NO_INPUT = { pressed: () => false, repeat: () => false, down: () => false, consume() {}, mouse: { pressed: false, moved: false }, mouseIn: () => false };
 // the buttons' everyday jobs, which a keyboard's or a gamepad's player knows by heart: no chip
 // under their hero for these (the special move is X's everyday job too — `x` left undefined)
 const EVERYDAY = { a: ['Attack', 'Release!', 'Wave', 'Next', 'Continue'], b: ['Jump', 'Hop'], y: ['Dodge', 'Whistle'] };
+const TOASTS = 3;                        // notes on screen at once (party.toast)
 
-// The shared dialogue box: A shows the whole line at once, A again moves on — as fast as
-// you like, with just a blink between the two so a double press can't skip a line unseen.
+// The shared dialogue box: anyone’s A shows the whole page at once, then it stays the time it
+// takes to read it — eight friends hammering A for a fight never lose a line unread. An answer
+// to pick waits half a second; a letter, a little longer than a page.
 class PartyDialogue extends Dialogue {
-  update(dt, input) {
-    const c = this.cur;
-    if (c) {
-      c.age = (c.age || 0) + dt;
-      if (c.shown >= c.total) c.readT = (c.readT || 0) + dt;
-      const locked = c.shown < c.total ? c.age < 0.12 : (c.readT || 0) < 0.22;
-      if (locked) { super.update(dt, NO_INPUT); return; }
-    }
-    super.update(dt, input);
+  readTime(c) {
+    if (c.choices && c.page >= c.pages.length - 1) return 0.5;
+    const n = c.pages ? c.total : stripTags(c.text).length;
+    return clamp(0.6 + 0.03 * n, 0.9, c.pages ? 3.2 : 5) / (this.game.settings.textSpeed || 1);
   }
+  openTime() { return 0.12; }
 
   // the host skips the current line (or letter)
   skip() {
@@ -175,7 +174,7 @@ export class Party {
     this.waits = [];
     this.prevKeys = new Set();
     this.padsDown = new Set();
-    this.banner = null;
+    this.lane = new Announcer(this);       // banners, title cards & long notes, one at a time (announce.js)
     this.npcWorld = { collisionFor: () => this.world.overCol, fx: this.world.fx, mapId: 'overworld', transferNpc() {} };
     this.groupInput = {
       pressed: (a) => this.anyPressed(a),
@@ -649,6 +648,8 @@ export class Party {
     const C = this.combat, fi = p.fighter;
     if (C && fi && !fi.down && !p.mount && !p.vehicle && !p.swimming && !this.vote && !scene && (C.pvp || C.enemies.some((e) => e.alive && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 9))) ctx = { ...ctx, y: 'Dodge' };
     if (ctx.x === undefined && (this.vote || this.dialogue.active)) ctx.x = null;
+    // (a page of the dialogue being read: « Next » lights up when it can be turned)
+    if (ctx.a === 'Next' && this.dialogue.reading) ctx = { ...ctx, a: null };
     return ctx;
   }
 
@@ -806,8 +807,42 @@ export class Party {
     this.obj = { text, sub, extra, t: o && o.text === text && o.t < o.secs ? Math.min(o.t, 0.3) : 0, secs };
   }
 
-  toast(text, color = '#fff3c4') { this.toasts.push({ text, color, t: 0, life: Math.max(3.2, 1.2 + String(text).length / 16) }); if (this.toasts.length > 4) this.toasts.shift(); }
-  showBanner(title, sub = '') { this.banner = { title, sub, t: 0 }; }
+  // A note in the right-hand column: three on screen at most (the next ones wait their turn),
+  // two rows each — a longer one is read in the announcement lane instead. The same note again
+  // while it is up counts up (« ×2 ») rather than stacking; a countdown’s numbers (« 3 », « 2 »)
+  // and a count going up (« Flag 2/7 », « Flag 3/7 ») follow one another in place.
+  toast(text, color = '#fff3c4') {
+    text = String(text);
+    if (wrap(text, this.toastW()).length > 2) { this.lane.push({ kind: 'hint', title: text, color, dur: noteTime(text) }); return; }
+    const key = /^\d+$/.test(text) ? '#' : text.replace(/\d+(?=\s*\/\s*\d)/g, '#');
+    const same = this.toasts.find((q) => q.color === color && q.key === key);
+    if (same) {
+      if (same.base === text) same.text = `${text} ×${++same.n}`; else { same.text = same.base = text; same.n = 1; }
+      same.t = Math.min(same.t, 0.25);
+      return;
+    }
+    // (`late`: said while the notes wait — it is for when they come back)
+    this.toasts.push({ text, base: text, key, color, n: 1, t: 0, age: 0, late: this.toastsHeld(), life: Math.max(3.2, 1.2 + visibleLength(text) / 16) });
+    if (this.toasts.length > TOASTS + 4) this.toasts.splice(TOASTS, 1);
+  }
+  toastW() { return Math.min(Math.round(this.display.w * 0.45), 240); }
+  // The dialogue box, a letter, a vote or a scene has the screen: the notes wait. The ones that
+  // were up before it are old news once it has lasted a few seconds; the ones said meanwhile
+  // (« You get: … » in the middle of a talk) show when it is over — unless that takes too long.
+  toastsHeld() { return this.dialogue.active || !!this.vote || !!(this.stage && (this.stage.active || this.stage.barK > 0)); }
+  updateToasts(dt) {
+    if (this.toastsHeld()) {
+      this.toastWait = (this.toastWait || 0) + dt;
+      for (const q of this.toasts) q.age += dt;
+      if (this.toasts.length) this.toasts = this.toasts.filter((q) => (q.late ? q.age <= 25 : this.toastWait <= 4));
+      return;
+    }
+    this.toastWait = 0;
+    this.toasts.forEach((q, i) => { if (i < TOASTS) q.t += dt; else q.age += dt; });
+    this.toasts = this.toasts.filter((q, i) => (i < TOASTS ? q.t < q.life : q.age < 8));
+  }
+  // A banner in the announcement lane (opts.keep: it shows however long it has to wait)
+  showBanner(title, sub = '', opts = {}) { this.lane.push({ kind: 'banner', title: String(title), sub: sub ? String(sub) : '', keep: !!opts.keep }); }
 
   spawnNpc(id, x, z, face = { x: 0, z: 1 }) {
     let n = this.npcs.find((q) => q.id === id);
@@ -911,6 +946,14 @@ export class Party {
     // the wheel too (not over someone’s own menu, the map or the host’s menu: they scroll or zoom those)
     this.wheelCd = Math.max(0, (this.wheelCd || 0) - dt);
     if (g.input.mouse.wheel && !this.wheelCd && !this.bigMapOpen && !this.host.menu && !this.tvmenus.pointing()) { this.host.act('zoom', g.input.mouse.wheel < 0 ? 1 : -1); g.input.mouse.wheel = 0; this.wheelCd = 0.25; }
+    // the display: V on the big screen’s keyboard (LT on a gamepad), or a click on the corner’s
+    // minimap — in the minimal display, on the little map that comes up there under the mouse
+    this.mouseIdle = g.input.mouse.moved ? 0 : (this.mouseIdle || 0) + dt;
+    if (this.phase !== 'lobby' && !this.host.menu && !this.bigMapOpen && !this.vote) {
+      const R = this.miniRect || this.miniSpot, gi = g.input;
+      if (gi.pressed('hud')) this.cycleHud();
+      else if (R && gi.mouse.pressed && gi.mouseIn(R.x, R.y, R.w, R.h) && !this.tvmenus.pointing() && !this.dialogue.active) { gi.mouse.pressed = false; this.cycleHud(); }
+    }
     this.saveT = (this.saveT || 0) + dt;
     if (this.saveT >= 30) { this.saveT = 0; this.saveNow(); }
     if (this.paused) { this.updatePaused(dt); return; }
@@ -1039,10 +1082,10 @@ export class Party {
       if (p.kind === 'phone') this.sendCtx(p, this.padCtx(p, ctx));
       else this.updateChips(p, ctx, dt);
     }
-    for (const q of this.toasts) q.t += dt;
+    this.updateToasts(dt);
     if (this.obj) this.obj.t += dt;
-    this.toasts = this.toasts.filter((q) => q.t < (q.life || 3.2));
-    if (this.banner) { this.banner.t += dt; if (this.banner.t > 3.6) this.banner = null; }
+    this.lane.update(dt);
+    if (this.note) { this.note.t += dt; if (this.note.t > 1.8) this.note = null; }
     this.updateAmbience(dt);
     this.updateCamera(dt);
   }
@@ -1106,8 +1149,8 @@ export class Party {
 
   // the host paused: the world holds its breath (menus, zoom & phones still work)
   updatePaused(dt) {
-    for (const q of this.toasts) q.t += dt;
-    this.toasts = this.toasts.filter((q) => q.t < (q.life || 3.2));
+    this.updateToasts(dt);
+    if (this.note) { this.note.t += dt; if (this.note.t > 1.8) this.note = null; }
     this.updateCamera(dt);
   }
 
@@ -1522,7 +1565,7 @@ export class Party {
     // ---- UI layer
     const ctx = d.ctx;
     ctx.clearRect(0, 0, d.w, d.h);
-    this.miniRect = null;
+    this.miniRect = null; this.miniSpot = null; this.noteRect = null;
     if (this.fade < 1) {
       for (const v of cam.views) {
         ctx.save(); this.clipPath(ctx, v, true);
@@ -1567,6 +1610,7 @@ export class Party {
     this.drawToasts(ctx);
     if (own && this.bigMapOpen) this.drawBigMap(ctx);
     if (own && this.zoom.flashT > 0 && !this.host.menu) this.drawZoomFlash(ctx);
+    else if (own && this.note && !this.host.menu) this.drawNote(ctx);
     if (this.paused && !(own && this.host.menu)) this.drawPaused(ctx);
     if (own && this.host.menu) this.host.drawMenu(ctx);
   }
@@ -1714,7 +1758,7 @@ export class Party {
   // do here and now (updateChips), on their own keys — [E] Row [Space] Get out, (A) Board (B) Dive.
   // Heroes side by side get their rows stacked; a row stays inside its view.
   drawChips(ctx, v) {
-    if (this.remoteFor || this.fade > 0.3 || (this.stage && (this.stage.active || this.stage.barK > 0))) return;
+    if (this.remoteFor || this.fade > 0.3 || (this.stage && (this.stage.active || this.stage.barK > 0)) || this.hudMode() === 'minimal') return;
     const d = this.display, R = v.rect, a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h), rows = [];
     for (const p of v.members) {
       const c = p.chips;
@@ -1823,46 +1867,35 @@ export class Party {
     this.mapCloseR = closeButton(ctx, W - 4, 1);
   }
 
+  // The announcement lane (one banner, title card or long note at a time) and the column of
+  // notes on the right: under the clock, stepping down past whatever is there — the lane’s
+  // announcement, a race’s card, a boss’s bar, the objective (when a menu pushes them left).
   drawToasts(ctx) {
-    // (a player's menu open on the right: the notes & the banner keep to the screen left of it)
-    const W = this.tvmenus.open ? Math.max(140, this.display.w - this.tvmenus.width() - 10) : this.display.w, b = this.banner;
-    // toasts step down under the banner (and the race card) rather than hide behind them
+    // (a player’s menu open on the right: the notes & the lane keep to the screen left of it)
+    const W = this.tvmenus.open ? Math.max(140, this.display.w - this.tvmenus.width() - 10) : this.display.w;
+    this.lane.draw(ctx, W, this.display.h);
+    if (this.toastsHeld()) return;
     const avoid = [];
-    if (b) {
-      const big = measure(b.title) * 2 <= W - 24, by = Math.round(this.display.h * 0.2);
-      const bw = Math.max(measure(b.title) * (big ? 2 : 1), b.sub ? measure(b.sub) : 0);
-      avoid.push({ x0: W / 2 - bw / 2 - 4, x1: W / 2 + bw / 2 + 4, y0: by - 3, y1: by + (b.sub ? 30 : 20) });
-    }
+    for (const rc of [this.lane.rect, this.races && this.races.cardRect, this.events && this.events.cardRect, this.camp && this.camp.cardRect, this.combat && this.combat.barRect, this.objectiveRect && this.objectiveRect(), this.noteRect]) if (rc) avoid.push({ x0: rc.x - 2, x1: rc.x + rc.w + 2, y0: rc.y - 2, y1: rc.y + rc.h + 2 });
     if (this.phase === 'lobby' && this.storyRect) avoid.push({ x0: this.storyRect.x - 2, x1: this.storyRect.x + this.storyRect.w + 2, y0: this.storyRect.y - 2, y1: this.storyRect.y + this.storyRect.h + 2 });
-    const scene = this.stage && (this.stage.active || this.stage.barK > 0);
-    for (const rc of [this.races && this.races.cardRect, this.events && this.events.cardRect, this.camp && this.camp.cardRect, !scene && this.combat && this.combat.barRect]) if (rc) avoid.push({ x0: rc.x - 2, x1: rc.x + rc.w + 2, y0: rc.y - 2, y1: rc.y + rc.h + 2 });
     avoid.sort((p, q) => p.y0 - q.y0);
-    let y = this.phase === 'lobby' ? 56 : 31;
-    this.toasts.forEach((t) => {
-      const a = Math.min(1, t.t * 4, ((t.life || 3.2) - t.t) * 3);
-      // (long ones — a puzzle room’s rules — wrap)
-      const lines = wrap(t.text, Math.min(W * 0.55, 300));
+    let y = this.phase === 'lobby' ? 56 : this.clockRect ? this.clockRect.y + this.clockRect.h + 4 : 4;
+    const tw0 = this.toastW();
+    this.toasts.slice(0, TOASTS).forEach((q) => {
+      const a = Math.min(1, q.t * 4, (q.life - q.t) * 3);
+      const lines = wrap(q.text, tw0).slice(0, 2);
       const tw = Math.max(...lines.map((l) => measure(l))) + 14, th = 3 + lines.length * 10;
       const x = Math.round(W - tw - 6);
       for (const r of avoid) if (x < r.x1 && x + tw > r.x0 && y < r.y1 && y + th > r.y0) y = r.y1 + 2;
       const ty = y;
       y += th + 2;
-      ctx.globalAlpha = a;
+      q.rect = { x, y: ty, w: tw, h: th };
+      ctx.globalAlpha = Math.max(0, a);
       ctx.fillStyle = 'rgba(30,20,40,0.82)'; ctx.fillRect(x, ty, tw, th);
-      ctx.fillStyle = t.color; ctx.fillRect(x, ty, 3, th);
+      ctx.fillStyle = q.color; ctx.fillRect(x, ty, 3, th);
       lines.forEach((l, k) => drawText(ctx, l, x + 8, ty + 3 + k * 10, { color: '#fff7e6' }));
       ctx.globalAlpha = 1;
     });
-    if (this.banner) {
-      const b = this.banner, a = Math.min(1, b.t * 3, (3.6 - b.t) * 2);
-      ctx.globalAlpha = Math.max(0, a);
-      const y = Math.round(this.display.h * 0.2);
-      // big letters when it fits, else normal size (long names, long languages)
-      const big = measure(b.title) * 2 <= W - 24;
-      drawText(ctx, b.title, W / 2, y + (big ? 0 : 6), { color: '#fff3c4', align: 'center', scale: big ? 2 : 1, outline: '#3b2a2e' });
-      if (b.sub) drawText(ctx, b.sub, W / 2, y + 20, { color: '#f6d38f', align: 'center', outline: '#3b2a2e' });
-      ctx.globalAlpha = 1;
-    }
   }
 
   // ------------------------------------------------------------------ lobby screen
@@ -1999,15 +2032,83 @@ export class Party {
     drawText(ctx, sub, x + 11, y + 15, { color: UI.inkSoft });
   }
 
+  // ---- the display (the Settings’ « Display », as in the solo game): full · compact (a small
+  // minimap, the hour alone, the chat’s last two lines) · minimal (the world to itself: no
+  // minimap, no clock, no chat log, no button chips). V on the big screen’s keyboard, LT on a
+  // gamepad, a click on the minimap, the host’s menu or a player’s own page changes it.
+  hudMode() { return HUD_MODES.includes(this.settings.hud) ? this.settings.hud : 'full'; }
+  cycleHud(dir = 1) {
+    const st = this.settings;
+    st.hud = HUD_MODES[(HUD_MODES.indexOf(this.hudMode()) + (dir < 0 ? -1 : 1) + HUD_MODES.length) % HUD_MODES.length];
+    saveSettings(st);
+    this.note = { t: 0 };
+    this.zoom.flashT = 0;
+    this.host.sentKey = '';
+    audio.sfx('select', { volume: 0.5 });
+  }
+
+  // « Display: Compact » for a moment after a change (the solo game’s words), with its three pips
+  drawNote(ctx) {
+    const n = this.note, mode = this.hudMode(), text = t('Display: {m}', { m: t(HUD_NAMES[mode]) });
+    // (in the middle of the top — left of a player’s menu, under the objective when it reaches there)
+    const W = this.tvmenus.open ? Math.max(140, this.display.w - this.tvmenus.width() - 10) : this.display.w, o = this.objectiveRect && this.objectiveRect();
+    const w = measure(text) + 40, x = Math.round(W / 2 - w / 2), y = o && x < o.x + o.w + 4 && x + w > o.x - 4 && o.y + o.h > 22 ? o.y + o.h + 5 : 26;
+    this.noteRect = { x: x - 1, y: y - 1, w: w + 2, h: 15 };
+    ctx.globalAlpha = Math.max(0, Math.min(1, n.t * 8, (1.8 - n.t) * 3));
+    ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, w + 2, 15);
+    ctx.fillStyle = '#3b2e4a'; ctx.fillRect(x, y, w, 13);
+    // (a little screen, as full as the display)
+    ctx.fillStyle = '#f6d38f'; ctx.fillRect(x + 4, y + 3, 9, 7);
+    ctx.fillStyle = '#3b2e4a'; ctx.fillRect(x + 5, y + 4, 7, 5);
+    ctx.fillStyle = '#f6d38f';
+    if (mode !== 'minimal') { ctx.fillRect(x + 9, y + 7, 2, 1); ctx.fillRect(x + 9, y + 5, 2, 1); }
+    if (mode === 'full') { ctx.fillRect(x + 6, y + 5, 2, 1); ctx.fillRect(x + 6, y + 7, 1, 1); }
+    drawText(ctx, text, x + 17, y + 3, { color: '#fff3c4' });
+    HUD_MODES.forEach((m, j) => { ctx.fillStyle = j < 3 - HUD_MODES.indexOf(mode) ? '#f6c65b' : '#6a5a7a'; ctx.fillRect(x + w - 4 - (3 - j) * 4, y + 4, 3, 5); });
+    ctx.globalAlpha = 1;
+  }
+
   // the adventure HUD is drawn by the activity (charms, badges…); the
   // objective card is shared
-  // the clock (top right): the day, the time, the sky
+  // the clock (top right): the day, the time, the sky — compact: the hour alone; minimal: none
   drawHud(ctx) {
-    const s = this.state, W = this.display.w;
+    const s = this.state, W = this.display.w, mode = this.hudMode();
+    this.clockRect = null;
+    if (mode === 'minimal') return;
+    if (mode === 'compact') {
+      const txt = timeLabel(s.hour), w = measure(txt) + 22;
+      panel(ctx, W - w - 5, 4, w, 17);
+      sunMoon(ctx, W - w, 9, s.hour, s.weather);
+      drawText(ctx, txt, W - 10, 9, { color: UI.ink, align: 'right' });
+      this.clockRect = { x: W - w - 5, y: 4, w, h: 17 };
+      return;
+    }
     const txt = dayLabel(s.day) + ' · ' + timeLabel(s.hour), w = measure(txt) + 30;
     panel(ctx, W - w - 5, 4, w, 23);
     weatherIcon(ctx, W - w + 1, 7, s.weather, s.hour);
     drawText(ctx, txt, W - 11, 11, { color: UI.ink, align: 'right' });
+    this.clockRect = { x: W - w - 5, y: 4, w, h: 23 };
+  }
+
+  // The corner minimap of an activity out in the world (compact: a small one; minimal: none —
+  // a little map comes up there under the mouse, to click the display back). `hide`: the
+  // activity has the corner for something else.
+  drawCornerMap(ctx, hide = false) {
+    const W = this.display.w, H = this.display.h, mode = this.hudMode(), gi = this.game.input;
+    this.miniSpot = null;
+    if (hide || this.cam.layout.type === 'grid' || this.dialogue.active || this.vote || this.bigMapOpen) return;
+    const full = Math.min(110, Math.round(W * 0.2)), mw = mode === 'compact' ? Math.round(full * 0.6) : full, mh = Math.round(mw * 0.62);
+    if (mode !== 'minimal') { this.drawMiniMap(ctx, W - mw - 7, H - 21 - mh - 5, mw, mh); return; }
+    if (this.remoteFor) return;
+    const R = { x: W - 29, y: H - 46, w: 22, h: 20 }, m = gi.mouse;
+    this.miniSpot = R;
+    const near = (this.mouseIdle || 0) < 4 && m.x > R.x - 46 && m.y > R.y - 40;
+    this.spotA = (this.spotA || 0) + ((near ? 1 : 0) - (this.spotA || 0)) * Math.min(1, (this.lastDt || 1 / 60) * 8);
+    if (this.spotA < 0.03) return;
+    ctx.globalAlpha = this.spotA;
+    ctx.fillStyle = gi.mouseIn(R.x, R.y, R.w, R.h) ? 'rgba(20,14,28,0.8)' : 'rgba(20,14,28,0.55)'; ctx.fillRect(R.x, R.y, R.w, R.h);
+    drawGlyph(ctx, 'map', R.x + 3, R.y + 2, 1);
+    ctx.globalAlpha = 1;
   }
 
   // where the objective card sits right now (the race & event cards keep clear of it)
@@ -2099,6 +2200,7 @@ export class Party {
     // the old activity’s scripts wait on lines, timers & votes that will
     // never come back: they just stop there
     this.dialogue.cur = null; this.dialogue.letter = null;
+    this.lane.clear();
     this.waits = [];
     if (this.vote) { this.vote = null; for (const p of this.players) if (p.kind === 'phone') this.net.send(p.id, { t: 'screen', s: 'play' }); }
     this.choosing = false;

@@ -4,10 +4,15 @@
 //
 // World v7 comic timing, inline in any line: {p} a beat's pause, {pp} a longer
 // one (between two sentences, « end.{p}Next », it stands for their space), {shake}…{/} trembling words, {wave}…{/} wavy ones, {big}…{/} a shout
-// twice the size (on a line of its own). Options: expr, vars, speed (×), shake
-// (the box jolts as the line opens), auto (seconds: the line moves on by itself).
+// twice the size (on a line of its own), {key}…{/} the words that must be understood, bold.
+// Options: expr, vars, speed (×), shake (the box jolts as the line opens), auto (seconds: the
+// line moves on by itself).
+//
+// The box holds three rows: a longer line is read a page at a time (cut at the end of a
+// sentence where one fits), the button turns the page. A page all there stays a moment before
+// a press can turn it (`readTime`) — the ↓ fills up meanwhile.
 
-import { drawText, measure, wrap, stripTags, parseRich } from '../engine/font.js';
+import { drawText, measure, wrap, stripTags, parseRich, keyColor } from '../engine/font.js';
 import { COLORS } from '../art/palette.js';
 import { panel, tag, UI } from './ui.js';
 import { audio } from '../engine/audio.js';
@@ -17,6 +22,29 @@ const TAG_COLORS = {
   hollis: '#4f7a4a', rosa: '#c8574f', pip: '#d9772f', finn: '#3f6f9e', ivy: '#4f955a', theo: '#8a5234',
   mabel: '#7d5f9e', sol: '#b8862a', wren: '#c86a8a', player: '#6b4330', narrator: '#5a4a5a',
 };
+const ROWS = 3, ROW_H = 13;              // a page of the box (a shout takes two rows)
+const rowsOf = (lines) => lines.reduce((n, l) => n + (l.startsWith('{big}') ? 2 : 1), 0);
+
+// A text’s sentences: cut at the space after . ! ? … (and the quotes that close them), outside
+// any tag — « M. » or « Dr. » don’t end one.
+function sentences(s) {
+  const out = [];
+  let depth = 0, from = 0;
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '{') { const e = s.indexOf('}', i); if (e > i) { depth = s.slice(i + 1, e) === '/' ? Math.max(0, depth - 1) : depth + 1; i = e; continue; } }
+    if (s[i] !== ' ' || depth || i === from) continue;
+    let j = i - 1;
+    const back = () => { while (j >= from && s[j] === '}') j = s.lastIndexOf('{', j) - 1; };
+    back();
+    if (j >= from && '»”"’\')]'.includes(s[j])) { j--; back(); while (j >= from && /\s/.test(s[j])) j--; back(); }
+    if (j < from || !'.!?…'.includes(s[j])) continue;
+    if (s[j] === '.' && /(^|[\s}])\p{Lu}\p{L}{0,2}$/u.test(s.slice(from, j))) continue;
+    out.push(s.slice(from, i));
+    from = i + 1;
+  }
+  if (from < s.length) out.push(s.slice(from));
+  return out;
+}
 
 export class Dialogue {
   constructor(game) {
@@ -46,8 +74,9 @@ export class Dialogue {
       .replaceAll('{petkind}', t(s.player.pet.kind)); // 'cat' → « chat »
   }
 
-  // {p}/{pp} pauses out of the text (their place counted in visible letters),
-  // {big} lines kept whole, then the lines wrapped to the box
+  // {p}/{pp} pauses out of the text (their place counted in visible letters), {big} lines kept
+  // whole, the rest wrapped to the box — then cut into the pages the box shows one at a time:
+  // [{ lines, total (visible letters), pauses ([letters into the page, seconds]) }]
   layout(text, w) {
     const pauses = [];
     let out = '', plain = 0;
@@ -62,28 +91,81 @@ export class Dialogue {
       if (text[i] === '{') { const e = text.indexOf('}', i); if (e > i) { out += text.slice(i, e + 1); i = e; continue; } }
       out += text[i]; plain++;
     }
-    // a shout stands on a line of its own, at twice the size
-    const parts = out.split(/(\{big\}.*?\{\/\})/);
-    const lines = [];
-    for (const part of parts) {
+    // a page takes whole sentences while they fit its rows; a shout stands on a line of its
+    // own, at twice the size (`run`: the page’s last sentences, still to wrap)
+    const pages = [];
+    let pg = null;
+    const fresh = () => { pg = { lines: [], run: '' }; pages.push(pg); };
+    const settle = () => { if (pg && pg.run) { pg.lines.push(...wrap(pg.run, w)); pg.run = ''; } };
+    for (const part of out.split(/(\{big\}.*?\{\/\})/)) {
       if (!part.trim()) continue;
-      if (part.startsWith('{big}')) lines.push(part.trim());
-      else lines.push(...wrap(part.trim(), w));
+      if (part.startsWith('{big}')) {
+        settle();
+        if (!pg || rowsOf(pg.lines) + 2 > ROWS) fresh();
+        pg.lines.push(part.trim());
+        continue;
+      }
+      for (const s of sentences(part.trim())) {
+        if (!pg) fresh();
+        const test = pg.run ? pg.run + ' ' + s : s;
+        if (rowsOf(pg.lines) + wrap(test, w).length <= ROWS) { pg.run = test; continue; }
+        if (pg.run || pg.lines.length) { settle(); fresh(); }
+        const rows = wrap(s, w);
+        // (a sentence taller than the box: its rows shared out evenly over the pages it takes)
+        for (let k = Math.ceil(rows.length / ROWS), i = 0; k > 0; k--) {
+          const n = Math.ceil((rows.length - i) / k);
+          if (i) fresh();
+          if (k > 1) pg.lines.push(...rows.slice(i, i + n)); else pg.run = rows.slice(i, i + n).join(' ');
+          i += n;
+        }
+      }
+      settle();
     }
-    return { lines, pauses };
+    // each pause to its page: every row is a run of the text’s letters, minus the spaces the
+    // breaks took
+    const flat = stripTags(out);
+    let at = 0;
+    for (const q of pages) {
+      q.total = 0; q.pauses = [];
+      q.spans = q.lines.map((l) => { const s = stripTags(l), a = Math.max(at, flat.indexOf(s, at)); at = a + s.length; q.total += s.length; return [a, s.length]; });
+    }
+    for (const [p, sec] of pauses) {
+      let hit = null;
+      for (const q of pages) { let n = 0; for (const [a, len] of q.spans) { if (a < p) hit = [q, n + Math.min(len, p - a)]; n += len; } }
+      if (hit) hit[0].pauses.push([hit[1], sec]);
+    }
+    return pages;
   }
 
   open(who, text, opts, resolve, choices = null) {
     const info = this.speakerInfo(who);
     const w = this.boxW() - (info.portrait ? 70 : 20);
-    const { lines, pauses } = text ? this.layout(this.format(t(text, opts.vars)), w) : { lines: [], pauses: [] };
+    const pages = text ? this.layout(this.format(t(text, opts.vars)), w) : [];
+    if (!pages.length) pages.push({ lines: [], total: 0, pauses: [] });
     this.cur = {
-      who, info, lines, pauses, shown: 0, hold: 0, total: lines.reduce((n, l) => n + stripTags(l).length, 0), resolve, expr: opts.expr || 'talk',
-      choices, sel: 0, blipN: 0, cancel: opts.cancel, auto: opts.auto, autoT: 0, speed: opts.speed || 1, jolt: opts.shake ? 0.35 * opts.shake : 0,
+      who, info, pages, page: 0, hold: 0, resolve, expr: opts.expr || 'talk',
+      choices, sel: 0, blipN: 0, cancel: opts.cancel, auto: opts.auto, speed: opts.speed || 1, jolt: opts.shake ? 0.35 * opts.shake : 0,
     };
+    this.turn(0);
     if (opts.sfx) audio.sfx(opts.sfx, { volume: 0.6 });
     this.game.onSpeak && this.game.onSpeak(who, true);
   }
+
+  // the page the box shows (`lines`, `total` & `shown` speak of it alone)
+  turn(i) {
+    const c = this.cur, q = c.pages[i];
+    Object.assign(c, { page: i, lines: q.lines, total: q.total, pauses: q.pauses, shown: 0, hold: 0, age: 0, readT: 0, autoT: 0 });
+    c.lock = this.readTime(c);
+  }
+
+  // How long a page stays, once it is all there, before a press can turn it or pick an answer
+  // (Party Mode: the time to read it — party.js)
+  readTime() { return 0.2; }
+  // (…and how soon after it opens a press shows it whole)
+  openTime() { return 0; }
+
+  // the page all there, its time not over yet: presses wait
+  get reading() { const c = this.cur; return !!c && c.shown >= c.total && c.readT < c.lock; }
 
   say(who, text, opts = {}) {
     return new Promise((resolve) => this.open(who, text, opts, resolve));
@@ -95,7 +177,8 @@ export class Dialogue {
 
   showLetter(title, text, sign, vars) {
     return new Promise((resolve) => {
-      this.letter = { title: t(title, vars), text: this.format(t(text, vars)), sign: sign ? t(sign, vars) : sign, shown: 0, resolve, t: 0 };
+      this.letter = { title: t(title, vars), text: this.format(t(text, vars)), sign: sign ? t(sign, vars) : sign, shown: 0, resolve, t: 0, readT: 0 };
+      this.letter.lock = this.readTime(this.letter);
       audio.sfx('page');
     });
   }
@@ -106,15 +189,16 @@ export class Dialogue {
     this.t += dt;
     const speed = 42 * (this.game.settings.textSpeed || 1);
     if (this.letter) {
-      const L = this.letter;
+      const L = this.letter, n = stripTags(L.text).length;
       L.t += dt;
       const before = Math.floor(L.shown);
-      L.shown = Math.min(stripTags(L.text).length, L.shown + dt * speed * 1.4);
+      L.shown = Math.min(n, L.shown + dt * speed * 1.4);
       if (Math.floor(L.shown) !== before && Math.floor(L.shown) % 3 === 0) audio.sfx('typewriter', { volume: 0.35 });
+      if (L.shown >= n) L.readT += dt;
       if (input.pressed('interact') || input.pressed('cancel') || input.mouse.pressed) {
         input.consume('cancel');
-        if (L.shown < stripTags(L.text).length) L.shown = stripTags(L.text).length;
-        else { this.letter = null; audio.sfx('page'); L.resolve(); }
+        if (L.shown < n) { if (L.t >= this.openTime()) L.shown = n; }
+        else if (L.readT >= L.lock) { this.letter = null; audio.sfx('page'); L.resolve(); }
         input.consume('interact');
       }
       return;
@@ -122,6 +206,7 @@ export class Dialogue {
     const c = this.cur;
     if (!c) return;
     if (c.jolt > 0) c.jolt = Math.max(0, c.jolt - dt);
+    c.age += dt;
     const before = Math.floor(c.shown);
     if (c.hold > 0) c.hold -= dt;
     else {
@@ -134,33 +219,44 @@ export class Dialogue {
       c.blipN++;
       if (c.blipN % 2 === 0) audio.blip({ ...c.info.voice, vary: 3 });
     }
-    const done = c.shown >= c.total;
+    const done = c.shown >= c.total, last = c.page >= c.pages.length - 1;
+    if (done) c.readT += dt;
     const talking = !done && !(c.hold > 0);
     this.game.onSpeak && this.game.onSpeak(c.who, talking);
-    // scenes can let a line move on by itself
-    if (done && c.auto && !c.choices) { c.autoT += dt; if (c.autoT >= c.auto) { this.finish(); return; } }
+    // scenes can let a line move on by itself (a page at a time)
+    if (done && c.auto && !c.choices) { c.autoT += dt; if (c.autoT >= c.auto) { this.advance(); return; } }
+    // (a press counts: not in the blink after the page opens, nor while it is being read)
+    const free = done ? c.readT >= c.lock : c.age >= this.openTime();
 
-    if (c.choices && done) {
+    if (c.choices && done && last) {
       if (input.repeat('up')) { c.sel = (c.sel + c.choices.length - 1) % c.choices.length; audio.sfx('select'); }
       if (input.repeat('down')) { c.sel = (c.sel + 1) % c.choices.length; audio.sfx('select'); }
       // mouse hover / click
       if (this.choiceRects) {
         this.choiceRects.forEach((r, i) => {
-          if (input.mouseIn(r.x, r.y, r.w, r.h)) {
+          if (this.cur === c && input.mouseIn(r.x, r.y, r.w, r.h)) {
             if (input.mouse.moved && c.sel !== i) { c.sel = i; }
-            if (input.mouse.pressed) { this.pick(i); }
+            if (input.mouse.pressed && free) { this.pick(i); }
           }
         });
+        if (this.cur !== c) return;
       }
-      if (input.pressed('interact')) { input.consume('interact'); this.pick(c.sel); return; }
-      if (input.pressed('cancel') && c.cancel !== undefined) { input.consume('cancel'); this.pick(c.cancel); return; }
+      if (input.pressed('interact')) { input.consume('interact'); if (free) this.pick(c.sel); return; }
+      if (input.pressed('cancel') && c.cancel !== undefined) { input.consume('cancel'); if (free) this.pick(c.cancel); return; }
       return;
     }
-    if (input.pressed('interact') || (input.mouse.pressed && !c.choices)) {
+    if (input.pressed('interact') || (input.mouse.pressed && (!c.choices || !last))) {
       input.consume('interact');
-      if (!done) c.shown = c.total;
-      else this.finish();
+      if (!free) return;
+      if (!done) { c.shown = c.total; c.hold = 0; }
+      else this.advance();
     }
+  }
+
+  // the next page — or, after the last, the line is over
+  advance() {
+    const c = this.cur;
+    if (c.page < c.pages.length - 1) { this.turn(c.page + 1); audio.sfx('page', { volume: 0.3 }); } else this.finish();
   }
 
   pick(i) {
@@ -204,7 +300,7 @@ export class Dialogue {
       tx = bx + 62;
     }
     if (c.info.name) tag(ctx, bx + 6, by - 9, c.info.name, c.info.color);
-    // text (a shout takes two rows)
+    // text: the page’s rows (a shout takes two)
     let remaining = Math.floor(c.shown), row = 0;
     const ink = c.who && c.who !== 'narrator' ? UI.ink : '#5a4a6a';
     c.lines.forEach((line) => {
@@ -212,15 +308,24 @@ export class Dialogue {
       const n = Math.max(0, Math.min(len, remaining));
       remaining -= len;
       const big = line.startsWith('{big}');
-      if (n > 0) this.drawLine(ctx, line, tx, by + 9 + row * 11, ink, n, big ? 2 : 1);
+      if (n > 0) this.drawLine(ctx, line, tx, by + 10 + row * ROW_H, ink, n, big ? 2 : 1);
       row += big ? 2 : 1;
     });
-    const done = c.shown >= c.total;
-    if (done && !c.choices && Math.floor(this.t * 2.5) % 2 === 0) {
-      drawText(ctx, '↓', bx + bw - 14, by + bh - 14, { color: UI.gold });
+    const done = c.shown >= c.total, last = c.page >= c.pages.length - 1;
+    if (done && !(c.choices && last)) {
+      // the ↓: pale while the page is being read, filling with gold, then lit (and nodding)
+      const k = c.lock > 0 ? Math.min(1, c.readT / c.lock) : 1, ax = bx + bw - 14, ay = by + bh - 14 + (k >= 1 && Math.floor(this.t * 2.5) % 2 ? 1 : 0);
+      drawText(ctx, '↓', ax, ay, { color: '#dcc7a0' });
+      if (k > 0) {
+        ctx.save(); ctx.beginPath(); ctx.rect(ax, ay, 5, k >= 1 ? 9 : Math.round(k * 6) + 1); ctx.clip();
+        drawText(ctx, '↓', ax, ay, { color: k >= 1 ? UI.gold : '#e9bd5a' });
+        ctx.restore();
+      }
+      // (a line of several pages: which one this is)
+      if (c.pages.length > 1) drawText(ctx, `${c.page + 1}/${c.pages.length}`, ax - 4, by + bh - 14, { color: '#c4ab84', align: 'right' });
     }
     // choices
-    if (c.choices && done) {
+    if (c.choices && done && last) {
       const cw = Math.max(...c.choices.map((o) => measure(o))) + 26;
       const ch = c.choices.length * 12 + 10;
       const cx = bx + bw - cw - 4, cy = by - ch - 4;
@@ -230,9 +335,10 @@ export class Dialogue {
         const oy = cy + 6 + i * 12;
         this.choiceRects.push({ x: cx, y: oy - 1, w: cw, h: 12 });
         if (i === c.sel) {
+          // (the heart lights once the answer can be picked)
           ctx.fillStyle = UI.sel;
           ctx.fillRect(cx + 4, oy - 1, cw - 8, 11);
-          drawText(ctx, '♥', cx + 7, oy + 1, { color: UI.heart });
+          drawText(ctx, '♥', cx + 7, oy + 1, { color: c.readT >= c.lock ? UI.heart : '#e3b9a8' });
         }
         drawText(ctx, o, cx + 17, oy + 1, { color: UI.ink });
       });
@@ -242,7 +348,7 @@ export class Dialogue {
   // one line of dialogue, with its trembling / wavy words
   drawLine(ctx, line, x, y, ink, maxChars, scale) {
     if (!/\{(shake|wave|big)\}/.test(line)) { drawText(ctx, line, x, y, { color: ink, maxChars, scale }); return; }
-    const stack = [{ color: ink, fx: null }];
+    const stack = [{ color: ink, fx: null, bold: false }];
     let cx = x, count = 0;
     for (let i = 0; i < line.length && count < maxChars; i++) {
       const ch = line[i];
@@ -251,8 +357,9 @@ export class Dialogue {
         if (e > i) {
           const tag = line.slice(i + 1, e), top = stack[stack.length - 1];
           if (tag === '/') { if (stack.length > 1) stack.pop(); }
-          else if (tag === 'shake' || tag === 'wave' || tag === 'big') stack.push({ color: top.color, fx: tag === 'big' ? top.fx : tag });
-          else stack.push({ color: tag.startsWith('#') ? tag : (COLORS[tag] || ink), fx: top.fx });
+          else if (tag === 'shake' || tag === 'wave' || tag === 'big') stack.push({ ...top, fx: tag === 'big' ? top.fx : tag });
+          else if (tag === 'key') stack.push({ ...top, color: keyColor(ink), bold: true });
+          else stack.push({ ...top, color: tag.startsWith('#') ? tag : (COLORS[tag] || ink) });
           i = e;
           continue;
         }
@@ -261,8 +368,8 @@ export class Dialogue {
       let ox = 0, oy = 0;
       if (top.fx === 'shake') { ox = Math.round((Math.random() - 0.5) * 2); oy = Math.round((Math.random() - 0.5) * 2); }
       else if (top.fx === 'wave') oy = Math.round(Math.sin(this.t * 9 + count * 0.7) * 1.5);
-      drawText(ctx, ch, cx + ox, y + oy, { color: top.color, scale });
-      cx += measure(ch, scale) + scale;
+      drawText(ctx, ch, cx + ox, y + oy, { color: top.color, scale, bold: top.bold });
+      cx += measure(ch, scale, top.bold) + scale;
       count++;
     }
   }
@@ -298,7 +405,11 @@ export class Dialogue {
     const sx = px + pw - 22, sy = py + 6;
     ctx.fillStyle = '#c8454f'; ctx.fillRect(sx, sy + 1, 10, 8); ctx.fillRect(sx + 1, sy, 8, 10);
     ctx.fillStyle = '#e97d8f'; ctx.fillRect(sx + 3, sy + 3, 2, 2);
-    if (L.shown >= stripTags(L.text).length && Math.floor(this.t * 2.5) % 2 === 0) drawText(ctx, '↓', px + pw / 2, py + ph - 12, { color: UI.gold, align: 'center' });
+    // (pale while it is being read, then lit and nodding)
+    if (L.shown >= stripTags(L.text).length) {
+      const open = L.readT >= L.lock;
+      drawText(ctx, '↓', px + pw / 2, py + ph - 12 + (open && Math.floor(this.t * 2.5) % 2 ? 1 : 0), { color: open ? UI.gold : '#dcc7a0', align: 'center' });
+    }
   }
 }
 

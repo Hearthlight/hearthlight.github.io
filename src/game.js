@@ -1049,7 +1049,8 @@ export class Game {
       key: async (code, frames = 2) => { g.input.keys.add(code); for (let i = 0; i < frames; i++) await tick(); g.input.keys.delete(code); await tick(); },
       hold: async (code, sec = 1) => { g.input.keys.add(code); for (let i = 0; i < sec * 60; i++) await tick(); g.input.keys.delete(code); await tick(); },
       newGame: async (name = 'Alex', look = {}) => { g.toCreator(); g.creator.name = name; Object.assign(g.creator.look, look); g.creator.finish(); await tick(); },
-      skip: async (n = 80) => { for (let i = 0; i < n && (g.dialogue.active || g.world.busy); i++) { g.input.keys.add('KeyE'); await tick(); g.input.keys.delete('KeyE'); for (let k = 0; k < 4; k++) await tick(); } },
+      // (a page all there stays a blink before E can turn it: wait that out)
+      skip: async (n = 80) => { for (let i = 0; i < n && (g.dialogue.active || g.world.busy); i++) { g.input.keys.add('KeyE'); await tick(); g.input.keys.delete('KeyE'); for (let k = 0; k < 4 || (k < 30 && g.dialogue.reading); k++) await tick(); } },
       tp: (x, z, map = null) => { const w = g.world; if (map && map !== w.mapId) w.setMap(map, x, z); else { w.player.pos.x = x; w.player.pos.z = z; } w.snapCamera(); },
       hour: (h) => { g.state.hour = h; },
       give: (id, n = 1) => g.world.giveItem(id, n),

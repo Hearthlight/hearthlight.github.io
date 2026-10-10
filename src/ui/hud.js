@@ -54,6 +54,14 @@ export function weatherIcon(ctx, x, y, weather, hour) {
   ctx.fillRect(x - 1, y - 1, 18, 1); ctx.fillRect(x - 1, y + 16, 18, 1); ctx.fillRect(x - 1, y, 1, 16); ctx.fillRect(x + 16, y, 1, 16);
 }
 
+// a small clock’s little sky: a sun, a moon, a cloud (8×8)
+export function sunMoon(ctx, x, y, hour, weather) {
+  const night = hour >= 20 || hour < 6, px = (c, a, b, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x + a, y + b, w, h); };
+  if (weather === 'rain' || weather === 'cloudy') { px('#b8bcd0', 1, 2, 6, 3); px('#e8eaf2', 2, 1, 3, 2); if (weather === 'rain') { px('#4d7fc4', 2, 6); px('#4d7fc4', 5, 6); } return; }
+  if (night) { px('#f6f0c8', 2, 1, 4, 6); px('#f6f0c8', 1, 2, 1, 4); px('#fff8dc', 2, 1, 1, 1); return; }
+  px('#ffd66b', 2, 2, 4, 4); px('#fff3a6', 3, 3, 1, 1); for (const [a, b] of [[3, 0], [3, 7], [0, 3], [7, 3]]) px('#f2b63d', a, b, 2, 1);
+}
+
 export class Hud {
   constructor(game) {
     this.game = game;
@@ -362,13 +370,7 @@ export class Hud {
     ctx.globalAlpha = 1;
   }
 
-  // the minimal clock's little sky: a sun, a moon, a cloud (8×8)
-  drawSunMoon(ctx, x, y, hour, weather) {
-    const night = hour >= 20 || hour < 6, px = (c, a, b, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x + a, y + b, w, h); };
-    if (weather === 'rain' || weather === 'cloudy') { px('#b8bcd0', 1, 2, 6, 3); px('#e8eaf2', 2, 1, 3, 2); if (weather === 'rain') { px('#4d7fc4', 2, 6); px('#4d7fc4', 5, 6); } return; }
-    if (night) { px('#f6f0c8', 2, 1, 4, 6); px('#f6f0c8', 1, 2, 1, 4); px('#fff8dc', 2, 1, 1, 1); return; }
-    px('#ffd66b', 2, 2, 4, 4); px('#fff3a6', 3, 3, 1, 1); for (const [a, b] of [[3, 0], [3, 7], [0, 3], [7, 3]]) px('#f2b63d', a, b, 2, 1);
-  }
+  drawSunMoon(ctx, x, y, hour, weather) { sunMoon(ctx, x, y, hour, weather); }
 
   // the save note: a book whose pages turn while it writes, then « Saved »
   drawSaveNote(ctx, xr, y) {

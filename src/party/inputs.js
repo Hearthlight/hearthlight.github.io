@@ -120,7 +120,8 @@ export class PadInput extends BaseInput {
     if (b(14)) x = -1; if (b(15)) x = 1; if (b(12)) y = -1; if (b(13)) y = 1;
     const l = Math.hypot(x, y);
     if (l > 1) { x /= l; y /= l; }
-    this.commit({ a: b(0), b: b(1), x: b(2), y: b(3), u: b(11), m: b(8), t: b(4) }, NO_TAPS, { x, y }, l > 0.92 || b(7) || b(6));
+    // (RT runs; LT is the big screen’s display — party.js `cycleHud`, as the Controls say)
+    this.commit({ a: b(0), b: b(1), x: b(2), y: b(3), u: b(11), m: b(8), t: b(4) }, NO_TAPS, { x, y }, l > 0.92 || b(7));
   }
 }
 

@@ -13,6 +13,7 @@ import { audio } from '../engine/audio.js';
 import { saveSettings } from '../state.js';
 import { t, getLang, setLang, LANGS } from '../i18n.js';
 import { CHAT_MODES } from '../ui/chatdata.js';
+import { HUD_MODES, HUD_NAMES } from '../ui/hud.js';
 
 export const DIFFS = {
   easy: { name: 'Cozy', hp: 0.75, dmg: 0.55, speed: 0.92 },
@@ -146,6 +147,9 @@ export class Host {
       { id: 'zauto', kind: 'button', label: Z.mode === 'auto' ? 'Auto zoom is on' : 'Back to auto zoom', hot: Z.mode === 'auto' },
     ];
     if (P.big) camera.push({ id: 'map', kind: 'button', label: P.bigMapOpen ? 'Hide the world map' : 'Show the world map' });
+    // (how much the big screen shows — the solo game’s three displays: party.js `hudMode`)
+    const hud = P.hudMode();
+    camera.push({ id: 'hud', kind: 'choice', label: 'Display', value: t(HUD_NAMES[hud]), bar: [HUD_MODES.indexOf(hud), HUD_MODES.length], sub: 'everything · a small minimap and the hour · just the world, no minimap' });
     const vol = (k) => Math.round((P.game.settings[k] ?? 0.7) * 10);
     const options = [
       { id: 'diff', kind: 'choice', label: 'Difficulty', value: t(D.name), bar: [DIFF_ORDER.indexOf(this.opts.diff), DIFF_ORDER.length] },
@@ -199,9 +203,10 @@ export class Host {
     if (id === 'end') { this.closeMenu(); P.exit(); return; }
     // (with the world map open, the zoom rocker zooms the map)
     if (id === 'zoom' && P.bigMapOpen && dir) { P.mapView.step(dir > 0 ? 1 : -1, null, null, P.centroid()); return; }
-    if (id === 'zoom') { if (dir) Z.step(dir > 0 ? 1 : -1); else Z.set('auto'); Z.flashT = 1.8; this.opts.zoom = Z.mode; this.saveOpts(); return; }
-    if (id === 'zauto') { Z.set('auto'); Z.flashT = 1.8; this.opts.zoom = 'auto'; this.saveOpts(); return; }
+    if (id === 'zoom') { if (dir) Z.step(dir > 0 ? 1 : -1); else Z.set('auto'); Z.flashT = 1.8; P.note = null; this.opts.zoom = Z.mode; this.saveOpts(); return; }
+    if (id === 'zauto') { Z.set('auto'); Z.flashT = 1.8; P.note = null; this.opts.zoom = 'auto'; this.saveOpts(); return; }
     if (id === 'map') { P.bigMapOpen = !P.bigMapOpen; return; }
+    if (id === 'hud') { P.cycleHud(dir || 1); return; }
     if (id.startsWith('inv:')) { const it = P.inviteItems().find((x) => x.id === id); if (it && it.url) copyText(it.url).then((ok) => P.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a')); return; }
     if (id === 'saves') { if (!from) { this.closeMenu(); g.saves.open(); } return; }
     if (id.startsWith('tv:')) { const q = P.players.find((x) => x.slot === +id.slice(3)); this.closeMenu(); if (q && !P.tvmenus.blocked()) { if (P.tvmenus.cur) P.tvmenus.close(P.tvmenus.cur.p, true); P.tvmenus.openFor(q); } return; }

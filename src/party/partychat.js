@@ -132,7 +132,10 @@ export class PartyChat {
       o.wheel.draw(ctx, Math.round(Math.max(a.x + 62, Math.min(b.x - 62, u.x))), Math.round(Math.max(a.y + 62, Math.min(b.y - 62, u.y))), { x: keyOf(p, 'x') });
     }
   }
+  // (the display — party.js `hudMode` —: compact keeps the last two lines, minimal the newest
+  // one alone, a few seconds)
   drawLog(ctx, W, H) {
-    if (this.chat.log.length) drawChatLog(ctx, this.chat, 6, H - 30, Math.min(220, Math.round(W * 0.36)));
+    const m = this.P.hudMode(), o = m === 'minimal' ? { rows: 1, fade: 5 } : m === 'compact' ? { rows: 2 } : {};
+    if (this.chat.log.length) drawChatLog(ctx, this.chat, 6, H - 30, Math.min(220, Math.round(W * 0.36)), o);
   }
 }

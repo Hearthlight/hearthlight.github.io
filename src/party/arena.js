@@ -741,7 +741,7 @@ export class ArenaAct {
       // phones pick on the phone, keyboard & gamepads right here — slowpokes get a surprise blessing
       this.pickHere();
       // (a crowd choosing here needs the whole screen: the « Wave cleared! » banner bows out early)
-      if (P.banner && this.blessTop < P.display.h * 0.2 + 32) P.banner.t = Math.max(P.banner.t, 3.1);
+      if (P.lane && this.blessTop < P.display.h * 0.2 + 32) P.lane.bow();
       const all = P.players.filter((p) => p.fighter && p.connected).every((p) => { const c = this.cards.get(p.slot); return !c || c.picked; });
       if (all || o.t > o.time) {
         for (const p of P.players) { const c = this.cards.get(p.slot); if (c && !c.picked && p.fighter) this.grant(p, pick(c.cards)); }

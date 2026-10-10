@@ -73,6 +73,7 @@ export class Stage {
 
   end() {
     this.barsOn = false; this.card = null; this.tw = null;
+    if (this.P.lane) this.P.lane.clear('title');
     for (const w of this.walks) this.arrive(w);
     this.walks = [];
     for (const w of this.waits) w.res();
@@ -101,7 +102,9 @@ export class Stage {
     if (this.tw) { this.cv.x = this.tw.tx; this.cv.z = this.tw.tz; this.tw.res(); this.tw = null; this.applyCam(); }
     if (this.skyTw) { this.skyTw.step(1e9); const r = this.skyTw.res; this.skyTw = null; r(); }
     for (const pr of this.props.values()) if (pr.tw) { const w = pr.tw; for (const ax of ['x', 'y', 'z']) if (w.to[ax] !== undefined) pr.obj.position[ax] = w.to[ax]; if (w.to.ry !== undefined) pr.obj.rotation.y = w.to.ry; if (w.to.s !== undefined) pr.obj.scale.setScalar(w.to.s); pr.tw = null; w.res(); }
-    this.card = null;
+    // (a card up when the scene is skipped: its script is let go on)
+    if (this.card) { const c = this.card; this.card = null; if (c.res) c.res(); }
+    if (this.P.lane) this.P.lane.clear('title');
   }
 
   // (solo: a click or a tap on « skip » in the top bar — a touch screen has no Esc; world.js asks
@@ -192,10 +195,13 @@ export class Stage {
   shake(k = 0.5) { if (this.skipping) return; if (this.solo) this.P.cam.shake = Math.max(this.P.cam.shake || 0, k); else this.P.cam.shake = Math.max(this.P.cam.shake || 0, k); }
   bars(on) { this.barsOn = on; }
   flash(color = '#ffffff', dur = 0.35) { if (!this.skipping) this.flashes.push({ color, t: 0, dur }); }
-  // a title card: small line over a big one
+  // a title card: small line over a big one (Party Mode: in the big screen’s announcement lane,
+  // where it never shares the screen with a banner or a note — party/announce.js)
   title(title, sub = '', dur = 3.2) {
     if (this.skipping) return Promise.resolve();
-    return new Promise((res) => { this.card = { title: t(title), sub: sub ? t(sub) : '', t: 0, dur, res }; audio.sfx('chime', { volume: 0.5 }); });
+    const chime = () => audio.sfx('chime', { volume: 0.5 }), L = this.P.lane;
+    if (L) return new Promise((res) => L.push({ kind: 'title', title: t(title), sub: sub ? t(sub) : '', dur, keep: true, res, start: chime }));
+    return new Promise((res) => { this.card = { title: t(title), sub: sub ? t(sub) : '', t: 0, dur, res }; chime(); });
   }
   fade(to, dur = 0.5) { return this.skipping ? (this.P.fadeTo(to, 0.01) || Promise.resolve()) : (this.P.fadeTo(to, dur) || Promise.resolve()); }
   music(track) { this.P.sceneMusic = track || null; if (track && !this.skipping) audio.playMusic(track, { fade: 0.8 }); }

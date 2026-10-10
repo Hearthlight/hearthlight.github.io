@@ -160,7 +160,7 @@ export class Saga {
     q.done = true; q.day = this.P.state ? this.P.state.day : 0;
     this.save();
     audio.jingle('questDone');
-    this.P.showBanner(t('Quest complete: {q}', { q: t(Q.title) }), this.rewardText(Q));
+    this.P.showBanner(t('Quest complete: {q}', { q: t(Q.title) }), this.rewardText(Q), { keep: true });
     this.reward(Q);
     if (Q.done) await Q.done(this);
     // (a mini-game to play again: counted, then offered afresh)

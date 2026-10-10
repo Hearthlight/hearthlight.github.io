@@ -17,6 +17,7 @@ import { HeroTab } from '../solo/herotab.js';
 import { Osk } from '../ui/osk.js';
 import { QuietInput, KEY_LAYOUTS } from './inputs.js';
 import { CLASSES } from '../combat/classes.js';
+import { HUD_MODES, HUD_NAMES } from '../ui/hud.js';
 import { randomLook } from '../data/looks.js';
 import { audio } from '../engine/audio.js';
 import { t, tn } from '../i18n.js';
@@ -296,7 +297,8 @@ class TvHero extends HeroTab {
     const dev = p.kind === 'gamepad' ? '🎮 ' + (p.input.name ? p.input.name.replace(/\(.*$/, '').trim() : t('Gamepad')) : t('Keyboard · {keys}', { keys: moveKeys() + ' / ← ↑ → ↓' });
     drawText(ctx, fitText(dev, A.w - 40), A.x + 36, A.y + 13, { color: UI.inkSoft });
     // the buttons (as wide as their words: the rest for your buttons' list)
-    const words = [t('Change your name'), t('Light a campfire'), t('Get unstuck'), t('Leave the party'), t('Press again')];
+    const display = (m) => t('Display: {m}', { m: t(HUD_NAMES[m]) });
+    const words = [t('Change your name'), t('Light a campfire'), t('Get unstuck'), t('Leave the party'), t('Press again'), ...HUD_MODES.map(display)];
     const bw = Math.min(150, A.w - 4, Math.max(96, ...words.map((s) => measure(s))) + 16), bx = A.x;
     let y = A.y + 38;
     const btn = (id, label, fn, color) => { this.btn(ctx, id, bx, y, bw, 15, label, fn, color); y += 19; };
@@ -305,6 +307,8 @@ class TvHero extends HeroTab {
     btn('name', t('Change your name'), () => { this.osk = new Osk(p.name, { title: 'Your name', keys: { a: keyOf(p, 'a'), b: keyOf(p, 'b'), x: keyOf(p, 'x'), ok: keyOf(p, 'm') }, hint: typed }); audio.sfx('open'); });
     if (P.phase !== 'lobby' && P.camp) btn('camp', t('Light a campfire'), () => { P.tvmenus.close(p); P.camp.build(p); }, '#b8502a');
     if (P.phase !== 'lobby') btn('unstuck', t('Get unstuck'), () => { P.tvmenus.close(p); P.unstick(p); });
+    // (the big screen’s display, for everyone: full · compact · minimal)
+    if (P.phase !== 'lobby') btn('hud', display(P.hudMode()), () => P.cycleHud(), '#5a7ab8');
     btn('leave', this.asking('leave') ? t('Press again') : t('Leave the party'), () => this.twice('leave', () => { P.tvmenus.close(p); P.removePlayer(p); }), this.asking('leave') ? '#c8454f' : '#8a7a98');
     if (!this.home) this.home = p.stuckOffer && P.phase !== 'lobby' ? 'unstuck' : 'name';
     // how you play, on your own buttons

@@ -340,7 +340,7 @@ export class ExploreAct {
     else {
       await P.fadeTo(0, 0.6);
       const ch = S.chapter;
-      P.showBanner(t('Chapter {n} — {title}', { n: ch.id, title: t(ch.title) }), t('the adventure goes on'));
+      P.showBanner(t('Chapter {n} — {title}', { n: ch.id, title: t(ch.title) }), t('the adventure goes on'), { keep: true });
     }
     this.stage = 'roam';
   }
@@ -927,10 +927,7 @@ export class ExploreAct {
     const P = this.party, W = P.display.w, H = P.display.h;
     if (P.phase === 'lobby') return;
     this.drawBadges(ctx);
-    if (P.cam.layout.type !== 'grid' && !P.dialogue.active && !P.vote && !this.overlay && !P.bigMapOpen) {
-      const mw = Math.min(110, Math.round(W * 0.2)), mh = Math.round(mw * 0.62);
-      P.drawMiniMap(ctx, W - mw - 7, H - 21 - mh - 5, mw, mh);
-    }
+    P.drawCornerMap(ctx, !!this.overlay);
     if (this.overlay) this.drawAwards(ctx, W, H);
     if (this.saga && !P.dialogue.active) this.saga.games.drawUi(ctx, W, H);
   }
