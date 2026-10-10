@@ -234,7 +234,8 @@ src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (spli
               the solo Hero page + their own page; one at a time, a queue), net.js, story.js + games.js (Starfall Festival), explore.js,
               arena.js (Festival Ring: site + waves/brawl/king), arena3d.js (its
               buildings & instanced crowd), host.js (crown & host menu), zones.js,
-              swim.js, vehicles.js, mounts.js, encounters.js (gloom camps), lairs.js
+              swim.js, vehicles.js, mounts.js, encounters.js (gloom camps: one a land, asleep until a hero
+              comes within 8 tiles, a brute worth two small foes), lairs.js
               (zone bosses, and the world bosses: `world: true`, a spot `at`), rares.js
               (named gloom with silver plates and a treasure hat each: TREASURE_HATS in
               data/looks.js, the hats in models/chars.js), progress.js (talents & gear), travel.js (waystones, fast
@@ -258,7 +259,11 @@ src/combat/   classes (4 heroes), enemies, combat (hits, specials, drops), bless
               (the Lamplighter, the Gardener, the Cook, the Tinkerer), kit9.js (their statuses —
               lit, blind, root — sprouts, snacks, heat, turrets & traps, hooked into combat.js),
               talents9.js, weapons9.js, grandma.js (Grandmother Kraken, the sixth world boss,
-              fought from boats: rowers ram her arms, lantern-throwers hit her when she peeks)
+              fought from boats: rowers ram her arms, lantern-throwers hit her when she peeks);
+              v11/brutes.js (the four ground brutes that took the flying foes’ place — the Gloom
+              Boar, the Gustbelly, the Storm Ram, the Gloom Ogre: every attack marked on the
+              ground, one move that leaves the brute helpless when answered well, a reel meter
+              for plain mashing; `Combat.spawn` maps a gone flyer’s id to its brute)
 src/saga/     World v7's story engine: saga.js (chapters, quests, NPCs, the journal — hosted by
               explore.js in Party and by the solo Wild), stage.js (the scene director: camera,
               actors, bars, title cards), levels.js (zone levels, group scaling), murk.js (the
