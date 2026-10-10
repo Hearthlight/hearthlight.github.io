@@ -140,7 +140,7 @@ map is huge: zones inspired by the great national parks.” Decisions:
   towers of Lighthouse Isle and Lanternport (a long cinematic the first time, then a short
   one), stopping over Whale Isle.
 - Mounts, boats, balloons, gliders, sleds, minecarts, ziplines: as today.
-- **The Murk** (« la Brume Mauve » — « grisaille » already names the gloom) gates the story: a grey-violet fog lies over every zone the
+- **The Murk** (« la Brume Mauve »; the gloom is « l’Ombre », its creatures « les Ombres ») gates the story: a grey-violet fog lies over every zone the
   story hasn’t reached. You can’t walk (swim, ride, sail, fly) into it — you’re pushed back
   with a line (“The Murk is too thick. Relight …’s Hearth first.”); on every map it’s a violet
   veil with the zone’s name greyed. Relighting a Great Hearth rolls it back in a cinematic.
@@ -155,7 +155,7 @@ gloom crawls out of. Nana June was the last Lamplighter of Marigold Cove.
 **Duchess Gloria Gloomsworth** (« la Duchesse Gloria de Grisemine »), a failed opera diva,
 was booed off the Starfall Festival’s stage in Marigold Cove thirty years ago (a hen walked
 on during her big aria). She swore the whole world would one day sit in the dark and watch
-only *her*. Aboard the **Gloomstage** (« le Théâtre-Grisaille »), a flying opera house, she
+only *her*. Aboard the **Gloomstage** (« le Théâtre d’Ombres »), a flying opera house, she
 snuffs the Great Hearths one by one with the **Grand Snuffer** (« le Grand Éteignoir ») to
 power her **Grand Finale**: the Umbral Spotlight, one beam on her, darkness everywhere else,
 forever. She insists nobody ever invited her to anything.

@@ -1,4 +1,4 @@
-// World v7: the Murk (« la Grisaille ») — the grey-violet fog lying over every
+// World v7: the Murk (« la Brume Mauve ») — the grey-violet fog lying over every
 // land the story hasn't reached. Nobody walks, swims, rides or sails into it
 // (the big world's collision asks `shut`); a soft wall of fog puffs rolls
 // along its edge wherever a camera looks, a veil darkens the land behind it,
