@@ -17,14 +17,14 @@ export const HOLLOWMOOR = {
   start: [22, 155],
   rooms: [
     { id: 'foyer', x: 14, z: 146, w: 16, h: 13, kind: 'start', rug: true,
-      said: 'Hollowmoor Manor. Dust sheets, cold candles, and every clock in the house stopped at twenty to nine.',
+      said: 'Hollowmoor Manor: dust, cold candles, and every clock stopped at twenty to nine.',
       props: [['candelabra', 16, 148], ['candelabra', 28, 148], ['dustchair', 17, 155], ['dustchair', 27, 155], ['portrait', 22, 147.4]] },
     // (a door bricked up NOW — open THEN)
     { id: 'hall', x: 10, z: 118, w: 24, h: 20, kind: 'clock', era: 'now', clock: [30.5, 128], rug: true,
       now: { walls: [[22, 118.9, 6, 1.8, 'brick']] },
       then: { walls: [[14.5, 126, 2.4, 1, 'sofa']] },
       goalZ: 117.5, opens: ['g2'],
-      said: 'A bricked-up doorway. A grandfather clock, stopped. Its plate is worn smooth, as if someone stood on it a great deal.',
+      said: 'NOW, this door is bricked up. Step on the plate at the foot of the clock: the room goes back to THEN.',
       done: 'Through the old door!',
       props: [['candelabra', 12, 120.5], ['portrait', 13, 136, -1], ['dustchair', 27, 135]] },
     // (THEN’s floor to cross the gap, NOW’s to get past the shelves — switch in the middle)
@@ -32,8 +32,8 @@ export const HOLLOWMOOR = {
       now: { pits: [[22, 104, 28, 4]], walls: [[12, 98, 2, 2, 'rubble']] },
       then: { walls: [[22, 91.8, 28, 1.4, 'shelf']] },
       goalZ: 88.6, opens: ['g3'],
-      said: 'The stairhall. Then, a library. Now, a hole where the floor used to be.',
-      fell: 'The floor’s gone NOW — down you go, and back up the stairs. Cross it THEN.',
+      said: 'The stairhall. THEN: a floor, and bookshelves in the way. NOW: no bookshelves… and no floor.',
+      fell: 'NOW, the floor is gone: down you go! Cross it THEN.',
       done: 'Up the old stairs!',
       props: [['candelabra', 10, 109], ['candelabra', 34, 109], ['dustchair', 11, 96]] },
     { id: 'dining', x: 8, z: 60, w: 28, h: 20, kind: 'fight', rug: true, foesList: ['poltergeist', 'poltergeist', 'wisp', 'wisp', 'clockwork', 'bogling', 'poltergeist'], shout: 'The dining room! The china is flying by itself!', chest: [32, 63],
@@ -43,8 +43,8 @@ export const HOLLOWMOOR = {
       then: { walls: [[22, 50.6, 32, 1.4, 'sofa'], [22, 30, 32, 1.2, 'brick']] },
       now: { pits: [[22, 40, 32, 4]] },
       goalZ: 29, opens: ['g5'],
-      said: 'The portrait gallery. A girl with a songbook, over and over, growing up — and then no more portraits.',
-      fell: 'Rotten boards — down you go! That floor was only whole THEN.',
+      said: 'The portrait gallery: the same girl with a songbook, growing up… then no more portraits. Two clocks to turn here.',
+      fell: 'NOW, the boards are rotten: down you go! Cross them THEN.',
       done: 'The ballroom doors swing open…',
       props: [['portrait', 12, 27.4, -1], ['portrait', 18, 27.4, -1], ['portrait', 26, 27.4, -1], ['candelabra', 8, 54], ['candelabra', 36, 54]] },
     // (the ballroom: the Lady, and four clocks)
