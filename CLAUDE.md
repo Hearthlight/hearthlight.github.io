@@ -25,8 +25,10 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
 - `window.__errs` (filled by `T.boot`) and the console must stay at **0 errors**.
 - Translations: `node tools/i18n-scan.mjs` must report **0 missing** in every language (fr, es,
   de, it — and each one's party lines; `--list` prints them, `--lang=de` one language);
-  `node tools/i18n-check.mjs es` compares a language's files with their French twins. Screens in a
-  language: `tools/langshots.js` (`start('de')`). Syntax check: `node --check file.js`.
+  `node tools/i18n-check.mjs es` compares a language's files with their French twins;
+  `node tools/i18n-orphans.mjs fr` lists the keys no source uses any more (a line cut from a scene
+  leaves four translations behind). Screens in a language: `tools/langshots.js` (`start('de')`).
+  Syntax check: `node --check file.js`.
 - Remote play (`play.html#CODE.key`, a friend at home) needs the Node relay — the Python dev
   server has none: `node server/relay.mjs --static . --lan --host 0.0.0.0 --port 8792` (once
   `npm --prefix server ci`). Each remote player gets their own camera (`p.rcam`, drawn by
@@ -147,6 +149,25 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   brief (`tools/i18n/brief-xx.md`). A new string → all four languages. Lines said to the whole
   party go in a chapter file's `__group` (vous · ustedes · ihr · voi). Dictionaries load on demand
   (`loadLang`). The dialogue box translates `say()` texts itself — don't double-translate.
+- **A story that is easy to follow** (the guide's « Clarity » and « One story » sections are
+  rules): one idea a line, one joke a scene, a scene that sends the player somewhere ends on that
+  order. The words that must be understood are marked `{key}…{/}` — drawn bold and in colour by
+  the font, on paper and on dark panels — in the English line and its four translations alike
+  (`i18n-check` compares the marks); never cut such a text with anything but the tag-aware
+  helpers (`fitText`, `splitTwo`, `cutRich` in ui.js, `fitRich` in `ui/questcard.js`). Every step's
+  `text` is an order that names its place, every quest has a `brief` (why we do this), every
+  chapter a `recap` (the story so far): `Saga.card(p)` gives them, with the checklist of steps and
+  where to go, to the objective card, the journals and the phone's Quest page. In French the
+  enemies are « les Ombres » (the gloom, « l’Ombre »), never a word that sounds like the weather.
+- **Party's big screen stays calm**: the objective card never leaves (small at rest, wide for a
+  few seconds when the step changes); banners, title cards and long notes go one at a time through
+  `P.lane` (`src/party/announce.js`: `showBanner(title, sub, { keep })`, never drawn over the
+  dialogue box); toasts are three at most; a page of dialogue stays its reading time before
+  anyone's A turns it (`PartyDialogue` — the bots and `debug.skip` wait it out). `settings.hud`
+  (full · compact · minimal) rules it as it does the solo HUD, the corner's minimap shows only
+  when the party asks (`settings.partyMap`), and the split screen keeps every player in their own
+  place (`settings.split`: `'seats'`, or `'groups'` for the old way; `tools/splittest.js` sets the
+  situations up and prints the camera's layout).
 - **The title** has two buttons, Play and Settings. Play asks what (`game.experiences`: the story,
   and any other way to play a mode adds — `{ id, name(), sub(), solo(), multi() }`, the words as
   functions; with only one, the step is skipped), then who (solo, or together: Party Mode), then,
@@ -174,7 +195,11 @@ src/engine/   display (two integer-scaled canvases), input (keys, mouse, touch, 
               analog stick, rumble, the pad's family), font, colour, audio (synth engine)
 src/ui/       hud, menu (the pause page, the Settings page — two tabs: settings · controls —, the
               book), dialogue, shop, creator, ui (panels, `ctl`, key hints); controls.js (the Settings'
-              Controls tab: keyboard · gamepad · phone), osk.js (on-screen keyboard for names)
+              Controls tab: keyboard · gamepad · phone), osk.js (on-screen keyboard for names),
+              questcard.js (the objective card's layout, a quest's checklist, tag-aware cutting),
+              levelbar.js (the experience bar, a level's words), big.js (buttons, arrows and the
+              die at a finger's size), field.js (a real text field laid over the canvas: a
+              phone's own keyboard for names)
 src/render/   r3d (low-res toon renderer, oblique ortho camera, post pass, split views: the
               world's matrices once a frame), cull.js (split views: each hides what it can't see
               nor shadow), lighting (time of day, lamp pool), portraits, wind.js (`windy(mat)`:
@@ -195,7 +220,11 @@ src/systems/  fx (particles), perches.js (birds landing on ridges, posts, lamps)
               (puddles & rain rings, wet roofs, dawn mist on the water), critters, fishing…
 src/solo/     wild.js (the wild lands in solo: a party of one), herotab.js (menu's Hero page),
               wanderers.js (Rook, Sigrid, Moss, Kai), phone.js (a phone as the solo controller)
-src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (split-screen),
+src/party/    Party Mode: party.js (players, lobby, votes, HUD), camera.js (split-screen: fixed
+              places by seat, or by groups), plates.js (whose picture is whose: a face and a name
+              in each place), announce.js (the lane: one banner, title card or long note at a
+              time), levelups.js (the level-up said once, the cards), slots.mjs + stories.js (up
+              to four saved stories),
               guide.js (a place picked on a map — the big screen's, a player's menu's, a phone's,
               the solo menu's — and the way there: the arrow at the hero's feet, the dots, the flag;
               `MapPick`; the way from world/big/route.js),
@@ -264,8 +293,12 @@ src/models/v7/ kit.js, gloomstage.js (the flying opera house), props7.js, dawn7.
               finale10.js (ch10's: the Umbral Spotlight, searchlights, the Understudies' crate
               stage, a letter, festival bunting), landmarks7.js (the Dawnlands' landmarks, 3D
               peaks & limestone pillars)
-src/pad/      the phone controller (pad.html) — canvas UI, talks to the relay; padmap.js
-              (the phone's own world map: pinch, drag, tap — fed by worldmap.js mapBase/mapUpdate)
+src/pad/      the phone controller (pad.html) — canvas UI, talks to the relay: the join screen (the
+              party's code, a name or the die's nickname: `src/data/nicknames.js`, per language),
+              the controller with the objective always on it, its Quest page (the host's
+              `{ t: 'quest' }` card: recap, brief, checklist, Go there), the level-up card;
+              padmap.js (the phone's own world map: pinch, drag, tap — fed by worldmap.js
+              mapBase/mapUpdate)
 src/lang/     fr/ es/ de/ it/ — the dictionaries (keys = English source text), loaded on demand
 tools/        devserver.py, partybots.js, sagatest.js (the saga played by itself: `V.solo`,
               `V.play`, `V.autoplay`, `V.toChapter(n)`), sagarun.js (a chapter played by the bots
