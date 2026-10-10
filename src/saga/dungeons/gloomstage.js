@@ -17,14 +17,14 @@ export const GLOOMSTAGE = {
   start: [22, 175],
   rooms: [
     { id: 'stagedoor', x: 14, z: 167, w: 16, h: 12, kind: 'start',
-      said: 'The stage door of the Gloomstage. A brass star on it, and a name scratched off. Somewhere above, an orchestra of nobody is tuning up.',
+      said: 'The stage door of the Gloomstage. A brass star on it, and a name scratched off.',
       props: [['mirror', 16.5, 168.6], ['rack', 27, 169], ['gloomcrate', 16.5, 176], ['gloomcrate', 27.5, 176.5, 0.8], ['sandbag', 22, 169.5], ['ghostlight', 22, 173.2], ['worklight', 28.6, 177.6]] },
     // (one light, sweeping the wings: wait in a flat’s shadow, then go)
     { id: 'wings', x: 8, z: 136, w: 28, h: 25, kind: 'spot',
       lights: [{ path: [[10, 150], [34, 150], [34, 143], [10, 143]], r: 2.2, speed: 0.2 }],
       flats: [[15, 155, 4, 0.5], [29, 155, 4, 0.5], [22, 146.5, 6, 0.5], [12, 139.5, 3, 0.5], [32, 139.5, 3, 0.5]],
       goalZ: 138.2, opens: ['g2'], back: [22, 159],
-      said: 'The wings. A spotlight sweeps the boards, looking for anyone out of place. The painted flats cast good, deep shadows.',
+      said: 'The wings. A spotlight sweeps the floor: wait in the shadow of a painted flat, then run.',
       done: 'Through the wings, unseen!',
       props: [['sandbag', 10, 158], ['sandbag', 34, 158], ['rack', 11, 137.5, 0.8], ['paintedmoon', 33, 137.5], ['worklight', 9.4, 160], ['worklight', 34.6, 160], ['worklight', 9.4, 141, 0.9], ['worklight', 34.6, 141, 0.9],
         ['pinrail', 8.4, 148, 18], ['ropes', 34, 136.8], ['catwalk', 35, 148, 20]] },
@@ -43,7 +43,7 @@ export const GLOOMSTAGE = {
       flats: [[12, 55.5, 4, 0.5], [32, 55.5, 4, 0.5], [22, 56, 4, 0.5], [13, 46, 4, 0.5], [31, 46, 4, 0.5]],
       board: [36.5, 64.5], dark: 5,
       goalZ: 40.2, opens: ['g5'], back: [22, 66], handsN: 2,
-      said: 'The fly tower: ropes, catwalks, lights — and the follow-spot, which hunts. A lever on the lighting board puts every light out.',
+      // (the chapter’s own scene says what this room is, as the heroes walk in)
       done: 'Up and over — the stage is below!',
       props: [['sandbag', 6, 40], ['sandbag', 38, 40], ['gloomcrate', 6.5, 66], ['gloomcrate', 7.8, 66.5, 0.7], ['worklight', 5.6, 67, 0.9], ['worklight', 38.4, 67, 0.9],
         // (Release v9) the fly tower proper: catwalks up the side walls, the pin rail, ropes

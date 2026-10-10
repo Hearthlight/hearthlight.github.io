@@ -74,22 +74,20 @@ async function coldOpen(S) {
     await st.cam(SHIP[0], SHIP[1] - SHIP_Y - 2.5, { dur: 0, ppu: Math.max(8, Math.round(st.basePpu() * 0.75)) });
     st.music('scar');
     await st.fade(0, 1.2);
-    await st.say('narrator', 'The Umbral Scar, at dusk: a crack in the world, black and bottomless. And moored over it, lit up like a birthday cake, the Gloomstage.');
+    await st.say('narrator', 'The Umbral Scar, at dusk: a crack in the world, black and bottomless. Moored over it, lit up like a birthday cake: {key}the Gloomstage{/}.');
     st.mark('scar');
     await st.cam(x + 1, z - 1, { dur: 1.6, ppu: st.basePpu() });
-    await st.say('wendy', 'Right. The plan. I fly us up through her searchlights, set you down on her stage door, and circle till you wave.', { expr: 'neutral' });
-    await st.say('minnow', 'We know the way in. The wings, Crumble’s workshop, under the stage — then up through the prompter’s trapdoor into the fly tower.', { expr: 'smug' });
-    await st.say('fidget', 'And the fly tower is FULL of lights. And stagehands. And lights. Did I say lights? I feel I should say lights again.', { expr: 'worried' });
+    await st.say('wendy', 'The plan: I fly you up through her searchlights and set you down at her stage door.', { expr: 'neutral' });
+    await st.say('minnow', 'We know her theatre. Stay {key}out of the spotlights{/} and climb to {key}the stage{/}.', { expr: 'smug' });
+    await st.say('tock', 'We’ll carry my Lantern Cannon up the back stairs. Against her, you’ll need it.', { expr: 'worried' });
     await st.say('brick', 'Brick carries cannon.', { expr: 'happy' });
-    await st.say('tock', 'Gently! It’s a precision instrument. …Mostly brass. But PRECISE brass.', { expr: 'worried' });
-    await st.say('wendy', 'And if it all goes wrong?', { expr: 'neutral' });
-    await st.say('minnow', 'Then we improvise. We’re understudies. It’s literally the job.', { expr: 'happy', hop: true });
+    await st.say('wendy', 'When you want to take off, come and see me {key}by the Teacup{/}.', { expr: 'neutral' });
     st.mark('plan');
     await st.title('The Grand Finale', 'Chapter 10', 3.2);
   });
 }
 async function wendyTalk(S) {
-  await S.say('wendy', 'Tea’s in the pot, nerves are in the hold, and the Teacup has never once been shot down. Say the word.', { expr: 'smug' });
+  await S.say('wendy', 'All aboard! This time, nobody shoots my Teacup down.', { expr: 'smug' });
   await boarding(S);
   if (S.P.dungeons) await S.P.dungeons.enter('gloomstage');
   else S.flag('finaleWon');
@@ -130,7 +128,7 @@ async function boarding(S) {
       st.sfx('thud', { volume: 0.6 });
       await st.cam(SHIP[0] - 4, SHIP[1] + 1 - SHIP_Y, { dur: 0.8 });
       st.mark('boarding');
-      await st.say('wendy', 'Stage door, starboard side! Everybody OFF — mind the gap, mind the Scar, mind the Duchess!', { expr: 'happy' });
+      await st.say('wendy', 'Stage door! Everybody off. Cross her theatre to {key}the stage{/}!', { expr: 'happy' });
       await st.fade(1, 0.5);
     }, { bars: true });
   } finally {
@@ -152,15 +150,14 @@ R('workshop').run = async (S, d, r) => {
   await S.scene(async (st) => {
     await st.cam(c.x, c.z - 3, { dur: 0.8 });
     st.sfx('slam', { volume: 0.8 }); st.shake(0.4);
-    await st.say('crumble', 'LADIES, GENTLEMEN AND ASSORTED LAMP-LICKERS! Crumble’s workshop proudly presents…{p} the Snuffbot MARK THREE, as PROMISED!', { expr: 'smug' });
-    await st.say('crumble', 'New! Improved! It has MOVES now. Its very own moves! I drew them myself, with a crayon!', { expr: 'happy' });
-    await st.say('crumble', '…Please don’t hit the dome. The dome is very sensitive. Emotionally.', { expr: 'worried' });
+    await st.say('crumble', 'LADIES, GENTLEMEN AND LAMP-LICKERS! Crumble’s workshop proudly presents…{p} the Snuffbot MARK THREE!', { expr: 'smug' });
+    await st.say('crumble', 'Please don’t hit the dome. It’s very sensitive… emotionally.', { expr: 'worried' });
     st.mark('mk3');
     await st.title('Snuffbot Mk III', 'Crumble’s masterpiece (at last)', 2.2);
   });
   e.state = 'chase'; e.timer = 1;
   d.D.setMusic('boss');
-  S.toast('Jump the rings of its wax flood — then hit the overheating dome!', null, '#ffb070');
+  S.toast('Jump over its rings of wax. Hit the dome when it overheats!', null, '#ffb070');
 };
 R('workshop').tick = (S, d, r) => {
   const e = r.boss;
@@ -175,9 +172,8 @@ R('workshop').tick = (S, d, r) => {
       st.actor('crumble', e.x + 1.2, e.z + 1, { face: { x: 0, z: 1 } });
       st.fx('smoke', e.x, 1, e.z, 8, { color: '#6a5a70' });
       await st.cam(e.x, e.z - 0.5, { dur: 0.7 });
-      await st.say('crumble', 'Mark Three… had… MOVES…', { expr: 'cry' });
-      await st.say('crumble', 'You know what? I QUIT. No more snuffing. No more drumrolls in the dark. Nobody even claps for the drumroll.', { expr: 'angry', shake: 1 });
-      await st.say('crumble', 'I’m going to be a TOUR GUIDE.{p}« And on your left, ladies and gentlemen: the scene of my greatest defeat. »{p}…It’s got a ring to it.', { expr: 'happy' });
+      await st.say('crumble', 'That’s it, I QUIT! No more putting out lights for the Duchess.', { expr: 'angry', shake: 1 });
+      await st.say('crumble', 'I’ll be a TOUR GUIDE instead. This way, please: {key}under the stage{/}, then up to her!', { expr: 'happy' });
       st.mark('tourguide');
       st.walk('crumble', c.x - 12, c.z + 10, { speed: 3.4 });
       await st.wait(0.8);
@@ -189,11 +185,11 @@ R('workshop').tick = (S, d, r) => {
 };
 
 // ------------------------------------------------------------------ under the stage
-R('understage').onClear = (S) => { S.toast('Minnow (from above): « The prompter’s trapdoor! Up, up, up! »', null, '#e8c0ff'); };
+R('understage').onClear = (S) => { S.toast('Minnow (from above): « All clear! Come on up, this way! »', null, '#e8c0ff'); };
 
 // ------------------------------------------------------------------ the fly tower: the Understudies’ finest hour
 const TROUPE = ['minnow', 'fidget', 'brick'];
-const PRATFALLS = ['Fidget forgets his line! The follow-spot wanders off the act…', 'Brick drops Minnow. Gently. The follow-spot looks away…', 'The team pose collapses! The follow-spot goes looking for something else to light…'];
+const PRATFALLS = ['Fidget forgets his line. The follow-spot is hunting again: hide!', 'Brick drops Minnow. The follow-spot is hunting again: hide!', 'The act falls apart. The follow-spot is hunting again: hide!'];
 R('flytower').run = async (S, d, r) => {
   const P = S.P, c = mid(d, r);
   const CS = [8.5, 63.5];
@@ -203,22 +199,20 @@ R('flytower').run = async (S, d, r) => {
   r.lure = () => (!r.act || r.act.on ? CS : null);
   await S.scene(async (st) => {
     await st.cam(c.x, c.z + 5, { dur: 0.6 });
-    await st.say('narrator', 'The fly tower: catwalks, ropes, sandbags — two lights sweeping, and a follow-spot that turns, slowly, to look at you.');
+    await st.say('narrator', 'The fly tower, high above the stage. Two lights sweep the floor, and a third turns, slowly, to look at you.');
     for (const [i, id] of TROUPE.entries()) st.actor(id, c.x - 1 + i, d.oz + r.z + r.h - 1.2, { face: { x: 0, z: -1 } });
     st.sfx('door', { volume: 0.6 });
-    await st.say('minnow', 'Psst! Up through the prompter’s trapdoor, just like old times. Right, Understudies. This is it.', { expr: 'neutral' });
-    await st.say('fidget', 'Is it? Is it really? Because I haven’t warmed up, I haven’t done my scales, I haven’t—', { expr: 'worried' });
-    await st.say('minnow', 'The show must go on — and tonight it’s OURS! Places, everyone!', { expr: 'happy', hop: true });
+    await st.say('minnow', 'Psst! That one hunts: leave it to us. Understudies, tonight the show is OURS!', { expr: 'happy', hop: true });
     await Promise.all(TROUPE.map((id, i) => st.walk(id, d.ox + CS[0] - 1.1 + i * 1.1, d.oz + CS[1] - 0.1, { speed: 4 })));
     for (const id of TROUPE) { const a = st.actorOf(id); if (a && a.n) { a.n.seatY = 0.8; st.face(id, a.n.pos.x, a.n.pos.z + 3); } st.keep(id); }
     st.sfx('fanfare', { volume: 0.5 });
     await st.say('brick', 'Ta. DA.', { expr: 'happy', hop: true });
     await st.cam(d.ox + CS[0] + 4, d.oz + CS[1], { dur: 0.8 });
     st.mark('act');
-    await st.say('narrator', 'And the follow-spot swings round to the brightest thing in the house: three understudies, doing the act of their lives.');
+    await st.say('narrator', 'The follow-spot swings to the three understudies, doing the act of their lives. Now slip past {key}the other two lights{/}!');
   });
   r.act = { t: 0, on: true, beat: 0 };
-  S.toast('The Understudies hold the follow-spot — slip past the other lights! The lighting board’s lever puts them all out.', null, '#fff3c4');
+  S.toast('The Understudies hold the follow-spot: slip past the other two lights! The plate at the lighting board puts them out for a moment.', null, '#fff3c4');
 };
 R('flytower').tick = (S, d, r, dt) => {
   const A = r.act, P = S.P;
@@ -230,7 +224,7 @@ R('flytower').tick = (S, d, r, dt) => {
   if (on !== A.on) {
     A.on = on;
     if (!on) { P.toast(t(PRATFALLS[A.beat++ % PRATFALLS.length]), '#ff9a8a'); audio.sfx('bonk', { volume: 0.5 }); }
-    else { P.toast(t('Minnow: « And a-one, a-two! » — the follow-spot swings back to the act.'), '#e8c0ff'); audio.sfx('tone', { volume: 0.4, pitch: 5 }); }
+    else { P.toast(t('Minnow: « And a-one, a-two! » The follow-spot is back on the act: go!'), '#e8c0ff'); audio.sfx('tone', { volume: 0.4, pitch: 5 }); }
   }
   A.hopT = (A.hopT || 0) - dt;
   if (A.hopT <= 0 && !r.passed) {
@@ -242,7 +236,7 @@ R('flytower').tick = (S, d, r, dt) => {
   // (once the heroes are through, the troupe takes its bow and slips away)
   if (r.passed && !A.bowed) {
     A.bowed = true;
-    P.toast(t('The Understudies take a bow — to an audience of stagehands, who clap. They actually clap.'), '#e8c0ff');
+    P.toast(t('The Understudies take a bow — and the stagehands clap. They actually clap.'), '#e8c0ff');
     (async () => { await P.wait(2.5); for (const id of TROUPE) P.removeNpc(id); })();
   }
 };
@@ -294,12 +288,13 @@ R('stage').run = async (S, d, r) => {
     st.music('finale');
     st.sfx('fanfare', { volume: 0.8 });
     st.flash('#fff4e0', 0.4);
-    await st.say('narrator', 'The house lights go down. The curtain rises. One spotlight — and in it, in a gown the colour of midnight, every stolen flame circling her like a necklace…');
+    await st.say('narrator', 'The curtain rises. One spotlight — and in it, wearing every stolen flame like a necklace…');
     st.mark('finale');
     await st.say('duchess', 'At LAST. An audience that can’t leave.{p}Welcome, Wick Brigade, to my GRAND FINALE!', { expr: 'smug' });
-    await st.say('duchess', 'Act One: I sing. Act Two: the stage does as it’s told. Act Three…{p}the Umbral Spotlight. The last light you will ever see — because it EATS all the others.', { expr: 'angry', shake: 1 });
+    await st.say('duchess', 'Act One: I sing. Act Two: the stage does as it’s told.', { expr: 'smug' });
+    await st.say('duchess', 'Act Three: {key}the Umbral Spotlight{/}. The last light you will ever see — because it EATS all the others.', { expr: 'angry', shake: 1 });
     await st.cam(d.ox + CX - 1, d.oz + CZ, { dur: 0.8 });
-    await st.say('tock', 'The Understudies carried it up the back stairs. All four hundred. Brick carried; Minnow shouted.{p}When she lights that thing: stand on the plate. I aim. You hold still. VERY still.', { expr: 'worried' });
+    await st.say('tock', 'When she lights that thing, stand on {key}the cannon’s plate{/} and hold still. I’ll aim.', { expr: 'worried' });
     await st.cam(H.x, H.z + 1, { dur: 0.6 });
     await st.title('Duchess Gloria Gloomsworth', 'in her Grand Finale', 2.8);
   });
@@ -353,7 +348,7 @@ async function finaleEnd(S, d, r, e) {
     await st.cam(x, z + 0.5, { dur: 0.8 });
     st.music(null);
     await st.say('duchess', 'Why won’t you stay DOWN? Why won’t anybody, ever, just let me FINISH?', { expr: 'angry', shake: 1 });
-    await st.say('duchess', 'Thirty years I have rehearsed this. Thirty YEARS. And every time there’s a hen, or a lantern, or four small people in hats—', { expr: 'cry' });
+    await st.say('duchess', 'Thirty years ago a hen walked onto my stage, and the whole cove LAUGHED at me. Never again. NEVER—', { expr: 'cry' });
     // Perkins, through the backdrop
     st.sfx('slam', { volume: 1 }); st.sfx('whoosh', { volume: 0.8 });
     st.flash('#ffffff', 0.4); st.shake(1);
@@ -367,9 +362,9 @@ async function finaleEnd(S, d, r, e) {
     st.dropProp('perkins');
     st.actor('perkins', x - 1.6, z + 1, { face: { x: 1, z: -0.3 } });
     st.mark('perkins');
-    await st.say('perkins', 'PELICAN POST! Mind your backdrop — ooh, sorry. Special delivery!', { expr: 'happy', hop: true });
-    await st.say('perkins', 'One letter, for a « Miss G. Gloomsworth, Marigold Cove ». Thirty years late — no forwarding address. The wind was against us.', { expr: 'neutral' });
-    await st.say('duchess', '…For me? Nobody writes to me. Nobody has EVER—', { expr: 'shock' });
+    await st.say('perkins', 'PELICAN POST! Special delivery! …Ooh. Sorry about the backdrop.', { expr: 'happy', hop: true });
+    await st.say('perkins', 'One letter, for « Miss G. Gloomsworth, Marigold Cove ». {key}Thirty years late{/}. The wind was against us.', { expr: 'neutral' });
+    await st.say('duchess', '…For me? Nobody ever writes to me.', { expr: 'shock' });
     const env = buildLetter(P.r3d);
     st.prop('letter', env, x - 1.2, 1.2, z + 0.8);
     st.sfx('page', { volume: 0.8 });
@@ -378,10 +373,10 @@ async function finaleEnd(S, d, r, e) {
     if (!st.skipping) await st.dialogue.showLetter('The Starfall Festival Committee', 'Dear Miss Gloria,\n\nThe hen was an accident. It belonged to the Mayor, and it has been spoken to.\n\nWe laughed at the hen — never at you. You were wonderful.\n\nPlease come back and close next year’s Festival. We would so like to hear the rest.', '— the Committee (June, secretary)');
     await st.say('duchess', '« We would so like to hear the rest… »', { expr: 'cry' });
     st.heroesFace(x, z);
-    await st.say(st.lead, 'And your mother asked us to tell you something. She said…{p}the tea is still warm.', { expr: 'sad' });
+    await st.say(st.lead, 'And your mother has a message for you.{p}The tea is still warm.', { expr: 'sad' });
     st.mark('tea');
     await st.say('duchess', '…Mother?{p}She kept… the tea… warm?', { expr: 'cry' });
-    await st.say('narrator', 'Duchess Gloria Gloomsworth, terror of the Wick Brigade, sits down in the middle of her own stage and cries like a girl of sixteen.');
+    await st.say('narrator', 'And Duchess Gloria Gloomsworth sits down in the middle of her own stage, and cries like a girl of sixteen.');
     // the flames fly home
     e.freedFlames = true;
     const cols = ['#ffd66b', '#8fd6b4', '#9fd8ff', '#ff9a6a', '#c8a8ff', '#ffe08a', '#b8f0a0'];
@@ -396,7 +391,7 @@ async function finaleEnd(S, d, r, e) {
     for (const [i] of cols.entries()) { const a = (i / cols.length) * Math.PI * 2; st.move('flame' + i, { x: x + Math.cos(a) * 12, y: 14, z: z + Math.sin(a) * 6 - 6 }, 2.4 + i * 0.15); }
     await st.wait(0.7);
     st.mark('flames');
-    await st.say('narrator', 'One by one, the stolen flames slip out of her hands — and fly home, every one of them, to its Great Hearth.');
+    await st.say('narrator', 'One by one, {key}the stolen flames{/} slip out of her hands and fly home, each to its Great Hearth.');
     await st.wait(0.6);
   });
   if (C) for (const q of heroesIn(S)) C.gainXp(q, 1400);
@@ -438,12 +433,11 @@ async function dawnOverAll(S) {
     await st.fade(1, 0.4);
     await st.cam(x - 2, z + 2, { dur: 0, ppu: st.basePpu() });
     await st.fade(0, 0.6);
-    await st.say('duchess', '…They’ll all be at the Festival tonight. Everyone. And they will all know it was me.', { expr: 'sad' });
+    await st.say('duchess', '…They’ll all be at the Festival tonight. And they will all know it was me.', { expr: 'sad' });
     await st.say(st.lead, 'Come anyway.', { expr: 'happy' });
-    await st.say('minnow', 'And if you’re scared, you do what we do. You audition.', { expr: 'smug' });
     await st.say('duchess', '…I haven’t sung FOR anybody in thirty years. Only AT them.', { expr: 'worried' });
-    await st.say('crumble', 'I’ll do your introduction! I’ve been practising your title. I’ve got it nearly right!', { expr: 'happy', hop: true });
-    await st.say('wendy', 'Then tonight’s the night. All aboard the Teacup — tea’s on in Marigold Cove!', { expr: 'happy' });
+    await st.say('crumble', 'I’ll introduce you! I’ve been practising your title: I’ve nearly got it right!', { expr: 'happy', hop: true });
+    await st.say('wendy', 'Then all aboard the Teacup! Next stop: {key}the Festival{/}, in {key}Marigold Cove{/}!', { expr: 'happy' });
     st.mark('home');
     await st.title('Dawn over every land', 'The Murk is gone — and the Festival is tonight', 3.4);
     S.flag('dawn10');
@@ -455,15 +449,15 @@ async function dawnOverAll(S) {
     P.gatherAt(PLAZA[0], PLAZA[1] + 1.2, 1.3);
     await st.cam(PLAZA[0], PLAZA[1], { dur: 0, ppu: st.basePpu() });
     await st.fade(0, 0.8);
-    await st.say('narrator', 'That evening, Marigold Cove. Lanterns on every string, and the whole world on the plaza — or near enough.');
+    await st.say('narrator', 'That evening, Marigold Cove: lanterns on every string. Behind {key}the Festival stage{/}, {key}the Duchess{/} is waiting, very nervous.');
   });
 }
 
 // ------------------------------------------------------------------ the Epilogue: the Starfall Festival
 async function duchessNerves(S) {
-  await S.say('duchess', 'Oh, it’s you. Good. Tell me honestly: is there a hen out there? Any hen. Any size.', { expr: 'worried' });
-  await S.say('duchess', 'Thirty years I have been a villain. Villains don’t get stage fright. Villains get REVENGE.{p}…This is much, much worse.', { expr: 'worried' });
-  await S.say('duchess', 'Right. RIGHT. A Gloomsworth never misses her cue. Go and find a good seat — the front. I want to see a friendly face.', { expr: 'smug' });
+  await S.say('duchess', 'Oh, it’s you. Thirty years a villain, and never once stage fright. This is much, much worse.', { expr: 'worried' });
+  await S.say('duchess', 'Tell me honestly: is there a hen out there?', { expr: 'worried' });
+  await S.say('duchess', 'Right. A Gloomsworth never misses her cue. Go and sit in {key}the front row{/}: I want to see a friendly face.', { expr: 'smug' });
 }
 
 // the crowd, in a horseshoe round the fountain (x, z from the stage’s mark)
@@ -497,17 +491,16 @@ async function festival(S) {
     st.music(null);
     await st.fade(0, 1);
     st.mark('festival');
-    await st.say('narrator', 'The Starfall Festival. The whole cove on the plaza — and everyone the Lamplighters met on the road, from the Whispering Woods to the Aurora Camp.');
+    await st.say('narrator', 'The Starfall Festival. The whole cove is on the plaza, with everyone you met on the road.');
     // (and someone who has been away a long while)
     await st.cam(x - 5.2, z + 4, { dur: 1 });
     st.emote('june', 'heart', 1.8);
     st.mark('june');
-    await st.say('narrator', 'And in the front row, knitting, home at last from wherever it is Lamplighters go: Nana June.');
-    await st.say('june', 'Don’t mind me, dears. I only came for the singing.', { expr: 'smug' });
+    await st.say('narrator', 'And in the front row, knitting, home at last: {key}Nana June{/}.');
     await st.cam(x, z + 2, { dur: 0.8 });
     // Crumble announces her — and gets it right
     st.actor('crumble', x - 2.3, z - 1.2, { face: { x: 0, z: 1 } }).n.seatY = 0.5;
-    await st.say('crumble', 'LADIES, GENTLEMEN AND ASSORTED WILDLIFE! Closing this year’s Festival — thirty years late — please welcome…{p}MISS GLORIA GLOOMSWORTH!', { expr: 'happy', hop: true });
+    await st.say('crumble', 'LADIES, GENTLEMEN AND ASSORTED WILDLIFE! Thirty years late, please welcome…{p}MISS GLORIA GLOOMSWORTH!', { expr: 'happy', hop: true });
     await st.say('crumble', '…I got it right. I GOT IT RIGHT!', { expr: 'love', hop: true });
     const cr = st.actorOf('crumble');
     if (cr && cr.n) cr.n.seatY = 0;
@@ -528,7 +521,7 @@ async function festival(S) {
     st.heroesEmote('exclaim', 1.6);
     for (const a of crowd) if (a && a.n) a.n.setEmote('exclaim', 1.6);
     st.mark('hen');
-    await st.say('narrator', 'From the wings: a hen.{p}The whole plaza holds its breath.');
+    await st.say('narrator', 'From the wings: a hen.{p}The whole plaza holds its breath. Mayor Hollis drops his tea.');
     await st.say('duchess', '…', { expr: 'shock' });
     // she picks it up, and sings on
     await st.move('hen', { x: x + 0.45, y: 1.6, z: z - 0.9 }, 0.5);
@@ -536,24 +529,24 @@ async function festival(S) {
     for (let k = 0; k < 6; k++) { st.fx('note', x + (Math.random() - 0.5) * 2, 3, z - 1, 1); await st.wait(0.25); }
     await st.say('duchess', '♪ …LAAAAAAAAA! ♪', { expr: 'happy' });
     st.mark('aria');
-    await st.say('narrator', 'She sings the whole aria — every note of it, with a hen tucked under one arm — and it is the most beautiful thing Marigold Cove has ever heard.');
+    await st.say('narrator', 'She sings the whole aria, a hen tucked under one arm. It is the most beautiful thing Marigold Cove has ever heard.');
     // the applause
     st.sfx('cheer', { volume: 1 }); st.sfx('cheer', { volume: 0.8, pitch: 5 });
     for (const a of crowd) if (a && a.n) { a.n.hop(Math.random() * 0.3); a.n.setEmote('heart', 2); }
     st.heroesEmote('heart', 2);
     for (let k = 0; k < 14; k++) st.fx('sparkle', x + (Math.random() - 0.5) * 8, 1 + Math.random() * 3, z + 3 + Math.random() * 4, 1, { color: '#ffe8a0' });
     st.mark('applause');
-    await st.say('narrator', 'And Marigold Cove applauds. It applauds until its hands hurt. It applauds thirty years’ worth.');
+    await st.say('narrator', 'And Marigold Cove applauds. It applauds thirty years’ worth.');
     await st.say('duchess', 'They’re… clapping. For ME.{p}Mother… they’re clapping.', { expr: 'love' });
     // the Understudies’ act
     st.dropProp('hen');
     for (const [i, id] of TROUPE.entries()) { const a = st.actor(id, x - 1.2 + i * 1.2, z - 1.1, { face: { x: 0, z: 1 } }); if (a && a.n) a.n.seatY = 0.5; }
     st.walk('duchess', x + 2.3, z - 1.7, { speed: 2 });
-    await st.say('minnow', 'And now — for one night only — the UNDERSTUDIES! Team pose!', { expr: 'happy', hop: true });
+    await st.say('minnow', 'And now, for one night only: the UNDERSTUDIES! Team pose!', { expr: 'happy', hop: true });
     for (const [i, id] of TROUPE.entries()) st.hop(id, i * 0.15);
     await st.wait(0.5);
     st.sfx('bonk', { volume: 0.6 });
-    await st.say('fidget', 'Oh no. Oh no no no, it’s collapsing, it always collapses—', { expr: 'shock' });
+    await st.say('fidget', 'Oh no. It’s collapsing. It ALWAYS collapses—', { expr: 'shock' });
     st.sfx('cheer', { volume: 0.8, pitch: 8 });
     for (const a of crowd) if (a && a.n) a.n.hop(Math.random() * 0.2);
     await st.say('brick', 'They laugh. WITH us.', { expr: 'love', hop: true });
@@ -562,7 +555,7 @@ async function festival(S) {
     ghostify(lady);
     await st.cam(x + 3.4, z + 8.4, { dur: 1.6 });
     st.mark('lady');
-    await st.say('narrator', 'At the back of the crowd, by the fountain, a pale lady in grey raises a teacup — and smiles — and is gone.');
+    await st.say('narrator', 'At the back, by the fountain, a pale lady in grey raises a teacup, smiles — and is gone.');
     for (let k = 0; k < 10; k++) st.fx('sparkle', x + 5.6 + (Math.random() - 0.5) * 1.5, 0.6 + Math.random() * 2.2, z + 10.4, 1, { color: '#e8f0ff' });
     st.hide('honoria');
     await st.wait(0.8);
@@ -580,8 +573,8 @@ async function festival(S) {
     st.prop('riser', rg, 0, 0, 0);
     for (let k = 0; k < 6; k++) { st.fx('firework', x - 7 + k * 2.8, 10 + (k % 2) * 2, z - 6, 26, { color: ['#ffd66b', '#ff8ab0', '#8fd6ff', '#b0f08a', '#c8a8ff', '#ffb07a'][k] }); st.sfx('firework', { volume: 0.5 }); await st.wait(0.3); }
     st.mark('fireworks');
-    await st.say('june', 'Well, my little Lamplighter. Seven flames home, one Duchess found, and not a single thing burned down.{p}I knew you could. I wrote and told you so — the letter should get here by spring.', { expr: 'love' });
-    await st.say('duchess', 'Same time next year? I have… a few more arias. And a hen who can harmonise.', { expr: 'happy' });
+    await st.say('june', 'Well, my little Lamplighter. Seven flames home, one Duchess found, and not a single thing burned down.{p}I knew you could.', { expr: 'love' });
+    await st.say('duchess', 'Same time next year? I have… a few more arias.', { expr: 'happy' });
     for (let k = 0; k < 6; k++) { st.fx('firework', x - 8 + Math.random() * 16, 11 + Math.random() * 3, z - 7, 26, { color: ['#ffd66b', '#ff8ab0', '#8fd6ff', '#b0f08a'][k % 4] }); st.sfx('firework', { volume: 0.45 }); await st.wait(0.35); }
     // the credits, over the festival, dimmed
     st.music('title');
@@ -601,7 +594,9 @@ async function festival(S) {
 
 // ------------------------------------------------------------------ the chapter
 export const CH10 = {
-  id: 10, title: 'The Grand Finale', lv: 39, zones: ['scar'], opens: [],
+  id: 10, title: 'The Grand Finale',
+  recap: 'At Hollowmoor, the Duchess’s mother gave you a message for her daughter. The Duchess is aboard {key}the Gloomstage{/}, over the Umbral Scar, ready for her Grand Finale. Fly up with Captain Wendy and {key}stop her{/}.',
+  lv: 39, zones: ['scar'], opens: [],
   // (the Scar, until dawn: a sky like a bruise)
   gloom(S) {
     if (S.st.ch !== 10 || S.has('dawn10')) return 0;
@@ -622,63 +617,69 @@ export const CH10 = {
   npcs: [
     // (at the edge of the Scar, until the Teacup takes off)
     { id: 'wendy', at: WENDY, face: { x: -0.4, z: 1 }, when: (S) => S.active('c10_finale') && S.stepOf('c10_finale') < 2,
-      lines: ['Tea: strong. Nerves: stronger. Teacup: ready when you are.'] },
+      lines: ['The Teacup is ready when you are.'] },
     { id: 'tock', at: [CAMP[0] - 3, CAMP[1] - 1.2], face: { x: 0.2, z: 1 }, when: (S) => S.active('c10_finale') && S.stepOf('c10_finale') < 2,
-      lines: ['I’ve polished the lens four times. Tick. Tick. Five.', 'The cannon wants a steady hand and a clear shot. I have one of those. We’ll find the other.'] },
+      lines: ['On her stage, stand on the cannon’s plate: I’ll do the aiming.'] },
     { id: 'minnow', at: [CAMP[0] + 0.4, CAMP[1] - 2.2], face: { x: 0, z: 1 }, when: (S) => S.active('c10_finale') && S.stepOf('c10_finale') < 2,
-      lines: ['Understudies don’t get stage fright. We get stage PREPARED.', 'Brick, stop eating the props.'] },
+      lines: ['Up there, stay in the shadows: her spotlights see everything.'] },
     { id: 'fidget', at: [CAMP[0] + 1.6, CAMP[1] - 2.4], face: { x: 0, z: 1 }, when: (S) => S.active('c10_finale') && S.stepOf('c10_finale') < 2,
-      lines: ['What if she sees us? What if she DOESN’T see us? Which is worse? Don’t answer that.'] },
+      lines: ['What if she sees us? …What if she DOESN’T?'] },
     { id: 'brick', at: [CAMP[0] - 1.2, CAMP[1] - 2.6], face: { x: 0, z: 1 }, when: (S) => S.active('c10_finale') && S.stepOf('c10_finale') < 2,
-      lines: ['Brick is ready.', 'Cannon is heavy. Brick is heavier.'] },
+      lines: ['Cannon is heavy. Brick is heavier.'] },
     // (the Epilogue: backstage, very nervous)
     { id: 'duchess', at: BACKSTAGE, face: { x: -1, z: 0.2 }, when: (S) => S.active('c10_festival') },
     // (after it all: the plaza and the cove)
     { id: 'duchess', at: [96.2, 67.4], face: { x: -0.4, z: 1 }, when: (S) => S.done('c10_festival'),
-      lines: ['Encore? …Well. If you INSIST.', 'I’ve started giving singing lessons. My first pupil is a hen. She’s very gifted.', 'Mother’s clocks are all running again, I hear. I’m going to Hollowmoor for tea on Sunday. It’ll be warm.'] },
+      lines: ['Encore? …Well. If you INSIST.', 'I’m going home to Hollowmoor for tea on Sunday. It will be warm.'] },
     { id: 'crumble', at: [COVE[0] - 8, COVE[1] - 12], face: { x: 0.3, z: 1 }, when: (S) => S.done('c10_festival'),
-      lines: ['Crumble’s Gloomstage Tours! On your left: the wings. On your right: more wings. Mind the trapdoors — no, really, MIND them.', 'Tips are welcome. Applause is MORE welcome.'] },
+      lines: ['Crumble’s Gloomstage Tours! On your left: the wings. On your right: more wings.', 'Tips are welcome. Applause is MORE welcome.'] },
     { id: 'fidget', at: [87.7, 68.8], face: { x: 0.2, z: 1 }, when: (S) => S.done('c10_festival'),
-      lines: ['I’ve been practising my bow. Forty times this morning. It’s getting less wobbly.', 'Do you think the Duchess will sing with us one day? She said « perhaps ». Perhaps is nearly yes.'] },
+      lines: ['Do you think the Duchess will sing with us one day? She said « perhaps ». Perhaps is nearly yes.'] },
     { id: 'brick', at: [85, 69], face: { x: 0.4, z: 1 }, when: (S) => S.done('c10_festival'),
-      lines: ['Brick likes applause.', 'Brick has a fan. The fan is a hen.'] },
+      lines: ['Brick likes applause.'] },
     { id: 'minnow', at: [86.4, 68.2], face: { x: 0.4, z: 1 }, when: (S) => S.done('c10_festival'),
-      lines: ['We’ve been booked! A real theatre! Well — the Gloomstage. It’s the same theatre. But we’re on the POSTER.', 'Fidget’s practising his bow. He’s practising it a lot.'] },
+      lines: ['We’re booked at the Gloomstage — and this time we’re on the POSTER!'] },
   ],
   quests: {
     c10_finale: {
-      title: 'The Grand Finale', auto: true, lv: 39, gear: 'rich',
+      title: 'The Grand Finale',
+      brief: 'The Duchess wants darkness everywhere, for ever. Fly up to {key}the Gloomstage{/}, cross her theatre and face her on its stage.',
+      auto: true, lv: 39, gear: 'rich',
       steps: [
-        { do: 'scene', text: '…', run: coldOpen },
-        { do: 'talk', npc: 'wendy', text: 'Tell Captain Wendy when you’re ready to board the Gloomstage', run: wendyTalk },
-        { do: 'dungeon', id: 'gloomstage', text: 'Sneak through the Gloomstage to the stage — and the Duchess’s Grand Finale' },
-        { do: 'scene', text: '…', run: dawnOverAll },
+        { do: 'scene', text: 'Hear the plan at {key}the Scar’s edge{/}', run: coldOpen },
+        { do: 'talk', npc: 'wendy', text: 'Go and see {key}Captain Wendy{/}, by the Teacup, to take off', run: wendyTalk },
+        { do: 'dungeon', id: 'gloomstage', text: 'Cross {key}the Gloomstage{/} to its stage and stop the Duchess' },
+        { do: 'scene', text: 'Watch the dawn rise over {key}the Umbral Scar{/}', run: dawnOverAll },
       ],
     },
     // ---- a mini-game, to play again and again (World v7 M13): percussion for the Understudies
     c10_talentshow: {
-      title: 'The Talent Show', kind: 'side', repeat: true, giver: 'minnow', after: 'c10_festival', lv: 40, dust: 25,
+      title: 'The Talent Show',
+      brief: 'The Understudies are rehearsing their new act on the plaza and need someone to keep the beat. A game to play again whenever you like.',
+      kind: 'side', repeat: true, giver: 'minnow', after: 'c10_festival', lv: 40, dust: 25,
       offer: async (S) => {
-        await S.say('minnow', 'We’re rehearsing for our real theatre debut! We need someone on percussion. You clap. On the beat. That’s it. That’s the whole job.', { expr: 'smug' });
-        await S.say('fidget', 'It’s a very important job. The last percussionist was Brick. Brick clapped once, very hard, and then the stage was gone.', { expr: 'worried' });
+        await S.say('minnow', 'We’re rehearsing our new act, and we need someone on percussion!', { expr: 'smug' });
+        await S.say('fidget', 'The last one was Brick: one clap, and the stage was gone. You just {key}clap on the beat{/}.', { expr: 'worried' });
       },
       steps: [
-        { do: 'rhythm', text: 'Keep the beat for the Understudies’ new act (press as each note reaches the ring)', at: [89.2, 70.4], r: 7, bpm: 116, need: 0.65,
+        { do: 'rhythm', text: 'Keep the beat on the plaza: press when a note {key}reaches the ring{/}', at: [89.2, 70.4], r: 7, bpm: 116, need: 0.65,
           beats: [0, 1, 2, 2.5, 3, 4, 5, 6, 6.5, 7, 8, 8.5, 9, 10, 11, 12, 13, 13.5, 14, 15, 16, 17, 18, 18.5, 19, 20, 20.5, 21, 22, 23],
           go: 'Five, six, seven, eight!', fail: 'Brick tripped over the beat. From the top!',
           onStart: (S) => { for (const id of ['minnow', 'fidget', 'brick']) { const n = S.npcFor(id); if (n) n.hop(); } },
           onHit: (S, n) => { const who = S.npcFor(['minnow', 'fidget', 'brick'][n % 3]); if (who) who.hop(); } },
-        { do: 'talk', npc: 'minnow', text: 'Take a bow with the Understudies', run: async (S) => {
+        { do: 'talk', npc: 'minnow', text: 'Take a bow with {key}Minnow{/}, on the plaza', run: async (S) => {
           if (S.plays('c10_talentshow')) await S.say('minnow', 'Tighter every time! Keep this up and we’ll put you on the poster. Small. In the corner. But ON it.', { expr: 'happy', hop: true });
           else await S.say('minnow', 'That was PERFECT. Nearly. The important thing is nobody fell off anything. Same time tomorrow?', { expr: 'love', hop: true });
         } },
       ],
     },
     c10_festival: {
-      title: 'The Starfall Festival', auto: true, after: 'c10_finale', lv: 40, dust: 100,
+      title: 'The Starfall Festival',
+      brief: 'The Murk is gone, and tonight is the Starfall Festival in Marigold Cove. The Duchess is to sing there at last, but she has stage fright: go and cheer her on.',
+      auto: true, after: 'c10_finale', lv: 40, dust: 100,
       steps: [
-        { do: 'talk', npc: 'duchess', text: 'Find the Duchess behind the Festival stage — she’s very nervous', run: duchessNerves },
-        { do: 'scene', text: '…', run: festival },
+        { do: 'talk', npc: 'duchess', text: 'Reassure {key}the Duchess{/}, behind {key}the Festival stage{/} on the plaza', run: duchessNerves },
+        { do: 'scene', text: 'Sit in {key}the front row{/} and listen to the Duchess sing', run: festival },
       ],
     },
   },
