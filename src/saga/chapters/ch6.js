@@ -581,7 +581,7 @@ export const CH6 = {
     c6_dango: {
       title: 'Granny’s Dango',
       brief: 'Granny Mochi’s bathers come out of the pool hungry. Thread her {key}dango{/} on the skewer in the order shown, at her stall south-east of the Hot Springs.',
-      kind: 'side', repeat: true, giver: 'mochi', lv: 27, when: (S) => S.done('c6_tow'), dust: 8,
+      kind: 'side', repeat: true, giver: 'mochi', lv: 23, when: (S) => S.done('c6_tow'), dust: 8,
       offer: async (S) => {
         await S.say('mochi', 'A hot bath makes them hungry. And I have only two hands!', { expr: 'worried' });
         await S.say('mochi', 'Thread my {key}dango{/} for me, at the stall {key}south-east of the pool{/}. In the right order, mind!', { expr: 'happy' });

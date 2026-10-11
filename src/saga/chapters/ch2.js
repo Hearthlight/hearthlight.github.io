@@ -419,7 +419,7 @@ export const CH2 = {
     c2_range: {
       title: 'Flour Fight',
       brief: 'The mills turn again, and Barley has painted gloom faces on old mill boards. {key}Throw flour bags{/} at them on Breezy Hill — but never at a hen.',
-      kind: 'side', repeat: true, giver: 'barley', lv: 9, when: (S) => S.done('c2_mills'), dust: 8,
+      kind: 'side', repeat: true, giver: 'barley', lv: 8, when: (S) => S.done('c2_mills'), dust: 8,
       offer: async (S) => {
         await S.say('barley', 'I painted {key}gloom faces{/} on old mill boards. Come and throw flour bags at them!', { expr: 'happy' });
         await S.say('barley', 'My range is {key}west of the high mill{/}. And don’t hit the hens: they hold grudges.', { expr: 'worried' });

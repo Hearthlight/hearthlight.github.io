@@ -536,7 +536,7 @@ export const CH4 = {
     c4_concert: {
       title: 'The Royal Concert',
       brief: 'The Royal Choir is whole again, and it needs a conductor. {key}Keep the beat{/} for the frogs, in front of the lily throne.',
-      kind: 'side', repeat: true, giver: 'newton', after: 'c4_choir', lv: 16, dust: 15,
+      kind: 'side', repeat: true, giver: 'newton', after: 'c4_choir', lv: 13, dust: 15,
       offer: async (S) => {
         await S.say('newton', 'The choir is complete! But with no conductor, it is only… ribbiting.', { expr: 'worried' });
         await S.say('newton', '{key}Keep the beat{/} for them, in front of the throne. His Majesty is listening.', { expr: 'happy' });

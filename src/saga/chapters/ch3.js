@@ -662,7 +662,7 @@ export const CH3 = {
     c3_herd: {
       title: 'Fluffhorn Round-Up',
       brief: 'A storm is coming, and the nomads’ fluffhorns are scattered over the grazing ground. Drive them into {key}the pen{/}, south-west of the yurts.',
-      kind: 'side', repeat: true, giver: 'tuya', lv: 11, when: (S) => S.done('c3_nomads'), dust: 8,
+      kind: 'side', repeat: true, giver: 'tuya', lv: 10, when: (S) => S.done('c3_nomads'), dust: 8,
       offer: async (S) => {
         await S.say('tuya', 'Storm tonight, and my fluffhorns are all over the grazing ground.', { expr: 'worried' });
         await S.say('tuya', 'They run from strangers. So {key}walk behind them{/}: they will run into {key}the pen{/}, south-west of here.', { expr: 'happy' });

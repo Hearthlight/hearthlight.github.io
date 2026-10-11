@@ -708,7 +708,7 @@ export const CH5 = {
     c5_coconuts: {
       title: 'Auntie’s Coconut Shy',
       brief: 'Auntie Saffron has set up a coconut shy on the dunes south of Palm Oasis. {key}Throw coconuts{/} at the gloom boards — but never at Humphrey’s portrait.',
-      kind: 'side', repeat: true, giver: 'saffron', lv: 22, when: (S) => S.done('c5_oasis'), dust: 8,
+      kind: 'side', repeat: true, giver: 'saffron', lv: 17, when: (S) => S.done('c5_oasis'), dust: 8,
       offer: async (S) => {
         await S.say('saffron', 'Three throws for a coin!{p} …For you? Free. I am getting soft.', { expr: 'smug' });
         await S.say('saffron', 'Knock down the {key}gloom boards{/}, on the dunes {key}south of the oasis{/}. Hit Humphrey’s portrait, and you pay.', { expr: 'happy' });
