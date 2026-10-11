@@ -64,7 +64,7 @@ import { StuckWatch, nearWater } from '../entities/stuck.js';
 import { PartyChat } from './partychat.js';
 import { drawSpeech, drawBubbles } from '../ui/chat.js';
 import { STORIES_KEY, stories, touchStory, playing } from './slots.mjs';
-import { storyName, storyWho, storyLevel, storyWhen } from './stories.js';
+import { storyTitle, storyWho, storyLevel, storyWhen } from './stories.js';
 import { Announcer, noteTime } from './announce.js';
 import { shownLevel, xpBar } from '../saga/levels.js';
 import { drawLevelTag, liftMark } from '../ui/levelbar.js';
@@ -962,6 +962,14 @@ export class Party {
     this.prevM = mKey;
     // (the map open: the heroes here wait, their sticks choose a place — the mouse too)
     this.guides.mapInput(dt);
+    // (the lobby's story tag: « Change… » goes back to the title's choice of stories)
+    const SB = this.storyBtn;
+    if (SB && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(SB.x, SB.y, SB.w, SB.h)) {
+      g.input.mouse.pressed = false;
+      audio.sfx('select', { volume: 0.6 });
+      this.changeStory();
+      return;
+    }
     // (the lobby's join card: its link copied in one click)
     const CR = this.copyR;
     if (CR && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(CR.x, CR.y, CR.w, CR.h)) {
@@ -1949,7 +1957,7 @@ export class Party {
     // join card on the left
     const py = 8, px = 8, card = !this.remoteFor;          // (a friend at home doesn't need the QR code)
     const pw = card ? Math.min(196, Math.round(W * 0.38)) : -16, ph = H - cardH - 14 - py;
-    this.copyR = null;
+    this.copyR = null; this.lobbyTip = null;
     if (card) {
     panel(ctx, px, py, pw, ph);
     const net = this.net;
@@ -1957,48 +1965,55 @@ export class Party {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
     const padFree = pads.some((gp) => gp && gp.connected !== false && !this.players.some((q) => q.kind === 'gamepad' && q.input.index === gp.index));
     const local = this.players.some((q) => q.kind !== 'phone');
+    // (who has no phone: a word at the foot of the card when the code to scan leaves it room, else
+    // over the plaza — the code comes first)
     const tipText = padFree ? t('🎮 A gamepad is here: press A to join!')
-      : local ? t('No phone? Your own menu (talents, gear…) is on this screen: Select on a gamepad, Tab on the keyboard.')
-        : t('No phone? Press E or Enter on the keyboard, or A on a gamepad, to play on this screen.');
+      : local ? t('Your own menu: Select on a gamepad, Tab on the keyboard')
+        : t('No phone? Press E, Enter, or A on a gamepad');
     const tips = wrap(tipText, pw - 16);
-    const tipsY = py + ph - 7 - tips.length * 10;
-    tips.forEach((l, i) => drawText(ctx, l, px + pw / 2, tipsY + i * 10, { color: padFree ? '#4f955a' : UI.inkSoft, align: 'center' }));
-    drawText(ctx, t('Join the party!'), px + pw / 2, py + 8, { color: '#8a5234', align: 'center' });
+    let foot = py + 18;                          // (where the card’s own things end)
+    drawText(ctx, t('Scan to play!'), px + pw / 2, py + 6, { color: '#8a5234', align: 'center' });
     if (net.status === 'unavailable' || net.status === 'full') {
       // (no relay here, or the online one has no room left: the desktop app has its own)
       const why = net.status === 'full' ? t('The online party server is full right now. Try again in a few minutes — or get the desktop app: phones on your Wi-Fi join it directly.')
         : t('Phones can’t join this copy of the game: play online or in the desktop app (or start it with python3 tools/devserver.py).');
       const lines = wrap(why, pw - 20);
-      lines.forEach((l, i) => drawText(ctx, l, px + 10, py + 26 + i * 11, { color: '#a8483a' }));
+      lines.forEach((l, i) => drawText(ctx, l, px + 10, py + 22 + i * 11, { color: '#a8483a' }));
+      foot = py + 22 + lines.length * 11;
     } else if (!net.code || !this.qr) {
       drawText(ctx, net.status === 'down' ? t('Reconnecting…') : t('Opening the room…'), px + pw / 2, py + 60, { color: UI.inkSoft, align: 'center' });
+      foot = py + 72;
     } else {
       const q = this.qr;
-      const room = tipsY - py - 88;              // (under it: the code, the address, the copy button, a line)
-      const m = Math.max(1, Math.floor(Math.min(pw - 20, room) / q.width));
-      const qs = q.width * m, qx = px + Math.round((pw - qs) / 2), qy = py + 20;
+      // the code to scan, as big as the card allows: under it, only the room’s code, the address
+      // and the button that copies the link
+      const m = Math.max(1, Math.floor(Math.min(pw - 14, ph - 17 - 52 - 3) / q.width));
+      const qs = q.width * m, qx = px + Math.round((pw - qs) / 2), qy = py + 17;
       ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(q, qx, qy, qs, qs);
-      let y = qy + qs + 6;
+      let y = qy + qs + 5;
       const lw = measure(t('code')) + 4, cw = measure(net.code, 2);
       const cx0 = px + Math.round((pw - lw - cw) / 2);
       drawText(ctx, t('code'), cx0, y + 5, { color: UI.inkSoft });
       drawText(ctx, net.code, cx0 + lw, y, { color: '#3b2a2e', scale: 2 });
-      y += 19;
+      y += 18;
       const url = net.joinUrl.replace(/^https?:\/\//, '').replace(/#.*$/, '');
       drawText(ctx, fitText(url, pw - 8), px + pw / 2, y, { color: '#4f73b6', align: 'center' });
+      foot = y + 22;
       if (net.status === 'down') drawText(ctx, t('Reconnecting…'), px + pw / 2, y + 11, { color: '#a8483a', align: 'center' });
       else {
         // (friends far away: the whole invitation link — code included — copied in one click)
         const lab = this.copiedT > 0 ? t('Copied! Paste it to your friends') : t('Copy the invitation link');
-        const bw = Math.min(pw - 16, measure(lab) + 16), bx = px + Math.round((pw - bw) / 2), by = y + 13;
+        const bw = Math.min(pw - 16, measure(lab) + 16), bx = px + Math.round((pw - bw) / 2), by = y + 12;
         const gi = this.game.input, hot = gi.mouseIn(bx, by, bw, 14);
         button(ctx, bx, by, bw, 14, fitText(lab, bw - 8), { hot, color: this.copiedT > 0 ? '#4f955a' : null });
         this.copyR = { x: bx - 2, y: by - 2, w: bw + 4, h: 18 };
-        if (net.playUrl) drawText(ctx, fitText(t('Far away? They can play from home with it'), pw - 10), px + pw / 2, by + 18, { color: '#3f8a4a', align: 'center' });
+        foot = by + 16;
       }
     }
+    if (py + ph - 4 - foot >= tips.length * 10 + 2) tips.forEach((l, i) => drawText(ctx, l, px + pw / 2, py + ph - 5 - (tips.length - i) * 10, { color: padFree ? '#4f955a' : UI.inkSoft, align: 'center' }));
+    else this.lobbyTip = { text: tipText, ink: padFree ? '#a8e6b0' : '#d9c8e8' };
     }
 
     // player cards along the bottom
@@ -2024,7 +2039,8 @@ export class Party {
       if (pc) ctx.drawImage(pc, 4, 2, pc.width - 8, pc.height - 10, pxp, cy + 7, ps, ps - 4);
       drawText(ctx, p.name, cx + cw / 2, cy + 35, { color: UI.ink, align: 'center', maxChars: Math.max(3, Math.floor((cw - 6) / 5)) });
       const st = !p.connected ? [tr('away…'), '#a8483a'] : p.ready ? [tr('READY'), '#3f8a4a'] : [tr('styling…'), '#8a6a4a'];
-      drawText(ctx, fitText(st[0], cw - 6), cx + cw / 2, cy + 44, { color: st[1], align: 'center' });
+      // (a word that does not fit a narrow card is not cut: three dots say « not yet » as well)
+      drawText(ctx, measure(st[0]) <= cw - 4 ? st[0] : p.ready && p.connected ? '✓' : '…', cx + cw / 2, cy + 44, { color: st[1], align: 'center' });
       // device badge
       const dev = p.kind === 'phone' ? '' : p.kind === 'keys' ? tr('keyboard') : tr('pad');
       if (dev) { const dw = measure(dev) + 4; ctx.fillStyle = '#5a3b2a'; ctx.fillRect(cx + cw - dw - 3, cy + 8, dw, 9); drawText(ctx, dev, cx + cw - dw - 1, cy + 9, { color: '#fff7e6' }); }
@@ -2035,9 +2051,10 @@ export class Party {
     // title & status over the plaza
     const fx = pw + 16 + (W - pw - 16) / 2;
     drawText(ctx, tr('Hearthlight Party'), fx, py, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
-    drawText(ctx, tr('stories, adventures & the arena · 1 to 8 players'), fx, py + 20, { color: '#f6d38f', align: 'center', outline: '#3b2a2e' });
-    wrap(tr('♛ the first phone is the host · {key}: the menu (invitations, options…)', { key: ctl('pause') }), W - pw - 28).slice(0, 2).forEach((l, i) => drawText(ctx, l, fx, py + 32 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
-    this.drawStoryTag(ctx, fx, py + 55, W - pw - 36);
+    // (one line under it — who the host is, the crown on their card and the line at the foot say)
+    const menuL = wrap(tr('{key}: the menu (invite, options…)', { key: ctl('pause') }), W - pw - 28).slice(0, 2);
+    menuL.forEach((l, i) => drawText(ctx, l, fx, py + 20 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
+    this.drawStoryTag(ctx, fx, py + 23 + menuL.length * 10, W - pw - 36);
     const here = this.players.filter((p) => p.connected);
     let msg;
     if (!here.length) msg = tr('Waiting for friends to join…');
@@ -2045,35 +2062,60 @@ export class Party {
     else if (this.choosing) msg = here.some((p) => p.kind === 'phone') ? tr('Vote on your phone!') : tr('Vote on this screen!');
     else {
       const k = here.filter((p) => !p.ready).length, H = this.hostLed();
+      // (one thing at a time: who still has to press Ready, then who starts — the cards show who is here)
       if (H && !k) msg = tr('Everyone’s ready! ♛ {name} starts the party', { name: H.name });
-      else msg = tn('{n} friend here', '{n} friends here', here.length) + ' · ' + (k ? tn('waiting for {n} to press Ready on their phone', 'waiting for {n} to press Ready on their phones', k) : '') + (H ? (k ? ' · ' : '') + tr('♛ {name} starts the party', { name: H.name }) : '');
+      else if (k) msg = tn('{n} player still has to press Ready', '{n} players still have to press Ready', k);
+      else msg = tn('{n} friend here', '{n} friends here', here.length);
     }
     // (a long line — German, Spanish… — takes two)
     const ml = wrap(msg, W - pw - 36).slice(0, 2);
     const mw = Math.max(...ml.map((l) => measure(l))) + 16, mx = Math.round(fx - mw / 2), my = cy - 4 - ml.length * 11 - 2;
     ctx.fillStyle = 'rgba(30,20,40,0.8)'; ctx.fillRect(mx, my, mw, ml.length * 11 + 2);
     ml.forEach((l, i) => drawText(ctx, l, mx + mw / 2, my + 3 + i * 11, { color: this.countdown > 0 ? '#ffd66b' : '#fff7e6', align: 'center' }));
+    // (the word for who has no phone, when the join card had no room for it)
+    if (this.lobbyTip) {
+      const tl = wrap(this.lobbyTip.text, W - pw - 36).slice(0, 2), tw = Math.max(...tl.map((l) => measure(l))) + 12, ty = my - tl.length * 10 - 6;
+      ctx.fillStyle = 'rgba(30,20,40,0.6)'; ctx.fillRect(Math.round(fx - tw / 2), ty, tw, tl.length * 10 + 3);
+      tl.forEach((l, i) => drawText(ctx, l, fx, ty + 2 + i * 10, { color: this.lobbyTip.ink, align: 'center' }));
+    }
   }
 
-  // which story is loaded, said before anyone starts it — a paper tag under the title: its chapter,
-  // who played it, how far the heroes are, when it was last played (`storyRect`: the toasts keep clear)
+  // which story is loaded, said before anyone starts it, on a paper tag under the title that nobody
+  // can miss: « New story » in big letters, or « Continuing your story » over the chapter it picks
+  // up at — its title, who played it, how far the heroes are, when it was last played. « Change… »
+  // (a click) goes back to the title’s choice of stories (`storyRect`: the toasts keep clear)
   drawStoryTag(ctx, cx, y, maxW) {
     const S = this.story;
-    this.storyRect = null;
+    this.storyRect = null; this.storyBtn = null;
     if (!S) return;
-    const head = S.blank ? '' : t('Your story:') + ' ', iw = Math.min(maxW, 300) - 20;
-    const name = fitText(S.blank ? t('A new story') : storyName(S), iw - measure(head));
-    const rest = storyLevel(S) + ' · ' + storyWhen(S), room = iw - measure(' · ' + rest);
-    const sub = S.blank ? fitText(t('It begins in Marigold Cove, with brand-new heroes'), iw) : [storyWho(S, (x) => measure(x) <= room), rest].filter(Boolean).join(' · ');
-    const w = Math.max(measure(head + name), measure(sub)) + 20, x = Math.round(cx - w / 2);
-    this.storyRect = { x, y, w, h: 27 };
-    ctx.fillStyle = 'rgba(30,18,30,0.35)'; ctx.fillRect(x + 1, y + 2, w, 27);
-    ctx.fillStyle = '#3b2a22'; ctx.fillRect(x, y, w, 27);
-    ctx.fillStyle = UI.paper; ctx.fillRect(x + 1, y + 1, w - 2, 25);
-    ctx.fillStyle = '#ffd66b'; ctx.fillRect(x + 1, y + 1, 3, 25);
-    drawText(ctx, head, x + 11, y + 5, { color: '#8a5234' });
-    drawText(ctx, name, x + 11 + measure(head), y + 5, { color: UI.ink });
-    drawText(ctx, sub, x + 11, y + 15, { color: UI.inkSoft });
+    const iw = Math.min(maxW, 300) - 22, fresh = S.blank || !S.begun;
+    const head = fresh ? '' : t('Continuing your story');
+    const big = fresh ? t('New story') : t('Chapter {n}', { n: S.ch });
+    const lab = t('Change…'), btn = !this.remoteFor, bw = btn ? measure(lab) + 12 : 0;
+    const sc = measure(big, 2) + (head ? 0 : bw + 8) <= iw ? 2 : 1;
+    const rest = storyLevel(S) + ' · ' + storyWhen(S);
+    // (the chapter’s title beside its number when the row has room for both, else under it)
+    const title = fresh ? '' : storyTitle(S), beside = !!title && measure(big, sc) + 8 + measure(title) <= iw;
+    const subs = fresh ? wrap(t('It all begins in Marigold Cove'), iw).slice(0, 2)
+      : [beside ? '' : fitText(title, iw), [storyWho(S, (x) => measure(x + ' · ' + rest) <= iw), rest].filter(Boolean).join(' · ')].filter(Boolean);
+    const w = Math.min(maxW, Math.max(head ? measure(head) + bw + 8 : measure(big, sc) + bw + 8, measure(big, sc) + (beside ? 8 + measure(title) : 0), ...subs.map((l) => measure(l))) + 22);
+    const h = 5 + (head ? 11 : 0) + (sc === 2 ? 19 : 11) + subs.length * 10 + 4, x = Math.round(cx - w / 2);
+    this.storyRect = { x, y, w, h };
+    ctx.fillStyle = 'rgba(30,18,30,0.35)'; ctx.fillRect(x + 1, y + 2, w, h);
+    ctx.fillStyle = '#3b2a22'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = UI.paper; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.fillStyle = fresh ? '#8fd67a' : '#ffd66b'; ctx.fillRect(x + 1, y + 1, 3, h - 2);
+    let ty = y + 5;
+    if (head) { drawText(ctx, head, x + 11, ty, { color: '#8a5234' }); ty += 11; }
+    drawText(ctx, big, x + 11, ty, { color: UI.ink, scale: sc });
+    if (beside) drawText(ctx, title, x + 11 + measure(big, sc) + 8, ty + (sc === 2 ? 7 : 0), { color: UI.inkSoft });
+    ty += sc === 2 ? 19 : 11;
+    subs.forEach((l, i) => drawText(ctx, l, x + 11, ty + i * 10, { color: UI.inkSoft }));
+    if (btn) {
+      const bx = x + w - bw - 5, by = y + 4, gi = this.game.input;
+      button(ctx, bx, by, bw, 12, lab, { hot: gi.mouseIn(bx, by, bw, 12) });
+      this.storyBtn = { x: bx - 2, y: by - 2, w: bw + 4, h: 16 };
+    }
   }
 
   // ---- the display (the Settings’ « Display », as in the solo game): full · compact (a small

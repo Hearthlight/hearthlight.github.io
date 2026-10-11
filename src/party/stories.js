@@ -20,6 +20,8 @@ export function storyWho(s, fits = null) {
   }
   return '';
 }
+// its chapter’s own title (« The Gilded Canyon »), for where the number stands alone
+export const storyTitle = (s) => { const ch = CHAPTERS.find((c) => c.id === s.ch); return ch ? t(ch.title) : ''; };
 // how far its heroes are: the highest level among them
 export const storyLevel = (s) => t('Level {n}', { n: shownLevel(s.level) });
 // when it was last played, in plain words: today, yesterday, 3 days ago; a date beyond a month

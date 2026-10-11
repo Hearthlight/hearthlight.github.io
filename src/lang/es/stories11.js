@@ -26,6 +26,16 @@ export const STORIES11_ES = {
   "This story is no longer here.": "Esta historia ya no está aquí.",
   "There is no story in this backup.": "Esta copia no contiene ninguna historia.",
   "This browser has no room left to put a story away. Nothing was changed.": "A este navegador no le queda sitio para guardar otra historia. No se ha cambiado nada.",
+  // the lobby: its join card and the tag that says which story is loaded (src/party/party.js)
+  "Scan to play!": "¡Escanea para jugar!",
+  "No phone? Press E, Enter, or A on a gamepad": "¿Sin teléfono? Pulsa E, Intro, o A en un mando",
+  "Your own menu: Select on a gamepad, Tab on the keyboard": "Tu menú: Select en un mando, Tab en el teclado",
+  "{key}: the menu (invite, options…)": "{key}: el menú (invitar, opciones…)",
+  "Continuing your story": "Seguimos con la historia",
+  "It all begins in Marigold Cove": "Todo empieza en Marigold Cove",
+  "Change…": "Cambiar…",
+  "{n} player still has to press Ready": "Falta {n} jugador por pulsar Listo",
+  "{n} players still have to press Ready": "Faltan {n} jugadores por pulsar Listo",
   // the lobby, the host menu (src/party/party.js, host.js)
   "Your story:": "Tu historia:",
   "A new story": "Una historia nueva",
