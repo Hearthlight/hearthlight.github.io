@@ -17,14 +17,18 @@ import { hash2 } from '../engine/util.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { drawMarks } from './mapmarks.js';
+import { zoneLevels } from '../saga/levels.js';
 
 const RESET = 30 * 60 * 1000;             // a solved secret comes back after half an hour
-const HOLD = 5.5;                         // seconds a plate stays lit once you step off
 const PLATE_R = 4.6;                      // plates' distance from the chest
 const NOTES = [0, 2, 4, 7];               // the crystals sing G, A, B, D
 const GEM = ['#ff6b7b', '#5aa8f2', '#8fdc5a', '#ffd66b'];
-const TUNE = [3, 4, 5];                   // notes in each round
 const BEAT = 0.62;                        // seconds per note when the pedestal plays
+// The further the land, the harder its secret — the secrets in three ranks, by their lands’ own
+// order (0: the nearest lands, 2: the furthest): a plate stays lit less long once you step off
+// (alone, the last ones are a run), a tune is longer.
+const HOLDS = [6.5, 5.5, 4.5];
+const TUNES = [[3, 4], [3, 4, 5], [4, 5, 6]];
 
 const PUZZLES = [
   { id: 'plates-dunes', kind: 'plates', poi: 'sand_temple' },
@@ -63,8 +67,9 @@ export class Secrets {
       if (!at) continue;
       taken.push({ ...at, r: R });
       const cz = D.kind === 'plates' ? at.z : at.z - 1.6;
-      this.list.push({ ...D, x: at.x, z: at.z, cx: at.x, cz, zone: B.zoneAt(at.x, at.z).id, state: this.solved(D.id) ? 'solved' : 'sealed', built: null, seen: false, told: false, game: null });
+      this.list.push({ ...D, x: at.x, z: at.z, cx: at.x, cz, zone: B.zoneAt(at.x, at.z).id, hold: HOLDS[1], tune: TUNES[1], state: this.solved(D.id) ? 'solved' : 'sealed', built: null, seen: false, told: false, game: null });
     }
+    [...this.list].sort((a, b) => zoneLevels(a.zone)[0] - zoneLevels(b.zone)[0]).forEach((S, i, all) => { const k = Math.min(2, Math.floor((i * 3) / all.length)); S.hold = HOLDS[k]; S.tune = TUNES[k]; });
     ZONES.forEach((Z, zi) => {
       if (Z.id === 'valley' || Z.id === 'sea' || !Z.seeds.length) return;
       const at = this.buriedSpot(Z, zi, taken);
@@ -250,14 +255,14 @@ export class Secrets {
     for (const pl of U.plates) {
       const was = pl.lit > 0;
       const stood = ps.some((p) => Math.hypot(p.pos.x - pl.x, p.pos.z - pl.z) < 0.85 && !(p.actor.jumpY > 0.6));
-      if (on && S.state === 'sealed' && stood) pl.lit = HOLD;
+      if (on && S.state === 'sealed' && stood) pl.lit = S.hold;
       else pl.lit = Math.max(0, pl.lit - dt);
       if (!was && pl.lit > 0) {
         audio.sfx('tone', { pitch: NOTES[pl.i], volume: 0.8 });
         audio.sfx('place', { volume: 0.6 });
         P.world.fx.emit('ring', pl.x, 0.2, pl.z, 1, { color: '#9fdcff' });
       } else if (was && pl.lit <= 0 && S.state === 'sealed') audio.sfx('poof', { volume: 0.3 });
-      const k = pl.lit / HOLD;
+      const k = Math.min(1, pl.lit / S.hold);
       pl.rune.material.emissiveIntensity = 0.1 + k * 1.7;
       pl.line.material.emissiveIntensity = k * 1.2;
       pl.pillar.visible = k > 0;
@@ -307,7 +312,7 @@ export class Secrets {
   start(S, p) {
     if (S.game && S.game.phase !== 'listen') return;
     const seq = [];
-    for (let k = 0; k < TUNE[0]; k++) seq.push(Math.floor(Math.random() * 4));
+    for (let k = 0; k < S.tune[0]; k++) seq.push(Math.floor(Math.random() * 4));
     S.game = { phase: 'play', round: 0, seq, pos: 0, t: -0.5, shown: -1, idle: 0 };
     this.party.toast(t('{name} wakes the crystals — listen!', { name: p.name }), p.color);
   }
@@ -326,11 +331,11 @@ export class Secrets {
     G.pos++;
     if (G.pos < G.seq.length) return;
     G.round++;
-    if (G.round >= TUNE.length) { S.game = null; P.wait(0.5).then(() => this.solve(S)); return; }
-    while (G.seq.length < TUNE[G.round]) G.seq.push(Math.floor(Math.random() * 4));
+    if (G.round >= S.tune.length) { S.game = null; P.wait(0.5).then(() => this.solve(S)); return; }
+    while (G.seq.length < S.tune[G.round]) G.seq.push(Math.floor(Math.random() * 4));
     G.phase = 'next'; G.t = 0;
     audio.sfx('sparkle', { volume: 0.7 });
-    P.toast(t('Lovely! Now a longer tune… ({n}/{total})', { n: G.round + 1, total: TUNE.length }), '#8fd6b4');
+    P.toast(t('Lovely! Now a longer tune… ({n}/{total})', { n: G.round + 1, total: S.tune.length }), '#8fd6b4');
   }
 
   solve(S) {

@@ -2,7 +2,7 @@
 // behind the falls at the foot of the Heights lies a hidden valley of the
 // Deepwood, glades strung along a dirt path under cliffs and old trees, in the
 // long light of late afternoon. The glade behind the falls · the root arches
-// (rootlings: the roots close the way) · the fireflies’ dell (three braziers to
+// (rootlings: the roots close the way) · the fireflies’ dell (four braziers to
 // light in the order the fireflies count) · the burrow fields (badger kits) ·
 // Grumbleclaw’s den (the gloom badger) · the log slide (logs roll down marked
 // lanes: jump them) · the Heartwood (Barkbeard), a stream falling into its
@@ -36,8 +36,10 @@ export const ROOTWAY = {
       props: [['flowers', 19, 141], ['flowers', 25.5, 140, 1.2], ['stump', 18.5, 146, 0.9], ['log', 29.5, 146.5, 0.8], ['fireflies', 24, 143]] },
     { id: 'hall', x: 8, z: 116, w: 32, h: 18, kind: 'fight', foesList: ['rootling', 'rootling', 'rootling', 'gloomling', 'kit'], shout: 'The roots writhe — rootlings!', chest: [24, 122],
       props: [['roots', 12, 120, 1.5], ['roots', 36, 127, 1.6], ['stones', 15, 124], ['flowers', 32, 119], ['log', 13, 129], ['stump', 35, 130.5, 0.8]] },
-    { id: 'glow', x: 12, z: 96, w: 24, h: 16, kind: 'torches', torches: [[16, 106, 2], [24, 101, 3], [32, 106, 1]], opens: ['g3'], done: 'The braziers roar — the roots draw back!',
-      said: 'Three cold braziers. Light the one with one firefly first, then two, then three.', wrong: 'Wrong order: the flames go out. Start with the single firefly.', ground: 'forest',
+    // (a rule to read: four braziers, off the way through, and nothing says the order but the fireflies)
+    { id: 'glow', x: 12, z: 96, w: 24, h: 16, kind: 'torches', torches: [[15.5, 107, 3], [21, 101.5, 1], [27, 101.5, 4], [32.5, 107, 2]], opens: ['g3'], done: 'The braziers roar — the roots draw back!',
+      said: 'Four cold braziers. Over each one, a few fireflies… as if they were counting.', wrong: 'Wrong order: the flames go out. Start with the single firefly.', ground: 'forest',
+      task: 'Light the four braziers {key}in the fireflies’ order{/}', hint: 'Count the fireflies: light the brazier with {key}one{/}, then two, three, four',
       props: [['shroom', 15, 109.5, 0.9], ['shroom', 33, 109.5], ['flowers', 24, 109.5]] },
     { id: 'burrows', x: 6, z: 74, w: 36, h: 18, kind: 'fight', pools: [[13, 80, 2.2, 1.4], [35, 84, 2.4, 1.5], [22, 88, 1.8, 1.2]], foesList: ['kit', 'kit', 'kit', 'rootling', 'rootling', 'sapling'], shout: 'Badger kits, all teeth!', chest: [30, 78],
       props: [['burrow', 11.5, 84.5], ['burrow', 29, 89, 1.1], ['burrow', 26, 78.5, 0.9], ['burrow', 17.5, 79], ['roots', 39, 79, 0.9], ['flowers', 9, 87]] },

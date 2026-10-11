@@ -2,7 +2,7 @@
 // Umbral Scar (saga/backstage.js dresses it: black boards, violet velvet, curtains that
 // rise). Its mechanic is the spotlights (room kind `spot`, saga/spots.js): pools of light
 // sweep the floor; anyone caught is « Spotted! » and marched back to the door; the shadow
-// of a painted flat hides you. The stage door · the wings (one light) · Crumble’s workshop
+// of a painted flat hides you. The stage door · the wings (two lights, a lane each) · Crumble’s workshop
 // (Snuffbot Mk III) · under the stage (a fight; the prompter’s trapdoor) · the fly tower
 // (two lights, the follow-spot, the lighting board — and the Understudies’ act) · the
 // stage, where the Duchess gives her Grand Finale.
@@ -19,9 +19,10 @@ export const GLOOMSTAGE = {
     { id: 'stagedoor', x: 14, z: 167, w: 16, h: 12, kind: 'start',
       said: 'The stage door of the Gloomstage. A brass star on it, and a name scratched off.',
       props: [['mirror', 16.5, 168.6], ['rack', 27, 169], ['gloomcrate', 16.5, 176], ['gloomcrate', 27.5, 176.5, 0.8], ['sandbag', 22, 169.5], ['ghostlight', 22, 173.2], ['worklight', 28.6, 177.6]] },
-    // (one light, sweeping the wings: wait in a flat’s shadow, then go)
+    // (two lights, each sweeping its own lane of the wings: wait in a flat’s shadow, then go — twice)
     { id: 'wings', x: 8, z: 136, w: 28, h: 25, kind: 'spot',
-      lights: [{ path: [[10, 150], [34, 150], [34, 143], [10, 143]], r: 2.2, speed: 0.2 }],
+      lights: [{ path: [[10, 150], [34, 150]], r: 2.6, speed: 0.2 }, { path: [[34, 143], [10, 143]], r: 2.6, speed: 0.2, phase: 0.45 }],
+      task: 'Cross the wings {key}unseen{/}', hint: 'No light sees into the shadow of a painted flat: the way is from shadow to shadow',
       flats: [[15, 155, 4, 0.5], [29, 155, 4, 0.5], [22, 146.5, 6, 0.5], [12, 139.5, 3, 0.5], [32, 139.5, 3, 0.5]],
       goalZ: 138.2, opens: ['g2'], back: [22, 159],
       said: 'The wings. A spotlight sweeps the floor: wait in the shadow of a painted flat, then run.',
@@ -39,10 +40,12 @@ export const GLOOMSTAGE = {
         ['ropes', 9.2, 86], ['ropes', 34.8, 85]] },
     // (the fly tower: two lights crossing, the follow-spot, the lighting board — and the Understudies’ act)
     { id: 'flytower', x: 4, z: 38, w: 36, h: 30, kind: 'spot',
-      lights: [{ path: [[6, 60], [38, 60]], r: 2.2, speed: 0.16 }, { path: [[38, 51], [6, 51]], r: 2.2, speed: 0.16, phase: 0.35 }, { path: [[22, 44]], r: 1.9, speed: 2.1, follow: true }],
+      lights: [{ path: [[6, 60], [38, 60]], r: 3, speed: 0.16 }, { path: [[38, 51], [6, 51]], r: 3, speed: 0.16, phase: 0.35 }, { path: [[22, 44]], r: 1.9, speed: 2.1, follow: true }],
       flats: [[12, 55.5, 4, 0.5], [32, 55.5, 4, 0.5], [22, 56, 4, 0.5], [13, 46, 4, 0.5], [31, 46, 4, 0.5]],
-      board: [36.5, 64.5], dark: 5,
+      // (the dark is short: nobody runs the whole tower in it — it is a dash to the next shadow)
+      board: [36.5, 64.5], dark: 4,
       goalZ: 40.2, opens: ['g5'], back: [22, 66], handsN: 2,
+      task: 'Cross the fly tower {key}unseen{/}', hint: 'No light sees into the shadow of a painted flat: the way is from shadow to shadow',
       // (the chapter’s own scene says what this room is, as the heroes walk in)
       done: 'Up and over — the stage is below!',
       props: [['sandbag', 6, 40], ['sandbag', 38, 40], ['gloomcrate', 6.5, 66], ['gloomcrate', 7.8, 66.5, 0.7], ['worklight', 5.6, 67, 0.9], ['worklight', 38.4, 67, 0.9],

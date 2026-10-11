@@ -376,7 +376,7 @@ async function dungeonStep(S, tp, clear, log, po = {}) {
     solveBeam(room);
     // (off to the side, clear of the mirrors' plates: a bot on one would turn it — and eight
     // bots stand in a little crowd)
-    const B = room.bm || {}, plates = [...(B.mirrors || []).map((M) => M.plate).filter(Boolean), ...((B.dawn && B.dawn.plates) || [])];
+    const B = room.bm || {}, plates = [...(B.plates || []), ...((B.dawn && B.dawn.plates) || [])];
     const clear = (x, z) => plates.every((pl) => Math.hypot(pl.x - x, pl.z - z) > 2.2);
     let spot = null;
     for (let dz = room.h - 2.5; dz > 1.5 && !spot; dz -= 1) for (let dx = 2; dx < room.w - 3.5 && !spot; dx += 1) if (clear(room.x + dx, room.z + dz) && clear(room.x + dx + 1.6, room.z + dz + 1.6)) spot = { x: room.x + dx, z: room.z + dz };

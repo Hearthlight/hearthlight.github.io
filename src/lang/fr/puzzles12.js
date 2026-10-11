@@ -1,4 +1,92 @@
-// French: the dungeons’ puzzles, harder as the story goes (src/saga/dungeons/).
+// French: the dungeons’ puzzles, harder as the story goes (src/saga/dungeons/). Each puzzle
+// room has its order (the objective while the heroes stand in it) and, often, a plainer word
+// that comes when they are stuck — short ones: the objective’s card holds two lines.
+// Solo: « tu ». `__group`: the « vous » for a party.
 export const PUZZLES12_FR = {
-  __group: {},
+  // chapter 1 — the Glimmer Grotto
+  'Turn the mirrors: send the light onto {key}the sea crystal{/}': 'Tourne les miroirs : envoie la lumière sur {key}le cristal marin{/}',
+  // chapter 2 — the Rootway
+  'Four cold braziers. Over each one, a few fireflies… as if they were counting.': 'Quatre braseros éteints. Au-dessus de chacun, quelques lucioles… on dirait qu’elles comptent.',
+  'Light the four braziers {key}in the fireflies’ order{/}': 'Allume les quatre braseros {key}dans l’ordre des lucioles{/}',
+  'Count the fireflies: light the brazier with {key}one{/}, then two, three, four': 'Compte les lucioles : allume le brasero qui en a {key}une{/}, puis deux, trois, quatre',
+  // chapter 3 — the Old Mine
+  'Set the points, then send {key}the ore cart{/} into the barricade': 'Règle les rails, puis envoie {key}le wagonnet{/} dans la barricade',
+  'The glowing rails show where the cart will go. Not every lever needs pulling.': 'Les rails qui brillent montrent où ira le wagonnet. Tous les leviers ne sont pas à tirer.',
+  // chapter 4 — the Frostbell Halls
+  'Ring the bells back {key}in the order they sang{/}': 'Fais sonner les cloches {key}dans l’ordre où elles ont chanté{/}',
+  'The bells sing slower now: watch which one lights up, note by note': 'Les cloches chantent plus lentement : regarde laquelle s’allume, note après note',
+  'Cross the frozen river on {key}the thick white ice{/}': 'Traverse la rivière gelée sur {key}la glace blanche{/}',
+  'When the snow hides the ice, stand still: it soon clears': 'Quand la neige cache la glace, ne bouge plus : elle s’en va vite',
+  // chapter 5 — the Sunken Bell Temple
+  'Ring {key}the bell{/}, then run through the sluice before the sea comes back': 'Sonne {key}la cloche{/}, puis cours passer la grille avant le retour de la mer',
+  'The tide pools: three little bells, strung out towards the sluice. Each holds the sea back a moment.': 'Les bassins de marée : trois clochettes, en file jusqu’à la grille. Chacune retient la mer un instant.',
+  'Ring the bells {key}one after another{/}, all the way to the sluice': 'Sonne les clochettes {key}l’une après l’autre{/}, jusqu’à la grille',
+  'Each little bell holds the sea back a few seconds: the next must ring in time': 'Chaque clochette retient la mer quelques secondes : la suivante doit sonner à temps',
+  'Bells, side by side. The inscription: “Together, or not at all.”': 'Des cloches, côte à côte. Il est écrit : « Ensemble, ou pas du tout. »',
+  'Ring {key}all the bells at the same moment{/}': 'Fais sonner {key}toutes les cloches en même temps{/}',
+  'Every bell must still be ringing when the last one is struck': 'Chaque cloche doit sonner encore quand on frappe la dernière',
+  // chapter 6 — the Forge Heart
+  'Cross the lava: ride {key}the vent{/}': 'Traverse la lave : monte sur {key}le geyser{/}',
+  'Three vents share one breath: shut one, and the others blow harder.': 'Trois geysers, un seul souffle : quand l’un est bouché, les autres soufflent plus fort.',
+  'Cross the lake of lava: make a vent {key}throw far enough{/}': 'Traverse le lac de lave : il faut qu’un geyser {key}envoie assez loin{/}',
+  'Shut two vents with their levers: the third throws all the way across': 'Bouche deux geysers avec leurs leviers : le troisième enverra jusqu’au bout',
+  'Islets in the lava, a vent on each — and a lever that shuts the vent you came by.': 'Des îlots dans la lave, un geyser sur chacun… et un levier qui bouche le geyser que tu viens de prendre.',
+  'Cross the lava {key}from islet to islet{/}': 'Traverse la lave {key}d’îlot en îlot{/}',
+  'Shut the vent behind you, and the next one throws further': 'Bouche le geyser derrière toi : le suivant enverra plus loin',
+  // chapter 7 — the Lantern Pagoda
+  'Send the beam of light to {key}the lotus lantern{/}': 'Envoie le rayon sur {key}la lanterne-lotus{/}',
+  'The pale mirror springs back once its plate is let go.': 'Le miroir pâle revient en place dès qu’on lâche sa dalle.',
+  'Paper screens: the beam burns through them. And here, a plate turns every mirror its colour runs to.': 'Des paravents de papier : le rayon les brûle. Et ici, une dalle tourne tous les miroirs reliés à sa couleur.',
+  'Each plate turns the mirrors its colour runs to. One of the three is best left alone.': 'Chaque dalle tourne les miroirs de sa couleur. Une des trois est de trop.',
+  'Light {key}both lotus lanterns at the same time{/}': 'Éclaire {key}les deux lanternes-lotus en même temps{/}',
+  'Hold both pale plates at once — or run from one to the other, quickly': 'Tiens les deux dalles pâles en même temps… ou cours vite de l’une à l’autre',
+  // chapter 8 — the Heartwood
+  'Lure the moths away with {key}a jar of fireflies{/}': 'Éloigne les phalènes avec {key}un bocal de lucioles{/}',
+  'Open {key}both walls of glowcaps{/} with jars of fireflies': 'Ouvre {key}les deux murs de champignons{/} avec des bocaux de lucioles',
+  'Three hooks: one for each wall — and one, far from the moths, to draw them away first': 'Trois crochets : un par mur, et un autre, loin des phalènes, pour les attirer d’abord',
+  'This swarm is awake: it chases any jar it sees, and drinks the light of the ones it catches.': 'Cet essaim est réveillé : il poursuit tous les bocaux qu’il voit, et boit la lumière de ceux qu’il attrape.',
+  'Hang a jar on {key}the hook by the door{/}, past the swarm': 'Accroche un bocal au {key}crochet près de la porte{/}, derrière l’essaim',
+  'A jar on the near hook keeps the moths busy: quick, another to the door!': 'Un bocal sur le premier crochet occupe les phalènes : vite, un autre à la porte !',
+  'The moths have drunk that jar’s light…': 'Les phalènes ont bu la lumière de ce bocal…',
+  // chapter 9 — Hollowmoor Manor
+  'Find a way through {key}the bricked-up door{/}': 'Trouve comment passer {key}la porte murée{/}',
+  'Cross the fallen floor in THEN, {key}before the tired clock runs down{/}': 'Traverse le plancher du PASSÉ, {key}avant que l’horloge fatiguée s’arrête{/}',
+  'The pale plate winds the clock: the old floor holds while it ticks': 'La dalle pâle remonte l’horloge : le vieux plancher tient tant qu’elle fait tic-tac',
+  'The tired clock runs down — and the dust comes back.': 'L’horloge fatiguée s’arrête : retour au PRÉSENT, et à la poussière.',
+  'Cross the gallery to {key}the ballroom doors{/}': 'Traverse la galerie jusqu’aux {key}portes de la salle de bal{/}',
+  'A tired clock ticks on while somebody stands on its plate': 'Une horloge fatiguée marche tant que quelqu’un reste sur sa dalle',
+  // chapter 10 — the Gloomstage
+  'Cross the wings {key}unseen{/}': 'Traverse les coulisses {key}sans te faire voir{/}',
+  'Cross the fly tower {key}unseen{/}': 'Traverse le haut du théâtre {key}sans te faire voir{/}',
+  'No light sees into the shadow of a painted flat: the way is from shadow to shadow': 'Aucun projecteur ne voit dans l’ombre d’un décor : le chemin va d’ombre en ombre',
+  __group: {
+    'Turn the mirrors: send the light onto {key}the sea crystal{/}': 'Tournez les miroirs : envoyez la lumière sur {key}le cristal marin{/}',
+    'Light the four braziers {key}in the fireflies’ order{/}': 'Allumez les quatre braseros {key}dans l’ordre des lucioles{/}',
+    'Count the fireflies: light the brazier with {key}one{/}, then two, three, four': 'Comptez les lucioles : allumez le brasero qui en a {key}une{/}, puis deux, trois, quatre',
+    'Set the points, then send {key}the ore cart{/} into the barricade': 'Réglez les rails, puis envoyez {key}le wagonnet{/} dans la barricade',
+    'Ring the bells back {key}in the order they sang{/}': 'Faites sonner les cloches {key}dans l’ordre où elles ont chanté{/}',
+    'The bells sing slower now: watch which one lights up, note by note': 'Les cloches chantent plus lentement : regardez laquelle s’allume, note après note',
+    'Cross the frozen river on {key}the thick white ice{/}': 'Traversez la rivière gelée sur {key}la glace blanche{/}',
+    'When the snow hides the ice, stand still: it soon clears': 'Quand la neige cache la glace, ne bougez plus : elle s’en va vite',
+    'Ring {key}the bell{/}, then run through the sluice before the sea comes back': 'Sonnez {key}la cloche{/}, puis courez passer la grille avant le retour de la mer',
+    'Ring the bells {key}one after another{/}, all the way to the sluice': 'Sonnez les clochettes {key}l’une après l’autre{/}, jusqu’à la grille',
+    'Ring {key}all the bells at the same moment{/}': 'Faites sonner {key}toutes les cloches en même temps{/}',
+    'Cross the lava: ride {key}the vent{/}': 'Traversez la lave : montez sur {key}le geyser{/}',
+    'Cross the lake of lava: make a vent {key}throw far enough{/}': 'Traversez le lac de lave : il faut qu’un geyser {key}envoie assez loin{/}',
+    'Shut two vents with their levers: the third throws all the way across': 'Bouchez deux geysers avec leurs leviers : le troisième enverra jusqu’au bout',
+    'Islets in the lava, a vent on each — and a lever that shuts the vent you came by.': 'Des îlots dans la lave, un geyser sur chacun… et un levier qui bouche le geyser que vous venez de prendre.',
+    'Cross the lava {key}from islet to islet{/}': 'Traversez la lave {key}d’îlot en îlot{/}',
+    'Shut the vent behind you, and the next one throws further': 'Bouchez le geyser derrière vous : le suivant enverra plus loin',
+    'Send the beam of light to {key}the lotus lantern{/}': 'Envoyez le rayon sur {key}la lanterne-lotus{/}',
+    'Light {key}both lotus lanterns at the same time{/}': 'Éclairez {key}les deux lanternes-lotus en même temps{/}',
+    'Hold both pale plates at once — or run from one to the other, quickly': 'Tenez les deux dalles pâles en même temps… ou courez vite de l’une à l’autre',
+    'Lure the moths away with {key}a jar of fireflies{/}': 'Éloignez les phalènes avec {key}un bocal de lucioles{/}',
+    'Open {key}both walls of glowcaps{/} with jars of fireflies': 'Ouvrez {key}les deux murs de champignons{/} avec des bocaux de lucioles',
+    'Hang a jar on {key}the hook by the door{/}, past the swarm': 'Accrochez un bocal au {key}crochet près de la porte{/}, derrière l’essaim',
+    'Find a way through {key}the bricked-up door{/}': 'Trouvez comment passer {key}la porte murée{/}',
+    'Cross the fallen floor in THEN, {key}before the tired clock runs down{/}': 'Traversez le plancher du PASSÉ, {key}avant que l’horloge fatiguée s’arrête{/}',
+    'Cross the gallery to {key}the ballroom doors{/}': 'Traversez la galerie jusqu’aux {key}portes de la salle de bal{/}',
+    'Cross the wings {key}unseen{/}': 'Traversez les coulisses {key}sans vous faire voir{/}',
+    'Cross the fly tower {key}unseen{/}': 'Traversez le haut du théâtre {key}sans vous faire voir{/}',
+  },
 };

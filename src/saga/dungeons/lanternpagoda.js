@@ -3,8 +3,9 @@
 // Its mechanic is the dawn beam (room kind `beam`, saga/beam.js): the kites’ light
 // comes in through a golden lens, bronze mirrors turn to steer it (step on the plate
 // in front of one), lotus lanterns lit by it open the way. The gate · the hall of
-// mirrors (one mirror) · the paper screens (the beam burns its way through) · the
-// ink imps’ floor · the split (a prism: two lotuses at once) · the roof, where Old
+// mirrors (three, a false trail, and the last mirror on a spring) · the paper
+// screens (the beam burns its way through; plates wired to several mirrors) · the
+// ink imps’ floor · the split (a prism: two lotuses at once, two springs) · the roof, where Old
 // Lucky, the Paper Dragon, circles the Dawn Mirror — and the Dawn Hearth above.
 
 // the way in: the Pagoda’s door, on the Dawn Monastery’s court (the chapter opens it)
@@ -23,23 +24,31 @@ export const LANTERNPAGODA = {
     { id: 'gate', x: 12, z: 136, w: 16, h: 12, kind: 'start',
       said: 'The Lantern Pagoda. Climb to the roof: Old Lucky waits up there.',
       props: [['plantern', 13.5, 138], ['plantern', 25.5, 138], ['incense', 20, 138], ['bonsai', 14, 145.5], ['bonsai', 26, 145.5]] },
-    // (one mirror: turn it and the lotus blooms)
-    { id: 'hall', x: 8, z: 110, w: 24, h: 18, kind: 'beam', sun: [9.5, 118, 'e'], mirrors: [[25, 118, 1]], lotus: [[25, 112.5]], opens: ['g2'],
+    // (three mirrors and a false trail: north, an old mirror that never turns throws the beam at
+    // the wall; the way is south and round — and the last mirror is on a spring: it has to be held)
+    { id: 'hall', x: 8, z: 110, w: 24, h: 18, kind: 'beam', sun: [9.5, 118, 'e'], mirrors: [[15, 118, 0], [15, 113, 1, 1], [15, 124, 0], [25, 124, 1, 'spring']], lotus: [[25, 112.5]], opens: ['g2'],
       said: 'The Hall of Mirrors. Step on the plate in front of a mirror to turn it, and send the beam to the lotus lantern.',
+      task: 'Send the beam of light to {key}the lotus lantern{/}',
       done: 'The lotus lantern blooms — the doors open!',
       props: [['plantern', 10, 112], ['plantern', 30, 112], ['gong', 27, 125], ['scroll', 13, 111.4], ['scroll', 27, 111.4], ['teatable', 13, 125]] },
-    // (paper screens across the light: it burns its way through, in order)
-    { id: 'screens', x: 6, z: 84, w: 28, h: 20, kind: 'beam', sun: [32.5, 100, 'w'], mirrors: [[26, 100, 0], [26, 89, 0]],
-      screens: [[26, 95, 'x', 3], [16, 89, 'z', 3]], lotus: [[9.5, 89]], opens: ['g3'],
-      said: 'Paper screens block the way. Turn the beam onto them: paper burns.',
+    // (paper screens across the light: it burns its way through — and the mirrors are wired, as
+    // the Old Mine’s points were: a plate turns every mirror its colour runs to. The blue and the
+    // green do it; the red one, which sets the first mirror right at once, is the one to leave)
+    { id: 'screens', x: 6, z: 84, w: 28, h: 20, kind: 'beam', sun: [32.5, 100, 'w'], mirrors: [[26, 100, 0, 'wired'], [26, 89, 1, 'wired'], [12, 89, 1, 'wired']],
+      wires: [{ at: [29.5, 102], turns: [0], col: '#e0483e' }, { at: [21.5, 97], turns: [0, 1], col: '#4a8ae8' }, { at: [19, 92.5], turns: [1, 2], col: '#4ac05a' }],
+      screens: [[26, 95, 'x', 3], [18, 89, 'z', 3]], lotus: [[12, 96]], opens: ['g3'],
+      said: 'Paper screens: the beam burns through them. And here, a plate turns every mirror its colour runs to.',
+      task: 'Send the beam of light to {key}the lotus lantern{/}', hint: 'Each plate turns the mirrors its colour runs to. One of the three is best left alone.',
       done: 'Through the screens — the lotus blooms!',
       props: [['plantern', 8, 86], ['plantern', 32, 86], ['incense', 20, 102], ['bonsai', 8, 102], ['scroll', 20, 85.4]] },
     { id: 'ink', x: 8, z: 60, w: 24, h: 18, kind: 'fight', foesList: ['inkimp', 'inkimp', 'inkimp', 'paperlantern', 'paperlantern', 'paperbat', 'paperbat'], shout: 'Ink imps have been painting the walls — in gloom!', chest: [28, 63],
       props: [['plantern', 10, 62], ['plantern', 30, 62], ['teatable', 12, 75], ['gong', 28, 75]] },
-    // (a prism splits the light in two: both lotuses at once)
-    { id: 'split', x: 4, z: 30, w: 32, h: 24, kind: 'beam', sun: [35.5, 50, 'w'], prisms: [[20, 44]], mirrors: [[20, 50, 0], [8, 44, 0], [32, 44, 1]],
+    // (a prism splits the light in two: both lotuses at once — and both of the last mirrors are
+    // on springs: two heroes hold them, one alone runs from plate to plate)
+    { id: 'split', x: 4, z: 30, w: 32, h: 24, kind: 'beam', sun: [35.5, 50, 'w'], prisms: [[20, 44]], mirrors: [[20, 50, 0], [8, 44, 0, 'spring'], [32, 44, 1, 'spring']],
       screens: [[26, 44, 'z', 3]], lotus: [[8, 34], [32, 34]], opens: ['g5'],
       said: 'A crystal splits the beam in two. Light both lotus lanterns at the same time.',
+      task: 'Light {key}both lotus lanterns at the same time{/}', hint: 'Hold both pale plates at once — or run from one to the other, quickly',
       done: 'Both lotuses bloom — the way to the roof opens!',
       props: [['plantern', 6, 32], ['plantern', 34, 32], ['plantern', 6, 52], ['plantern', 34, 52], ['incense', 14, 50], ['bonsai', 26, 50]] },
     // (the roof: the Dawn Mirror, and Old Lucky)

@@ -5,7 +5,8 @@
 // them, in an arc, to where their arrow points. The rim · the lava moat (one vent)
 // · the old foundry (magma imps & slugs) · the pressure lake (three vents share one
 // pressure: cap two and the third throws far enough) · the chain (vent to vent over
-// a lava river) · Crumble’s Snuffbot Mk II (vents in its arena blow it sky-high) ·
+// a lava river, each islet’s lever shutting the vent behind for the one ahead) ·
+// Crumble’s Snuffbot Mk II (vents in its arena blow it sky-high) ·
 // the Duchess’s Debut, on her stage in the crater.
 
 // the way in: the old smiths’ Forge Gate, on Emberpeak’s north-east slope
@@ -28,28 +29,43 @@ export const FORGEHEART = {
     // (one vent over a band of lava: stand on it when it blows)
     { id: 'moat', x: 12, z: 152, w: 32, h: 20, kind: 'vent', lavas: [[28, 161, 16, 2.6, 'rect']], goal: [28, 155.5], goalZ: 158.2,
       vents: [{ at: [28, 167], to: [28, 155.5], period: 3.2 }], back: [28, 169.5],
-      said: 'A river of lava! Stand on the vent when it blows: it throws you across.',
+      said: 'A river of lava! Stand on the vent when it blows: it throws you across.', task: 'Cross the lava: ride {key}the vent{/}',
       props: [['anvil', 16, 168], ['brazier', 40, 168], ['anvil', 40, 155], ['brazier', 16, 155]] },
     { id: 'foundry', x: 10, z: 126, w: 36, h: 18, kind: 'fight', ground: 'basalt', foesList: ['imp', 'imp', 'slug', 'slug', 'knight', 'imp'], shout: 'Magma imps in the old foundry — and they’ve lit the furnaces!', chest: [38, 129],
       props: [['anvil', 14, 130], ['anvil', 42, 140], ['furnace', 20, 129], ['furnace', 36, 140], ['brazier', 28, 142]] },
-    // (three vents share one pressure: cap two, and the third throws far enough)
+    // (three vents share one pressure: cap two, and the third throws far enough — the room says
+    // the rule, a ring on the ground shows where each vent throws: the players work out the rest)
     { id: 'pressure', x: 8, z: 100, w: 40, h: 20, kind: 'vent', group: true, lavas: [[28, 107.8, 20, 4.4, 'rect']], goal: [28, 101.6], goalZ: 103.4, opens: ['g4'], back: [28, 118],
       vents: [
-        { at: [16, 115.6], cap: [13.4, 117.6], tos: [[18, 110.5, 1], [20, 106.5, 1], [22, 101.8]], period: 3.4 },
+        // (the levers well inside the round room’s floor: the outer two stood outside it, out of reach)
+        { at: [16, 115.6], cap: [18.6, 117.4], tos: [[18, 110.5, 1], [20, 106.5, 1], [22, 101.8]], period: 3.4 },
         { at: [28, 115.6], cap: [25.4, 117.6], tos: [[28, 110.5, 1], [28, 106.5, 1], [28, 101.8]], period: 3.4, phase: 1.1 },
-        { at: [40, 115.6], cap: [42.6, 117.6], tos: [[38, 110.5, 1], [36, 106.5, 1], [34, 101.8]], period: 3.4, phase: 2.2 },
+        { at: [40, 115.6], cap: [37.4, 117.4], tos: [[38, 110.5, 1], [36, 106.5, 1], [34, 101.8]], period: 3.4, phase: 2.2 },
       ],
-      said: 'Three vents, one lake of lava. Shut two with their levers: the third throws you across.', short: 'Not far enough — into the lava! Back to the rocks.',
+      said: 'Three vents share one breath: shut one, and the others blow harder.', short: 'Not far enough — into the lava! Back to the rocks.',
+      task: 'Cross the lake of lava: make a vent {key}throw far enough{/}', hint: 'Shut two vents with their levers: the third throws all the way across',
       done: 'Across the lake!',
       props: [['brazier', 10, 118], ['brazier', 46, 118], ['anvil', 12, 101.5], ['anvil', 44, 101.5]] },
-    // (a chain: vent to islet to vent, over a lava river — in rhythm)
-    { id: 'chain', x: 18, z: 60, w: 20, h: 32, kind: 'vent', lavas: [[28, 76, 10, 11.5, 'rect']], isles: [[28, 81.5, 1.6], [28, 72, 1.6]], goal: [28, 63], goalZ: 64.5, back: [28, 90],
+    // (a chain: vent to islet to vent, over a lava river — and the pressure again: on each islet
+    // a lever shuts the vent you came by, so the next one throws far enough. Shut too soon, and
+    // the friends behind have no way over; once somebody is across every lid lifts for them)
+    { id: 'chain', x: 18, z: 60, w: 20, h: 32, kind: 'vent', group: true, lavas: [[28, 76, 10, 11.5, 'rect']], isles: [[28, 81.5, 3.2], [28, 72, 3.2]], goal: [28, 63], goalZ: 64.5, back: [28, 90],
       vents: [
-        { at: [28, 89.2], to: [28, 81.5], period: 3, phase: 0 },
-        { at: [28, 81.5], to: [28, 72], period: 3, phase: 1.8 },
-        { at: [28, 72], to: [28, 63], period: 3, phase: 0.5 },
+        { at: [28, 89.2], tos: [[28.2, 82.2]], cap: [30.2, 81.2], period: 3, phase: 0 },
+        { at: [26.2, 81.2], tos: [[26.6, 77.6, 1], [28.2, 72.7]], cap: [30.2, 71.7], period: 3, phase: 1.8, back: [28.2, 82.5] },
+        { at: [26.2, 71.7], tos: [[26.6, 68.7, 1], [27.2, 66.6, 1], [28, 63]], period: 3, phase: 0.5, back: [28.2, 73] },
       ],
-      said: 'Islets in the lava, a vent on each. Ride them one after another, in rhythm.',
+      said: 'Islets in the lava, a vent on each — and a lever that shuts the vent you came by.',
+      task: 'Cross the lava {key}from islet to islet{/}', hint: 'Shut the vent behind you, and the next one throws further',
+      hintAt: [80, 160],
+      // (the arrows: for whoever is furthest on — the lever of the vent behind, then the vent ahead)
+      help(d, r) {
+        const [A, B, C] = r.vt, zs = d.P.players.filter((p) => (p.connected || d.P.solo) && d.roomAt(p.pos.x, p.pos.z) === r).map((p) => p.pos.z - d.oz), z = Math.min(...zs);
+        if (!zs.length) return [];
+        if (z > 86) return A.capped ? [] : [[A.x, A.z, 2.4]];
+        if (z > 77) return A.capped ? [[B.x, B.z, 2.4]] : [[A.lever.x, A.lever.z, 1.6]];
+        return B.capped ? [[C.x, C.z, 2.4]] : [[B.lever.x, B.lever.z, 1.6]];
+      },
       props: [['brazier', 20, 90], ['brazier', 36, 90], ['anvil', 21, 62], ['brazier', 35, 62]] },
     // (Crumble’s Snuffbot Mk II: vents in the floor — lure it onto one when it blows)
     { id: 'snuffbot', x: 10, z: 34, w: 36, h: 20, kind: 'vent', ground: 'basalt',

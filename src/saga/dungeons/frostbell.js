@@ -28,11 +28,13 @@ export const FROSTBELL = {
     // (the singing bells: listen to the tune, ring it back — a note longer each round)
     { id: 'bells', x: 16, z: 132, w: 24, h: 16, kind: 'simon', bells: [[21.5, 142.4], [25.6, 139.8], [30.4, 139.8], [34.5, 142.4]], rounds: 3, opens: ['g3'], done: 'The bells sing your tune back to you — the ice wall sinks!',
       said: 'Four frozen bells. They are about to sing a tune: listen, then ring it back, bell by bell.', again: 'Right! Now a longer tune…', wrong: 'A sour note! Listen again…',
+      task: 'Ring the bells back {key}in the order they sang{/}', hint: 'The bells sing slower now: watch which one lights up, note by note',
       props: [['iceshard', 18, 134, 0.8], ['iceshard', 38, 134, 0.8]] },
     // (thin ice: find the path of thick white slabs across the frozen river)
     { id: 'crevasse', x: 22, z: 104, w: 12, h: 22, kind: 'thinice', shape: 'rect', ground: 'glacier', ice: { x0: 22, z0: 104.4, cols: 6, rows: 10, size: 2, seed: 4, back: [28, 125.4] },
       said: 'A frozen river. Walk on the thick white ice: the thin blue ice won’t hold you.', wrong: 'Splash! Thin ice — back to the bank.',
       gust: 'A gust sweeps snow over the river — remember the way!',
+      task: 'Cross the frozen river on {key}the thick white ice{/}', hint: 'When the snow hides the ice, stand still: it soon clears',
       props: [['iceshard', 20, 106, 0.7], ['iceshard', 36, 118, 0.7]] },
     { id: 'lanterns', x: 12, z: 84, w: 32, h: 16, kind: 'fight', foesList: ['frostimp', 'frostimp', 'frostimp', 'wisp', 'wisp', 'yeti'], shout: 'The ice choir! They sing — very, very badly.', chest: [37, 90], ground: 'glacier',
       props: [['iceshard', 14, 87], ['iceshard', 42, 88], ['snowman', 40, 97, 0.8]] },

@@ -1,15 +1,17 @@
 // The spotlights (room kind `spot`, World v7 chapter 10 — aboard the Gloomstage): pools of
 // light sweep the floor on set paths; anyone caught in one is « Spotted! » — stagehands
 // pour out of the wings and the hero is marched back to the room’s door. Wait behind the
-// scenery flats, time the dash, or throw the lighting board’s lever to put every light out
-// for a few seconds.
+// scenery flats, time the dash, or stand on the lighting board’s plate to put the sweeping
+// lights out — for as long as somebody stays on it, and a few seconds more.
 //   lights: [{ path: [[x, z]…], r, speed, follow }]   a pool of light moving back and forth
 //                                     along its path (`follow`: it drifts after the nearest
 //                                     hero instead — the follow-spot)
 //   flats: [[x, z, w, d]]            painted scenery flats: solid, and their shadow hides
 //                                     whoever keeps close (a place to wait for the light)
-//   board: [x, z]                    the lighting board’s lever: step on it, and it’s dark
-//                                     for `dark` seconds (then it has to cool down)
+//   board: [x, z]                    the lighting board’s plate: the sweeping lights are out
+//                                     while a hero stands on it and `dark` seconds more for a
+//                                     hero alone (less for a party, who leaves somebody there);
+//                                     the follow-spot hunts on
 //   goalZ                            past this line the room is passed (opens `opens`) — keep
 //                                     it a tile inside the room (≥ z + 1), where heroes count
 //   back: [x, z]                     where the spotted are marched back to
@@ -22,7 +24,7 @@ import { t } from '../i18n.js';
 
 export function buildSpots(d, r) {
   const K = d.K, root = K.grp(d.root, 0, 0, 0);
-  const S = { root, lights: [], board: null, dark: 0, cool: 0 };
+  const S = { root, lights: [], board: null, dark: 0 };
   for (const L of r.lights || []) {
     const [x0, z0] = L.path[0];
     const g = K.grp(root, x0, 0, z0);
@@ -54,8 +56,10 @@ export function buildSpots(d, r) {
     const [x, z] = r.board, g = K.grp(root, x, 0, z);
     K.put(g, K.box(1.2, 1, 0.6), K.c('#2a2430'), 0, 0.5, -0.4);
     for (let i = 0; i < 5; i++) K.put(g, K.box(0.08, 0.3, 0.08), K.c(['#e0483a', '#f2c14e', '#5aa05a', '#4a8ae8', '#e0e0e0'][i]), -0.4 + i * 0.2, 1.1, -0.4);
-    const plate = K.noCast(K.put(g, K.cyl(0.45, 0.5, 0.06, 14), K.glow('#e0c080', '#c8904a', 0.3), 0, 0.03, 0.6));
+    const plate = K.noCast(K.put(g, K.cyl(0.45, 0.5, 0.06, 14), K.glow('#cfe8ff', '#8ad0ff', 0.3), 0, 0.03, 0.6));
     plate.material = plate.material.clone();
+    // (a spring’s coil round it, as round the pale mirrors’ plates: it holds while stood on)
+    for (const [rr, y] of [[0.62, 0.02], [0.72, 0.035]]) K.noCast(K.put(g, K.geo('board-coil' + rr, () => new THREE.TorusGeometry(rr, 0.04, 4, 18).rotateX(Math.PI / 2)), K.glow('#dff4ff', '#8ad0ff', 0.7), 0, y, 0.6));
     d.colliders.push({ x, z: z - 0.4, r: 0.5 });
     S.board = { x, z: z + 0.6, plate, near: false };
   }
@@ -69,24 +73,30 @@ export function spotRoom(d, r, inside, dt) {
   if (r.run && r.state === 'idle' && inside.length) { r.state = 'running'; r.run(d.D.saga, d, r); }
   else if (r.state === 'running' && r.tick) r.tick(d.D.saga, d, r, dt);
   const lx = (p) => p.pos.x - d.ox, lz = (p) => p.pos.z - d.oz;
-  // the lighting board: every light out for a while
-  S.dark = Math.max(0, S.dark - dt); S.cool = Math.max(0, S.cool - dt);
+  // the lighting board: the sweeping lights are out while someone stands on its plate, and a
+  // moment more — the time of a dash for a hero alone; hardly any for a party, who leaves
+  // somebody on it (that somebody then crosses the old way: from shadow to shadow). The
+  // follow-spot is not on the board: it hunts on.
+  const wasDark = S.dark > 0;
+  S.dark = Math.max(0, S.dark - dt);
   if (S.board) {
     const on = inside.some((p) => Math.hypot(lx(p) - S.board.x, lz(p) - S.board.z) < 0.6);
-    if (on && !S.board.near && S.cool <= 0) {
-      S.dark = r.dark || 5; S.cool = (r.dark || 5) + 4;
+    if (on) S.dark = d.holds(r, [r.dark || 5, 3, 1.5]);
+    if (S.dark > 0 && !wasDark) {
       audio.sfx('unlock', { volume: 0.7, pitch: -6 }); audio.sfx('whoosh', { volume: 0.4, pitch: -10 });
       P.toast(t(r.darkSaid || 'Lights out! Go, go, go!'), '#fff3c4');
-    }
+    } else if (wasDark && S.dark <= 0) audio.sfx('flick', { volume: 0.6, pitch: 4 });
     S.board.near = on;
-    S.board.plate.material.emissiveIntensity = S.cool > 0 ? 0.1 : on ? 1.2 : 0.3 + Math.sin(d.t * 3) * 0.12;
+    S.board.plate.material.emissiveIntensity = on ? 1.2 : S.dark > 0 ? 0.3 + 0.9 * Math.abs(Math.sin(d.t * 12)) : 0.3 + Math.sin(d.t * 3) * 0.12;
   }
-  const lit = S.dark <= 0;
   // (nobody is caught while a scene is playing)
   const watching = !(d.D.saga && d.D.saga.stage && d.D.saga.stage.active);
   // (in a flat’s shadow, nobody sees you)
   const hid = (p) => S.flats.some((f) => Math.abs(lx(p) - f.x) < f.w && Math.abs(lz(p) - f.z) < f.d);
+  // (help, at its last degree: the lights sweep slower)
+  const slow = (r.helped || 0) >= 2 ? 0.6 : 1;
   for (const L of S.lights) {
+    const lit = L.follow || S.dark <= 0;
     // (along its path and back, or after the nearest hero)
     if (L.follow) {
       const lure = r.lure ? r.lure(d, r) : null;
@@ -95,7 +105,7 @@ export function spotRoom(d, r, inside, dt) {
       if (to && lit) { const dx = to[0] - L.x, dz = to[1] - L.z, l = Math.hypot(dx, dz); if (l > 0.05) { const k = Math.min(l, dt * (L.speed || 2.2) * (lure ? 1.6 : 1)); L.x += (dx / l) * k; L.z += (dz / l) * k; } }
     } else {
       const pts = L.path, n = pts.length - 1, seg = Math.min(n - 1, Math.floor(L.u));
-      L.u += dt * (L.speed || 0.35) * L.dir;
+      L.u += dt * (L.speed || 0.35) * L.dir * slow;
       if (L.u >= n) { L.u = n; L.dir = -1; } else if (L.u <= 0) { L.u = 0; L.dir = 1; }
       const k = L.u - seg, [ax, az] = pts[seg], [bx, bz] = pts[Math.min(n, seg + 1)];
       L.x = ax + (bx - ax) * k; L.z = az + (bz - az) * k;
@@ -108,6 +118,7 @@ export function spotRoom(d, r, inside, dt) {
     for (const p of inside) {
       if (p.spottedT > 0 || Math.hypot(lx(p) - L.x, lz(p) - L.z) > L.r || hid(p)) continue;
       p.spottedT = 1.4;
+      d.fail(r);
       audio.sfx('whistle', { volume: 0.8 }); audio.sfx('error', { volume: 0.5 });
       if (C) C.popText(p.pos.x, 2.4, p.pos.z, t('Spotted!'), '#fff4c8', true);
       // (stagehands pour out of the wings)

@@ -29,19 +29,23 @@ export const OLDMINE = {
     { id: 'yard', x: 10, z: 156, w: 36, h: 18, kind: 'fight', foesList: ['mole', 'mole', 'fuse', 'fuse', 'slinger', 'mole'], shout: 'Mole miners! And they’ve brought dynamite.', chest: [37, 162],
       props: [['orecart', 16, 162], ['orecart', 40, 168, 0.9], ['derrick', 14, 170.5], ['crates', 38, 159], ['tnt', 20, 171], ['lampost', 28, 158], ['shack', 36.5, 169.5, 0.9],
         ['orepile', 21, 160, 1.1], ['orepile', 42, 163], ['barrels', 13, 166], ['rails', 28, 165, 1.4], ['rails', 20, 165.5, 0.8]] },
-    // (the rail points: three levers switch the points; route the cart into the barricade)
+    // (the rail points: three levers switch the points; route the cart into the barricade — two
+    // of the three need pulling: whoever pulls them all sends it into a siding)
     { id: 'switch', x: 16, z: 134, w: 24, h: 16, kind: 'points', shape: 'rect', opens: ['g3'], done: 'CRASH! The ore cart bursts through the barricade!',
       said: 'Three levers work the points. Route the ore cart into the barricade — then press the big red button.', wrong: 'Clunk. The cart ends up in a siding. Try other points.',
+      task: 'Set the points, then send {key}the ore cart{/} into the barricade', hint: 'The glowing rails show where the cart will go. Not every lever needs pulling.',
       rails: {
         nodes: { d: [20, 148.2], j1: [20, 144], x1: [18, 138.4], j2: [28, 144], x2: [37, 147.4], j3: [28, 139.6], x3: [36.4, 137.6], b: [28, 131.4] },
         next: { d: 'j1', j1: ['x1', 'j2'], j2: ['j3', 'x2'], j3: ['x3', 'b'] },
         levers: { j1: [21.8, 146.2], j2: [26.3, 145.8], j3: [26.3, 141.4] },
-        start: { j1: 0, j2: 1, j3: 0 }, go: [23.2, 139.8], goal: 'b',
+        start: { j1: 0, j2: 0, j3: 0 }, go: [23.2, 139.8], goal: 'b',
       },
       props: [['lampost', 38.4, 141.5], ['lampost', 17.6, 148.6], ['barrels', 33.5, 149], ['orepile', 22.5, 136.2, 0.8], ['tnt', 38.4, 144]] },
-    // (more points, harder: the levers are wired — each flips every set wearing its colour)
+    // (more points, harder: the levers are wired — each flips every set wearing its colour; the
+    // red and the green do it, the blue undoes it)
     { id: 'crystals', x: 12, z: 112, w: 32, h: 16, kind: 'points', shape: 'rect', opens: ['g4'], done: 'The cart smashes through — the second barricade is gone!',
       said: 'More points — but these levers are wired together: each one flips every set of points that wears its colour.', wrong: 'Clunk. The cart ends up in a siding. Try other points.',
+      task: 'Set the points, then send {key}the ore cart{/} into the barricade', hint: 'The glowing rails show where the cart will go. Not every lever needs pulling.',
       rails: {
         nodes: { d: [17, 126.4], j1: [17, 122], x1: [14.2, 115.2], j2: [25, 122], x2: [33, 126], j3: [25, 117.4], x3: [19.6, 114], j4: [33, 117.4], x4: [40.5, 113.8], b: [28, 109.4] },
         next: { d: 'j1', j1: ['x1', 'j2'], j2: ['j3', 'x2'], j3: ['x3', 'j4'], j4: ['b', 'x4'] },
@@ -50,7 +54,7 @@ export const OLDMINE = {
           blue: { at: [22.4, 119.4], flips: ['j2', 'j3'], col: '#4a8ae8' },
           green: { at: [35.6, 121.2], flips: ['j4', 'j2'], col: '#4ac05a' },
         },
-        start: { j1: 0, j2: 0, j3: 1, j4: 1 }, go: [30, 120.4], goal: 'b',
+        start: { j1: 0, j2: 1, j3: 0, j4: 1 }, go: [30, 120.4], goal: 'b',
       },
       props: [['crystal', 13.6, 126.6], ['crystal', 42.2, 126.6], ['crystal', 42.4, 113.4, 0.8], ['crystal', 13.4, 119, 0.8], ['lampost', 38.5, 125.5]] },
     { id: 'blast', x: 18, z: 90, w: 20, h: 16, kind: 'wax', drop: 'dynamite', every: 0.8, said: 'Up on the ledges, fuse imps light their sticks — keep moving!',

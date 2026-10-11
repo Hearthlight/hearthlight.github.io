@@ -3,8 +3,9 @@
 // jars (room kind `jars`, saga/jars.js): moth swarms fill the passages; fireflies are
 // the one light they can’t eat, and they’ll leave their post for a jar hung on a hook.
 // The hollow · the first swarm (one jar, one hook) · the glowcaps (mushroom walls that
-// part in a jar’s light, a swarm to lure off first) · the burrow (a fight) · the chase
-// (a swarm that goes after whoever carries a jar) · the Moth Queen’s chamber, round the
+// part in a jar’s light, a swarm to lure off first: three jars, in the right order) ·
+// the burrow (a fight) · the chase (a swarm that goes after whoever carries a jar, to be
+// kept busy while the jar that matters is run past it) · the Moth Queen’s chamber, round the
 // Heartlight.
 
 // the way in: the arched door in the Great Tree’s trunk (Rootholm’s old hall)
@@ -22,20 +23,29 @@ export const HEARTWOOD = {
     // (one swarm on the way out; one jar, one hook to lure it off)
     { id: 'swarm', x: 8, z: 108, w: 28, h: 22, kind: 'jars', racks: [[12, 126]], hooks: [[31, 123]], swarms: [{ at: [22, 111], r: 2.4, lure: 24 }], goalZ: 110.2, opens: ['g2'],
       said: 'A cloud of moths blocks the way. Take a jar of fireflies from the rack and hang it on the hook: they will go to it.',
+      task: 'Lure the moths away with {key}a jar of fireflies{/}',
       done: 'The moths went to the jar: the way is clear!',
       props: [['shroom', 10, 110], ['shroom', 34, 128, 0.9], ['roots', 33, 112], ['amber', 11, 116], ['glowworms', 20, 127]] },
-    // (glowcap walls part in a jar’s light — and a swarm to lure off first)
+    // (glowcap walls part in a jar’s light — and a swarm that guards the second wall’s hook: it
+    // only leaves for the far hook, in the west, so that is where the second jar goes; three jars)
     { id: 'glowcaps', x: 6, z: 78, w: 32, h: 24, kind: 'jars', racks: [[22, 100]], hooks: [[9.5, 97], [9.5, 89], [34, 89]],
-      swarms: [{ at: [30, 90], r: 2.2, lure: 30, chase: 5 }],
+      swarms: [{ at: [30, 90], r: 2.2, lure: 21, chase: 5 }],
       doors: [{ at: [22, 94], w: 31, hook: 0 }, { at: [22, 85], w: 31, hook: 2 }], goalZ: 83.5, opens: ['g3'],
       said: 'Walls of glowcap mushrooms, shut tight. They open to living light: hang firefly jars on the hooks.',
+      task: 'Open {key}both walls of glowcaps{/} with jars of fireflies', hint: 'Three hooks: one for each wall — and one, far from the moths, to draw them away first',
+      hintAt: [80, 160],
       done: 'Through the glowcaps!',
       props: [['amber', 36, 99], ['shroom', 8, 80, 0.8], ['glowworms', 36, 80]] },
     { id: 'burrow', x: 8, z: 54, w: 28, h: 18, kind: 'fight', foesList: ['rootling', 'rootling', 'mothling', 'mothling', 'beetle', 'murkmoth', 'murkmoth'], shout: 'Mothlings and rootlings, nesting in the heartwood!', chest: [32, 57],
       props: [['roots', 10, 56], ['roots', 34, 70], ['shroom', 11, 69], ['amber', 33, 62]] },
-    // (a swarm that goes after anyone carrying a jar: run it to the far hook)
-    { id: 'chase', x: 6, z: 26, w: 32, h: 22, kind: 'jars', racks: [[9, 45]], hooks: [[35, 29]], swarms: [{ at: [22, 29.5], r: 2.6, lure: 30, chase: 9, speed: 2.5 }], goalZ: 27, opens: ['g5'],
-      said: 'This swarm is awake: it chases any jar it sees. Run with your jar to the far hook!',
+    // (a swarm that goes after anyone carrying a jar, faster than before, and sits by the very
+    // hook that would clear the door: it has to be kept busy — a first jar on the near hook, which
+    // it drinks dry in a dozen seconds, or a friend who runs a jar the other way — while the jar
+    // that matters is run to the hook by the door)
+    { id: 'chase', x: 6, z: 26, w: 32, h: 22, kind: 'jars', racks: [[9, 45]], hooks: [[9.5, 34, 12], [28, 31]], swarms: [{ at: [22, 29.5], r: 2.6, lure: 30, chase: 14, speed: 3.5 }], goalZ: 28.2, opens: ['g5'],
+      said: 'This swarm is awake: it chases any jar it sees, and drinks the light of the ones it catches.',
+      task: 'Hang a jar on {key}the hook by the door{/}, past the swarm', hint: 'A jar on the near hook keeps the moths busy: quick, another to the door!',
+      hintAt: [80, 160],
       snatched: 'The swarm caught your jar! Back to the rack, and run faster.',
       done: 'The swarm settles on the jar. The way up is clear!',
       props: [['shroom', 8, 28], ['amber', 36, 46], ['glowworms', 14, 34], ['roots', 30, 44]] },

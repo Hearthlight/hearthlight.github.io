@@ -3,8 +3,13 @@
 // manor in its heyday: warm candlelight, furniture where it stood, doors that were open)
 // and NOW (dust, cold, rubble, floors fallen in). What stands in one time is gone in the
 // other. Everyone in the room shares its time.
-//   clocks: [[x, z]…]                   its clocks (each plate, just south of one, turns the
-//                                        whole room — `clock: [x, z]` for just the one)
+//   clocks: [[x, z, how]…]              its clocks (each plate, just south of one, turns the
+//                                        whole room — `clock: [x, z]` for just the one).
+//                                        `how` ’wind’: a tired clock — it runs while someone
+//                                        stands on its plate and a moment more (long for a hero
+//                                        alone, who runs; short for a party, who leaves somebody
+//                                        on it): THEN while it runs, the room’s own time after
+//   winds: [alone, two, more]           how many seconds a tired clock runs once let go
 //   era: ’now’ | ’then’                 the time the room starts in
 //   then / now: { walls: [[x, z, w, d, kind]], pits: [[x, z, w, d]] }
 //                                        what exists only in that time: furniture, bricked
@@ -44,7 +49,7 @@ function block(K, g, w, d, kind) {
 
 export function buildClockRoom(d, r) {
   const K = d.K, root = K.grp(d.root, 0, 0, 0);
-  const T = { root, era: r.era || 'now', sets: {}, near: false, flash: 0 };
+  const T = { root, era: r.era || 'now', base: r.era || 'now', sets: {}, near: false, flash: 0 };
   for (const era of ['then', 'now']) {
     const E = r[era] || {}, g = K.grp(root, 0, 0, 0), cols = [];
     for (const [x, z, w, dd, kind = 'brick'] of E.walls || []) {
@@ -62,9 +67,9 @@ export function buildClockRoom(d, r) {
     T.sets[era] = { g, cols, pits };
   }
   // the grandfather clocks, and their plates
-  T.clocks = (r.clocks || [r.clock]).map(([cx, cz]) => {
-    const cg = K.grp(root, cx, 0, cz);
-    const wood = K.c('#4a2a1a'), brass = K.glow('#e0b050', '#a87a2a', 0.3);
+  T.clocks = (r.clocks || [r.clock]).map(([cx, cz, how]) => {
+    const cg = K.grp(root, cx, 0, cz), wind = how === 'wind';
+    const wood = K.c(wind ? '#5a4a5a' : '#4a2a1a'), brass = K.glow('#e0b050', '#a87a2a', 0.3);
     K.put(cg, K.box(0.9, 2.6, 0.55), wood, 0, 1.3, 0);
     K.put(cg, K.box(1.0, 0.2, 0.6), wood, 0, 2.7, 0);
     K.put(cg, K.cyl(0.34, 0.34, 0.06, 16), K.c('#f4ecd8'), 0, 2.1, 0.29, 0, Math.PI / 2);
@@ -74,9 +79,17 @@ export function buildClockRoom(d, r) {
     K.put(pend, K.box(0.03, 0.8, 0.02), brass, 0, -0.4, 0);
     K.put(pend, K.cyl(0.14, 0.14, 0.04, 12), brass, 0, -0.85, 0, 0, Math.PI / 2);
     d.colliders.push({ x: cx, z: cz, r: 0.5 });
-    const plate = K.noCast(K.put(root, K.cyl(0.5, 0.55, 0.06, 16), K.glow('#e0c080', '#c8904a', 0.3), cx, 0.03, cz + 1.2));
+    const plate = K.noCast(K.put(root, K.cyl(0.5, 0.55, 0.06, 16), wind ? K.glow('#cfe8ff', '#8ad0ff', 0.3) : K.glow('#e0c080', '#c8904a', 0.3), cx, 0.03, cz + 1.2));
     plate.material = plate.material.clone();
-    return { x: cx, z: cz, hands, pend, plate, near: false };
+    // (a tired clock: a big key in its side, turning while it runs, and a spring’s coil round its plate)
+    let key = null;
+    if (wind) {
+      key = K.grp(cg, 0.52, 1.5, 0);
+      K.put(key, K.box(0.22, 0.07, 0.07), brass, 0.1, 0, 0);
+      for (const s of [-1, 1]) K.put(key, K.cyl(0.13, 0.13, 0.06, 10), brass, 0.26, s * 0.13, 0, 0, Math.PI / 2);
+      for (const [rr, y] of [[0.66, 0.02], [0.76, 0.035]]) K.noCast(K.put(root, K.geo('clock-coil' + rr, () => new THREE.TorusGeometry(rr, 0.04, 4, 18).rotateX(Math.PI / 2)), K.glow('#dff4ff', '#8ad0ff', 0.7), cx, y, cz + 1.2));
+    }
+    return { x: cx, z: cz, hands, pend, plate, near: false, wind, key, run: 0 };
   });
   // the room’s candles (then) and its cold light (now)
   T.warm = []; T.cold = [];
@@ -95,7 +108,7 @@ function show(T, era, instant = false) {
     S.g.visible = on;
     for (const c of S.cols) c.disabled = !on;
   }
-  if (instant) { for (const w of T.warm) w.power = era === 'then' ? 1.3 : 0; for (const c of T.cold) c.power = era === 'now' ? 0.9 : 0; }
+  if (instant) { for (const w of T.warm) { w.power = era === 'then' ? 1.3 : 0; w.off = era !== 'then'; } for (const c of T.cold) { c.power = era === 'now' ? 0.9 : 0; c.off = era !== 'now'; } }
 }
 
 // the room each frame
@@ -107,18 +120,32 @@ export function clockRoom(d, r, inside, dt) {
   else if (r.state === 'running' && r.tick) r.tick(d.D.saga, d, r, dt);
   const lx = (p) => p.pos.x - d.ox, lz = (p) => p.pos.z - d.oz;
   // a plate: step on it and the room’s time turns over
-  const then = T.era === 'then';
   for (const ck of T.clocks) {
     const on = inside.some((p) => !p.flight && Math.hypot(lx(p) - ck.x, lz(p) - (ck.z + 1.2)) < 0.6);
-    if (on && !ck.near) turn(d, r, inside);
+    if (ck.wind) {
+      // (it runs while someone stands there, and a moment more; it ticks faster as it runs down)
+      const was = ck.run;
+      ck.run = on ? d.holds(r, r.winds || [8, 5, 2.5]) : Math.max(0, ck.run - dt);
+      if (ck.run > 0 && !on && Math.floor(was * (was < 2 ? 4 : 2)) !== Math.floor(ck.run * (ck.run < 2 ? 4 : 2))) audio.sfx('tick', { volume: 0.5, pitch: ck.run < 2 ? 5 : 0 });
+      if (was > 0 && ck.run <= 0 && !r.windTold) { r.windTold = true; P.toast(t('The tired clock runs down — and the dust comes back.'), '#b8c8e8'); }
+      ck.key.rotation.x = ck.run > 0 ? d.t * 5 : 0;
+    } else if (on && !ck.near) T.base = T.base === 'then' ? 'now' : 'then';
     ck.near = on;
-    ck.plate.material.emissiveIntensity = on ? 1.2 : 0.3 + Math.sin(d.t * 2.5) * 0.12;
+    ck.plate.material.emissiveIntensity = on ? 1.2 : ck.run > 0 ? 0.3 + 0.9 * Math.abs(Math.sin(d.t * (ck.run < 2 ? 12 : 5))) : 0.3 + Math.sin(d.t * 2.5) * 0.12;
+  }
+  // (a tired clock running makes it THEN; else the time the other clocks were left at)
+  const want = T.clocks.some((ck) => ck.run > 0) ? 'then' : T.base;
+  if (want !== T.era) turn(d, r, inside, want, true);
+  const then = T.era === 'then';
+  for (const ck of T.clocks) {
     // (the clock: its pendulum swings and its hands turn — only in THEN; NOW it’s stopped at twenty to nine)
     ck.pend.rotation.z = then ? Math.sin(d.t * 3) * 0.3 : 0.05;
     ck.hands.children[0].rotation.z = then ? -d.t * 0.05 : -2.1; ck.hands.children[1].rotation.z = then ? -d.t * 0.6 : 0;
   }
-  for (const w of T.warm) w.power += ((T.era === 'then' ? 1.3 : 0) - w.power) * Math.min(1, dt * 4);
-  for (const c of T.cold) c.power += ((then ? 0 : 0.9) - c.power) * Math.min(1, dt * 4);
+  // (the other time’s lights are put out for good — `off` —: a light of no power at all would
+  // shine like any other, and take a place among the few the picture can hold)
+  for (const w of T.warm) { w.power += ((T.era === 'then' ? 1.3 : 0) - w.power) * Math.min(1, dt * 4); w.off = w.power < 0.03; }
+  for (const c of T.cold) { c.power += ((then ? 0 : 0.9) - c.power) * Math.min(1, dt * 4); c.off = c.power < 0.03; }
   if (Math.random() < dt * (then ? 2 : 4)) P.world.fx.emit(then ? 'sparkle' : 'smoke', d.ox + r.x + 1 + Math.random() * (r.w - 2), then ? 1.5 : 0.4, d.oz + r.z + 1 + Math.random() * (r.h - 2), 1, { color: then ? '#ffd8a0' : '#9a9aa8' });
   // a pit underfoot: down you go — a bump, and back to the door
   const S = T.sets[T.era];
@@ -131,6 +158,7 @@ export function clockRoom(d, r, inside, dt) {
     P.world.fx.emit('dust', p.pos.x, 0.3, p.pos.z, 10, { color: '#6a625a' });
     if (P.solo) P.gatherAt(d.ox + bx, d.oz + bz); else p.actor.pos = { x: d.ox + bx + (Math.random() - 0.5), z: d.oz + bz };
     audio.sfx('thud', { volume: 0.6 });
+    d.fail(r);
     P.toast(t(r.fell || 'The floor gives way! Down to the cellar — and back up the stairs.'), '#ff9a8a');
   }
   if (!r.passed && r.goalZ && inside.some((p) => lz(p) < r.goalZ)) {
@@ -140,9 +168,11 @@ export function clockRoom(d, r, inside, dt) {
   }
 }
 
-// turn the room’s time over (the plate, or the Lady herself)
-export function turn(d, r, inside, to = null) {
+// turn the room’s time over (a plate, or the Lady herself; `wound`: a tired clock’s doing —
+// the room’s own time stays what it was)
+export function turn(d, r, inside, to = null, wound = false) {
   const T = r.ck, P = d.P, era = to || (T.era === 'then' ? 'now' : 'then');
+  if (!wound) T.base = era;
   if (era === T.era) return;
   show(T, era);
   audio.sfx('bell', { volume: 0.7, pitch: era === 'then' ? 7 : -5 }); audio.sfx('whoosh', { volume: 0.5, pitch: era === 'then' ? 4 : -6 });

@@ -640,6 +640,9 @@ export class Saga {
   objParts(qid) {
     const st = this.stepDef(qid), q = this.st.q[qid];
     if (!st) return null;
+    // (in one of a dungeon’s puzzle rooms: the room’s own order, then its hint — `sub` tells them apart)
+    const room = st.do === 'dungeon' && this.dungeons ? this.dungeons.line(st.id) : null;
+    if (room) return { text: t(room.text), tail: '', sub: room.key };
     const txt = typeof st.text === 'function' ? st.text(this) : st.text;
     let n = st.n ? t(' ({n}/{total})', { n: Math.min(q.n, st.n), total: st.n }) : '';
     if (st.do === 'race' && this.race && this.race.qid === qid) n = t(' — {s} s', { s: Math.max(0, Math.ceil(this.race.left)) });
@@ -651,7 +654,7 @@ export class Saga {
   objective(qid = this.tracked()) {
     if (!qid) return null;
     const Q = QUESTS[qid], o = this.objParts(qid);
-    return { id: qid, step: this.stepOf(qid), title: t(Q.title), brief: Q.brief ? t(Q.brief) : '', lines: o ? [o.text + o.tail] : [], tail: o ? o.tail : '', side: Q.kind === 'side' };
+    return { id: qid, step: this.stepOf(qid) + (o && o.sub ? ':' + o.sub : ''), title: t(Q.title), brief: Q.brief ? t(Q.brief) : '', lines: o ? [o.text + o.tail] : [], tail: o ? o.tail : '', side: Q.kind === 'side' };
   }
 
   // the journal’s rows: { id: ’saga:…’, saga, done, def: { title, main }, obj, tail }
@@ -747,7 +750,7 @@ export class Saga {
     const tg = this.targetOf(qid);
     // (a scene plays by itself: neither a step ticked nor one to come)
     return {
-      id: qid, k: q.s, title: t(Q.title), brief: Q.brief ? t(Q.brief) : '', side: Q.kind === 'side',
+      id: qid, k: q.s + (o.sub ? ':' + o.sub : ''), title: t(Q.title), brief: Q.brief ? t(Q.brief) : '', side: Q.kind === 'side',
       done: Q.steps.slice(0, q.s).filter((st) => st.do !== 'scene').map(said).filter(Boolean),
       now: o.text + o.tail, tail: o.tail, left: Q.steps.slice(q.s + 1).filter((st) => st.do !== 'scene').length,
       where: tg ? this.spot(tg) : null,

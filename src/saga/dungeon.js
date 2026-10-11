@@ -27,7 +27,7 @@ import { drawText } from '../engine/font.js';
 import { DUNGEONS } from './dungeons/index.js';
 import { flat } from '../combat/v3/bosses.js';
 import { Instance } from './instance.js';
-import { buildBeam, beamRoom } from './beam.js';
+import { buildBeam, beamRoom, nextPlates } from './beam.js';
 import { PAGODA_THEME, PAGODA_PROPS } from './pagoda.js';
 import { buildJars, jarsRoom } from './jars.js';
 import { heartwoodFloor, HEARTWOOD_PROPS } from './heartwood.js';
@@ -212,6 +212,12 @@ export class Dungeons {
 
   update(dt) { if (this.cur) this.cur.update(dt); }
   drawLabels(ctx, v) { if (this.cur) this.cur.drawLabels(ctx, v); }
+  // the story’s line while the heroes stand in a puzzle of dungeon `id`: the room’s own order,
+  // then its hint ({ key, text }; null: the quest’s own words)
+  line(id) {
+    const d = this.cur, r = d && d.def.id === id ? d.now : null;
+    return r ? { key: d.lineKey, text: r.helped && r.hint ? r.hint : r.task } : null;
+  }
 
   // a little map of the dungeon (the rooms you’ve seen) instead of the world’s
   drawMini(ctx, x, y, w, h, who) {
@@ -255,6 +261,9 @@ class Dungeon {
     this.gates = [];
     this.plates = [];
     this.anims = [];
+    this.arrows = [];
+    // (the heroes who come in: some rooms are laid out for their number)
+    this.n0 = this.P.players.filter((p) => p.connected || this.P.solo).length;
     this.t = 0;
     this.K = kit(this.P.r3d);
     this.carve();
@@ -351,7 +360,7 @@ class Dungeon {
       for (const pr of r.props || []) this.prop(pr);
       for (const [x, z] of r.plates || []) this.plates.push(this.buildPlate(r, x, z));
       if (r.torches) r.tb = r.torches.map(([x, z, n]) => this.buildTorch(r, x, z, n));
-      if (r.bells) r.sb = r.bells.map(([x, z], k) => this.buildSimBell(r, x, z, k));
+      if (r.bells && r.kind === 'simon') r.sb = r.bells.map(([x, z], k) => this.buildSimBell(r, x, z, k));
       if (r.rails) r.pn = this.buildRails(r);
       if (r.ice) r.slabs = this.buildIce(r);
       if (r.kind === 'tide') r.tide = this.buildTide(r);
@@ -573,7 +582,11 @@ class Dungeon {
     sea.material.transparent = true; sea.material.opacity = 0.62; sea.material.depthWrite = false;
     sea.receiveShadow = false; sea.castShadow = false;
     const T = { sea, k: 0, outT: 0, bells: [], was: false, cool: 0, full: () => T.k < 0.5 };
-    for (const [x, z] of r.bells || []) {
+    // (`bellsBy`: more bells for a bigger party — { 4: […], 6: […] }, by the heroes who came
+    // in — and `saidMore`, the room’s word when there are more than its usual ones)
+    const by = Object.keys(r.bellsBy || {}).map(Number).filter((n) => n <= this.n0).sort((a, b) => b - a)[0];
+    if (by && r.saidMore) r.said = r.saidMore;
+    for (const [x, z] of (by ? r.bellsBy[by] : r.bells) || []) {
       if (r.greatBell) {
         // (the great Sunken Bell itself: a ring of shells before it to step into)
         const g = K.grp(root, x, 0, z), big = buildSunkenBell(this.P.r3d);
@@ -597,7 +610,7 @@ class Dungeon {
       const ring = K.noCast(K.put(g, K.cyl(0.9, 0.9, 0.05, 16), K.glow('#f4e8d0', '#ffd66b', 0.2), 0, 0.03, 0));
       ring.material = ring.material.clone();
       const b = { x, z, bell, ring, near: false, rung: -99, swing: 0 };
-      this.anims.push((tm, dt) => { b.swing = Math.max(0, b.swing - (dt || 0.016) * 1.2); bell.rotation.z = Math.sin(tm * 12) * 0.4 * b.swing; ring.material.emissiveIntensity = T.cool > 0 || T.outT > 0 ? 0.05 : 0.2 + (this.t - b.rung < (r.together || 1.5) ? 1.4 : 0.35 + Math.sin(tm * 4) * 0.25); });
+      this.anims.push((tm, dt) => { b.swing = Math.max(0, b.swing - (dt || 0.016) * 1.2); bell.rotation.z = Math.sin(tm * 12) * 0.4 * b.swing; ring.material.emissiveIntensity = T.cool > 0 || b.spent || (T.outT > 0 && !r.relay) ? 0.05 : 0.2 + (this.t - b.rung < (r.tog || 1.5) ? 1.4 : 0.35 + Math.sin(tm * 4) * 0.25); });
       T.bells.push(b);
     }
     return T;
@@ -635,6 +648,8 @@ class Dungeon {
       this.colliders.push({ x: cx, z: cz, r: 0.3 });
     }
     const inPlace = Math.hypot(aim[0] - x, aim[1] - z) < 0.5;
+    // (a ring where it throws right now: gold on the rock, red in the lava)
+    if (!inPlace) { V.mark = K.noCast(K.put(this.root, K.geo('vent-mark', () => new THREE.TorusGeometry(0.62, 0.09, 4, 18).rotateX(Math.PI / 2)), K.glow('#ffd66b', '#ffb040', 1), aim[0], 0.08, aim[1])); V.mark.material = V.mark.material.clone(); }
     V.show = () => { if (V.lid) { V.lid.position.y = V.capped ? 0.34 : -0.4; V.lid.visible = V.capped; V.knob.material.emissiveIntensity = V.capped ? 1.2 : 0.3; } V.arrow.visible = !V.capped && !inPlace; };
     V.show();
     return V;
@@ -696,9 +711,11 @@ class Dungeon {
         if (r.said) P.toast(t(r.said), '#fff3c4');
         if (r.onSeen) r.onSeen(this.D.saga, this, r);
       }
+      r.here = inside.length;
       const K = ROOM_KINDS[r.kind];
       if (K) K(this, r, inside, dt);
     }
+    this.help(dt);
     // the plates (lit a moment after someone steps off)
     for (const pl of this.plates) {
       const on = heroes.some((p) => Math.hypot(p.pos.x - this.ox - pl.x, p.pos.z - this.oz - pl.z) < 0.75);
@@ -723,6 +740,55 @@ class Dungeon {
     // (a boss glows enough to be seen coming)
     if (P.combat) for (const e of P.combat.enemies) if (e.alive && e.def.boss && this.D.inside(e.x, e.z)) this.lights.push({ hero: true, x: e.x, y: e.def.h + 1.2, z: e.z + 1.2, color: '#ffe0b0', power: 1.5, dist: 9, lamp: true });
     this.room.lights = this.lights;
+  }
+
+  // ------------------------------------------------------------------ help, by degrees
+  // A puzzle nobody has cracked yet: its own order (`task`) is the story’s objective while the
+  // heroes stand in it (Saga.objParts asks `Dungeons.line`). After a while — sooner with every
+  // failure — a plainer word takes its place (`hint`); later still golden arrows hang over the
+  // next thing to do, and whatever has to be held stays held as long as it does for a hero alone.
+  puzzle(r) { return PUZZLES.has(r.kind) && !!r.task && (!r.run || !!r.goalZ); }
+  // (a tide room is behind us once someone stands in the next room: its sea comes back)
+  open(r) { return r.kind === 'tide' ? !(this.rooms[this.rooms.indexOf(r) + 1] || {}).seen : !(r.solved || r.passed); }
+  fail(r, n = 1) { r.fails = (r.fails || 0) + n; }
+  // how long a plate, a spring, a clock holds once let go: long for a hero alone (a sprint),
+  // short for a party (somebody stays on it) — and long again once help has come that far
+  holds(r, [one, two, many]) { const n = this.count(); return (r.helped || 0) >= 2 || n <= 1 ? one : n === 2 ? two : many; }
+  // how many heroes are in here
+  count() { const P = this.P; return P.players.filter((p) => (p.connected || P.solo) && !p.away && this.D.inside(p.pos.x, p.pos.z)).length; }
+  help(dt) {
+    const P = this.P, S = this.D.saga;
+    let now = this.rooms.find((r) => r.here && this.puzzle(r) && this.open(r)) || null;
+    // (in the corridor between two rooms the last one’s line stays, while it is still to crack)
+    if (!now && this.now && this.open(this.now) && !this.rooms.some((r) => r.here)) now = this.now;
+    if (now && now.here && !P.busy && !(S.stage && S.stage.active)) {
+      now.stuck = (now.stuck || 0) + dt;
+      const at = now.hintAt || HINT_AT, v = now.stuck + (now.fails || 0) * 15, deg = v > at[1] ? 2 : v > at[0] ? 1 : 0;
+      if (deg > (now.helped || 0)) {
+        now.helped = deg;
+        if (deg === 1 && now.hint) P.toast(t(now.hint), '#fff3c4');
+        audio.sfx('sparkle', { volume: 0.5 });
+      }
+    }
+    const key = now ? now.id + (now.hint && now.helped ? ':1' : '') : '';
+    if (key !== this.lineKey) { this.lineKey = key; this.now = now; if (S.refreshCard) S.refreshCard(); }
+    // (no plainer word to say: the arrows come first)
+    const deg = now ? now.helped || 0 : 0;
+    const spots = now && now.here && deg >= (now.hint ? 2 : 1) ? (now.help ? now.help(this, now) : HELP[now.kind] ? HELP[now.kind](this, now) : []) || [] : [];
+    spots.forEach(([x, z, y = 2.3], i) => {
+      let m = this.arrows[i];
+      if (!m) {
+        // (a golden point, drawn over everything: no beam, no wall hides it)
+        m = this.arrows[i] = new THREE.Mesh(this.K.cone(0.36, 0.85, 4), new THREE.MeshBasicMaterial({ color: 0xffd66b, depthTest: false, transparent: true }));
+        m.rotation.x = Math.PI; m.renderOrder = 9; m.frustumCulled = false;
+        this.root.add(m);
+      }
+      m.visible = true;
+      m.position.set(x, y + Math.sin(this.t * 4 + i) * 0.18, z);
+      m.rotation.y = this.t * 2;
+      if (Math.random() < dt * 4) P.world.fx.emit('sparkle', this.ox + x, y - 0.6, this.oz + z, 1, { color: '#ffe08a' });
+    });
+    for (let i = spots.length; i < this.arrows.length; i++) this.arrows[i].visible = false;
   }
 
   // spawn foes in a room (spots spread around its middle)
@@ -787,6 +853,7 @@ class Dungeon {
     this.P.world.over.root.remove(this.root);
     if (this.inst) this.inst.dispose();
     if (this.floorTex) this.floorTex.dispose();
+    for (const m of this.arrows) m.material.dispose();
     this.root.traverse((o) => { if (o.isMesh && o.geometry && o.geometry.userData.own) o.geometry.dispose(); });
   }
 }
@@ -806,6 +873,58 @@ function runawayCart(K, w) {
   for (const x of [-(w / 2 - 0.5), w / 2 - 0.5]) for (const z of [-0.4, 0.4]) { const wh = K.grp(g, x, -0.1, z); K.put(wh, K.cyl(0.22, 0.22, 0.1, 10), band, 0, 0, 0, 0, 0, Math.PI / 2); K.put(wh, K.box(0.12, 0.3, 0.04), K.c('#9a96a0'), 0, 0, 0.06); wheels.push(wh); }
   return { g, wheels };
 }
+
+// the kinds of room that are puzzles (with a `task` to say), and how long before help comes:
+// a plainer word, then the arrows (seconds in the room; a failure counts for fifteen)
+const PUZZLES = new Set(['plates', 'torches', 'simon', 'points', 'thinice', 'tide', 'vent', 'beam', 'jars', 'clock', 'spot']);
+const HINT_AT = [60, 130];
+// the next thing to do in a puzzle, for the arrows: [[x, z, height]…] in the dungeon’s own tiles
+// (a room may say it itself: `help(d, r)`)
+const HELP = {
+  torches: (d, r) => { const n = r.tb.filter((q) => q.lit).length + 1, tb = r.tb.find((q) => q.n === n); return tb ? [[tb.x, tb.z, 2.9]] : []; },
+  simon: (d, r) => { const S = r.sim, b = S && S.state === 'input' ? r.sb[S.seq[S.i]] : null; return b ? [[b.x, b.z, 2.9]] : []; },
+  // (the lever to pull next — the first of the fewest that send the cart home — or the button)
+  points(d, r) {
+    const N = r.pn, R = N.R;
+    let best = null;
+    for (let m = 0; m < 1 << N.levers.length; m++) {
+      const st = { ...N.state };
+      N.levers.forEach((L, i) => { if ((m >> i) & 1) for (const j of L.flips) st[j] = 1 - st[j]; });
+      let at = 'd';
+      for (let k = 0; k < 12; k++) { const nx = R.next[at]; if (nx === undefined) break; at = Array.isArray(nx) ? nx[st[at]] : nx; }
+      const bits = N.levers.filter((L, i) => (m >> i) & 1).length;
+      if (at === R.goal && (!best || bits < best[1])) best = [m, bits];
+    }
+    if (!best) return [];
+    const pull = N.levers.find((L, i) => (best[0] >> i) & 1);
+    return pull ? [[pull.x, pull.z, 1.9]] : [[N.go.x, N.go.z, 1.6]];
+  },
+  // (the bells still to ring; the sea out: the way through)
+  tide(d, r) {
+    const T = r.tide, G = d.gate((r.opens || [])[0]);
+    const left = T.bells.filter((b) => !b.spent && !(d.t - b.rung < (r.tog || 0)));
+    if (T.outT > 0 && !(r.relay && left.length)) return G ? [[G.x, G.z + 1.2, 2.2]] : [];
+    return (r.relay ? left.slice(0, 1) : left).map((b) => [b.x, b.z, 2.8]);
+  },
+  // (the lids to turn first, then the vent that throws all the way)
+  vent(d, r) {
+    const open = r.vt.filter((V) => !V.capped), n = r.vt.length - open.length;
+    const far = (V) => { const tos = V.tos || [V.to], to = tos[Math.min(tos.length - 1, r.group ? n : 0)]; return !to[2]; };
+    const V = open.find(far);
+    if (V) return [[V.x, V.z, 2.4]];
+    const L = r.vt.find((q) => q.lever && !q.capped && r.vt.filter((o) => !o.capped).length > 1);
+    return L ? [[L.lever.x, L.lever.z, 1.6]] : [];
+  },
+  beam(d, r) { const pl = nextPlates(r); return pl.map((q) => [q.x, q.z, 1.7]); },
+  // (a jar to take, or the hook it goes on)
+  jars(d, r) {
+    const J = r.jr, H = J.hooks.find((q) => !q.lit);
+    if (!H || J.hooks[J.hooks.length - 1].lit) return [];
+    return J.held.size ? [[H.px, H.pz, 2.9]] : J.racks.slice(0, 1).map((R) => [R.x, R.z + 0.6, 1.9]);
+  },
+  // (the lighting board, while the lights are on)
+  spot(d, r) { const S = r.sp; return S.board && !(S.dark > 0) ? [[S.board.x, S.board.z, 1.9]] : []; },
+};
 
 // ======================================================================
 // what each kind of room does
@@ -888,6 +1007,7 @@ const ROOM_KINDS = {
         }
       } else if (r.tb.some((q) => q.lit) || tb.n !== 1) {
         for (const q of r.tb) d.setTorch(q, false);
+        d.fail(r);
         audio.sfx('error', { volume: 0.6 });
         d.P.toast(t(r.wrong || 'The flames gutter out. The glowworms blink, patient: one… two… three…'), '#b8ffd8');
       }
@@ -900,11 +1020,14 @@ const ROOM_KINDS = {
     const S = r.sim || (r.sim = { round: 0, seq: [], i: 0, state: 'wait', t: 0, seed: 11 });
     S.t -= dt;
     for (const b of r.sb) { b.glow = Math.max(0, b.glow - dt * 2.2); b.setGlow(b.glow); }
+    // (a party has more heads to remember with: a note more for four heroes or more)
+    const more = d.count() >= 4 ? 1 : 0;
     const newTune = () => {
       S.seq = [];
-      for (let k = 0; k < (r.first || 3) + S.round; k++) {
+      for (let k = 0; k < (r.first || 3) + S.round + more; k++) {
+        // (the high bits: the low ones of such a generator only go 0, 1, 0, 1…)
         S.seed = (S.seed * 1103515245 + 12345) & 0x7fffffff;
-        let n = S.seed % r.sb.length;
+        let n = (S.seed >> 16) % r.sb.length;
         if (k && n === S.seq[k - 1]) n = (n + 1) % r.sb.length;
         S.seq.push(n);
       }
@@ -914,7 +1037,8 @@ const ROOM_KINDS = {
       if (S.t > 0) return;
       if (S.i >= S.seq.length) { S.state = 'input'; S.i = 0; for (const b of r.sb) b.near = inside.some((p) => Math.hypot(p.pos.x - d.ox - b.x, p.pos.z - d.oz - b.z) < 1.05); return; }
       r.sb[S.seq[S.i++]].ring();
-      S.t = 0.7;
+      // (help: the bells sing it slower)
+      S.t = r.helped ? 1.05 : 0.7;
       return;
     }
     if (S.state === 'pause') { if (S.t <= 0) { S.state = 'play'; S.i = 0; S.t = 0.4; } return; }
@@ -936,6 +1060,7 @@ const ROOM_KINDS = {
           if (r.onClear) r.onClear(d.D.saga, d, r);
         } else { d.P.toast(t(r.again || 'Right! Now a longer tune…'), '#bfe8ff'); newTune(); S.state = 'pause'; S.t = 1.4; }
       } else {
+        d.fail(r);
         audio.sfx('error', { volume: 0.6 });
         d.P.toast(t(r.wrong || 'A sour note! Listen again…'), '#bfe8ff');
         S.state = 'pause'; S.t = 1.6;
@@ -991,6 +1116,7 @@ const ROOM_KINDS = {
         for (const id of r.opens || []) { const G = d.gate(id); if (G) d.setGate(G, true); }
         if (r.onClear) r.onClear(d.D.saga, d, r);
       } else {
+        d.fail(r);
         audio.sfx('thud', { volume: 0.6 });
         d.P.toast(t(r.wrong || 'Clunk. The cart ends up in a siding. Try other points.'), '#ffd66b');
       }
@@ -1021,7 +1147,8 @@ const ROOM_KINDS = {
     // same for a while: remember the way)
     if (inside.length || onIce.length || r.gustT) {
       r.gustT = (r.gustT || 0) + dt;
-      const cyc = r.gustT % 9, w = r.passed || cyc < 5.5 ? 0 : Math.max(0, Math.min(1, (cyc - 5.5) / 0.6, (9 - cyc) / 0.6));
+      // (help, at its last degree: the wind drops)
+      const cyc = r.gustT % 9, w = r.passed || (r.helped || 0) >= 2 || cyc < 5.5 ? 0 : Math.max(0, Math.min(1, (cyc - 5.5) / 0.6, (9 - cyc) / 0.6));
       if (w > 0 && !r.gustSaid) { r.gustSaid = true; d.P.toast(t(r.gust || 'A gust sweeps snow over the river — remember the way!'), '#bfe8ff'); audio.sfx('whoosh', { volume: 0.5 }); }
       if (Math.abs(w - (r.gustW || 0)) > 0.005) {
         r.gustW = w;
@@ -1042,6 +1169,7 @@ const ROOM_KINDS = {
         if (C && p.fighter) C.hurtPlayer(p, 8 * (1 + (d.def.lv[0] - 1) * 0.1), { from: 'trap', elem: 'ice' });
         if (d.P.solo) d.P.gatherAt(d.ox + bx, d.oz + bz); else p.actor.pos = { x: d.ox + bx + (Math.random() - 0.5), z: d.oz + bz };
         audio.sfx('splash', { volume: 0.8 });
+        d.fail(r);
         d.P.toast(t(r.wrong || 'Splash! Thin ice — back to the bank.'), '#bfe8ff');
       }
     }
@@ -1059,18 +1187,26 @@ const ROOM_KINDS = {
     else if (r.state === 'running' && r.tick) r.tick(d.D.saga, d, r, dt);
     if (r.run && r.state !== 'running') return;
     if (T.cool > 0) T.cool -= dt;
+    // (together: a ringer for each bell strikes with the others — `tight` —; fewer heroes than
+    // bells have the time to run from one to the next)
+    const legs = Math.max(0, T.bells.length - d.count());
+    r.tog = !r.together ? 0 : legs ? r.together + (legs - 1) * 1.8 : (r.helped || 0) >= 2 ? r.together : r.tight || r.together;
     // (the bells: stepped into, they ring — unless they are still re-tuning)
     for (const b of T.bells) {
-      const nr = inside.some((p) => Math.hypot(p.pos.x - d.ox - b.x, p.pos.z - d.oz - b.z) < (b.great ? 1.6 : 1.0 * (r.bellScale || 1))) && T.cool <= 0 && !r.done && (!b.great || r.clapperIn);
+      const here = inside.some((p) => Math.hypot(p.pos.x - d.ox - b.x, p.pos.z - d.oz - b.z) < (b.great ? 1.6 : 1.0 * (r.bellScale || 1)));
+      const nr = here && T.cool <= 0 && !r.done && (!b.great || r.clapperIn) && !b.spent;
       if (nr && !b.near) {
         b.rung = d.t; b.swing = 1;
         if (b.great) { b.great.userData.swing = 1; audio.sfx('bell', { volume: 1, pitch: -14 }); d.P.combat && d.P.combat.vfx.shockwave(d.ox + b.x, d.oz + b.z - 1.6, { r: 9, color: '#ffe8b0', life: 0.9, wall: 1 }); }
-        else audio.sfx('bell', { volume: 0.7, pitch: -5 });
+        else audio.sfx('bell', { volume: 0.7, pitch: -5 + (r.relay ? T.bells.indexOf(b) * 2 : 0) });
         P.world.fx.emit('water', d.ox + b.x, 0.4, d.oz + b.z, 8);
+        // (a relay: each bell holds the sea back a moment more, once a tide)
+        if (r.relay) { b.spent = true; if (T.outT > 0) T.outT = r.window || 12; }
       }
-      b.near = nr;
+      // (a relay bell has to be stepped into afresh: nobody parks on one to ring every tide)
+      b.near = r.relay ? here : nr;
     }
-    const all = T.bells.length && T.bells.every((b) => d.t - b.rung < (r.together || 99));
+    const all = T.bells.length && T.bells.every((b) => d.t - b.rung < (r.tog || 99));
     const any = T.bells.some((b) => d.t - b.rung < 0.1);
     if (T.outT <= 0 && (r.together ? all : any)) {
       T.outT = r.window || 12;
@@ -1082,6 +1218,7 @@ const ROOM_KINDS = {
       if (r.crabs && !r.crabbed && P.combat) { r.crabbed = true; r.foes = d.spawnIn(r, new Array(r.crabs).fill('reefcrab'), {}); }
     } else if (r.together && !all && T.bells.some((b) => d.t - b.rung < 0.1) && T.outT <= 0 && !(r.aloneT > d.t)) {
       r.aloneT = d.t + 6;
+      d.fail(r);
       P.toast(t(r.alone || 'One bell alone isn’t enough — they must ring together!'), '#8fd6e8');
     }
     if (T.outT > 0) {
@@ -1096,7 +1233,8 @@ const ROOM_KINDS = {
         else {
           for (const id of r.opens || []) { const G = d.gate(id); if (G) d.setGate(G, false); }
           T.cool = r.cooldown || 0;
-          if (!r.done && inside.length) { P.toast(t(r.back || 'The tide comes back in!'), '#8fd6e8'); audio.sfx('splash', { volume: 0.8, pitch: -4 }); }
+          for (const b of T.bells) b.spent = false;
+          if (!r.done && inside.length) { P.toast(t(r.back || 'The tide comes back in!'), '#8fd6e8'); audio.sfx('splash', { volume: 0.8, pitch: -4 }); if (!r.run && d.open(r)) d.fail(r); }
         }
       }
     }
@@ -1117,16 +1255,25 @@ const ROOM_KINDS = {
     const P = d.P, C = P.combat;
     if (r.run && r.state === 'idle' && inside.length) { r.state = 'running'; r.run(d.D.saga, d, r); }
     else if (r.state === 'running' && r.tick) r.tick(d.D.saga, d, r, dt);
+    // (someone is across: every lid lifts and every vent throws its furthest — nobody is left behind)
+    if (r.passed && r.group && !r.relaxed) { r.relaxed = true; for (const V of r.vt) { V.capped = false; V.show(); } }
     // (the caps: stepped on, a lever swings its lid)
-    for (const V of r.vt) if (V.lever) {
-      const nr = inside.some((p) => Math.hypot(p.pos.x - d.ox - V.lever.x, p.pos.z - d.oz - V.lever.z) < 0.95);
+    for (const V of r.vt) if (V.lever && !r.relaxed) {
+      const nr = inside.some((p) => !p.flight && Math.hypot(p.pos.x - d.ox - V.lever.x, p.pos.z - d.oz - V.lever.z) < 0.95);
       if (nr && !V.lever.near) { V.capped = !V.capped; V.show(); audio.sfx('unlock', { volume: 0.6, pitch: V.capped ? -4 : 2 }); }
       V.lever.near = nr;
     }
-    const capped = r.vt.filter((q) => q.capped).length;
-    // (the more caps, the further the open vents throw: their arrows say so)
-    if (r.group) for (const V of r.vt) V.arrow.scale.z = 0.7 + capped * 0.55;
+    const capped = r.relaxed ? 9 : r.vt.filter((q) => q.capped).length;
     for (const V of r.vt) {
+      // (the more caps, the further the open vents throw: their arrows and their rings say so)
+      const tos = V.tos || [V.to], at = Math.min(tos.length - 1, r.group ? capped : 0), to = tos[at];
+      if (r.group) V.arrow.scale.z = 0.7 + at * 0.55;
+      if (V.mark) {
+        V.mark.visible = !V.capped;
+        V.mark.position.x += (to[0] - V.mark.position.x) * Math.min(1, dt * 8); V.mark.position.z += (to[1] - V.mark.position.z) * Math.min(1, dt * 8);
+        V.mark.material.color.set(to[2] ? '#ff5a3a' : '#ffd66b'); V.mark.material.emissive.set(to[2] ? '#c8281a' : '#ffb040');
+        V.mark.material.emissiveIntensity = 0.9 + Math.sin(d.t * 5 + V.k) * 0.3;
+      }
       const per = V.period || 3.2, blow = V.blow || 0.8;
       V.t = (V.t + dt) % per;
       const on = !V.capped && V.t > per - blow;
@@ -1139,9 +1286,8 @@ const ROOM_KINDS = {
       V.was = on;
       if (!on) continue;
       // whoever stands on it flies (and a boss standing on it takes a nasty jolt)
-      const tos = V.tos || [V.to], to = tos[Math.min(tos.length - 1, r.group ? capped : 0)];
       for (const p of inside) if (!p.flight && Math.hypot(p.pos.x - d.ox - V.x, p.pos.z - d.oz - V.z) < 0.9) {
-        p.flight = { room: r, t: 0, dur: V.dur || 1.1, x0: p.pos.x, z0: p.pos.z, x1: d.ox + to[0], z1: d.oz + to[1], h: V.h || 4, lava: !!to[2] };
+        p.flight = { room: r, t: 0, dur: V.dur || 1.1, x0: p.pos.x, z0: p.pos.z, x1: d.ox + to[0], z1: d.oz + to[1], h: V.h || 4, lava: !!to[2], back: V.back };
         audio.sfx('jump', { volume: 0.6 });
       }
       if (C) for (const e of C.enemies) if (e.alive && e.def.boss && !(e.ventT > 0) && Math.hypot(e.x - d.ox - V.x, e.z - d.oz - V.z) < 1.3) {
@@ -1162,11 +1308,13 @@ const ROOM_KINDS = {
       p.flight = null;
       P.world.fx.emit('dust', p.pos.x, 0.2, p.pos.z, 8, { color: '#8a8488' });
       if (F.lava) {
-        // (short: into the lava — a scorch, and back to the room's safe spot)
-        const [bx, bz] = r.back || [r.x + r.w / 2, r.z + r.h - 1.5];
+        // (short: into the lava — a scorch, and back to the room’s safe spot, or to the rock that
+        // vent stands on: its own `back`)
+        const [bx, bz] = F.back || r.back || [r.x + r.w / 2, r.z + r.h - 1.5];
         if (C && p.fighter) C.hurtPlayer(p, 10 * (1 + (d.def.lv[0] - 1) * 0.1), { from: 'trap', elem: 'fire' });
         P.world.fx.emit('smoke', p.pos.x, 0.5, p.pos.z, 10, { color: '#5a4a4a' });
-        if (P.solo) P.gatherAt(d.ox + bx, d.oz + bz); else p.actor.pos = { x: d.ox + bx + (Math.random() - 0.5), z: d.oz + bz };
+        if (P.solo) P.gatherAt(d.ox + bx, d.oz + bz); else p.actor.pos = { x: d.ox + bx + (F.back ? 0 : Math.random() - 0.5), z: d.oz + bz };
+        d.fail(r);
         audio.sfx('sizzle', { volume: 0.7 });
         P.toast(t(r.short || 'Not far enough — into the lava! Back to the rocks.'), '#ffb070');
       }

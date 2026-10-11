@@ -21,7 +21,7 @@ export const GROTTO = {
       foesList: ['reefcrab', 'reefcrab', 'shellback', 'gloomling', 'gloomling'], shout: 'Gloom crabs scuttle out of the pools!', chest: [24, 88],
       props: [['crystal', 12, 90], ['crystal', 36, 84], ['rock', 34, 88, 1.2], ['shell', 26, 96], ['shell', 18, 83], ['torch', 12, 83], ['torch', 36, 96]] },
     { id: 'plates', x: 12, z: 62, w: 24, h: 14, kind: 'beam', look: 'cave', sun: [33.5, 72, 'w'], mirrors: [[17, 72, 0], [17, 65.5, 1]], lotus: [[31, 65.5]], opens: ['g3'],
-      done: 'The sea crystal blazes — the rock door grinds open!', said: 'A crack high in the rock lets down a thread of Old Glimmer’s own light. The old Lamplighters left mirrors here: step on a mirror’s plate to turn it.',
+      done: 'The sea crystal blazes — the rock door grinds open!', task: 'Turn the mirrors: send the light onto {key}the sea crystal{/}', said: 'A crack high in the rock lets down a thread of Old Glimmer’s own light. The old Lamplighters left mirrors here: step on a mirror’s plate to turn it.',
       props: [['crystal', 14, 64, 0.8], ['crystal', 34, 64, 0.8], ['torch', 15, 74.5], ['shell', 25, 70], ['rock', 24, 63.5, 0.8]] },
     { id: 'stage', x: 8, z: 42, w: 32, h: 16, kind: 'script',
       props: [['stageboards', 24, 45.5], ['spot', 16, 49], ['spot', 32, 49], ['candle', 12, 47, 1.2], ['candle', 36, 47, 1.2], ['barrel', 11, 53], ['barrel', 37, 54]] },

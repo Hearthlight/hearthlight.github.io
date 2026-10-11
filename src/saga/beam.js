@@ -1,8 +1,13 @@
 // The dawn beam (room kind `beam`, World v7 chapter 7 — the Lantern Pagoda): the
 // kites’ light comes in through a golden lens and runs across the floor as a beam.
 //   sun: [x, z, ’n’|’s’|’e’|’w’]     the lens, and the way it shines
-//   mirrors: [[x, z, o, fixed]]      bronze mirrors: o 0 = ’/’, 1 = ’\’ — step on the
-//                                    plate in front of one to turn it
+//   mirrors: [[x, z, o, how]]        bronze mirrors: o 0 = ’/’, 1 = ’\’ — step on the
+//                                    plate in front of one to turn it. `how`: 1 it never
+//                                    turns · ’spring’ it turns back a moment after its plate
+//                                    is let go (two heroes hold two; one alone has to run) ·
+//                                    ’wired’ it has no plate of its own (see `wires`)
+//   wires: [{ at: [x, z], turns: [i…], col }]   a plate that turns several mirrors at once:
+//                                    a line of its colour runs to each of them
 //   prisms: [[x, z]]                 split the beam both ways, square to it
 //   screens: [[x, z, ’x’|’z’, len]]  paper screens (and walls): a second in the beam
 //                                    and they burn away
@@ -26,7 +31,7 @@ const Y = 1.15;
 
 export function buildBeam(d, r) {
   const K = d.K, root = K.grp(d.root, 0, 0, 0);
-  const B = { root, segs: [], mirrors: [], prisms: [], screens: [], lotus: [], lens: null, dawn: null, sig: '', lit: 0 };
+  const B = { root, segs: [], mirrors: [], plates: [], prisms: [], screens: [], lotus: [], lens: null, dawn: null, sig: '', lit: 0 };
   const bronze = K.c('#c8923a'), bronzeD = K.c('#8a5a2a'), wood = K.c('#6a3a2a'), lacq = K.c('#b8302a'), gold = K.glow('#f2c14e', '#c89020', 0.4);
   const plateM = K.glow('#e8c070', '#c8923a', 0.3);
   B.core = new THREE.MeshBasicMaterial({ color: 0xfff4c0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -50,27 +55,42 @@ export function buildBeam(d, r) {
     B.lens = { x, z, dir, g };
     d.lights.push({ x: d.ox + x, y: 1.4, z: d.oz + z + 0.3, color: '#ffe0a0', power: 1.2, dist: 5, lamp: true });
   }
-  for (const [x, z, o, fixed] of r.mirrors || []) {
-    const g = K.grp(root, x, 0, z);
+  // a plate: a disc to step on, a curved arrow on it (this one turns a mirror)
+  const plate = (px, pz, mat, turns, spring = false) => {
+    const pl = K.grp(root, px, 0, pz);
+    const disc = K.noCast(K.put(pl, K.cyl(0.36, 0.4, 0.06, 12), mat, 0, 0.03, 0));
+    disc.material = disc.material.clone();
+    for (let k = 0; k < 5; k++) { const a = -0.9 + k * 0.45; K.noCast(K.put(pl, K.box(0.08, 0.03, 0.08), K.c('#5a3a1a'), Math.sin(a) * 0.22, 0.07, -Math.cos(a) * 0.22)); }
+    // (a spring under it: a coil of pale rings round the plate)
+    if (spring) for (const [rr, y] of [[0.5, 0.02], [0.58, 0.035]]) K.noCast(K.put(pl, K.geo('beam-coil' + rr, () => new THREE.TorusGeometry(rr, 0.035, 4, 16).rotateX(Math.PI / 2)), K.glow('#dff4ff', '#8ad0ff', 0.7), 0, y, 0));
+    const p = { x: px, z: pz, disc, turns, spring, near: false, hold: 0 };
+    B.plates.push(p);
+    return p;
+  };
+  for (const [x, z, o, how] of r.mirrors || []) {
+    const g = K.grp(root, x, 0, z), spring = how === 'spring';
     K.put(g, K.box(0.5, 0.14, 0.5), wood, 0, 0.07, 0);
     K.put(g, K.box(0.1, 0.9, 0.1), wood, 0, 0.55, 0);
     const turn = K.grp(g, 0, Y, 0);
-    K.put(turn, K.cyl(0.46, 0.46, 0.08, 16), bronzeD, 0, 0, 0, 0, Math.PI / 2);
+    K.put(turn, K.cyl(0.46, 0.46, 0.08, 16), spring ? K.c('#7a9ab8') : bronzeD, 0, 0, 0, 0, Math.PI / 2);
     const face = K.put(turn, K.cyl(0.4, 0.4, 0.1, 16), K.glow('#f4d890', '#c89a4a', 0.25), 0, 0, 0.02, 0, Math.PI / 2);
     face.material = face.material.clone();
     K.put(turn, K.ball(0.07, 6, 4), gold, 0, 0.5, 0);
-    const M = { x, z, o, fixed: !!fixed, g, turn, face, ry: o ? -Math.PI / 4 : Math.PI / 4, plate: null, near: false, hot: 0 };
+    const M = { x, z, o, base: o, fixed: how === 1 || how === true, spring, g, turn, face, ry: o ? -Math.PI / 4 : Math.PI / 4, plate: null, hot: 0 };
     turn.rotation.y = M.ry;
-    if (!fixed) {
-      const px = x, pz = z + 1.15, pl = K.grp(root, px, 0, pz);
-      const disc = K.noCast(K.put(pl, K.cyl(0.36, 0.4, 0.06, 12), plateM, 0, 0.03, 0));
-      disc.material = disc.material.clone();
-      // (a curved arrow: this one turns the mirror)
-      for (let k = 0; k < 5; k++) { const a = -0.9 + k * 0.45; K.noCast(K.put(pl, K.box(0.08, 0.03, 0.08), K.c('#5a3a1a'), Math.sin(a) * 0.22, 0.07, -Math.cos(a) * 0.22)); }
-      M.plate = { x: px, z: pz, disc };
-    }
+    if (!how || spring) M.plate = plate(x, z + 1.15, spring ? K.glow('#cfe8ff', '#8ad0ff', 0.3) : plateM, [M], spring);
     d.colliders.push({ x, z, r: 0.34 });
     B.mirrors.push(M);
+  }
+  // (plates that turn several mirrors: a line of their colour on the floor to each, a gem at its foot)
+  for (const W of r.wires || []) {
+    const [px, pz] = W.at, mat = K.glow(W.col, W.col, 0.3), turns = W.turns.map((i) => B.mirrors[i]);
+    plate(px, pz, mat, turns);
+    for (const M of turns) {
+      const L = Math.hypot(M.x - px, M.z - pz) || 1, ux = (M.x - px) / L, uz = (M.z - pz) / L;
+      K.noCast(K.beam(root, K.glow(W.col, W.col, 0.5), px + ux * 0.45, 0.03, pz + uz * 0.45, M.x - ux * 0.4, 0.03, M.z - uz * 0.4, 0.09));
+      K.noCast(K.put(M.g, K.ball(0.11, 6, 4), K.glow(W.col, W.col, 0.9), -ux * 0.3, 0.24, -uz * 0.3));
+    }
   }
   for (const [x, z] of r.prisms || []) {
     const g = K.grp(root, x, 0, z);
@@ -195,14 +215,27 @@ export function beamRoom(d, r, inside, dt) {
   if (r.run && r.state === 'idle' && inside.length) { r.state = 'running'; r.run(d.D.saga, d, r); }
   else if (r.state === 'running' && r.tick) r.tick(d.D.saga, d, r, dt);
   const onPlate = (x, z) => inside.some((p) => !p.flight && Math.hypot(p.pos.x - d.ox - x, p.pos.z - d.oz - z) < 0.55);
-  // stepped on: a mirror turns
-  for (const M of B.mirrors) {
-    if (M.plate) {
-      const nr = onPlate(M.plate.x, M.plate.z);
-      if (nr && !M.near && !r.solved) { M.o = 1 - M.o; audio.sfx('unlock', { volume: 0.6, pitch: M.o ? 3 : -2 }); P.world.fx.emit('sparkle', d.ox + M.x, 1.4, d.oz + M.z, 6, { color: '#ffe08a' }); }
-      M.near = nr;
-      M.plate.disc.material.emissiveIntensity = nr ? 1 : 0.3;
+  // stepped on: a plate turns its mirror — its mirrors
+  for (const pl of B.plates) {
+    const nr = onPlate(pl.x, pl.z) || !!pl.lock;
+    const flip = () => { for (const M of pl.turns) { M.o = 1 - M.o; P.world.fx.emit('sparkle', d.ox + M.x, 1.4, d.oz + M.z, 6, { color: '#ffe08a' }); } };
+    if (pl.spring) {
+      // (a spring: turned while someone stands there, and a moment more — long for a hero
+      // alone, who has to run, short for a party, who can leave somebody on it)
+      const was = pl.hold > 0;
+      if (nr) pl.hold = d.holds(r, [8, 5, 2.5]); else if (!r.solved) pl.hold = Math.max(0, pl.hold - dt);
+      if (pl.hold > 0 !== was && !r.solved) {
+        flip(); audio.sfx(was ? 'flick' : 'unlock', { volume: 0.6, pitch: was ? -4 : 5 });
+        if (was && !r.springTold) { r.springTold = true; P.toast(t('The pale mirror springs back once its plate is let go.'), '#cfe8ff'); }
+      }
+      pl.disc.material.emissiveIntensity = nr ? 1.2 : pl.hold > 0 ? 0.3 + 0.9 * Math.abs(Math.sin(d.t * (pl.hold < 2 ? 12 : 5))) : 0.3;
+    } else {
+      if (nr && !pl.near && !r.solved) { flip(); audio.sfx('unlock', { volume: 0.6, pitch: pl.turns[0].o ? 3 : -2 }); }
+      pl.disc.material.emissiveIntensity = nr ? 1 : 0.3;
     }
+    pl.near = nr;
+  }
+  for (const M of B.mirrors) {
     const to = M.o ? -Math.PI / 4 : Math.PI / 4;
     M.ry += (to - M.ry) * Math.min(1, dt * 10);
     M.turn.rotation.y = M.ry;
@@ -287,13 +320,30 @@ function segDist(px, pz, ax, az, bx, bz) {
   return Math.hypot(px - ax - vx * k, pz - az - vz * k);
 }
 
-// (the harness) the mirrors’ turns that light every lotus, by trying them all
-export function solveBeam(r) {
-  const B = r.bm, M = B.mirrors.filter((m) => !m.fixed), n = M.length;
-  for (let mask = 0; mask < 1 << n; mask++) {
-    M.forEach((m, i) => { m.o = (mask >> i) & 1; });
-    const T = traceBeam(r, B, { ignoreScreens: true });
-    if (B.lotus.every((L) => T.hitL.has(L))) return true;
+// the plates to step on from here — the fewest that light every lotus — by trying them all
+// (a spring plate among them: one to hold)
+export function solvePlates(r) {
+  const B = r.bm, pls = B.plates, was = B.mirrors.map((M) => M.o);
+  const rest = B.mirrors.map((M) => (M.spring ? M.base : M.o));
+  let best = null;
+  for (let mask = 0; mask < 1 << pls.length; mask++) {
+    B.mirrors.forEach((M, i) => { M.o = rest[i]; });
+    pls.forEach((pl, i) => { if ((mask >> i) & 1) for (const M of pl.turns) M.o = 1 - M.o; });
+    const T = traceBeam(r, B, { ignoreScreens: true }), bits = pls.filter((pl, i) => (mask >> i) & 1).length;
+    if (B.lotus.every((L) => T.hitL.has(L)) && (!best || bits < best.bits)) best = { mask, bits };
   }
-  return false;
+  B.mirrors.forEach((M, i) => { M.o = was[i]; });
+  return best ? pls.filter((pl, i) => (best.mask >> i) & 1) : null;
+}
+// (the arrows) the next plate to step on; when only springs are left, every one still to hold
+export function nextPlates(r) {
+  const sol = solvePlates(r) || [], tog = sol.filter((pl) => !pl.spring);
+  return tog.length ? tog.slice(0, 1) : sol.filter((pl) => !(pl.hold > 0));
+}
+// (the harness) the plates that light every lotus, stepped on — the springs held for good
+export function solveBeam(r) {
+  const sol = solvePlates(r);
+  if (!sol) return false;
+  for (const pl of sol) { if (pl.spring) pl.lock = true; else for (const M of pl.turns) M.o = 1 - M.o; }
+  return true;
 }
