@@ -51,10 +51,16 @@ import { LEVELS11_FR } from './levels11.js';
 import { STORIES11_FR } from './stories11.js';
 import { MOBILE11_FR } from './mobile11.js';
 import { SPLIT11_FR } from './split11.js';
+import { TRAVEL12_FR } from './travel12.js';
+import { PACE12_FR } from './pace12.js';
+import { TALENTS12_FR } from './talents12.js';
+import { PUZZLES12_FR } from './puzzles12.js';
+import { GAMES12_FR } from './games12.js';
+import { ACTING12_FR } from './acting12.js';
 
-export const FR = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_FR, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_FR, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_FR, ...WORLD7, ...CH2_FR, ...CH3_FR, ...CH4_FR, ...CH5_FR, ...CH6_FR, ...CH7_FR, ...CH8_FR, ...CH9_FR, ...CH10_FR, ...WORLD13_FR, ...CONTROLS_FR, ...RELEASE9_FR, ...CLASSES9_FR, ...MULTI10_FR, ...CHAT_FR, ...GUIDE_FR, ...PLAY_FR, ...BRUTES11_FR, ...QUESTS11_FR, ...READING11_FR, ...LEVELS11_FR, ...STORIES11_FR, ...MOBILE11_FR, ...SPLIT11_FR };
+export const FR = { ...UI, ...ONLINE, ...ITEMS, ...LINES, ...STORY, ...PARTY, ...COMBAT, ...HOST, ...WORLD, ...MOVES, ...ARENA, ...MOUNTS_FR, ...FIGHTS, ...PROGRESS, ...TRAVEL, ...SECRETS, ...RACES, ...EVENTS_FR, ...SOLO, ...ADVENTURE, ...TALENTS4, ...WEAPONS4, ...DINOS, ...COMPANIONS, ...PHONE, ...SAGA_UI, ...CH1_FR, ...WORLD7, ...CH2_FR, ...CH3_FR, ...CH4_FR, ...CH5_FR, ...CH6_FR, ...CH7_FR, ...CH8_FR, ...CH9_FR, ...CH10_FR, ...WORLD13_FR, ...CONTROLS_FR, ...RELEASE9_FR, ...CLASSES9_FR, ...MULTI10_FR, ...CHAT_FR, ...GUIDE_FR, ...PLAY_FR, ...BRUTES11_FR, ...QUESTS11_FR, ...READING11_FR, ...LEVELS11_FR, ...STORIES11_FR, ...MOBILE11_FR, ...SPLIT11_FR, ...TRAVEL12_FR, ...PACE12_FR, ...TALENTS12_FR, ...PUZZLES12_FR, ...GAMES12_FR, ...ACTING12_FR };
 
 // lines said to the whole party (« vous »): looked up first in Party Mode
 export const FR_GROUP = {};
-for (const d of [SAGA_UI, CH1_FR, CH2_FR, CH3_FR, CH4_FR, CH5_FR, CH6_FR, CH7_FR, CH8_FR, CH9_FR, CH10_FR, WORLD13_FR, BRUTES11_FR, QUESTS11_FR, READING11_FR, LEVELS11_FR, STORIES11_FR, MOBILE11_FR, SPLIT11_FR]) if (d.__group) Object.assign(FR_GROUP, d.__group);
+for (const d of [SAGA_UI, CH1_FR, CH2_FR, CH3_FR, CH4_FR, CH5_FR, CH6_FR, CH7_FR, CH8_FR, CH9_FR, CH10_FR, WORLD13_FR, BRUTES11_FR, QUESTS11_FR, READING11_FR, LEVELS11_FR, STORIES11_FR, MOBILE11_FR, SPLIT11_FR, TRAVEL12_FR, PACE12_FR, TALENTS12_FR, PUZZLES12_FR, GAMES12_FR, ACTING12_FR]) if (d.__group) Object.assign(FR_GROUP, d.__group);
 delete FR.__group;
