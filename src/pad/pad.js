@@ -175,7 +175,7 @@ function onMessage(m) {
       break;
     case 'tally': if (S.choice && S.choice.id === m.id) S.choice.tally = m.counts; break;
     case 'ctx':
-      S.ctx = { a: m.a || null, b: m.b === undefined ? t('Hop') : m.b, x: m.x || null, y: m.y || null, hint: m.hint || '', hp: m.hp, lv: m.lv, cd: m.cd || 0, mode: m.mode || 'play', page: typeof m.page === 'string' ? m.page : null, hot: m.hot || '', ic: m.ic || {}, camp: !!m.camp, stuck: !!m.stuck, ult: typeof m.ult === 'number' ? m.ult : null, uic: m.uic || null };
+      S.ctx = { a: m.a || null, b: m.b === undefined ? t('Hop') : m.b, x: m.x || null, y: m.y || null, hint: m.hint || '', hp: m.hp, lv: m.lv, cd: m.cd || 0, mode: m.mode || 'play', page: typeof m.page === 'string' ? m.page : null, hot: m.hot || '', ic: m.ic || {}, camp: !!m.camp, stuck: !!m.stuck, ult: typeof m.ult === 'number' ? m.ult : null, uic: m.uic || null, ults: Array.isArray(m.ults) && m.ults.length > 1 ? m.ults.slice(0, 3).map((u) => ({ g: Number(u && u[0]) || 0, ic: (u && u[1]) || null })) : null };
       if (m.score !== undefined) S.score = m.score;
       break;
     case 'cls': if (CLASSES[m.v]) { S.cls = m.v; store.set('cls', m.v); } break;
@@ -887,10 +887,23 @@ function drawControls(zoneY, lobby) {
   const xx = ax - Math.round(rA * 0.45), xy = ay - rA - rB - 18;
   if (S.ctx.x && !lobby) bigButton(xx, xy, rB, 'X', S.ctx.x, '#7fa8f0', 'x', S.ctx.cd || 0, 'top', ic.x);
   // U: the ultimate — its gauge fills the button, and it glows once it's ready
-  if (S.ctx.ult !== null && !lobby) {
+  let top = xy - rB - 24;
+  const glow = (ux, uy, rU) => { const k = Math.floor(S.t * 6) % 2; disc(ux, uy, rU + 3 + k, k ? 'rgba(255,214,107,0.55)' : 'rgba(255,243,166,0.35)'); };
+  if (S.ctx.ults && !lobby) {
+    // (a hero who has learned several: a button each, its own gauge and picture — in a row
+    // leftwards from X when the phone lies on its side, over X when it stands)
+    const n = S.ctx.ults.length, rU = Math.round(rB * 0.76), step = rU * 2 + (land ? 8 : 6);
+    const x1 = land ? xx - rB - rU - 10 : W - rU - 8, uy = land ? xy - Math.round(rB * 0.35) : xy - rB - rU - 23;
+    S.ctx.ults.forEach((u, i) => {
+      const ux = x1 - (n - 1 - i) * step, ready = u.g >= 100;
+      if (ready) glow(ux, uy, rU);
+      bigButton(ux, uy, rU, 'U', '', '#e0a526', 'u' + (i + 1), ready ? 0 : 100 - u.g, 'top', u.ic, ready);
+    });
+    if (!land) top = uy - rU - 10;
+  } else if (S.ctx.ult !== null && !lobby) {
     const rU = Math.round(rB * 0.82), ux = xx - rB - rU - 10, uy = xy - Math.round(rB * 0.35);
     const ready = S.ctx.ult >= 100;
-    if (ready) { const k = Math.floor(S.t * 6) % 2; disc(ux, uy, rU + 3 + k, k ? 'rgba(255,214,107,0.55)' : 'rgba(255,243,166,0.35)'); }
+    if (ready) glow(ux, uy, rU);
     bigButton(ux, uy, rU, 'U', ready ? t('Ultimate!') : '', '#e0a526', 'u', ready ? 0 : 100 - S.ctx.ult, 'top', S.ctx.uic);
   }
   // Y: whistle for your mount / get off — above B, left of X (its label on the left)
@@ -901,7 +914,7 @@ function drawControls(zoneY, lobby) {
   }
   // (and what stays free of them: the gap between the stick and the buttons, from side to
   // side, and how far down a card may come over the buttons)
-  return { ay, rA, rB, xy, gap: [restX + R + 10, bx2 - rB - 10], top: xy - rB - 24 };
+  return { ay, rA, rB, xy, gap: [restX + R + 10, bx2 - rB - 10], top };
 }
 
 // ------------------------------------------------------------------ the solo game
@@ -1639,9 +1652,9 @@ function hpBar(x, y, w, pct) {
   ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(x + 1, y + 1, Math.round((w - 2) * pct / 100), 1);
 }
 
-function bigButton(cx, cy, r, letter, label, color, id, cd = 0, side = 'top', icon = null) {
+function bigButton(cx, cy, r, letter, label, color, id, cd = 0, side = 'top', icon = null, lit = false) {
   const down = held[id];
-  if (!label && S.phase !== 'lobby') color = '#8a7a98';
+  if (!label && !lit && S.phase !== 'lobby') color = '#8a7a98';
   const y = cy + (down ? 2 : 0);
   disc(cx, cy + 3, r, 'rgba(10,6,16,0.55)');
   disc(cx, y, r, '#3b2a22');

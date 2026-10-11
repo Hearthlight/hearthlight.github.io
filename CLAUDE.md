@@ -122,7 +122,10 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   own buttons: `P.keyOf(p, 'a'|'b'|'x'|'y'|'u'|'m')`; a text for everyone says `{a}` with
   `P.keyName('a')` (the connected players' own: « A/E » when they differ), never a bare "A" —
   a keyboard player is there too, with the big screen's mouse (their menu, the votes: `tvmenu.js`
-  `pointing()`, `voteRects`). `input.buzz(pattern, index)` rumbles. What a player's buttons do
+  `pointing()`, `voteRects`). `input.buzz(pattern, index)` rumbles. A hero who has learned several
+  ultimates (a capstone per talent branch) has a gauge for each (`f.ults`; `f.ult` is the fullest)
+  and, on a phone, a button for each (`u1`…`u3` → the actions `ult1`…`ult3`); the one key or
+  gamepad button (`ult`) unleashes the first that is ready. What a player's buttons do
   right now is one context for everyone, `P.ctxOf(p)` (English a/b/x/y + hint, from each system's
   `ctxFor`): phones get it translated, keyboard & gamepad players as chips under their hero
   (`updateChips`: only non-everyday labels, shown when new or when standing still, gone once

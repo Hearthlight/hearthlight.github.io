@@ -13,7 +13,7 @@ import { tickHazards, drawBubbles, onEnemyDeath, heir } from './v3/bestiary.js';
 import { bossDamageMul } from './v3/bosses.js';
 import { worldBossMul } from './v7/world.js';
 import { bruteMul, bruteHit, bruteFall, drawBruteMarks, BRUTE_FALL } from './v11/brutes.js';
-import { talentMods, buildMoves, picksOf, ultOf, ULTS, MAX_LEVEL } from './v4/talents.js';
+import { talentMods, buildMoves, picksOf, ultsOf, ULTS, MAX_LEVEL } from './v4/talents.js';
 import { gearMods } from './v3/gear.js';
 import { Vfx, VFX_COL, BLASTS } from './v4/vfx.js';
 import { WEAPONS, weaponOf, weaponMoves, weaponMods } from './v4/weapons.js';
@@ -34,6 +34,10 @@ const SWUNG = new Set(['pan', 'rollingpin', 'mallet', 'sword', 'lanternpole', 't
 const GLOOM = '#b06ae0';
 export { XP_NEED };
 const NEAR = 30;                   // heroes this close to a fight make it bigger
+const ULT_SHARE = [1, 1, 0.8, 0.65]; // how fast each gauge fills when a hero has one, two, three ultimates
+// the ultimate a hero’s buttons ask for: the one ULT button (-1: the first that is ready), or a
+// phone’s button for each of them (0, 1, 2)
+const ultAsked = (inp) => (inp.pressed('ult') ? -1 : inp.pressed('ult1') ? 0 : inp.pressed('ult2') ? 1 : inp.pressed('ult3') ? 2 : null);
 
 // the weapon arm's angle `t` seconds into an attack (its `pose`) — the creator's preview too
 export function poseAt(A, t) {
@@ -145,8 +149,13 @@ export class Combat {
     if (prop !== f.prop) { f.prop = prop; if (!p.vehicle && !p.mount && !p.swimming && p.actor.model.propKind) p.actor.model.setProp(prop); }
     f.mods = weaponMods(gearMods(talentMods(applyBlessings(f.blessings), picks), prof.gear), wpn);
     f.moves = buildMoves(weaponMoves(f.cls, wpn), picks);
-    f.ultId = ultOf(f.clsId, picks);
-    f.ult = f.ultId ? f.ult || 0 : 0;
+    // (the ultimates learned: `ults` a gauge each, `ult` the fullest of them)
+    const had = f.ults || {};
+    f.ultIds = ultsOf(f.clsId, picks);
+    f.ultId = f.ultIds[0] || null;
+    f.ults = {};
+    for (const id of f.ultIds) f.ults[id] = had[id] || 0;
+    f.ult = Math.max(0, ...Object.values(f.ults));
     f.elem = f.mods.elem; f.elemChance = f.mods.elemChance;
     const old = f.maxHp;
     f.maxHp = this.hpAt(f, f.eff || f.level);
@@ -223,7 +232,11 @@ export class Combat {
 
   update(dt) {
     this.ups.update(dt);
-    if (this.hitstop > 0) { this.hitstop -= dt; this.updateNums(dt); return; }
+    if (this.hitstop > 0) {
+      // (a blow’s frozen frames swallow no ultimate: asked for now, unleashed when time moves again)
+      for (const p of this.players) { const u = p.fighter && !p.fighter.down && p.input ? ultAsked(p.input) : null; if (u !== null) p.fighter.ultAsk = u; }
+      this.hitstop -= dt; this.updateNums(dt); return;
+    }
     tickCombo(this, dt);
     tickHazards(this, dt);
     drawBubbles(this);
@@ -249,6 +262,8 @@ export class Combat {
 
   updateFighter(p, dt) {
     const f = p.fighter, a = p.actor, inp = p.input;
+    const asked = f.ultAsk ?? null;      // (an ultimate asked for while a blow froze the picture)
+    f.ultAsk = null;
     f.inv = Math.max(0, f.inv - dt);
     f.cd = Math.max(0, f.cd - dt);
     f.hurtT = Math.max(0, f.hurtT - dt);
@@ -297,7 +312,8 @@ export class Combat {
     }
     if (f.spin) this.updateSpin(p, dt);
     // new inputs
-    if (canAct && inp.pressed('ult')) { if (!this.ultimate(p)) this.party.buzz(p, 15); }
+    const ult = asked ?? ultAsked(inp);
+    if (canAct && ult !== null && !this.ultimate(p, ult)) this.party.buzz(p, 15);
     if (!f.act && !f.spin && canAct) {
       if (inp.pressed('x') && f.cd <= 0) this.special(p);
       else if (inp.pressed('a')) {
@@ -751,13 +767,24 @@ export class Combat {
     if (!had) this.vfx.bubble(() => ({ x: p.pos.x, y: (p.actor.baseY || 0) + p.actor.jumpY, z: p.pos.z }), () => f.shield > 0 && f.shieldT > 0 && !f.down, { color: '#9fdcff' });
   }
 
-  // the gauge fills as you fight: hits, kills, hits taken
+  // the gauges as they were: a number for all of them, or a saved { ultimate: gauge }
+  setUlt(p, v) {
+    const f = p && p.fighter;
+    if (!f || !f.ultIds) return;
+    for (const id of f.ultIds) f.ults[id] = Math.max(0, Math.min(100, Number(v && typeof v === 'object' ? v[id] : v) || 0));
+    f.ult = Math.max(0, ...Object.values(f.ults));
+  }
+
+  // the gauges fill as you fight: hits, kills, hits taken (an ultimate each, all at once —
+  // a little slower when a hero has learned two or three)
   ultGain(p, n) {
     const f = p && p.fighter;
     if (!f || !f.ultId || f.down || !(n > 0) || f.ultOn > 0) return;
-    const was = f.ult;
-    f.ult = Math.min(100, f.ult + n);
-    if (was < 100 && f.ult >= 100) {
+    n *= ULT_SHARE[f.ultIds.length] || 1;
+    let ready = false;
+    for (const id of f.ultIds) { const was = f.ults[id]; f.ults[id] = Math.min(100, was + n); if (was < 100 && f.ults[id] >= 100) ready = true; }
+    f.ult = Math.max(0, ...Object.values(f.ults));
+    if (ready) {
       this.popText(p.pos.x, 2.5, p.pos.z, t('Ultimate ready!'), '#ffd66b', true);
       this.vfx.star(p.pos.x, 1.3, p.pos.z, { size: 2, kind: 'rays', color: '#ffd66b', life: 0.6, spin: 2 });
       audio.sfx('levelup', { volume: 0.45 });
@@ -765,12 +792,16 @@ export class Combat {
     }
   }
 
-  // unleash it (the ULT button)
-  ultimate(p) {
+  // unleash it (the ULT button: the first ultimate whose gauge is full — or the `i`-th one the
+  // hero has learned, for a phone, which has a button each)
+  ultimate(p, i = -1) {
     const f = p.fighter, a = p.actor;
-    if (!f || !f.ultId || f.ult < 100 || f.down) return false;
-    const U = ULTS[f.ultId], V = this.vfx, x = a.pos.x, z = a.pos.z, dm = this.dmgMul(p);
-    f.ult = 0; f.act = null; f.charging = false; f.hold = 0;
+    if (!f || !f.ultId || f.down) return false;
+    const id = i >= 0 ? f.ultIds[i] : f.ultIds.find((u) => f.ults[u] >= 100);
+    if (!id || f.ults[id] < 100) return false;
+    const U = ULTS[id], V = this.vfx, x = a.pos.x, z = a.pos.z, dm = this.dmgMul(p), on = f.ultOn || 0;
+    f.ults[id] = 0; f.ult = Math.max(0, ...Object.values(f.ults));
+    f.act = null; f.charging = false; f.hold = 0;
     f.inv = Math.max(f.inv, 0.6);
     f.ultOn = 2.2;            // (an ultimate’s own hits don’t fill the next one)
     this.popText(x, 2.7, z, t('{ult}!', { ult: t(U.name) }), '#ffd66b', true);
@@ -780,7 +811,7 @@ export class Combat {
     this.party.cam.shake = Math.max(this.party.cam.shake || 0, 0.35);
     this.sfx('charge'); this.party.buzz(p, [60, 40, 120]);
     const near = (r) => this.enemies.filter((e) => e.alive && e.hurtable && Math.hypot(e.x - x, e.z - z) < r + e.r);
-    switch (f.ultId) {
+    switch (id) {
       case 'bulwark':
         f.bulwark = 6; f.ultOn = 6.5;
         V.dome(() => ({ x: p.pos.x, y: 0, z: p.pos.z }), { r: 4.2, color: '#ffd66b', life: 6 });
@@ -845,8 +876,9 @@ export class Combat {
         this.sfx('chord');
         break;
       }
-      default: K9.ultimate(this, p, f.ultId, dm); break;
+      default: K9.ultimate(this, p, id, dm); break;
     }
+    f.ultOn = Math.max(f.ultOn, on);      // (one unleashed while another still runs)
     return true;
   }
 

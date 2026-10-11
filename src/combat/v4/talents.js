@@ -250,9 +250,10 @@ export function buildMoves(cls, P) {
   return M;
 }
 
-// the ultimate a hero has learned (the branch with the most points, if two)
-export function ultOf(cls, P) {
-  let best = null, bn = -1;
-  (TREES[cls] || []).forEach((B, b) => { const cap = B.talents.find((T) => T.ult); if (cap && rankOf(P, cap.id) > 0) { const n = spentIn(cls, P, b); if (n > bn) { bn = n; best = cap.ult; } } });
-  return best;
+// the ultimates a hero has learned: one for every branch whose capstone is taken, in the
+// branches’ order (each has its own gauge and, on a phone, its own button)
+export function ultsOf(cls, P) {
+  const out = [];
+  for (const B of TREES[cls] || []) { const cap = B.talents.find((T) => T.ult); if (cap && rankOf(P, cap.id) > 0) out.push(cap.ult); }
+  return out;
 }

@@ -54,7 +54,7 @@ import { drawXpBar, liftMark, liftInk, levelWords, XP_PAPER } from '../ui/levelb
 // Party Mode's systems read a player's input as A / B / X / Y (+ 'interact',
 // 'jump', 'special'); this maps the solo game's actions onto that, after the
 // solo World has had its say (a press it used — talking, a door — is gone).
-const MAP = { a: 'interact', interact: 'interact', b: 'jump', jump: 'jump', x: 'special', special: 'special', y: 'dodge', ult: 'ult', u: 'ult', run: 'run', left: 'left', right: 'right', up: 'up', down: 'down' };
+const MAP = { a: 'interact', interact: 'interact', b: 'jump', jump: 'jump', x: 'special', special: 'special', y: 'dodge', ult: 'ult', u: 'ult', ult1: 'ult1', ult2: 'ult2', ult3: 'ult3', run: 'run', left: 'left', right: 'right', up: 'up', down: 'down' };
 
 // a press a system uses is gone for the solo game too (no jump after a dive…)
 class Edges extends Set {
@@ -237,7 +237,7 @@ export class Wild {
     this.startCombat();
     // (health & the ultimate's gauge as they were when the game was saved)
     const v = this.loadSave('vitals', null), f = this.me.fighter;
-    if (v && f && !v.down) { f.hp = Math.max(1, Math.min(f.maxHp, v.hp)); f.ult = v.ult || 0; }
+    if (v && f && !v.down) { f.hp = Math.max(1, Math.min(f.maxHp, v.hp)); this.combat.setUlt(this.me, v.ults || v.ult); }
     this.encounters = new Encounters(this);
     this.lairs = new Lairs(this);
     this.rares = new Rares(this);
@@ -342,7 +342,7 @@ export class Wild {
   beforeSave() {
     const f = this.me.fighter;
     this.saveProfile(this.me);
-    if (f) this.writeSave('vitals', { hp: Math.round(f.hp), ult: Math.floor(f.ult || 0), down: !!f.down });
+    if (f) this.writeSave('vitals', { hp: Math.round(f.hp), ult: Math.floor(f.ult || 0), ults: Object.fromEntries(Object.entries(f.ults || {}).map(([id, u]) => [id, Math.floor(u)])), down: !!f.down });
   }
 
   // the solo save keeps the wild lands' progress (a new game starts it afresh)
@@ -1086,7 +1086,9 @@ export class Wild {
       { icon: I.special, key: this.keyName('x'), cd: f.cd > 0 ? f.cd / specFull : 0 },
       { icon: DODGE_ICON, key: this.keyName('y'), cd: f.rollCd > 0 ? f.rollCd / rollFull : 0 },
     ];
-    if (f.ultId) slots.push({ icon: ULTS[f.ultId].icon, key: this.keyName('u'), cd: f.ult < 100 ? 1 - f.ult / 100 : 0, glow: f.ult >= 100, ult: true });
+    // (an ultimate each, its own gauge; the one key unleashes the first that is ready: that one wears it)
+    const next = f.ultIds.find((id) => f.ults[id] >= 100) || f.ultId;
+    for (const id of f.ultIds) { const u = f.ults[id]; slots.push({ icon: ULTS[id].icon, key: id === next ? this.keyName('u') : '', cd: u < 100 ? 1 - u / 100 : 0, glow: u >= 100, ult: true }); }
     const W = this.display.w, gap = 4, bw = slots.length * (18 + gap) - gap;
     let x0 = Math.round(W / 2 - bw / 2);
     const y0 = Math.min(bottom, this.display.h - 38) - 22;
@@ -1097,6 +1099,7 @@ export class Wild {
       const x = x0 + i * (18 + gap);
       drawIcon(ctx, s.icon, x, y0, { cd: s.cd || 0, glow: s.glow, t: this.t });
       // the key in the corner (like a keybind on WoW's bar; a gamepad's round button)
+      if (!s.key) return;
       if (isFace(s.key) && device() === 'pad') { faceGlyph(ctx, x + 15, y0 + 15, s.key); return; }
       const kw = measure(s.key) + 3;
       ctx.fillStyle = 'rgba(20,14,28,0.85)'; ctx.fillRect(x + 18 - kw, y0 + 10, kw, 9);

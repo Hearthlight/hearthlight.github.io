@@ -707,7 +707,11 @@ export class Party {
       ctx.lv = shownLevel(f.level);
       ctx.cd = f.cd > 0 ? Math.ceil((f.cd / (f.cls.special.cd * f.mods.cdr)) * 10) * 10 : 0;
       ctx.cls = f.clsId;
-      if (f.ultId && !f.down && !p.mount && !p.vehicle) { ctx.ult = Math.floor(f.ult); ctx.uic = ULTS[f.ultId].icon; }
+      if (f.ultId && !f.down && !p.mount && !p.vehicle) {
+        ctx.ult = Math.floor(f.ult); ctx.uic = ULTS[f.ultId].icon;
+        // (several ultimates learned: the phone has a button each — its gauge, its picture)
+        if (f.ultIds.length > 1) ctx.ults = f.ultIds.map((id) => [Math.floor(f.ults[id]), ULTS[id].icon]);
+      }
       if (ctx.x === undefined) ctx.x = t(f.cls.special.name);
       if (f.down) { ctx.a = null; ctx.b = null; ctx.x = null; ctx.y = null; ctx.hint = t(this.combat.pvp ? 'Bonked! Back in a moment…' : 'Having a little nap… a friend can help you up!'); }
     }
@@ -2421,10 +2425,15 @@ export class Party {
         ctx.fillStyle = g >= 1 ? f.cls.color : 'rgba(143,183,255,0.55)';
         ctx.fillRect(x + 3, y, Math.round((bw - 3) * g), 1);
         if (f.down) drawText(ctx, 'zZ', x + bw - 3, y - 7, { color: '#b9a2e3', align: 'right', outline: '#241a2e' });
-        // the ultimate’s gauge: a thin gold line under the name, a blinking U once it’s ready
+        // the ultimate’s gauge: a thin gold line under the name (cut in two or three when the
+        // hero has as many, a gauge each), a blinking U once one is ready
         if (f.ultId && !f.down) {
-          ctx.fillStyle = f.ult >= 100 ? (Math.floor(now * 4) % 2 ? '#ffd66b' : '#fff3a6') : 'rgba(255,214,107,0.55)';
-          ctx.fillRect(x + 5, hy - 2, Math.round(hw * Math.min(1, f.ult / 100)), 1);
+          const n = f.ultIds.length, sw = Math.floor((hw - (n - 1)) / n);
+          f.ultIds.forEach((id, i) => {
+            const u = f.ults[id];
+            ctx.fillStyle = u >= 100 ? (Math.floor(now * 4) % 2 ? '#ffd66b' : '#fff3a6') : 'rgba(255,214,107,0.55)';
+            ctx.fillRect(x + 5 + i * (sw + 1), hy - 2, Math.round(sw * Math.min(1, u / 100)), 1);
+          });
           if (f.ult >= 100) drawText(ctx, 'U', x + bw - 3, y - 7, { color: '#ffd66b', align: 'right', outline: '#241a2e' });
         }
       }

@@ -6,7 +6,11 @@
 import { padStyle } from '../engine/input.js';
 
 // (t: talk — a keyboard's chat line, a gamepad's wheel of phrases: src/party/partychat.js)
-const ACTIONS = { a: ['interact', 'a'], b: ['jump', 'b'], x: ['special', 'x'], y: ['y'], u: ['ult', 'u'], m: ['menu', 'm'], t: ['talk', 't'] };
+// (u: the ultimate that is ready; u1…u3: a phone’s button for each of them, when a hero has several)
+const ACTIONS = { a: ['interact', 'a'], b: ['jump', 'b'], x: ['special', 'x'], y: ['y'], u: ['ult', 'u'], u1: ['ult1'], u2: ['ult2'], u3: ['ult3'], m: ['menu', 'm'], t: ['talk', 't'] };
+const KEYS = Object.keys(ACTIONS);
+const PHONE = ['a', 'b', 'x', 'y', 'u', 'u1', 'u2', 'u3'];
+const each = (v) => Object.fromEntries(PHONE.map((k) => [k, v]));
 const NONE = { a: false, b: false, x: false, y: false, u: false, m: false, t: false };
 const NO_TAPS = { a: 0, b: 0, x: 0, y: 0, u: 0, m: 0, t: 0 };
 
@@ -27,7 +31,7 @@ class BaseInput {
     this.prev = this.cur;
     this.cur = new Set();
     this.edges = new Set();
-    for (const k of ['a', 'b', 'x', 'y', 'u', 'm', 't']) {
+    for (const k of KEYS) {
       const on = buttons[k] || taps[k] > 0;
       for (const a of ACTIONS[k]) {
         if (on) this.cur.add(a);
@@ -52,8 +56,8 @@ export class RemoteInput extends BaseInput {
   constructor() {
     super('phone');
     this.stick = { x: 0, y: 0 };
-    this.btn = { a: false, b: false, x: false, y: false, u: false };
-    this.taps = { a: 0, b: 0, x: 0, y: 0, u: 0 };
+    this.btn = each(false);
+    this.taps = each(0);
     this.seen = performance.now();
   }
   onMsg(d) {
@@ -62,17 +66,17 @@ export class RemoteInput extends BaseInput {
       const x = Number(d.x) || 0, y = Number(d.y) || 0;
       const l = Math.hypot(x, y);
       this.stick = l > 1 ? { x: x / l, y: y / l } : { x, y };
-    } else if (d.t === 'b' && (d.k === 'a' || d.k === 'b' || d.k === 'x' || d.k === 'y' || d.k === 'u')) {
+    } else if (d.t === 'b' && PHONE.includes(d.k)) {
       const v = !!d.v;
       if (v && !this.btn[d.k]) this.taps[d.k]++;
       this.btn[d.k] = v;
     }
   }
-  release() { this.stick = { x: 0, y: 0 }; this.btn = { a: false, b: false, x: false, y: false, u: false }; }
+  release() { this.stick = { x: 0, y: 0 }; this.btn = each(false); }
   update() {
     const run = Math.hypot(this.stick.x, this.stick.y) > 0.86;
     this.commit(this.btn, this.taps, this.stick, run);
-    this.taps = { a: 0, b: 0, x: 0, y: 0, u: 0 };
+    this.taps = each(0);
   }
 }
 

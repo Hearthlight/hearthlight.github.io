@@ -69,7 +69,7 @@ async function camp(ctx, site, brute = false) {
   await T.skipTalk(60);
   C.comboState = null;
   for (const p of heroes()) { const f = p.fighter, pr = P.progress.prof(p); if (f) { pr.level = f.level = site.lv; pr.xp = f.xp = 0; f.eff = C.effOf(p); C.refreshStats(p, true); } }
-  for (const p of heroes()) { const f = p.fighter; if (f) { f.hp = f.maxHp; f.cd = 0; f.ult = 0; f.combo = 0; f.buffT = 0; } }
+  for (const p of heroes()) { const f = p.fighter; if (f) { f.hp = f.maxHp; f.cd = 0; f.ult = 0; for (const u in f.ults) f.ults[u] = 0; f.combo = 0; f.buffT = 0; } }
   // (a real camp — encounters.js: two places, one or two more further out, one more for every two
   // heroes around; a brute takes two of them and, from four heroes up, a second one four more; an
   // elite, never a brute, for every four heroes)

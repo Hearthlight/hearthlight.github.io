@@ -19,7 +19,7 @@ import { cleanName } from '../data/nicknames.js';
 import { shownLevel } from '../saga/levels.js';
 
 // the phone's buttons → the solo game's actions (B also backs out of menus)
-const BTN = { a: ['interact'], b: ['jump', 'cancel'], x: ['special'], y: ['dodge'], u: ['ult'] };
+const BTN = { a: ['interact'], b: ['jump', 'cancel'], x: ['special'], y: ['dodge'], u: ['ult'], u1: ['ult1'], u2: ['ult2'], u3: ['ult3'] };
 const ACTS = new Set(['menu', 'pause', 'cancel', 'map', 'journal', 'hero', 'hotPrev', 'hotNext', 'bike', 'hud']);
 
 export class SoloPhone {
@@ -219,7 +219,10 @@ export class SoloPhone {
     if (f && (W.armed() || f.hp < f.maxHp)) {
       c.hp = Math.round((100 * Math.max(0, f.hp)) / f.maxHp);
       c.lv = shownLevel(f.level);
-      if (f.ultId && !f.down && W.armed() && !W.me.mount && !W.me.vehicle) { c.ult = Math.floor(f.ult); c.uic = ULTS[f.ultId].icon; }
+      if (f.ultId && !f.down && W.armed() && !W.me.mount && !W.me.vehicle) {
+        c.ult = Math.floor(f.ult); c.uic = ULTS[f.ultId].icon;
+        if (f.ultIds.length > 1) c.ults = f.ultIds.map((id) => [Math.floor(f.ults[id]), ULTS[id].icon]);      // (a button each)
+      }
       const full = (f.moves ? f.moves.special.cd : f.cls.special.cd) * (f.mods.cdr || 1);
       if (c.x && f.cd > 0) c.cd = Math.round((100 * f.cd) / full);
     }
