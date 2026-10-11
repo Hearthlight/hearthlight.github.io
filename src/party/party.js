@@ -1883,15 +1883,16 @@ export class Party {
     }
     // Above each head: just a little arrow in the player’s colour (it blinks
     // red when health runs low). Names only show for a few seconds — when
-    // someone joins, respawns, levels up or waves — so a crowd stays readable.
-    const tags = [], speech = [];
+    // someone joins, respawns, levels up or waves — so a crowd stays readable
+    // (never during a scene: gathered in front of the actors, four names hid the stage).
+    const tags = [], speech = [], staged = !!(this.stage && this.stage.active);
     for (const p of this.players) {
       if (p.hidden) continue;
       const a = p.actor;
       const u = this.toUi(v, p.pos.x, 1.72 + (a.baseY || 0) + a.jumpY, p.pos.z);
       const f = p.fighter;
       const low = !!(f && !f.down && f.hp < f.maxHp * 0.3);
-      if (!(p.tagT > 0) && p.connected) { playerPip(ctx, u.x, u.y - 1, p.color, low, now); if (p.emote) speech.push({ x: u.x, y: u.y - 9, icon: p.emote }); else drawSpeech(ctx, p, u.x, u.y - 6, now, speech); continue; }
+      if ((!(p.tagT > 0) || staged) && p.connected) { playerPip(ctx, u.x, u.y - 1, p.color, low, now); if (p.emote) speech.push({ x: u.x, y: u.y - 9, icon: p.emote }); else drawSpeech(ctx, p, u.x, u.y - 6, now, speech); continue; }
       tags.push({ p, x: u.x, y: u.y - 4, w: measure(p.name) + 6, ay: u.y, a: p.connected ? Math.min(1, p.tagT * 2.5) : 1 });
     }
     tags.sort((a, b) => b.y - a.y);
