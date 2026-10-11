@@ -166,7 +166,9 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   goes — a phone has it always (it stays only for a party without phones, or when asked:
   `settings.partyGoal`, `P.goalStays()`); banners, title cards and long notes go one at a time through
   `P.lane` (`src/party/announce.js`: `showBanner(title, sub, { keep })`, never drawn over the
-  dialogue box); toasts are three at most; a page of dialogue stays its reading time before
+  dialogue box — a banner is a line in bold at the usual size over a smaller one; only a short
+  shout, under a third of the screen’s width, gets big letters: `isShout`); during a scene the
+  heroes keep their little arrows, not their names; toasts are three at most; a page of dialogue stays its reading time before
   anyone's A turns it (`PartyDialogue` — the bots and `debug.skip` wait it out). `settings.hud`
   (full · compact · minimal) rules it as it does the solo HUD, the corner's minimap shows only
   when the party asks (`settings.partyMap`). The camera (`settings.camera`) keeps everyone in one
@@ -217,7 +219,9 @@ src/ui/       hud, menu (the pause page, the Settings page — two tabs: setting
               book), dialogue, shop, creator, ui (panels, `ctl`, key hints); controls.js (the Settings'
               Controls tab: keyboard · gamepad · phone), osk.js (on-screen keyboard for names),
               questcard.js (the objective card's layout, a quest's checklist, tag-aware cutting),
-              levelbar.js (the experience bar, a level's words), big.js (buttons, arrows and the
+              levelbar.js (the experience bar, a level's words), talentpage.js (the talent tree on
+              one page, its three branches side by side — the phone’s, the solo Hero page’s and
+              the big-screen menu’s: `treeLayout`, `drawTree`, `drawInfo`), big.js (buttons, arrows and the
               die at a finger's size), field.js (a real text field laid over the canvas: a
               phone's own keyboard for names)
 src/render/   r3d (low-res toon renderer, oblique ortho camera, post pass, split views: the
@@ -297,9 +301,26 @@ src/saga/     World v7's story engine: saga.js (chapters, quests, NPCs, the jour
               theme is pagoda.js), jars (jars.js: firefly jars, moth swarms, glowcap doors; the
               heartwood theme is heartwood.js), clock (clocks.js: THEN and NOW; the manor theme
               is manor.js), spot (spots.js: sweeping spotlights, flats, the lighting board; the
-              backstage theme is backstage.js), script, end), escort.js (escort steps: a walker
+              backstage theme is backstage.js), script, end; a puzzle room says its `task` as the
+              objective while the heroes stand in it, then a plainer `hint` after a minute — a
+              failure counts for 15 s —, then golden arrows over the next thing to do; its
+              numbers follow the heroes who came in, and each chapter adds to what the last one
+              taught: `bellsBy`, `relay`, `wires`, spring mirrors, clocks that tire, a hook’s
+              `drink`…), escort.js (escort steps: a walker
               on a path, or a flock following the lantern), games7/8/9.js (step mini-games:
               whack, lamps, kite, net, carry, rhythm, piles, seek, snap, defend, chase),
+              games12.js (mini-games played in rounds — a card with the rule, three, two, one, a
+              board with the clock, the score and three stars, a result: toss (a shooting
+              range), herd, tug, cook; their models in models/v7/games12.js; a side quest with
+              `repeat: true` in chapters 1 to 6, on the phone’s Quest page until played once),
+              aboard.js (a journey in a craft: `aboard(st)` seats a look-alike of every hero in
+              it for the trip — `seat`, `ride`, `land` — and sets everybody down on dry ground
+              beside it; the stage ends it however the scene ends; every journey scene, the
+              Teacup line and the Pelican Post use it), acting.js (the stage’s acting
+              vocabulary, `st.act.*`: some sixty gestures any chibi can chain, a `troupe` whose
+              third member gets it wrong, entrances and exits — a rope, a trapdoor, a curtain, a
+              spotlight —, the heroes’ reactions; `st.say(…, { beats })` plays one at each pause
+              of a line; the villains’ scenes are blocked with it),
               pelican.js (the Pelican Post's flights), teacup.js (the Teacup line between the
               continents), chapters/ (ch1…ch10 — ch10 ends with the Epilogue and the credits;
               a chapter may darken its lands with `gloom(S)`; scenes have `st.sepia()` for
@@ -335,7 +356,13 @@ tools/        devserver.py, partybots.js, sagatest.js (the saga played by itself
               `window.__bal`), pace.js (the pace of levels: the story played by the bots with
               every gain of experience written down — `start('party', 4, [1, 2], { fresh: true })`,
               `side`, `camps`; `campStart(4, 'dino', 30)` a land’s camp for a party of a level:
-              poll `window.__pace`), perf.js (Party frame times: `start(8, 'apart'|'apart4'|'together')`,
+              poll `window.__pace`), journeytest.js (every journey played with the sticks held —
+              drift, strays, anybody left hidden; `awake()` and `brisk()` keep a hidden tab’s
+              timers and frames going for any long replay), actingtest.js (frame strips of every
+              villain scene, a sheet of the gestures, the skip test), gamestest.js (a round
+              mini-game played by 1 to 8 bots: `start('party', 4, questId, { shots })`, poll
+              `window.__gt`), puzzletest.js + puzzleplays.js (every puzzle room failed on
+              purpose then solved from its clue; `audit()`: can every lever be reached), perf.js (Party frame times: `start(8, 'apart'|'apart4'|'together')`,
               poll `window.__pf`), grandmatest.js (Grandmother Kraken played through),
               i18n-scan.mjs, i18n-glossary.md,
               mapdump.mjs, bigmap.mjs (`--crop

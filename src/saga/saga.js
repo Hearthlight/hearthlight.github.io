@@ -727,16 +727,18 @@ export class Saga {
       const C = this.chapter, main = this.tracked();
       // (a quest to give — a step to talk through is on its quest’s own line already; the latest
       // chapter’s people first)
-      const offers = [];
+      const offers = [], games = [];
       for (const [id, N] of this.wanted()) {
         const o = this.offerOf(id);
-        if (o && o.kind === 'give' && !o.Q.repeat) offers.push([o.Q.ch || 0, { who: id, name: this.nameOf(id), ...this.spot({ x: N.at[0], z: N.at[1] }) }]);
+        // (a mini-game nobody has played yet is worth the walk too — `game`: two of them have
+        // their own rows, whatever else is on offer —, once played it is no news)
+        if (o && o.kind === 'give' && (!o.Q.repeat || !this.plays(o.qid))) (o.Q.repeat ? games : offers).push([o.Q.ch || 0, { who: id, name: this.nameOf(id), ...(o.Q.repeat ? { game: 1 } : {}), ...this.spot({ x: N.at[0], z: N.at[1] }) }]);
       }
       base = {
         ch: { n: C.id, title: t(C.title), recap: C.recap ? t(C.recap) : '' },
         main: main ? this.questCard(main) : null,
         sides: this.activeIds().filter((id) => id !== main).map((id) => this.questCard(id)),
-        offers: offers.sort((a, b) => b[0] - a[0]).slice(0, 3).map((o) => o[1]),
+        offers: [...offers.sort((a, b) => b[0] - a[0]).slice(0, 3), ...games.sort((a, b) => b[0] - a[0]).slice(0, 2)].map((o) => o[1]),
       };
     } finally { setAudience(was); }
     K[one] = { v: this.cardV, at: now, base };

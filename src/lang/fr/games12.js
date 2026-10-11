@@ -1,6 +1,8 @@
 // French: the round mini-games (src/saga/games12.js) and their quests in the chapters.
 // Solo: « tu ». `__group`: the « vous » lines said to the whole party.
 export const GAMES12_FR = {
+  // ---- the phone’s Quest page: someone has a mini-game nobody has played yet
+  '{name} has a game for you': '{name} a un jeu pour toi',
   'Best: {n}': 'Record : {n}',
   '{s} s': '{s} s',
   'Get ready…': 'Prépare-toi…',

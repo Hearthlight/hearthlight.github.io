@@ -1238,7 +1238,7 @@ function drawQuest() {
     // who has a quest to give, and the way to them
     if (C.offers.length) R.push(space(C.sides.length ? 6 : 10));
     for (const o of C.offers) {
-      const L = wrap(t('{name} has something for you', { name: String(o.name || '') }), w - 22), sub = whereText(o, true);
+      const L = wrap(o.game ? t('{name} has a game for you', { name: String(o.name || '') }) : t('{name} has something for you', { name: String(o.name || '') }), w - 22), sub = whereText(o, true);
       const label = o.go === 2 ? t('Stop guiding') : t('Go there'), gw = measure(label) + 12, beside = !o.go || measure(sub) + gw + 28 <= w;
       const h = 8 + L.length * 11 + (o.go && !beside ? 31 : o.go ? 19 : sub ? 11 : 0);
       R.push({ h: h + 4, draw: (x, y) => {

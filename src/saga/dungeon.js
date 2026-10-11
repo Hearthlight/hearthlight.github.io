@@ -765,8 +765,7 @@ class Dungeon {
       now.stuck = (now.stuck || 0) + dt;
       const at = now.hintAt || HINT_AT, v = now.stuck + (now.fails || 0) * 15, deg = v > at[1] ? 2 : v > at[0] ? 1 : 0;
       if (deg > (now.helped || 0)) {
-        now.helped = deg;
-        if (deg === 1 && now.hint) P.toast(t(now.hint), '#fff3c4');
+        now.helped = deg;       // (the plainer word comes on the objective’s card and on the phones: not said twice)
         audio.sfx('sparkle', { volume: 0.5 });
       }
     }

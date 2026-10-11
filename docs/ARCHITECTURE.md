@@ -115,8 +115,11 @@ Coordinates: 1 unit = 1 tile = 16 texels; x runs east, z south.
 ## The story
 
 - `saga/`: the ten-chapter story engine — chapters (`saga/chapters/`), quests and their steps,
-  the stage for cutscenes (`stage.js`), zone levels, the Murk that hides lands the story hasn't
-  reached, dungeons and their puzzle rooms, escorts, and the mini-games.
+  the stage for cutscenes (`stage.js`, its actors' gestures in `acting.js`, the heroes seen aboard
+  a craft during a journey in `aboard.js`), the levels — four of the game's forty a chapter, the
+  experience bending so that heroes follow the story (`levels.js`) —, the Murk that hides lands
+  the story hasn't reached, dungeons and their puzzle rooms (harder with every chapter, help
+  coming by degrees), escorts, and the mini-games (`games7…9.js`, the rounds of `games12.js`).
 - `story/` holds the valley's quests and lines; `data/` the items, villagers and looks.
 - `combat/`: the heroes (eight classes), the gloom creatures and bosses, blessings, statuses;
   `party/progress.js`: talents and gear.
