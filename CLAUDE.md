@@ -169,7 +169,9 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   when the party asks (`settings.partyMap`). The camera (`settings.camera`) keeps everyone in one
   picture by default (`'together'`): the zoom goes out, then `Party.tether` takes back the step
   that would lead a hero out of it (an invisible wall), a house's door brings the others in, and
-  a hero out of reach all the same is put back beside them (`regroup`); `'seats'` splits the
+  a hero out of reach all the same is put back beside them (`regroup`; in any camera a player
+  can ask for it: « Rejoin » on the phone’s menu and on a local player’s own page — `rejoin` —,
+  « Bring everyone together » in the host’s menu); `'seats'` splits the
   screen with every player in their own place, `'groups'` the old way (`tools/splittest.js` sets
   the situations up and prints the camera's layout). A dungeon's fight room takes everyone in
   before it locks (`Dungeon.gatherIn`), and « Get unstuck » never leaves a dungeon.

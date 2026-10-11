@@ -14,6 +14,14 @@ export const SPLIT11_DE = {
   'one picture for everyone: it zooms out, then nobody can walk further away': 'ein Bild für alle: es zoomt heraus, dann kann niemand weiter weglaufen',
   'Wait for the others!': 'Warte auf die anderen!',
   '{name} is back with the others': '{name} ist wieder bei den anderen',
+  // ---- back beside the others: the phone’s tile, a player’s own page, the host’s menu (party.js `rejoin`)
+  'Rejoin': 'Zur Gruppe',
+  'Rejoin the group': 'Zurück zur Gruppe',
+  'Already with the others': 'Schon bei den anderen',
+  'Nobody to join yet': 'Noch niemand da',
+  'Not during a race!': 'Nicht während eines Rennens!',
+  'Bring everyone together': 'Alle zusammenholen',
+  'whoever is away hops back beside the others': 'wer weit weg ist, kommt zu den anderen zurück',
   __group: {
   },
 };

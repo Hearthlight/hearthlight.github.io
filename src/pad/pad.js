@@ -1720,6 +1720,8 @@ function drawMenu() {
   const solo = S.phase === 'solo';
   const tiles = [
     S.quest && { id: 'questm', glyph: 'book', label: t('Quest'), color: '#d9b877', badge: S.questNew ? '•' : '', fn: () => openQuest() },
+    // (separated from the others by chance: one tap, and the hero is back beside them)
+    !solo && S.phase !== 'lobby' && { id: 'rejm', glyph: 'people', label: t('Rejoin'), color: '#4f955a', fn: () => { S.menu = false; send({ t: 'rejoin' }); buzz(15); } },
     !solo && S.host && { id: 'hostm', glyph: 'crown', label: t('Host'), color: '#d8962a', fn: () => { S.menu = 'host'; S.hconfirm = null; } },
     S.prog && { id: 'talm', glyph: 'star', label: t('Talents'), color: '#5a9a48', badge: pts ? '+' + pts : '', fn: () => { S.menu = 'talents'; S.talSel = null; } },
     S.prog && { id: 'gearm', glyph: 'armory', label: t('Gear'), color: '#8a6a9a', fn: () => { S.menu = 'gear'; S.gearSel = null; } },

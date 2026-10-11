@@ -146,6 +146,7 @@ export class Host {
       game.push({ id: 'act:' + a.id, kind: 'button', label: a.label, sub: P.phase === 'lobby' ? 'Start it now' : 'Switch to it', color: a.color, confirm: P.phase !== 'lobby' });
     }
     if (P.phase !== 'lobby') game.push({ id: 'unstuck', kind: 'button', label: 'Get everyone unstuck', sub: 'anyone stuck in a corner hops to open ground' });
+    if (P.phase !== 'lobby') game.push({ id: 'gather', kind: 'button', label: 'Bring everyone together', sub: 'whoever is away hops back beside the others' });
     if (P.camp && P.exploring()) game.push({ id: 'camp', kind: 'button', label: 'Light a campfire', sub: 'by the crowned player: warm up, and sleep there at night' });
     if (P.phase !== 'lobby') game.push({ id: 'lobby', kind: 'button', label: 'Back to the lobby', confirm: true });
     // (another of the saved stories, or a new one: they change at the title — slots.mjs)
@@ -209,6 +210,7 @@ export class Host {
     if (id === 'vote') { if (P.phase === 'lobby' && !P.vote && !P.choosing) P.chooseActivity(); this.closeMenu(); return; }
     if (id === 'restart') { this.setPaused(false); this.closeMenu(); P.restartActivity(); return; }
     if (id === 'unstuck') { for (const q of P.players) if (q.connected) P.unstick(q, true); this.closeMenu(); return; }
+    if (id === 'gather') { P.gatherAll(); this.closeMenu(); return; }
     if (id === 'camp') { const q = from || P.players.find((r) => this.isHost(r) && r.connected) || P.players.find((r) => r.connected); this.closeMenu(); if (q && P.camp) P.camp.build(q); return; }
     if (id.startsWith('act:')) { this.setPaused(false); this.closeMenu(); P.switchActivity(id.slice(4)); return; }
     if (id === 'lobby') { this.setPaused(false); this.closeMenu(); if (P.phase !== 'lobby') P.backToLobby(); return; }

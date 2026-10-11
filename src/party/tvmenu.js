@@ -329,7 +329,7 @@ class TvHero extends HeroTab {
     drawText(ctx, fitText(dev, A.w - 40), A.x + 36, A.y + 13, { color: UI.inkSoft });
     // the buttons (as wide as their words: the rest for your buttons' list)
     const display = (m) => t('Display: {m}', { m: t(HUD_NAMES[m]) });
-    const words = [t('Change your name'), t('Light a campfire'), t('Get unstuck'), t('Leave the party'), t('Press again'), ...HUD_MODES.map(display)];
+    const words = [t('Change your name'), t('Light a campfire'), t('Get unstuck'), t('Rejoin the group'), t('Leave the party'), t('Press again'), ...HUD_MODES.map(display)];
     const bw = Math.min(150, A.w - 4, Math.max(96, ...words.map((s) => measure(s))) + 16), bx = A.x;
     let y = A.y + 38;
     const btn = (id, label, fn, color) => { this.btn(ctx, id, bx, y, bw, 15, label, fn, color); y += 19; };
@@ -338,6 +338,8 @@ class TvHero extends HeroTab {
     btn('name', t('Change your name'), () => { this.osk = new Osk(p.name, { title: 'Your name', keys: { a: keyOf(p, 'a'), b: keyOf(p, 'b'), x: keyOf(p, 'x'), ok: keyOf(p, 'm') }, hint: typed }); audio.sfx('open'); });
     if (P.phase !== 'lobby' && P.camp) btn('camp', t('Light a campfire'), () => { P.tvmenus.close(p); P.camp.build(p); }, '#b8502a');
     if (P.phase !== 'lobby') btn('unstuck', t('Get unstuck'), () => { P.tvmenus.close(p); P.unstick(p); });
+    // (separated by chance: back beside the others)
+    if (P.phase !== 'lobby' && P.players.some((q) => q !== p && q.connected)) btn('rejoin', t('Rejoin the group'), () => { P.tvmenus.close(p); P.rejoin(p); }, '#4f955a');
     // (the big screen’s display, for everyone: full · compact · minimal)
     if (P.phase !== 'lobby') btn('hud', display(P.hudMode()), () => P.cycleHud(), '#5a7ab8');
     btn('leave', this.asking('leave') ? t('Press again') : t('Leave the party'), () => this.twice('leave', () => { P.tvmenus.close(p); P.removePlayer(p); }), this.asking('leave') ? '#c8454f' : '#8a7a98');

@@ -472,6 +472,7 @@ export class Party {
       // the host starts the party from the lobby (nobody else does — not even "everyone’s ready")
       case 'start': if (this.phase === 'lobby' && this.host.isHost(p) && !this.vote && !this.choosing) this.chooseActivity(); break;
       case 'unstuck': this.unstick(p); break;
+      case 'rejoin': this.rejoin(p); break;
       // (a place chosen on the phone's map: the way there — or « stop » on the place you're heading for)
       case 'goto': this.guides.fromPhone(p, d); break;
       case 'camp': if (this.camp && this.phase !== 'lobby') this.camp.build(p); break;
@@ -1201,9 +1202,48 @@ export class Party {
     }
   }
 
-  // a hero out of everyone's reach comes back beside the nearest of the others
-  regroup(p) {
-    const main = (this.mainG || []).filter((q) => q !== p && q.connected && q.actor), a = p.actor;
+  // the others as one group to come back to: the bigger group of them when they stand apart
+  // themselves, the first seat’s among equals
+  bigGroup(list) {
+    if (list.length < 2) return list;
+    const R = this.zoom.reach(), cl = clusterize(list, R.w, R.h), first = (c) => Math.min(...c.members.map((q) => q.slot));
+    cl.sort((a, b) => b.members.length - a.members.length || first(a) - first(b));
+    return cl[0].members;
+  }
+
+  // « Rejoin the group » (a phone’s menu, a player’s own page): separated by chance, a hero hops
+  // back beside the others, whatever the camera does. Not knocked down, nor in a race.
+  rejoin(p) {
+    if (!p || !p.actor || !p.connected || this.busy || this.cinematic || this.dialogue.active || this.vote || p.frozen || (p.fighter && p.fighter.down)) return false;
+    const race = this.races && this.races.race;
+    if (race && race.racers.has(p.slot)) { p.say(t('Not during a race!'), 1.6); return false; }
+    if (this.t - (p.rejoinedAt || -99) < 2) return false;
+    const group = this.bigGroup(this.players.filter((q) => q !== p && q.connected && q.actor)), a = p.actor.pos;
+    if (!group.length) { p.say(t('Nobody to join yet'), 1.6); return false; }
+    if (group.some((q) => Math.hypot(q.pos.x - a.x, q.pos.z - a.z) < 4)) { p.say(t('Already with the others'), 1.6); return false; }
+    p.rejoinedAt = this.t;
+    if (p.sleeping && this.camp) this.camp.wake(p);
+    if (p.vehicle && this.vehicles) this.vehicles.leave(p, true);
+    this.regroup(p, group);
+    return true;
+  }
+
+  // the host’s « Bring everyone together »: whoever is away from the bigger group comes back to it
+  gatherAll() {
+    const all = this.players.filter((q) => q.connected && q.actor && !(q.fighter && q.fighter.down));
+    if (all.length < 2 || this.busy || this.cinematic || this.dialogue.active) return;
+    const group = this.bigGroup(all), race = this.races && this.races.race;
+    for (const q of all) {
+      if (group.includes(q) || (race && race.racers.has(q.slot))) continue;
+      if (q.sleeping && this.camp) this.camp.wake(q);
+      if (q.vehicle && this.vehicles) this.vehicles.leave(q, true);
+      this.regroup(q, group);
+    }
+  }
+
+  // a hero out of everyone's reach comes back beside the nearest of the others (`group`: of these)
+  regroup(p, group = this.mainG) {
+    const main = (group || []).filter((q) => q !== p && q.connected && q.actor), a = p.actor;
     if (!main.length || !a) return;
     const d = (q) => Math.hypot(q.pos.x - a.pos.x, q.pos.z - a.pos.z), near = main.sort((u, v) => d(u) - d(v))[0];
     if (p.mount && this.mounts) this.mounts.dismount(p, true);
