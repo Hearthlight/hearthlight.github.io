@@ -1,4 +1,4 @@
-// Chapter 10 — The Grand Finale, and the Epilogue. The Umbral Scar, levels 39–40. Everyone
+// Chapter 10 — The Grand Finale, and the Epilogue. The Umbral Scar, levels 37–40. Everyone
 // who helped is at the edge of the Scar: Captain Wendy and her Teacup, Master Tock and the
 // Lantern Cannon, the Understudies. The Teacup flies the heroes up through the Gloomstage’s
 // searchlights to its stage door; they sneak through her theatre (the spotlights), beat
@@ -702,7 +702,7 @@ async function festival(S) {
 export const CH10 = {
   id: 10, title: 'The Grand Finale',
   recap: 'At Hollowmoor, the Duchess’s mother gave you a message for her daughter. The Duchess is aboard {key}the Gloomstage{/}, over the Umbral Scar, ready for her Grand Finale. Fly up with Captain Wendy and {key}stop her{/}.',
-  lv: 39, zones: ['scar'], opens: [],
+  lv: 37, zones: ['scar'], opens: [],
   // (the Scar, until dawn: a sky like a bruise)
   gloom(S) {
     if (S.st.ch !== 10 || S.has('dawn10')) return 0;
@@ -750,7 +750,7 @@ export const CH10 = {
     c10_finale: {
       title: 'The Grand Finale',
       brief: 'The Duchess wants darkness everywhere, for ever. Fly up to {key}the Gloomstage{/}, cross her theatre and face her on its stage.',
-      auto: true, lv: 39, gear: 'rich',
+      auto: true, lv: 37, gear: 'rich',
       steps: [
         { do: 'scene', text: 'Hear the plan at {key}the Scar’s edge{/}', run: coldOpen },
         { do: 'talk', npc: 'wendy', text: 'Go and see {key}Captain Wendy{/}, by the Teacup, to take off', run: wendyTalk },

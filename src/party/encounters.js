@@ -65,7 +65,7 @@ export class Encounters {
         if ((m.sledRuns || []).some((run) => run.pts.some((q, i) => i && segDist(x, z, run.pts[i - 1], q) < 14))) return;     // (the sled runs stay clear)
         const id = zone + ':' + made;
         // (each camp keeps its level, somewhere in its land’s range)
-        const level = rollLevel(ZONES.find((q) => q.id === zone).lv || [1, 5], ((made * 0.618 + zone.length * 0.137 + x * 0.013) % 1 + 1) % 1);
+        const level = rollLevel(ZONES.find((q) => q.id === zone).lv || [1, 4], ((made * 0.618 + zone.length * 0.137 + x * 0.013) % 1 + 1) % 1);
         drawn.push({ id, zone, x, z, level, state: this.cleared.has(id) ? 'cleared' : 'idle', foes: [], props: null, seen: false, clearedAt: -1e9 });
         if (!made) this.camps.push(drawn[drawn.length - 1]);
         made++;
@@ -162,9 +162,10 @@ export class Encounters {
     const P = this.party, C = P.combat;
     const lv = c.level || 1, n = C.heroesNear(c.x, c.z, 34);
     const pool = c.pool || ZONE_FOES[c.zone], land = this.big && this.big.zoneAt(c.x, c.z);
-    // small camps: a place or two more further out, and one for every two heroes around — a
-    // brute takes two of them, a second brute four (bestiary.js `pickFoes`)
-    const places = Math.min(8, (c.saga && c.saga.n ? c.saga.n : 2 + Math.min(2, Math.floor(lv / 12))) + Math.floor(n / 2));
+    // small camps: a place more from chapter 3 on (level 10) and another from chapter 5 on
+    // (level 19), one for every two heroes around — a brute takes two of them, a second brute
+    // four (bestiary.js `pickFoes`)
+    const places = Math.min(8, (c.saga && c.saga.n ? c.saga.n : 2 + (lv >= 10 ? 1 : 0) + (lv >= 19 ? 1 : 0)) + Math.floor(n / 2));
     const types = [];
     for (const ty of pickFoes(pool, places, n, { spare: land && ZONE_FOES[land.id], named: !!c.pool })) {
       types.push(ty);

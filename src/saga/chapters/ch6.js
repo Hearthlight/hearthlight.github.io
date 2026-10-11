@@ -1,5 +1,5 @@
 // Chapter 6 — Fire & Fins. Emberpeak, the Whirlpool Straits and Dino Isle, levels
-// 25–30. It opens with a crash: the Gloomstage’s spotlights find the Dauntless
+// 20–24. It opens with a crash: the Gloomstage’s spotlights find the Dauntless
 // Teacup over the sea, gloom flak tears its envelope, and down it goes into Dino
 // Isle’s jungle. Professor Ammonite and a triceratops tow the gondola out of the
 // tar; Old Barnaby’s Straits Regatta, against the Understudies in a swan pedalo
@@ -477,7 +477,7 @@ function swanRace(S, dt) {
 export const CH6 = {
   id: 6, title: 'Fire & Fins',
   recap: 'The Great Hearth of the South burns again, but the Duchess keeps the marsh’s flame on her flying theatre, up on the volcano Emberpeak. She shot down the Teacup, Captain Wendy’s airship, over Dino Isle. Mend the Teacup, get into the crater and take {key}the flame{/} back.',
-  lv: 27, zones: ['volcano', 'straits', 'dino'], opens: ['whale'],
+  lv: 23, zones: ['volcano', 'straits', 'dino'], opens: ['whale'],
   update(S, dt) { swanRace(S, dt); },
   props: [
     { id: 'tarGondola', at: GONDOLA, r: 1, build: (r3d) => { const K = kit(r3d), g = new THREE.Group(); K.put(g, K.cyl(1.1, 0.8, 1, 16), K.c('#fbf6ec'), 0, -0.2, 0); K.put(g, K.cyl(1.35, 1.25, 0.12, 16), K.c('#fbf6ec'), 0, -0.5, 0); g.rotation.z = 0.25; return g; }, when: (S) => S.done('c6_flak') && !S.done('c6_tow') },
@@ -499,7 +499,7 @@ export const CH6 = {
     c6_flak: {
       title: 'Flak over the Straits',
       brief: 'The Duchess’s theatre shot the Teacup down over Dino Isle. See how {key}Captain Wendy{/} is, and what is left of her airship.',
-      auto: true, lv: 25,
+      auto: true, lv: 21,
       steps: [
         { do: 'scene', text: 'Fly to {key}Emberpeak{/} aboard the Teacup', run: flak },
         { do: 'talk', npc: 'wendy', text: 'Talk to {key}Captain Wendy{/}, by the wreck of the Teacup', run: wendyCrash },
@@ -508,7 +508,7 @@ export const CH6 = {
     c6_tow: {
       title: 'A Triceratops and a Teacup',
       brief: 'The Teacup’s gondola is sinking in the tar. Only {key}a triceratops{/} is strong enough to pull it out: tame one and ride it there.',
-      auto: true, after: 'c6_flak', lv: 26,
+      auto: true, after: 'c6_flak', lv: 21,
       steps: [
         { do: 'talk', npc: 'ammonite', text: 'Ask {key}the scientists{/} at {key}Fern Landing{/} for help', run: ammoniteTalk },
         { do: 'check', text: 'Offer a fern to {key}a triceratops{/}, then ride it to {key}the gondola{/}', target: () => GONDOLA,
@@ -518,7 +518,7 @@ export const CH6 = {
     c6_regatta: {
       title: 'The Straits Regatta',
       brief: 'The Teacup needs a new propeller. Old Barnaby, the lighthouse keeper, gives one to whoever wins his boat race: {key}the Straits Regatta{/}.',
-      auto: true, after: 'c6_tow', lv: 27,
+      auto: true, after: 'c6_tow', lv: 23,
       steps: [
         { do: 'talk', npc: 'barnaby', text: 'Ask {key}Old Barnaby{/} for a propeller, at {key}the Straits Light{/} to the east', run: barnabyTalk },
         { do: 'race', text: 'Win {key}the Regatta{/} by sailboat: round {key}the three buoys{/}, then back to the light', points: REGATTA, time: 55, r: 4, go: 'And they’re OFF!', fail: 'The swan wins! Back to the start line to try again.', rival: true },
@@ -528,7 +528,7 @@ export const CH6 = {
     c6_forge: {
       title: 'The Debut',
       brief: 'The Duchess sings her Debut in the crater of Emberpeak, with the marsh’s flame on her stage. Find a way in and take {key}the flame{/} back.',
-      auto: true, after: 'c6_regatta', lv: 28,
+      auto: true, after: 'c6_regatta', lv: 24,
       steps: [
         { do: 'talk', npc: 'mochi', text: 'Ask {key}Granny Mochi{/}, at {key}the Hot Springs{/}, for the way into the crater', run: mochiTalk },
         { do: 'go', text: 'Go through {key}the Forge Gate{/}, up the path east of the Hot Springs', at: FORGE_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('forgeheart'); else S.flag('jar'); } },
@@ -538,7 +538,7 @@ export const CH6 = {
     c6_home: {
       title: 'The Marsh Warms Again',
       brief: 'The Duchess fled east, but the jar with the marsh’s flame fell from her stage. Carry the flame home to {key}King Croakington{/}, in Croakmire.',
-      auto: true, after: 'c6_forge', lv: 29,
+      auto: true, after: 'c6_forge', lv: 24,
       steps: [
         { do: 'go', text: 'Carry {key}the marsh’s flame{/} home to {key}King Croakington{/}, in Croakmire', at: KING, r: 3.5, run: marshHome },
       ],
@@ -549,7 +549,7 @@ export const CH6 = {
     c6_tooth: {
       title: 'The Tyrant’s Toothache',
       brief: 'A wobbly tooth keeps the Tyrant King awake. Creep up on him while he dozes, {key}without running{/}, and pull it out.',
-      kind: 'side', giver: 'ammonite', lv: 27, when: (S) => S.done('c6_tow'), dust: 50,
+      kind: 'side', giver: 'ammonite', lv: 23, when: (S) => S.done('c6_tow'), dust: 50,
       offer: async (S) => {
         await S.say('ammonite', 'The Tyrant King has a wobbly tooth! It keeps him awake, and then he sings. Badly.', { expr: 'worried' });
         await S.say('ammonite', 'He’s dozing in {key}his nest{/} right now. Creep up on him — {key}no running{/}! — and pull it out.', { expr: 'happy' });
@@ -562,7 +562,7 @@ export const CH6 = {
     c6_bottles: {
       title: 'Messages in Bottles',
       brief: 'Three bottles with letters inside drift round the Straits. Swim out, catch them and bring them to {key}Old Barnaby{/}.',
-      kind: 'side', giver: 'barnaby', lv: 27, when: (S) => S.done('c6_regatta'), dust: 50,
+      kind: 'side', giver: 'barnaby', lv: 23, when: (S) => S.done('c6_regatta'), dust: 50,
       offer: async (S) => {
         await S.say('barnaby', 'Forecast: {key}three bottles{/}, drifting round the Straits, with letters inside.', { expr: 'neutral' });
         await S.say('barnaby', 'Swim out and catch them for an old man. The current won’t wait.', { expr: 'happy' });

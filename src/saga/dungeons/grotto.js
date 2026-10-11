@@ -10,7 +10,7 @@ import { t } from '../../i18n.js';
 
 // rooms in local tiles: x, z (north-west corner), w, h — the way goes north (up the screen)
 export const GROTTO = {
-  id: 'grotto', name: 'The Glimmer Grotto', lv: [3, 5], theme: 'cave', music: 'grotto', slot: 0,
+  id: 'grotto', name: 'The Glimmer Grotto', lv: [2, 4], theme: 'cave', music: 'grotto', slot: 0,
   w: 48, h: 118,
   door: [125.5, 100.5],
   start: [24, 111],

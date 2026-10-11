@@ -23,7 +23,7 @@ import { TT } from '../world/tiles.js';
 import { animDino } from '../models/dinos3d.js';
 import { t } from '../i18n.js';
 import * as K9 from './v9/kit9.js';
-import { XP_NEED, levelAt, rollLevel, hpL, dmgL, groupHp, groupDmg, gapDealt, gapTaken, effLevel, killXp, levelColor, shownLevel } from '../saga/levels.js';
+import { XP_NEED, levelAt, rollLevel, hpL, dmgL, groupHp, groupDmg, gapDealt, gapTaken, effLevel, killXp, levelOf, levelColor, shownLevel } from '../saga/levels.js';
 import { LevelUps } from '../party/levelups.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -1141,7 +1141,7 @@ export class Combat {
     // XP by the monster’s level, for every hero who fought near it
     for (const q of this.players) {
       if (!q.fighter || !q.connected || (q !== p && Math.hypot(q.pos.x - e.x, q.pos.z - e.z) > 24)) continue;
-      const xp = e.level ? killXp(e.level, q.fighter.level, { elite: !!e.elite, rare: !!e.rare, boss: !!d.boss }) : d.xp;
+      const xp = e.level ? killXp(e.level, levelOf(q.fighter), { elite: !!e.elite, rare: !!e.rare, boss: !!d.boss }) : d.xp;
       if (xp > 0) this.gainXp(q, xp);
     }
     if (p && p.fighter) {

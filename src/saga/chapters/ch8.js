@@ -1,5 +1,5 @@
 // Chapter 8 — Autumn & Roots. Emberleaf Wood, the Glowtide Coast and Elderbough,
-// levels 32–37. The Duchess fires the Understudies (she has cardboard ones now) and they
+// levels 28–32. The Duchess fires the Understudies (she has cardboard ones now) and they
 // tumble into Harvestholm’s pumpkins, where the Harvest Festival is two days off and every
 // lantern gets eaten by moths. They join the heroes. Fireflies are the one light moths
 // can’t eat: net them at night on the Glowtide, carry the jars back, hang them along the
@@ -340,7 +340,7 @@ async function marisolOffer(S) {
 export const CH8 = {
   id: 8, title: 'Autumn & Roots',
   recap: 'The Dawn Hearth burns again: six flames in the lantern. The Duchess has flown north-east, to {key}the Great Tree{/} of Elderbough, to steal its Heartlight: the last light she needs. Follow her through Emberleaf Wood and {key}stop her{/}.',
-  lv: 35, zones: ['autumn', 'glow', 'elder'], opens: ['moor', 'prism', 'clock', 'tundra'],
+  lv: 32, zones: ['autumn', 'glow', 'elder'], opens: ['moor', 'prism', 'clock', 'tundra'],
   // (Elderbough under the siphon: a grey sky until the Heartlight burns again)
   gloom(S) {
     if (S.st.ch !== 8 || S.has('heartLit')) return 0;
@@ -388,7 +388,7 @@ export const CH8 = {
   ],
   quests: {
     c8_fired: {
-      title: 'Fired', auto: true, lv: 32,
+      title: 'Fired', auto: true, lv: 29,
       brief: 'The Duchess has fired her three Understudies, up in the Great Tree. Captain Wendy can’t fly there: walk to {key}Harvestholm{/}, in Emberleaf Wood.',
       steps: [
         { do: 'scene', text: 'Watch the Duchess, up in {key}the Great Tree{/}', run: fired },
@@ -397,14 +397,14 @@ export const CH8 = {
       ],
     },
     c8_patch: {
-      title: 'Strangers in the Pumpkins', auto: true, after: 'c8_fired', lv: 33,
+      title: 'Strangers in the Pumpkins', auto: true, after: 'c8_fired', lv: 29,
       brief: 'Moths eat every lantern in Harvestholm. And three strangers fell from the sky into {key}Hazel’s pumpkin patch{/}: go and see who.',
       steps: [
         { do: 'go', text: 'Find the three strangers in {key}Hazel’s pumpkin patch{/}, east of Harvestholm', at: PATCH, r: 4, run: patchTalk },
       ],
     },
     c8_fireflies: {
-      title: 'Light That Can’t Be Eaten', auto: true, after: 'c8_patch', lv: 33,
+      title: 'Light That Can’t Be Eaten', auto: true, after: 'c8_patch', lv: 29,
       brief: 'Moths can’t eat the light of {key}fireflies{/}. Old Mo, in Stiltwater, knows where they dance: net enough of them to fill his jars.',
       steps: [
         { do: 'talk', npc: 'mo', text: 'Go and see {key}Old Mo{/} in {key}Stiltwater{/}, on the coast to the south-east', run: moTalk },
@@ -413,7 +413,7 @@ export const CH8 = {
       ],
     },
     c8_festival: {
-      title: 'The Harvest Festival', auto: true, after: 'c8_fireflies', lv: 34,
+      title: 'The Harvest Festival', auto: true, after: 'c8_fireflies', lv: 31,
       brief: 'Hang the firefly jars in {key}Harvestholm{/} to light its festival. Then the Understudies do their act on the stage: keep the beat for them.',
       steps: [
         { do: 'carry', text: 'Take the {key}jars{/} from Mo’s cart and hang them in {key}Harvestholm{/}’s lanes', from: CART, hooks: HOOKS, jar: buildJarModel, hook: buildHookPost },
@@ -427,7 +427,7 @@ export const CH8 = {
       ],
     },
     c8_tree: {
-      title: 'The Great Tree', auto: true, after: 'c8_festival', lv: 35,
+      title: 'The Great Tree', auto: true, after: 'c8_festival', lv: 32,
       brief: 'The Moth Queen is drinking the Heartlight, inside the Great Tree. Go in at Rootholm, lure her moths away with firefly jars and {key}beat her{/}.',
       steps: [
         { do: 'go', text: 'Take the road north-east to {key}Rootholm{/}, at the foot of the Great Tree', at: ROOTHOLM, r: 5 },
@@ -439,7 +439,7 @@ export const CH8 = {
     },
     // ---- side quests
     c8_ring: {
-      title: 'The Lost Harvest Ring', kind: 'side', giver: 'pumpkin', after: 'c8_patch', lv: 33, dust: 25,
+      title: 'The Lost Harvest Ring', kind: 'side', giver: 'pumpkin', after: 'c8_patch', lv: 29, dust: 25,
       brief: 'The wind blew Hazel’s harvest ring into a leaf pile. Jump into the {key}ten piles{/} by her barn to find it.',
       offer: hazelOffer,
       steps: [
@@ -449,7 +449,7 @@ export const CH8 = {
       ],
     },
     c8_trade: {
-      title: 'A Song for a Supper', kind: 'side', giver: 'marisol', after: 'c8_fireflies', lv: 34, dust: 25,
+      title: 'A Song for a Supper', kind: 'side', giver: 'marisol', after: 'c8_fireflies', lv: 31, dust: 25,
       brief: 'Marisol won’t sing in Stiltwater without her new hat, and Wick the Hatter can’t sew on an empty stomach. Find him {key}a fish{/}.',
       offer: marisolOffer,
       steps: [

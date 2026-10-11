@@ -18,7 +18,7 @@ export const FALLS = { x: 112, z: cliffZ(112) };
 export const ROOTWAY_DOOR = [108.5, FALLS.z + 2.4];
 
 export const ROOTWAY = {
-  id: 'rootway', name: 'The Rootway', lv: [8, 10], theme: 'roots', music: 'rootway', slot: 1,
+  id: 'rootway', name: 'The Rootway', lv: [6, 8], theme: 'roots', music: 'rootway', slot: 1,
   // under the open sky: the Deepwood’s palettes & trees, a late-afternoon sun
   outdoor: {
     zone: 'deepwood', hour: 15.6, floor: 'grass', cliffs: [2, 4],

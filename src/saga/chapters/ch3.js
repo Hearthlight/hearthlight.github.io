@@ -1,5 +1,5 @@
 // Chapter 3 — Dust & Spores. The Golden Steppe, the Red Canyon and Bouncecap
-// Woods, levels 9–17. The Duchess’s big top on the Festival Ring and the
+// Woods, levels 8–12. The Duchess’s big top on the Festival Ring and the
 // Understudies’ Human Cannonball; the Steppe’s Hearthstone dug up from under the
 // Ring and carried off to Foreman Grubb; the nomads’ lost fluffhorns; Dusty Gulch, its
 // sheriff and Old Boom, the retired cannonball whose cannon Big Bertha was; the
@@ -85,7 +85,7 @@ async function bigTop(S) {
 function spawnAct(S) {
   const C = S.P.combat, B = S.props && S.props.get('bertha');
   if (!C) return;
-  const lv = 11, out = [];
+  const lv = 10, out = [];
   const mk = (type, x, z) => { const e = C.spawn(type, x, z, { level: lv }); e.saga = true; e.sagaTag = 'cannonball'; out.push(e); return e; };
   mk('minnow', STAGE[0] - 1.5, STAGE[1] + 3);
   mk('fidget', STAGE[0] + 1.5, STAGE[1] + 3);
@@ -473,7 +473,7 @@ const fluffWant = (S, k) => { const q = S.st.q.c3_nomads; return !!q && !q.done 
 export const CH3 = {
   id: 3, title: 'Dust & Spores',
   recap: 'Two Great Hearths burn again: Old Glimmer and the Deepwood’s. The Duchess has had the Steppe’s stolen: its stone, {key}the Hearthstone{/}, has gone west, to the Old Mine. Take it back and set it under the star of {key}the Festival Ring{/}.',
-  lv: 10, zones: ['steppe', 'canyon', 'bouncecap'], opens: ['marsh', 'glacier', 'cloud'],
+  lv: 9, zones: ['steppe', 'canyon', 'bouncecap'], opens: ['marsh', 'glacier', 'cloud'],
   props: [
     { id: 'bigtop', at: BIGTOP, r: 3, build: (r3d) => buildBigTop(r3d), when: (S) => !S.done('c3_relight') },
     { id: 'stage', at: STAGE, build: (r3d) => buildShowStage(r3d), when: (S) => !S.done('c3_relight') },
@@ -516,7 +516,7 @@ export const CH3 = {
     c3_minecart: {
       title: 'The Minecart Rush',
       brief: 'Nugget Nell’s ore cart keeps slipping its brake and rolling round Dusty Gulch. {key}Catch it{/} for some stardust, as many times as you like.',
-      kind: 'side', repeat: true, giver: 'nell', after: 'c3_relight', lv: 14, dust: 15,
+      kind: 'side', repeat: true, giver: 'nell', after: 'c3_relight', lv: 12, dust: 15,
       offer: async (S) => {
         await S.say('nell', 'Dagnabbit! My ore cart has slipped its brake again!', { expr: 'angry' });
         await S.say('nell', '{key}Catch it{/} as it rolls round Dusty Gulch: it slows at the corners. Stardust for you each time!', { expr: 'happy' });
@@ -532,7 +532,7 @@ export const CH3 = {
     c3_west: {
       title: 'The Big Top',
       brief: 'The Steppe’s Great Hearth lies under the Festival Ring. The Duchess’s three Understudies have set up a circus right on top of it: go and {key}stop their act{/}.',
-      auto: true, lv: 10,
+      auto: true, lv: 9,
       steps: [
         { do: 'go', text: 'Go west of the valley, to {key}the Festival Ring{/}', at: RING_LANE, r: 7, run: bigTop },
         { do: 'kill', text: 'Stop the act: beat {key}the three Understudies{/} in the Festival Ring', tag: 'cannonball', n: 3, at: [A.x, A.z], r: 30, run: afterAct },
@@ -541,28 +541,28 @@ export const CH3 = {
     c3_nomads: {
       title: 'Riders of the Steppe',
       brief: 'The Understudies ran west with the Hearthstone. The nomads know the road: first bring back their {key}three lost fluffhorns{/} and clear their grazing ground.',
-      auto: true, after: 'c3_west', lv: 11,
+      auto: true, after: 'c3_west', lv: 10,
       steps: [
         { do: 'talk', npc: 'tuya', text: 'Talk to {key}Grandmother Tuya{/} at the Nomad Camp, north-west of the Ring', run: tuyaTalk },
         { do: 'collect', text: 'Find the {key}three lost fluffhorns{/} on the steppe around the camp', item: 'Lost Fluffhorn', n: 3, spots: FLUFF, hint: 'A fluffhorn, sulking behind a rock' },
-        { do: 'camp', text: 'Chase the gloom off {key}the grazing ground{/}, west of the camp', camp: { id: 'c3_graze', at: GRAZE, level: 11, foes: ['tumble', 'tumble', 'fox', 'tumble'], n: 4, done: 'The grazing ground is quiet again!' } },
+        { do: 'camp', text: 'Chase the gloom off {key}the grazing ground{/}, west of the camp', camp: { id: 'c3_graze', at: GRAZE, level: 10, foes: ['tumble', 'tumble', 'fox', 'tumble'], n: 4, done: 'The grazing ground is quiet again!' } },
         { do: 'talk', npc: 'tuya', text: 'Go back to {key}Grandmother Tuya{/} at the Nomad Camp', run: tuyaThanks },
       ],
     },
     c3_gulch: {
       title: 'Dusty Gulch',
       brief: 'The Hearthstone is on its way to the Old Mine, above {key}Dusty Gulch{/}. Grubb’s moles have dried up the town: help Sheriff Dolly, then talk to Old Boom.',
-      auto: true, after: 'c3_nomads', lv: 12,
+      auto: true, after: 'c3_nomads', lv: 10,
       steps: [
         { do: 'go', text: 'Follow the canyon road west to {key}Dusty Gulch{/}', at: STATION, r: 6, run: gulchArrival },
-        { do: 'camp', text: 'Chase the mole miners off {key}the water tower{/} of Dusty Gulch', camp: { id: 'c3_tower', at: [TOWER[0], TOWER[1] + 3], level: 12, foes: ['mole', 'mole', 'fuse', 'mole'], n: 4, done: 'Water gushes back into the tower!' } },
+        { do: 'camp', text: 'Chase the mole miners off {key}the water tower{/} of Dusty Gulch', camp: { id: 'c3_tower', at: [TOWER[0], TOWER[1] + 3], level: 10, foes: ['mole', 'mole', 'fuse', 'mole'], n: 4, done: 'Water gushes back into the tower!' } },
         { do: 'talk', npc: 'boom', text: 'Talk to {key}Old Boom{/} on the saloon porch, in Dusty Gulch', run: boomTalk },
       ],
     },
     c3_chase: {
       title: 'Runaway Cart',
       brief: 'Foreman Grubb fled up the rails with the Hearthstone and blew the mine’s tunnel shut. Professor Hazel knows {key}another way in{/}.',
-      auto: true, after: 'c3_gulch', lv: 13,
+      auto: true, after: 'c3_gulch', lv: 11,
       steps: [
         { do: 'scene', text: 'Stop {key}Foreman Grubb{/} at the station in Dusty Gulch', run: theChase },
         { do: 'talk', npc: 'hazel', text: 'Talk to {key}Professor Hazel{/} in the mine yard', run: hazelTalk },
@@ -571,7 +571,7 @@ export const CH3 = {
     c3_mine: {
       title: 'The Old Mine',
       brief: 'The Hearthstone is at the far end of {key}the Old Mine{/}, guarded by Foreman Grubb and his moles. Go in by the old quarry road and take it back.',
-      auto: true, after: 'c3_chase', lv: 14,
+      auto: true, after: 'c3_chase', lv: 12,
       steps: [
         { do: 'go', text: 'Enter the Old Mine by {key}the old quarry road{/}, west of the yard', at: QUARRY_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('oldmine'); else S.flag('hearthstone'); } },
         { do: 'dungeon', id: 'oldmine', text: 'Find {key}the Steppe’s Hearthstone{/} at the far end of the Old Mine' },
@@ -580,7 +580,7 @@ export const CH3 = {
     c3_relight: {
       title: 'The Steppe Sings Again',
       brief: 'You have the Hearthstone! Carry it back east to {key}the Festival Ring{/} and set it under the star in the sand: the Steppe’s Great Hearth will burn again.',
-      auto: true, after: 'c3_mine', lv: 15,
+      auto: true, after: 'c3_mine', lv: 12,
       steps: [
         { do: 'go', text: 'Set {key}the Hearthstone{/} under the star of {key}the Festival Ring{/}, to the east', at: [A.x, A.z], r: 3.5, run: relight },
       ],
@@ -591,7 +591,7 @@ export const CH3 = {
     c3_chimes: {
       title: 'Songs of the Wind',
       brief: 'The wind of the steppe forgot its songs when the Murk came. Hang Temur’s wind chimes on the {key}three old posts{/} around the Nomad Camp.',
-      kind: 'side', giver: 'temur', lv: 10, when: (S) => S.done('c3_west'), dust: 25,
+      kind: 'side', giver: 'temur', lv: 9, when: (S) => S.done('c3_west'), dust: 25,
       offer: async (S) => {
         await S.say('temur', 'The wind forgot its songs when the Murk came. Let’s remind it!', { expr: 'happy' });
         await S.say('temur', 'Hang my chimes on the {key}three old posts{/}: by the spring, by the road, and on the hill.', { expr: 'love' });
@@ -607,7 +607,7 @@ export const CH3 = {
     c3_boom: {
       title: 'One Last Boom',
       brief: 'The moles took Old Boom’s lucky helmet up to {key}the mine yard{/}. Bring it back, and he will show you a real cannonball jump.',
-      kind: 'side', giver: 'boom', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
+      kind: 'side', giver: 'boom', lv: 10, when: (S) => S.done('c3_gulch'), dust: 30,
       offer: async (S) => {
         await S.say('boom', 'Those moles pinched my lucky helmet! Sixty years on my head, and only one dent.', { expr: 'sad' });
         await S.say('boom', 'It must be up in {key}the mine yard{/}. Fetch it, and I’ll show you a REAL cannonball!', { expr: 'smug' });
@@ -627,7 +627,7 @@ export const CH3 = {
     c3_nell: {
       title: 'Gold Fever',
       brief: 'The spring runs again, and the river carries gold. Nugget Nell’s back won’t bend: pan {key}three nuggets{/} for her, and she pays in stardust.',
-      kind: 'side', giver: 'nell', lv: 12, when: (S) => S.done('c3_gulch'), dust: 30,
+      kind: 'side', giver: 'nell', lv: 10, when: (S) => S.done('c3_gulch'), dust: 30,
       offer: async (S) => {
         await S.say('nell', 'The river is washing gold down from the hills again! I can feel it in my socks!', { expr: 'love' });
         await S.say('nell', 'My back won’t bend any more. Pan {key}three nuggets{/} for me in the river, and I’ll pay you in stardust!', { expr: 'happy' });
@@ -643,7 +643,7 @@ export const CH3 = {
     c3_spores: {
       title: 'Achoo!',
       brief: 'The Mother Cap of the Sporefolk has a cold, and her sneezes spread gloom spores. Bring Old Morel {key}three sprigs of sneezewort{/} from the fairy rings.',
-      kind: 'side', giver: 'morel', lv: 14, when: (S) => S.done('c2_relight'), dust: 30,
+      kind: 'side', giver: 'morel', lv: 12, when: (S) => S.done('c2_relight'), dust: 30,
       offer: async (S) => {
         await S.say('morel', 'Big ones! The Mother Cap has a cold, and every sneeze puffs gloom spores over the woods!', { expr: 'worried' });
         await S.say('morel', 'We are too short to fetch her cure. Pick us {key}three sprigs of sneezewort{/} by the fairy rings!', { expr: 'happy' });

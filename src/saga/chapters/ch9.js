@@ -1,5 +1,5 @@
 // Chapter 9 — Moor & Machines. Hollowmoor, Prism Springs, Cogsworth and the Aurora
-// Tundra, levels 35–40. Candlewick whispers: the moor’s ghosts are sad, not scary. Four of
+// Tundra, levels 33–36. Candlewick whispers: the moor’s ghosts are sad, not scary. Four of
 // them — the old manor’s butler, cook, gardener and maid — tell a story in pieces, and
 // only a lantern shows them. In Hollowmoor Manor every clock stopped at twenty to nine;
 // the rooms shift between THEN and NOW; the Lady in Grey waits in the ballroom — Lady
@@ -328,7 +328,7 @@ async function hikersDone(S) {
 export const CH9 = {
   id: 9, title: 'Moor & Machines',
   recap: 'Seven flames burn in the lantern, and the Understudies are on your side now. The Duchess has flown to the Umbral Scar to ready her Spotlight, a light that eats all the others. Cross {key}Hollowmoor{/}, the moor of ghosts, and find a way to {key}put it out{/}.',
-  lv: 38, zones: ['moor', 'prism', 'clock', 'tundra'], opens: ['scar'],
+  lv: 36, zones: ['moor', 'prism', 'clock', 'tundra'], opens: ['scar'],
   // (the moor, until the Lady is at peace: grey, and very quiet)
   gloom(S) {
     if (S.st.ch !== 9 || S.has('ladyPeace')) return 0;
@@ -357,7 +357,7 @@ export const CH9 = {
     c9_moor: {
       title: 'The Moor’s Ghosts',
       brief: 'Sad ghosts wander Hollowmoor, and only your lantern shows them. Find {key}all four{/} and listen: they have a story to tell.',
-      auto: true, lv: 35,
+      auto: true, lv: 33,
       steps: [
         { do: 'scene', text: 'Arrive in {key}Candlewick{/}, a village on the moor', run: coldOpen },
         { do: 'talk', npc: 'tallow', text: 'Talk to {key}Aunt Tallow{/} in Candlewick', run: tallowTalk },
@@ -374,7 +374,7 @@ export const CH9 = {
     c9_manor: {
       title: 'Hollowmoor Manor',
       brief: 'The ghosts served Lady Honoria, who has waited thirty years for her daughter Gloria. Cross her manor to {key}the ballroom{/}: its clocks switch between THEN and NOW.',
-      auto: true, after: 'c9_moor', lv: 37,
+      auto: true, after: 'c9_moor', lv: 35,
       steps: [
         { do: 'talk', npc: 'tallow', text: 'Tell {key}Aunt Tallow{/}, in Candlewick, what the ghosts said', run: tallowManor },
         { do: 'go', text: 'Go to {key}Hollowmoor Manor{/}, on the hill east of Candlewick', at: MANOR_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('hollowmoor'); else S.flag('ladyPeace'); } },
@@ -384,20 +384,20 @@ export const CH9 = {
     c9_cannon: {
       title: 'The Lantern Cannon',
       brief: 'Master Tock’s Lantern Cannon can put out the Duchess’s Spotlight, but it lacks a lens. Catch {key}three rainbows{/} at Prism Springs to make one.',
-      auto: true, after: 'c9_manor', lv: 38,
+      auto: true, after: 'c9_manor', lv: 36,
       steps: [
         { do: 'talk', npc: 'tock', text: 'Find {key}Master Tock{/}, the clockmaker of Cogsworth, north of the moor', run: tockTalk },
         { do: 'talk', npc: 'rhoda', text: 'Ask {key}Ranger Rhoda{/} about the geysers at Prism Springs, south of the moor', run: rhodaTalk },
         { do: 'snap', text: 'Catch a rainbow at the top of the spray of each of the {key}3 geysers{/}', spots: GEYSERS, r: 4.5 },
         { do: 'talk', npc: 'tock', text: 'Bring the rainbows back to {key}Master Tock{/}, in Cogsworth', run: tockLens },
-        { do: 'defend', text: 'Keep the gloom off the {key}Lantern Cannon{/}, on Cogsworth’s square', at: CANNON, r: 8, time: 40, hp: 100, every: 4.5, foes: ['clockwork', 'wisp', 'bogling', 'poltergeist'], level: 38, model: buildLanternCannon, go: 'Test-fire!', sub: 'keep the gloom off the cannon while it charges', lost: 'The cannon’s knocked over! Master Tock rights it — from the top.' },
+        { do: 'defend', text: 'Keep the gloom off the {key}Lantern Cannon{/}, on Cogsworth’s square', at: CANNON, r: 8, time: 40, hp: 100, every: 4.5, foes: ['clockwork', 'wisp', 'bogling', 'poltergeist'], level: 36, model: buildLanternCannon, go: 'Test-fire!', sub: 'keep the gloom off the cannon while it charges', lost: 'The cannon’s knocked over! Master Tock rights it — from the top.' },
         { do: 'scene', text: 'Watch the {key}Lantern Cannon{/} fire', run: testFired },
       ],
     },
     c9_aurora: {
       title: 'The Last Camp',
       brief: 'The Lantern Cannon works. Join Master Tock and the Understudies at the {key}Aurora Camp{/}, the last camp before the Gloomstage.',
-      auto: true, after: 'c9_cannon', lv: 39,
+      auto: true, after: 'c9_cannon', lv: 36,
       steps: [
         { do: 'go', text: 'Go to the {key}Aurora Camp{/}, on the tundra west of Cogsworth', at: CAMP, r: 5, run: auroraCamp },
       ],
@@ -407,7 +407,7 @@ export const CH9 = {
     c9_cuckoo: {
       title: 'The Runaway Cuckoo',
       brief: 'The cuckoo of Master Tock’s clock has run off round Cogsworth’s square. Catch it: it tires as it runs.',
-      kind: 'side', giver: 'tock', after: 'c9_manor', lv: 38, dust: 30,
+      kind: 'side', giver: 'tock', after: 'c9_manor', lv: 36, dust: 30,
       offer: cuckooOffer,
       steps: [
         { do: 'chase', text: 'Catch {key}the cuckoo{/} running round Cogsworth’s square', area: [COG[0] - 2, COG[1] + 3, 7.5], speed: 5.4, tire: 22, model: buildCuckoo, sound: 'chirp', caught: 'Cuckoo!' },
@@ -418,7 +418,7 @@ export const CH9 = {
     c9_ghosthunt: {
       title: 'Ghost Hunt',
       brief: 'Happy at last, the manor’s four ghosts play hide-and-seek on the moor. Find them all: only a lantern shows them.',
-      kind: 'side', repeat: true, giver: 'tallow', after: 'c9_manor', lv: 38, dust: 20,
+      kind: 'side', repeat: true, giver: 'tallow', after: 'c9_manor', lv: 36, dust: 20,
       offer: async (S) => {
         await S.say('tallow', '(whispering) Our ghosts are happy now: they play hide-and-seek on the moor. Very badly.', { expr: 'happy' });
         await S.say('tallow', '(whispering) They love being found. Go and find {key}all four{/}, would you?', { expr: 'love' });
@@ -439,7 +439,7 @@ export const CH9 = {
     c9_hikers: {
       title: 'Rule Nine',
       brief: 'Two hikers are lost in the steam of Prism Springs. Find them and bring them back to Ranger Rhoda.',
-      kind: 'side', giver: 'rhoda', after: 'c9_manor', lv: 38, dust: 30,
+      kind: 'side', giver: 'rhoda', after: 'c9_manor', lv: 36, dust: 30,
       offer: hikersOffer,
       steps: [
         { do: 'seek', text: 'Find the {key}2 hikers{/} lost in the steam, north of Ranger Rhoda', near: [1196, 238], reveal: 3.5, solid: true, verb: 'Help',

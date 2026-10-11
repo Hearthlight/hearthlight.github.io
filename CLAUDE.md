@@ -196,6 +196,16 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   a shown level (`xpBar`, drawn by `src/ui/levelbar.js`: a notch half-way, where a talent point
   waits); the level-up — one banner for all who rose together, a card on each phone, a panel in
   solo — and the word when a land lifts a hero are `src/party/levelups.js` (owned by `Combat`).
+- **The pace**: a chapter is four of the game’s levels — chapter n runs from 4n − 3 to 4n
+  (`chapterLevels`), and so do its lands (`ZONES[].lv`, one level lower at most where a chapter
+  begins), its quests (`lv`), its camps (`level`) and its dungeon (the top three). New content
+  takes the levels of the chapter it belongs to: `node tools/pacecheck.mjs` must report
+  **0 out of place**. Experience follows the story (`questXp`,
+  `killXp`, `bend` in `src/saga/levels.js`): a chapter’s main quests share 3.4 of its levels, a
+  side quest is a quarter of one, a defeat a fiftieth, each bent by the gap between the thing and
+  the hero — so adding a main quest gives no more experience, and a hero ahead of the story (an
+  older save) earns slowly, never nothing, and never loses a level. `tools/pace.js` measures it
+  (the bots’ levels chapter by chapter, what a party meets at a land’s camp).
 - Match the surrounding code: dense, lightly commented, small helpers, no framework.
 
 ## Layout
@@ -322,7 +332,10 @@ tools/        devserver.py, partybots.js, sagatest.js (the saga played by itself
               `start('rares', …)` the rares: poll `window.__wb`), balance.js (bots fighting
               real-sized camps at levels 5/20/40, 3 times each from a fresh start, or `BOSS`;
               `geared` spends every talent point; `classes()` each class alone: poll
-              `window.__bal`), perf.js (Party frame times: `start(8, 'apart'|'apart4'|'together')`,
+              `window.__bal`), pace.js (the pace of levels: the story played by the bots with
+              every gain of experience written down — `start('party', 4, [1, 2], { fresh: true })`,
+              `side`, `camps`; `campStart(4, 'dino', 30)` a land’s camp for a party of a level:
+              poll `window.__pace`), perf.js (Party frame times: `start(8, 'apart'|'apart4'|'together')`,
               poll `window.__pf`), grandmatest.js (Grandmother Kraken played through),
               i18n-scan.mjs, i18n-glossary.md,
               mapdump.mjs, bigmap.mjs (`--crop

@@ -14,7 +14,7 @@ export async function run(mode = 'solo', n = 4, shots = '') {
   if (mode === 'solo') { await V.solo('ranger'); P = window.game.world.wild; heroes = () => [P.me]; }
   else { const T = window.T = await import('/tools/partybots.js?' + Date.now()); await T.boot(n); await T.autoplay('saga', [], { until: () => true }); P = window.game.party; heroes = () => P.players.filter((p) => p.connected); }
   await V.toChapter(7);
-  for (const p of heroes()) if (p.fighter) for (let i = 0; i < 40 && p.fighter.level < 30; i++) P.combat.gainXp(p, 5000);
+  for (const p of heroes()) if (p.fighter) for (let i = 0; i < 40 && p.fighter.level < 26; i++) P.combat.gainXp(p, 5000);
   const go = (x, z) => { if (P.solo) D.tp(x, z); else { heroes().forEach((p, i) => { p.actor.pos = { x: x + i * 0.9, z }; }); P.cam.snap(P.camPlayers()); } };
   go(652, 106);
   for (let i = 0; i < 30; i++) { await sleep(40); await D.step(4); }

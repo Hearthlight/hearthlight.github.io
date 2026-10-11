@@ -1,5 +1,5 @@
 // Chapter 2 — The Whispering Woods. Deep Whisperwood & the Windy Heights,
-// levels 4–11. The foresters’ trees are sick with gloom; Old Rowan listens to
+// levels 4–8. The foresters’ trees are sick with gloom; Old Rowan listens to
 // them, Tansy wants to be a Lamplighter. Perkins opens the Pelican Post (the
 // first flight: up onto the Heights, slightly off). Crumble’s Gustbellies blow
 // against the sails of Barley’s mills — and without their wind the Rootway stays
@@ -326,7 +326,7 @@ export const CH2 = {
       ],
     },
     c2_mills: {
-      title: 'Gone With the Wind', auto: true, after: 'c2_trees', lv: 8,
+      title: 'Gone With the Wind', auto: true, after: 'c2_trees', lv: 7,
       brief: 'The door to Barkbeard only shows when the windmills of Breezy Hill turn. A Gustbelly blows against each of Barley’s three mills: chase them off.',
       steps: [
         { do: 'talk', npc: 'barley', text: 'Talk to {key}Barley the miller{/}, among his mills on Breezy Hill',
@@ -336,13 +336,13 @@ export const CH2 = {
           } },
         // (a Gustbelly at each mill, blowing against its sails; the high mill’s has a Storm Ram beside it)
         ...MILLS.map(([x, z], k) => ({ do: 'camp', text: ['Chase the Gustbelly from the {key}west mill{/}, west of Barley', 'Chase the Gustbelly from the {key}high mill{/}, north of Barley', 'Chase the Gustbelly from the {key}east mill{/}, east of Barley'][k],
-          camp: { id: 'c2_mill' + k, at: [x, z + 3.5], level: 8 + (k === 1 ? 1 : 0), foes: [['wisp', 'gloomling'], ['stormram'], ['wisp', 'gloomling']][k], n: [1, 1, 2][k], big: 'gustbelly', done: 'The sails creak — and turn!' },
+          camp: { id: 'c2_mill' + k, at: [x, z + 3.5], level: 7 + (k === 1 ? 1 : 0), foes: [['wisp', 'gloomling'], ['stormram'], ['wisp', 'gloomling']][k], n: [1, 1, 2][k], big: 'gustbelly', done: 'The sails creak — and turn!' },
           run: async (S) => { S.flag('mill' + k); audio.sfx('whoosh', { volume: 0.6 }); } })),
         { do: 'scene', text: 'Watch the wind come back to {key}Breezy Hill{/}', run: theWind },
       ],
     },
     c2_rootway: {
-      title: 'The Rootway', auto: true, after: 'c2_mills', lv: 9,
+      title: 'The Rootway', auto: true, after: 'c2_mills', lv: 8,
       brief: 'The mills turn, and the door behind the falls is open. Cross the Rootway to Barkbeard, then relight the Deepwood’s Great Hearth.',
       steps: [
         { do: 'go', text: 'Go through the {key}door behind the falls{/}, north-east of the foresters’ camp', at: ROOTWAY_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('rootway'); else S.flag('rootwayDone'); } },
@@ -350,7 +350,7 @@ export const CH2 = {
       ],
     },
     c2_relight: {
-      title: 'The Deepwood Breathes Again', auto: true, after: 'c2_rootway', lv: 10,
+      title: 'The Deepwood Breathes Again', auto: true, after: 'c2_rootway', lv: 8,
       brief: 'The Deepwood’s flame burns in the lantern. Outside the Rootway, Barkbeard chases the Murk from the lands to the west.',
       steps: [
         { do: 'scene', text: 'Watch the {key}Deepwood{/} wake up, outside the Rootway', run: dawnInTheWoods },
@@ -392,7 +392,7 @@ export const CH2 = {
       ],
     },
     c2_flour: {
-      title: 'Flour Power', kind: 'side', giver: 'barley', lv: 8, when: (S) => S.has('mill0') && S.has('mill1') && S.has('mill2'), dust: 30,
+      title: 'Flour Power', kind: 'side', giver: 'barley', lv: 7, when: (S) => S.has('mill0') && S.has('mill1') && S.has('mill2'), dust: 30,
       brief: 'The mills turn again. Barley wants Rosa, the baker of Marigold Cove, to have his first sack of flour: take it down to her.',
       offer: async (S) => {
         await S.say('barley', 'The first flour from my mills! Take this sack to {key}Rosa{/}, the baker of Marigold Cove, would you?', { expr: 'happy' });
@@ -406,7 +406,7 @@ export const CH2 = {
       ],
     },
     c2_cairns: {
-      title: 'Stack ’Em High', kind: 'side', giver: 'barley', lv: 9, when: (S) => S.done('c2_mills'), dust: 30,
+      title: 'Stack ’Em High', kind: 'side', giver: 'barley', lv: 8, when: (S) => S.done('c2_mills'), dust: 30,
       brief: 'The Gustbellies blew down the cairns that guide walkers across the Windy Heights. Stack all three back up, along the road east of the mills.',
       offer: async (S) => {
         await S.say('barley', 'Those Gustbellies blew down the cairns that guide walkers on the Heights.', { expr: 'worried' });

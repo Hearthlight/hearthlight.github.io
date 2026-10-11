@@ -56,33 +56,33 @@ Levels are fixed per zone and shown (the zone banner, the map, monsters' name pl
 
 | # | id | Zone (EN / FR) | Lv | Biome | Hub | Chapter |
 |---|---|---|---|---|---|---|
-| 1 | valley | Marigold Valley / Vallée de Marigold | 1–5 | the hand-made valley | Marigold Cove | 1 |
-| 2 | deepwood | Deep Whisperwood / Bois-Murmure profond | 4–8 | deep forest, gorge | Foresters’ Clearing | 2 |
-| 3 | heights | Windy Heights / Hauts-Venteux | 7–11 | heather plateau, windmills | Breezy Hill | 2 |
-| 4 | steppe | Golden Steppe / Steppe dorée | 9–13 | golden grass, yurts | Nomad Camp | 3 |
-| 5 | canyon | Red Canyon / Canyon rouge | 11–15 | mesas, mine | Dusty Gulch | 3 |
-| 6 | bouncecap | Bouncecap Woods / Bois-Rebondis | 13–17 | giant mushrooms | the Mother Cap | 3 |
-| 7 | marsh | Croakmire / Coassemare | 15–19 | bayou, frogs | Croakton | 4 |
-| 8 | glacier | Frostpeak Glacier / Glacier du Pic-Givre | 17–21 | ice, crevasses | Frostpeak Camp | 4 |
-| 9 | cloud | Cloud Isles / Îles-Nuages | 20–23 | islands on clouds | Cloud Harbour | 4 |
-| 10 | dunes | Sunscorch Dunes / Dunes Brûlesoleil | 21–24 | desert, oases | Palm Oasis | 5 |
-| 11 | lagoon | Coral Lagoon / Lagon de corail | 22–25 | atoll | Turtle Nest | 5 |
-| 12 | sunken | Sunken City / Cité engloutie | 23–26 | drowned ruins | the Old Forum | 5 |
-| 13 | volcano | Emberpeak / Pic-Braise | 25–28 | volcano, lava | Hot Springs | 6 |
-| 14 | straits | Whirlpool Straits / Détroit des Tourbillons | 26–29 | sea stacks | Lighthouse Isle | 6 |
-| 15 | dino | Dino Isle / Île aux Dinosaures | 27–30 | jungle | Fern Landing | 6 |
-| 16 | whale | Whale Isle / Île-Baleine | 28–30 | an island on a sleeping whale | the Blowhole Inn | 7 |
-| 17 | harbor | Lantern Bay / Baie des Lanternes | 29–31 | a fjord, a terraced harbour town (Norway) | **Lanternport** / Port-Lanterne | 7 |
-| 18 | jade | Jade Terraces / Terrasses de Jade | 30–33 | rice terraces & limestone pillars (Longji, Zhangjiajie) | Dawn Monastery | 7 |
-| 19 | salt | Saltmirror Flats / Miroir de Sel | 31–34 | salt mirror & white travertine stairs (Uyuni, Pamukkale) | the Saltworks / la Saline | 7 |
-| 20 | autumn | Emberleaf Wood / Bois-Braise | 32–35 | red autumn forest, pumpkins (Kyoto, New England) | Harvestholm / Moissonval | 8 |
-| 21 | glow | Glowtide Coast / Côte des Lueurs | 33–36 | mangroves, a glowing bay, sea stacks (Ha Long) | Stiltwater / les Pilotis | 8 |
-| 22 | elder | Elderbough / Grande-Ramure | 34–37 | a valley of giants under granite walls & a great fall (Yosemite, Sequoia) | Rootholm / Racinebourg | 8 |
-| 23 | moor | Hollowmoor / Lande-Creuse | 35–38 | rolling moor, lochs, a lone pinnacle (Skye, the Highlands) | Candlewick / Bout-de-Chandelle | 9 |
-| 24 | prism | Prism Springs / Sources Prismatiques | 36–39 | rainbow hot springs, geysers, travertine (Yellowstone) | Old Punctual Lodge | 9 |
-| 25 | clock | Cogsworth Heights / Hauts-Rouages | 37–40 | alpine peaks, meadows, a clockmakers’ brass town (the Alps) | **Cogsworth** / Rouageville | 9 |
-| 26 | tundra | Aurora Tundra / Toundra des Aurores | 37–40 | a high plateau, jagged peaks, glaciers, turquoise lakes (Glacier NP) | Aurora Camp | 9 |
-| 27 | scar | Umbral Scar / Balafre d’Ombre | 39–40 | black glass, a chasm, basalt steps into the sea (Giant’s Causeway) | — | 10 |
+| 1 | valley | Marigold Valley / Vallée de Marigold | 1–4 | the hand-made valley | Marigold Cove | 1 |
+| 2 | deepwood | Deep Whisperwood / Bois-Murmure profond | 4–7 | deep forest, gorge | Foresters’ Clearing | 2 |
+| 3 | heights | Windy Heights / Hauts-Venteux | 6–8 | heather plateau, windmills | Breezy Hill | 2 |
+| 4 | steppe | Golden Steppe / Steppe dorée | 8–11 | golden grass, yurts | Nomad Camp | 3 |
+| 5 | canyon | Red Canyon / Canyon rouge | 10–12 | mesas, mine | Dusty Gulch | 3 |
+| 6 | bouncecap | Bouncecap Woods / Bois-Rebondis | 10–12 | giant mushrooms | the Mother Cap | 3 |
+| 7 | marsh | Croakmire / Coassemare | 12–15 | bayou, frogs | Croakton | 4 |
+| 8 | glacier | Frostpeak Glacier / Glacier du Pic-Givre | 14–16 | ice, crevasses | Frostpeak Camp | 4 |
+| 9 | cloud | Cloud Isles / Îles-Nuages | 14–16 | islands on clouds | Cloud Harbour | 4 |
+| 10 | dunes | Sunscorch Dunes / Dunes Brûlesoleil | 16–19 | desert, oases | Palm Oasis | 5 |
+| 11 | lagoon | Coral Lagoon / Lagon de corail | 17–20 | atoll | Turtle Nest | 5 |
+| 12 | sunken | Sunken City / Cité engloutie | 18–20 | drowned ruins | the Old Forum | 5 |
+| 13 | volcano | Emberpeak / Pic-Braise | 20–23 | volcano, lava | Hot Springs | 6 |
+| 14 | straits | Whirlpool Straits / Détroit des Tourbillons | 21–24 | sea stacks | Lighthouse Isle | 6 |
+| 15 | dino | Dino Isle / Île aux Dinosaures | 22–24 | jungle | Fern Landing | 6 |
+| 16 | whale | Whale Isle / Île-Baleine | 24–26 | an island on a sleeping whale | the Blowhole Inn | 7 |
+| 17 | harbor | Lantern Bay / Baie des Lanternes | 25–27 | a fjord, a terraced harbour town (Norway) | **Lanternport** / Port-Lanterne | 7 |
+| 18 | jade | Jade Terraces / Terrasses de Jade | 26–28 | rice terraces & limestone pillars (Longji, Zhangjiajie) | Dawn Monastery | 7 |
+| 19 | salt | Saltmirror Flats / Miroir de Sel | 26–28 | salt mirror & white travertine stairs (Uyuni, Pamukkale) | the Saltworks / la Saline | 7 |
+| 20 | autumn | Emberleaf Wood / Bois-Braise | 28–31 | red autumn forest, pumpkins (Kyoto, New England) | Harvestholm / Moissonval | 8 |
+| 21 | glow | Glowtide Coast / Côte des Lueurs | 29–32 | mangroves, a glowing bay, sea stacks (Ha Long) | Stiltwater / les Pilotis | 8 |
+| 22 | elder | Elderbough / Grande-Ramure | 30–32 | a valley of giants under granite walls & a great fall (Yosemite, Sequoia) | Rootholm / Racinebourg | 8 |
+| 23 | moor | Hollowmoor / Lande-Creuse | 33–36 | rolling moor, lochs, a lone pinnacle (Skye, the Highlands) | Candlewick / Bout-de-Chandelle | 9 |
+| 24 | prism | Prism Springs / Sources Prismatiques | 34–36 | rainbow hot springs, geysers, travertine (Yellowstone) | Old Punctual Lodge | 9 |
+| 25 | clock | Cogsworth Heights / Hauts-Rouages | 34–36 | alpine peaks, meadows, a clockmakers’ brass town (the Alps) | **Cogsworth** / Rouageville | 9 |
+| 26 | tundra | Aurora Tundra / Toundra des Aurores | 34–36 | a high plateau, jagged peaks, glaciers, turquoise lakes (Glacier NP) | Aurora Camp | 9 |
+| 27 | scar | Umbral Scar / Balafre d’Ombre | 37–40 | black glass, a chasm, basalt steps into the sea (Giant’s Causeway) | — | 10 |
 | — | sea, wide | Open Sea, Wide Sea | — | sea | — | — |
 
 (The Festival Ring keeps its Murk-free bubble on the steppe; it stays a Party activity.)
@@ -165,50 +165,50 @@ Hearth relit adds a flame to it — and its light pushes the Murk back from the 
 
 ### 3.2 Acts and chapters
 **Act I — the Hearthlands**
-1. **Lights Out** (« Extinction des feux ») — Marigold Valley, lv 1–5. The Gloomstage
+1. **Lights Out** (« Extinction des feux ») — Marigold Valley, lv 1–4. The Gloomstage
    eclipses the sun over the cove; Crumble announces the Duchess (wrongly); her aria; the
    Grand Snuffer comes down on Old Glimmer; colours drain; the Murk rolls over the hills.
    Nana’s lantern, choosing a way to fight, the gloom in the fields, the Understudies’ first
    audition. Dungeon **Glimmer Grotto** (« la Grotte de la Lueur ») under the lighthouse —
    boss **Crumble’s Snuffbot 3000** (« le Mouchobot 3000 de Miette »). Old Glimmer relit:
    the beam sweeps, the Murk recedes north. *Unlocks deepwood, heights.*
-2. **The Whispering Woods** (« Les Bois qui murmurent ») — deepwood, heights, lv 4–11.
+2. **The Whispering Woods** (« Les Bois qui murmurent ») — deepwood, heights, lv 4–8.
    Foresters who talk to trees, the Pelican Post opens, windmills stopped by gloom kites.
    Dungeon **the Rootway** (« la Voie des Racines »), a hidden valley behind the falls — boss **Barkbeard**
    (« Barbécorce »), a gloomed elder treant. *Unlocks steppe, canyon, bouncecap.*
-3. **Dust & Spores** (« Poussière et Spores ») — steppe, canyon, bouncecap, lv 9–17. The
+3. **Dust & Spores** (« Poussière et Spores ») — steppe, canyon, bouncecap, lv 8–12. The
    Understudies’ *Human Cannonball* at the Festival Ring; a gold-rush town; a minecart chase.
    Dungeon **the Old Mine** — boss **Foreman Grubb and his Drillosaur** (« le Contremaître
    Grubb et sa Foreuse »). *Unlocks marsh, glacier, cloud.*
-4. **Mire & Frost** (« Marais et Frimas ») — marsh, glacier, cloud, lv 15–23. King Croakington’s
+4. **Mire & Frost** (« Marais et Frimas ») — marsh, glacier, cloud, lv 12–16. King Croakington’s
    crown stolen; the Gloomstage’s shadow over the glacier; Crumble stuck in a cloud.
    Dungeon **the Frostbell Halls** (« les Salles de Cloche-Givre ») — boss **the Frost Tenor**
    (« le Ténor des Glaces »), whose high C shatters ice. *Unlocks dunes, lagoon, sunken.*
-5. **Sand & Sea** (« Sable et Écume ») — dunes, lagoon, sunken, lv 21–26. The Understudies’
+5. **Sand & Sea** (« Sable et Écume ») — dunes, lagoon, sunken, lv 16–20. The Understudies’
    *Synchronised Swimmers*. Dungeon **the Sunken Bell Temple** (« le Temple de la Cloche
    engloutie ») — boss **the Gloom Kraken**. *Unlocks volcano, straits, dino.*
-6. **Fire & Fins** (« Feu et Nageoires ») — volcano, straits, dino, lv 25–30. Dungeon **the
+6. **Fire & Fins** (« Feu et Nageoires ») — volcano, straits, dino, lv 20–24. Dungeon **the
    Forge Heart** (« le Cœur de la Forge ») — boss **the Duchess herself** (*her Debut*), who
    flees east over the sea with the Hearthlands’ flames. Captain Wendy offers her airship.
    *Unlocks the Wide Sea crossing.*
 
 **Act II — the Dawnlands**
-7. **The Dawnlands** (« Les Terres-de-l’Aube ») — whale, harbor, jade, salt, lv 28–34. The
+7. **The Dawnlands** (« Les Terres-de-l’Aube ») — whale, harbor, jade, salt, lv 24–28. The
    crossing (Whale Isle opens its eye), Lanternport under the Murk, the monks of the Dawn
    Monastery, the Understudies’ *Mime Troupe*. Dungeon **the Lantern Pagoda** (« la Pagode aux
    Lanternes ») — boss **the Paper Dragon** (« le Dragon de Papier »), a festival puppet the
    gloom brought to life. *Unlocks autumn, glow, elder.*
-8. **Autumn & Roots** (« Automne et Racines ») — autumn, glow, elder, lv 32–37. A harvest
+8. **Autumn & Roots** (« Automne et Racines ») — autumn, glow, elder, lv 28–32. A harvest
    festival without light; the Understudies fired by the Duchess — they join you. Dungeon
    **the Heartwood** (« le Cœur-de-Bois ») inside Elderbough — boss **the Moth Queen**
    (« la Reine des Phalènes »). *Unlocks moor, prism, clock, tundra.*
-9. **Moor & Machines** (« Landes et Rouages ») — moor, prism, clock, tundra, lv 35–40. Ghosts
+9. **Moor & Machines** (« Landes et Rouages ») — moor, prism, clock, tundra, lv 33–36. Ghosts
    only your lantern shows; Cogsworth builds the Lantern Cannon. Dungeon **Hollowmoor Manor**
    (« le Manoir de la Lande-Creuse ») — boss **the Lady in Grey** (« la Dame en Gris »), who
    shows the Duchess’s past (a sepia flashback: the hen on the stage). *Unlocks scar.*
 
 **Act III — the Grand Finale**
-10. **The Grand Finale** (« Le Grand Final ») — the Umbral Scar, lv 39–40, then **the Gloomstage**
+10. **The Grand Finale** (« Le Grand Final ») — the Umbral Scar, lv 37–40, then **the Gloomstage**
     (backstage, catwalks, the orchestra pit, the stage). Final boss **the Duchess in three
     acts** (her aria; the stage machinery; the Umbral Diva with every stolen flame). Perkins
     lands mid-fight with a thirty-year-late letter: her invitation to the Starfall Festival.
@@ -234,7 +234,7 @@ Written before building, against `world-v7-reviews.md`'s checklist: a shape of i
 setback or an intense beat, a sincere moment, the Duchess felt, three quest verbs or more, a
 signature dungeon mechanic, a boss mechanic nobody else has.
 
-**Chapter 5 — « Sand & Sea » (« Sable et Écume »), dunes · lagoon · sunken, lv 21–26.**
+**Chapter 5 — « Sand & Sea » (« Sable et Écume »), dunes · lagoon · sunken, lv 16–20.**
 - *Shape*: it opens **in the middle of the action** — no « arrive, meet two locals »: Perkins
   drops the heroes « slightly off », in the middle of a sandstorm, beside a caravan lost in it.
   The setback comes at the midpoint, the dungeon is a race against the sea.
@@ -296,7 +296,7 @@ signature dungeon mechanic, a boss mechanic nobody else has.
   sea took it (« We… swam… through… its… windows… Every… window… had… a… lamp… »), and, after
   the setback, Auntie Saffron sits with the heroes by the fire without haggling.
 
-**Chapter 6 — « Fire & Fins » (« Feu et Nageoires »), volcano · straits · dino, lv 25–30.**
+**Chapter 6 — « Fire & Fins » (« Feu et Nageoires »), volcano · straits · dino, lv 20–24.**
 - *Shape*: it **opens with a crash** — a setback in the first minute — and the heroes have
   to put the airship back together across three islands before the big night. No escort,
   no camp: the verbs are taming and towing, a sea race, launch vents, a sneak, and one
@@ -340,7 +340,7 @@ signature dungeon mechanic, a boss mechanic nobody else has.
   in them tell of the Dawnlands.
 - *Sincere beat*: the Understudies uninvited; the Duchess frozen by a hen, thirty years on.
 
-**Chapter 7 — « The Dawnlands » (« Les Terres-de-l’Aube »), whale · harbor · jade · salt, lv 28–34.**
+**Chapter 7 — « The Dawnlands » (« Les Terres-de-l’Aube »), whale · harbor · jade · salt, lv 24–28.**
 - *Shape*: a new continent under the Murk, reached by air. Every verb is new: whack-a-barnacle
   on a whale, relight a dark town with a guttering lantern, fly kites above the fog, and the
   dungeon's **dawn beam** steered with mirrors. No escort, no camp, no race.
@@ -402,7 +402,7 @@ signature dungeon mechanic, a boss mechanic nobody else has.
   reflection shows one, and it becomes real).
 - *Sincere beats*: Hoshi and June's letters; Brick's invisible box; Old Lucky saved, not slain.
 
-**Chapter 8 — « Autumn & Roots » (« Automne et Racines »), autumn · glow · elder, lv 32–37.**
+**Chapter 8 — « Autumn & Roots » (« Automne et Racines »), autumn · glow · elder, lv 28–32.**
 - *Shape*: the Understudies change sides, and a harvest festival with no light gets both its
   light and the Understudies' first real audience; then into the Great Tree. The verbs: **net
   fireflies** at night (a timing catch), **carry** firefly jars and hang them (introduced in the
@@ -450,7 +450,7 @@ signature dungeon mechanic, a boss mechanic nobody else has.
   chain with a funny end).
 - *Sincere beats*: the Understudies' first applause; Warden Ashby and the tree he planted as a boy.
 
-**Chapter 9 — « Moor & Machines » (« Landes et Rouages »), moor · prism · clock · tundra, lv 35–40.**
+**Chapter 9 — « Moor & Machines » (« Landes et Rouages »), moor · prism · clock · tundra, lv 33–36.**
 - *Shape*: the saga's heart is revealed. Hollowmoor's ghosts tell a story in pieces; the manor
   where a mother waited for a daughter who never came home; the Duchess's past in a sepia
   flashback; then the machines — a Lantern Cannon to answer the Umbral Spotlight — and the
@@ -502,7 +502,7 @@ signature dungeon mechanic, a boss mechanic nobody else has.
 - *Sincere beats*: the staff ghosts; the flashback; « the tea is still warm »; Tock, who built
   clocks to keep time and a cannon to save it.
 
-**Chapter 10 — « The Grand Finale » (« Le Grand Final »), scar, lv 39–40 — and the Epilogue.**
+**Chapter 10 — « The Grand Finale » (« Le Grand Final »), scar, lv 37–40 — and the Epilogue.**
 - *Shape*: everything pays off. The heroes board the Gloomstage over the Umbral Scar with the
   Understudies, Master Tock and his Lantern Cannon, and Captain Wendy's Teacup; they sneak
   through her theatre, beat Crumble's last machine, and face the Duchess in three acts. The
@@ -581,9 +581,13 @@ you “slightly off” · Nibs and heights · Hollis’s tea.
 ### 5.1 Heroes
 - Cap **40** (was 30): 39 talent points of the 45 the three trees hold (two full trees and
   most of the third). `XP_NEED(lv) = 40 + 30·lv + lv²`.
-- XP mostly from **quests**: a main quest gives ≈ 45 % of `XP_NEED(its level)`, a side quest
-  ≈ 25 %, a dungeon’s end ≈ 60 %; kills give `4 + 2·(monster level)` scaled by the level gap
-  (none for grey monsters), camps, lairs and events as today but level-based.
+- **Four levels a chapter** (round 12 — the table above and the chapters’ lines carry the new
+  numbers): chapter n runs from level 4n − 3 to 4n, its lands, quests, camps and dungeon (the
+  top three) with it. XP follows the story: a chapter’s main quests share 3.4 levels of
+  `XP_NEED(their level)`, a side quest is a quarter of one, a kill a fiftieth of the monster’s
+  (elite ×2, rare ×5, boss ×10; a camp’s end ×3) — each bent by the gap between the thing and the
+  hero (+12 % a level below it, a fifth less with every level above; a quest never under a third
+  of its share of the hero’s own level, a kill never under a quarter). `tools/pace.js` measures it.
 - Loot’s item level = the monster’s level; weapons +0.6 % damage per item level.
 
 ### 5.2 Monsters keep their level

@@ -11,7 +11,7 @@
 export const FROST_DOOR = [300, -108];
 
 export const FROSTBELL = {
-  id: 'frostbell', name: 'The Frostbell Halls', lv: [19, 21], theme: 'ice', music: 'frostbell', slot: 3,
+  id: 'frostbell', name: 'The Frostbell Halls', lv: [14, 16], theme: 'ice', music: 'frostbell', slot: 3,
   // under the noon sun: snow and pines, then glacier ice; frozen cliffs all round
   outdoor: {
     zone: 'glacier', hour: 11.5, floor: 'snow', rim: 'snow', woods: 'rock', cliffs: [0, 2, 4],

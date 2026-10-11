@@ -13,7 +13,7 @@ export const FORGE_DOOR = [448, 39.6];
 
 // (a throw that lands in the lava: its third number is 1)
 export const FORGEHEART = {
-  id: 'forgeheart', name: 'The Forge Heart', lv: [27, 29], theme: 'forge', music: 'forgeheart', slot: 5,
+  id: 'forgeheart', name: 'The Forge Heart', lv: [22, 24], theme: 'forge', music: 'forgeheart', slot: 5,
   // at dusk in the caldera: basalt and ash, lava all round, the rim rising in cliffs
   outdoor: {
     zone: 'volcano', hour: 18.6, floor: 'basalt', path: 'ash', rim: 'ash', woods: 'lava', cliffs: [0, 2, 4],

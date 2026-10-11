@@ -11,7 +11,7 @@
 export const MANOR_DOOR = [1175, 139.4];
 
 export const HOLLOWMOOR = {
-  id: 'hollowmoor', name: 'Hollowmoor Manor', lv: [37, 39], theme: 'manor', music: 'hollowmoor', slot: 8, ambient: 0.4,
+  id: 'hollowmoor', name: 'Hollowmoor Manor', lv: [34, 36], theme: 'manor', music: 'hollowmoor', slot: 8, ambient: 0.4,
   w: 44, h: 162,
   door: MANOR_DOOR,
   start: [22, 155],

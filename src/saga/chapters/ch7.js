@@ -1,5 +1,5 @@
 // Chapter 7 — The Dawnlands. Whale Isle, Lantern Bay, the Jade Terraces and the
-// Saltmirror Flats, levels 28–34. The Dauntless Teacup crosses the Wide Sea (the
+// Saltmirror Flats, levels 24–28. The Dauntless Teacup crosses the Wide Sea (the
 // Teacup line: a mooring mast on Lighthouse Isle, another in Lanternport), runs out
 // of tea over an island that isn’t on any chart — and the island opens its eye:
 // Grandmother Bellows, itching with gloom barnacles. Stomp them, and her spout throws
@@ -310,7 +310,7 @@ async function mimesMeet(S) {
 function spawnMimes(S) {
   const C = S.P.combat, [x, z] = MIMES;
   const band = [['mimeminnow', x - 1.8, z - 0.6], ['mimefidget', x, z - 1], ['mimebrick', x + 2, z - 0.6]].map(([ty, ex, ez]) => {
-    const e = C.spawn(ty, ex, ez, { level: 30, quiet: true });
+    const e = C.spawn(ty, ex, ez, { level: 26, quiet: true });
     e.saga = true; e.sagaTag = 'mimes'; e.miniGroup = t('The Mime Troupe');
     e.spawnT = 0; e.obj.scale.setScalar(1);
     return e;
@@ -626,7 +626,7 @@ const TOWN = (p) => p.pos.x > 755 && p.pos.x < 820 && p.pos.z > 25 && p.pos.z < 
 export const CH7 = {
   id: 7, title: 'The Dawnlands',
   recap: 'The Duchess fled east across the Wide Sea with every flame she has stolen. Cross after her aboard Captain Wendy’s Teacup. In the Dawnlands, the sun has not risen for a month: find their {key}Great Hearth{/} and relight it.',
-  lv: 31, zones: ['wide', 'whale', 'harbor', 'jade', 'salt'], opens: ['autumn', 'glow', 'elder'],
+  lv: 27, zones: ['wide', 'whale', 'harbor', 'jade', 'salt'], opens: ['autumn', 'glow', 'elder'],
   // (Grandmother Bellows keeps an eye open while her back itches)
   update(S, dt) {
     S.mimeT = (S.mimeT || 0) - dt;
@@ -685,7 +685,7 @@ export const CH7 = {
     c7_cross: {
       title: 'The Crossing',
       brief: 'The Duchess fled east across the Wide Sea with the stolen flames. Board {key}Captain Wendy’s airship{/} and cross after her.',
-      auto: true, lv: 28,
+      auto: true, lv: 25,
       steps: [
         { do: 'talk', npc: 'wendy', text: 'Meet {key}Captain Wendy{/} at the mast on {key}Lighthouse Isle{/}, by Barnaby’s lighthouse', run: wendyMast },
         { do: 'scene', text: 'Cross {key}the Wide Sea{/} aboard the Dauntless Teacup', run: crossing },
@@ -694,7 +694,7 @@ export const CH7 = {
     c7_whale: {
       title: 'The Itch',
       brief: 'This island is a whale: Grandmother Bellows. {key}Gloom barnacles{/} make her back itch: stomp them all.',
-      auto: true, after: 'c7_cross', lv: 29,
+      auto: true, after: 'c7_cross', lv: 25,
       steps: [
         { do: 'whack', text: 'Stomp the {key}gloom barnacles{/} on the whale’s back: jump on them!', at: WHACK, r: 8, holes: HOLES, n: 14, per: 4, time: 45, up: 1.5, every: 0.75, model: buildBarnacle, go: 'Stomp!' },
         { do: 'scene', text: 'Hold on to the Teacup: next stop, {key}Lanternport{/}', run: spout },
@@ -703,16 +703,16 @@ export const CH7 = {
     c7_lamps: {
       title: 'Lanternport in the Dark',
       brief: 'Lanternport is in the dark. Relight its {key}seven street lamps{/} and stay in their light: in the dark, moths eat your lantern’s flame.',
-      auto: true, after: 'c7_whale', lv: 29,
+      auto: true, after: 'c7_whale', lv: 25,
       steps: [
-        { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 11, glow: 3.8, moths: { every: 4.5, max: 2, level: 29 }, model: buildStreetLamp },
+        { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 11, glow: 3.8, moths: { every: 4.5, max: 2, level: 25 }, model: buildStreetLamp },
         { do: 'scene', text: 'Watch {key}Lanternport{/} wake up', run: townWakes },
       ],
     },
     c7_hoshi: {
       title: 'The Last Lamplighter',
       brief: 'At the top of the town, one lamp never went out: {key}Old Hoshi{/} kept it lit. Go and talk to her.',
-      auto: true, after: 'c7_lamps', lv: 30,
+      auto: true, after: 'c7_lamps', lv: 26,
       steps: [
         { do: 'talk', npc: 'hoshi', text: 'Talk to {key}Old Hoshi{/} on the hall steps, at the top of the town', run: hoshiTalk },
       ],
@@ -720,7 +720,7 @@ export const CH7 = {
     c7_mimes: {
       title: 'The Mime Troupe',
       brief: 'The Dawnlands’ Great Hearth is out, at the Dawn Monastery in the north. Take the {key}Pilgrims’ Way{/} and beat whoever blocks the road.',
-      auto: true, after: 'c7_hoshi', lv: 30,
+      auto: true, after: 'c7_hoshi', lv: 26,
       steps: [
         { do: 'go', text: 'Take the {key}Pilgrims’ Way{/} north, towards the Dawn Monastery', at: MIMES, r: 7, run: mimesMeet },
         { do: 'kill', tag: 'mimes', n: 3, text: 'Beat {key}the Mime Troupe{/}: jump over the rope, hop out of the box', at: MIMES, r: 14, target: () => MIMES },
@@ -730,7 +730,7 @@ export const CH7 = {
     c7_kites: {
       title: 'The Dawn Kites',
       brief: 'The Lantern Pagoda opens only to the light of dawn, and the Murk hides it. Fly a {key}kite{/} above the Murk to bring the morning down.',
-      auto: true, after: 'c7_mimes', lv: 31,
+      auto: true, after: 'c7_mimes', lv: 27,
       steps: [
         { do: 'talk', npc: 'sen', text: 'Talk to {key}Abbot Sen{/} at the {key}Dawn Monastery{/}, to the north', run: abbotTalk },
         { do: 'kite', text: 'Fly your kite higher than the Murk, in the {key}field to the east{/}', at: KITES, r: 8, climb: 0.075, gust: 1.1, model: buildKite },
@@ -740,7 +740,7 @@ export const CH7 = {
     c7_pagoda: {
       title: 'The Lantern Pagoda',
       brief: 'The Pagoda is open. Climb to its roof, free {key}Old Lucky{/} the paper dragon from the gloom, and relight the Dawn Hearth.',
-      auto: true, after: 'c7_kites', lv: 32,
+      auto: true, after: 'c7_kites', lv: 28,
       steps: [
         { do: 'go', text: 'Enter the {key}Lantern Pagoda{/}, on the monastery’s court', at: PAGODA_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('lanternpagoda'); else S.flag('dawnLit'); } },
         { do: 'dungeon', id: 'lanternpagoda', text: 'Climb to the roof of the Pagoda and free {key}Old Lucky{/} from the gloom' },
@@ -749,7 +749,7 @@ export const CH7 = {
     c7_festival: {
       title: 'The Lantern Festival',
       brief: 'The sun is back over the Dawnlands. Tonight Lanternport holds its {key}Lantern Festival{/}: go back down to the harbour square.',
-      auto: true, after: 'c7_pagoda', lv: 33,
+      auto: true, after: 'c7_pagoda', lv: 28,
       steps: [
         { do: 'go', text: 'Go back to {key}Lanternport{/}, on the harbour square, for the festival', at: FESTIVAL, r: 4, run: festival },
       ],
@@ -759,7 +759,7 @@ export const CH7 = {
     c7_riddles: {
       title: 'Brother Bao’s Vow',
       brief: 'Brother Bao, on the Pilgrims’ Way, speaks only in riddles. Answer his {key}three riddles{/}.',
-      kind: 'side', giver: 'bao', after: 'c7_mimes', lv: 31, dust: 25,
+      kind: 'side', giver: 'bao', after: 'c7_mimes', lv: 27, dust: 25,
       offer: async (S) => {
         await S.say('bao', 'Halt! I have taken a vow: I speak only in riddles. It is very inconvenient at breakfast.', { expr: 'happy' });
         await S.say('bao', 'Answer my {key}three riddles{/}, and I shall be very pleased.', { expr: 'smug' });
@@ -772,13 +772,13 @@ export const CH7 = {
     c7_lamplight: {
       title: 'Lamplighting',
       brief: 'Some nights the fog blows Lanternport’s lamps out again. Relight {key}all seven{/} before your lantern goes out.',
-      kind: 'side', repeat: true, giver: 'hoshi', after: 'c7_festival', lv: 32, dust: 20,
+      kind: 'side', repeat: true, giver: 'hoshi', after: 'c7_festival', lv: 28, dust: 20,
       offer: async (S) => {
         await S.say('hoshi', 'Some nights, the fog comes back and blows my lamps out.', { expr: 'worried' });
         await S.say('hoshi', 'Mind the moths, and relight {key}all seven lamps{/} before your lantern goes out.', { expr: 'smug' });
       },
       steps: [
-        { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 10, glow: 3.8, moths: { every: 4, max: 3, level: 31 }, model: buildStreetLamp },
+        { do: 'lamps', text: 'Relight the {key}seven street lamps{/} of Lanternport, from the quay to the hall', lamps: LAMPS, start: LP_LAND, light: 10, glow: 3.8, moths: { every: 4, max: 3, level: 27 }, model: buildStreetLamp },
         { do: 'talk', npc: 'hoshi', text: 'Tell {key}Old Hoshi{/}, at the top of the town, that the lamps are lit', run: async (S) => {
           if (S.plays('c7_lamplight')) await S.say('hoshi', 'Lit again, and quicker. The fog is starting to take it personally.', { expr: 'happy' });
           else await S.say('hoshi', 'Every lamp is lit! My old teacher would have given you a biscuit: I only have stardust.', { expr: 'love' });
@@ -788,7 +788,7 @@ export const CH7 = {
     c7_mirror: {
       title: 'The Salt Painter’s Reflections',
       brief: 'On the Saltmirror Flats, Blanche sees {key}three things{/} in the reflection that are not there above. Find them and bring them to her.',
-      kind: 'side', giver: 'blanche', after: 'c7_lamps', lv: 32, dust: 25,
+      kind: 'side', giver: 'blanche', after: 'c7_lamps', lv: 28, dust: 25,
       offer: blancheOffer,
       steps: [
         { do: 'collect', text: 'Find the {key}three reflections{/} on the Saltmirror Flats, around the Saltworks', item: 'Reflection', n: 3, spots: REFLECT, model: buildReflection, verb: 'Reach in', hint: 'Something shows in the mirror — but nothing above it' },

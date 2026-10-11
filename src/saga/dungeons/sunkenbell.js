@@ -13,7 +13,7 @@
 export const SUNKEN_DOOR = [91.5, 248.2];
 
 export const SUNKENBELL = {
-  id: 'sunkenbell', name: 'The Sunken Bell Temple', lv: [24, 26], theme: 'sea', music: 'sunkenbell', slot: 4,
+  id: 'sunkenbell', name: 'The Sunken Bell Temple', lv: [18, 20], theme: 'sea', music: 'sunkenbell', slot: 4,
   // under the noon sun: sand and flagstones, the lagoon's shallows all round
   outdoor: {
     zone: 'sunken', hour: 12.5, floor: 'ruins', path: 'sand', rim: 'sand', woods: 'water', cliffs: false,

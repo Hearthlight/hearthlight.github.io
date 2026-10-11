@@ -262,7 +262,7 @@ const GAMES = {
         const live = C.enemies.filter((e) => e.alive && e.sagaTag === 'lamps').length;
         for (const p of dark.slice(0, 4)) {
           if (live >= (st.moths.max || 3) * Math.max(1, Math.ceil(heroes.length / 2))) break;
-          const a = rand(0, Math.PI * 2), e = C.spawn(st.moths.type || 'murkmoth', p.pos.x + Math.cos(a) * 6, p.pos.z + Math.sin(a) * 4, { level: st.moths.level || 29, quiet: true });
+          const a = rand(0, Math.PI * 2), e = C.spawn(st.moths.type || 'murkmoth', p.pos.x + Math.cos(a) * 6, p.pos.z + Math.sin(a) * 4, { level: st.moths.level || 25, quiet: true });
           e.saga = true; e.sagaTag = 'lamps'; e.lamps = R;
         }
       }

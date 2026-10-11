@@ -1,5 +1,5 @@
 // Chapter 5 — Sand & Sea. Sunscorch Dunes, the Coral Lagoon and the Sunken City,
-// levels 21–26. It opens in the middle of a sandstorm: Perkins drops the heroes
+// levels 16–20. It opens in the middle of a sandstorm: Perkins drops the heroes
 // « slightly off », beside Humphrey, a caravan camel who is afraid of the dark —
 // lead him to Palm Oasis. Auntie Saffron haggles, the spring goes dark, Tariq’s
 // glass-bottomed boat, the Turtle Nest (Elder Shellington… takes… his time; Snap
@@ -543,7 +543,7 @@ const got = (S, qid, k) => !!S.st.got[qid + ':0:' + k];
 export const CH5 = {
   id: 5, title: 'Sand & Sea',
   recap: 'Croakmire is warm again, and the turtles call for help: in the south, the Sunken Bell has stopped ringing. Cross the dunes, find the Bell’s clapper and wake the {key}Great Hearth{/} of the South. But the Duchess has sworn to snuff again every Hearth you relight.',
-  lv: 23, zones: ['dunes', 'lagoon', 'sunken'], opens: ['volcano', 'straits', 'dino'],
+  lv: 18, zones: ['dunes', 'lagoon', 'sunken'], opens: ['volcano', 'straits', 'dino'],
   // (Croakmire, snuffed again, keeps its colours drained until chapter 6 wins its flame back)
   drain: (S) => {
     if (!S.has('marshSnuffed') || S.has('marshBack') || !S.P.big) return 0;
@@ -580,10 +580,10 @@ export const CH5 = {
     c5_storm: {
       title: 'The Sandstorm',
       brief: 'A sandstorm blew out the caravan’s lamps, and Humphrey the camel is afraid of the dark. He follows the lantern: walk him to {key}Palm Oasis{/}.',
-      auto: true, lv: 21,
+      auto: true, lv: 17,
       steps: [
         { do: 'scene', text: 'Look around you, in the storm of the Sunscorch Dunes', run: stormDrop },
-        { do: 'escort', text: 'Walk {key}Humphrey{/} to {key}Palm Oasis{/}: stay close to him', build: (r3d) => buildCamel(r3d), path: HUMPHREY_PATH, speed: 2.1, near: 5.5, lv: 21,
+        { do: 'escort', text: 'Walk {key}Humphrey{/} to {key}Palm Oasis{/}: stay close to him', build: (r3d) => buildCamel(r3d), path: HUMPHREY_PATH, speed: 2.1, near: 5.5, lv: 17,
           ambush: { 2: ['beetle', 'slinger', 'burrower'], 4: ['beetle', 'beetle', 'slinger', 'burrower'] }, lost: 'Humphrey won’t take a step without your lantern. Stay close!', ambushText: 'Gloom in the storm! Keep Humphrey safe!', clear: 'Humphrey groans, and plods on.' },
         { do: 'talk', npc: 'saffron', text: 'Talk to {key}Auntie Saffron{/}, the caravan master, at Palm Oasis', run: oasisArrive },
       ],
@@ -591,16 +591,16 @@ export const CH5 = {
     c5_oasis: {
       title: 'The Dimming Spring',
       brief: 'Gloom has crept into the palm grove of Palm Oasis, and the spring is going dark. Chase it out, then tell {key}Auntie Saffron{/}.',
-      auto: true, after: 'c5_storm', lv: 22,
+      auto: true, after: 'c5_storm', lv: 17,
       steps: [
-        { do: 'camp', text: 'Chase the gloom from the {key}palm grove{/}, on the west side of Palm Oasis', camp: { id: 'c5_spring', at: SPRING, level: 22, foes: ['beetle', 'beetle', 'slinger', 'burrower', 'burrower'], n: 5, done: 'The spring runs clear and bright!' } },
+        { do: 'camp', text: 'Chase the gloom from the {key}palm grove{/}, on the west side of Palm Oasis', camp: { id: 'c5_spring', at: SPRING, level: 17, foes: ['beetle', 'beetle', 'slinger', 'burrower', 'burrower'], n: 5, done: 'The spring runs clear and bright!' } },
         { do: 'talk', npc: 'saffron', text: 'Tell {key}Auntie Saffron{/}, at the oasis, that the spring is clear', run: springClear },
       ],
     },
     c5_lagoon: {
       title: 'The Turtle Nest',
       brief: 'The Sunken Bell has stopped ringing and the sea has gone dark. The turtles know that bell: Tariq’s boat sails to their {key}Turtle Nest{/}.',
-      auto: true, after: 'c5_oasis', lv: 23,
+      auto: true, after: 'c5_oasis', lv: 18,
       steps: [
         { do: 'talk', npc: 'tariq', text: 'Talk to {key}Tariq{/}, at Palm Oasis, to sail to the {key}Turtle Nest{/}', run: boatToNest },
         { do: 'talk', npc: 'shellington', text: 'Talk to {key}Elder Shellington{/} at the Turtle Nest', run: nestTalk },
@@ -610,7 +610,7 @@ export const CH5 = {
     c5_clapper: {
       title: 'The Silent Bell',
       brief: 'The Sunken Bell is silent: its clapper fell into the {key}Old Forum{/} and broke in three. Dive for the pieces, so the Bell can ring again.',
-      auto: true, after: 'c5_lagoon', lv: 24,
+      auto: true, after: 'c5_lagoon', lv: 19,
       steps: [
         { do: 'talk', npc: 'tariq', text: 'Ask {key}Tariq{/}, at the Turtle Nest, to take you to the {key}Old Forum{/}', run: boatToForum },
         { do: 'collect', text: 'Dive under the bubbles at the Old Forum: find {key}3 clapper pieces{/}', item: 'Clapper piece', n: 3, spots: CLAPPER, dive: true, hint: 'Bubbles rise here' },
@@ -620,7 +620,7 @@ export const CH5 = {
     c5_temple: {
       title: 'The Sunken Bell Temple',
       brief: 'The Duchess has snuffed Croakmire again: three flames left. Put the clapper back in the Sunken Bell Temple, ring the Bell and wake the {key}Great Hearth{/} of the South.',
-      auto: true, after: 'c5_clapper', lv: 25,
+      auto: true, after: 'c5_clapper', lv: 20,
       steps: [
         { do: 'talk', npc: 'tariq', text: 'Ask {key}Tariq{/}, at the Old Forum, to row you to the {key}temple{/}', run: boatToTemple },
         { do: 'go', text: 'Enter the {key}Sunken Bell Temple{/}', at: SUNKEN_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('sunkenbell'); else S.flag('southLit'); } },
@@ -630,7 +630,7 @@ export const CH5 = {
     c5_relight: {
       title: 'The Bell Rings',
       brief: 'The Great Hearth of the South burns again. Outside the temple, the {key}Sunken Bell{/} rings over the whole sea.',
-      auto: true, after: 'c5_temple', lv: 26,
+      auto: true, after: 'c5_temple', lv: 20,
       steps: [
         { do: 'scene', text: 'Listen to the Sunken Bell ring, outside the temple', run: southRelit },
       ],
@@ -641,7 +641,7 @@ export const CH5 = {
     c5_hatch: {
       title: 'Home by Lantern Light',
       brief: 'Five baby turtles hatched in the dark and got lost on the sandbar. They follow lights: lead them home to the {key}Turtle Nest{/} with the lantern.',
-      kind: 'side', giver: 'snap', lv: 23, when: (S) => S.done('c5_lagoon'), dust: 40,
+      kind: 'side', giver: 'snap', lv: 18, when: (S) => S.done('c5_lagoon'), dust: 40,
       offer: async (S) => {
         await S.say('snap', 'five baby turtles hatched on the sandbar last night! it was so DARK they got lost!', { expr: 'cry', speed: 1.8 });
         await S.say('snap', 'they follow lights! please bring them home from the {key}sandbar{/} with your lantern!', { expr: 'worried', speed: 1.8 });
@@ -659,7 +659,7 @@ export const CH5 = {
     c5_mirage: {
       title: 'The Mirage Merchant',
       brief: 'Zizi sells mirages in the dunes, and a map to a « Lost Oasis ». Hear him out, then choose: buy the map, or tell Auntie Saffron.',
-      kind: 'side', giver: 'zizi', lv: 22, when: (S) => S.done('c5_storm'), dust: 10,
+      kind: 'side', giver: 'zizi', lv: 17, when: (S) => S.done('c5_storm'), dust: 10,
       offer: async (S) => { await S.say('zizi', 'Oh! A customer! I am Zizi, seller of fine mirages. Come closer… not THAT close!', { expr: 'happy' }); },
       steps: [
         { do: 'talk', npc: 'zizi', text: 'Hear out {key}Zizi{/}, the mirage seller in the dunes', run: mirageChoice },
@@ -668,11 +668,11 @@ export const CH5 = {
     c5_mirage_buy: {
       title: 'The Lost Oasis',
       brief: 'Zizi’s map shows an old {key}sand temple{/}, south-west of Palm Oasis. Go and see whether his treasure is real.',
-      kind: 'side', auto: true, after: 'c5_mirage', lv: 23, when: (S) => S.has('mirageBought'), dust: 40, gear: 'rich',
+      kind: 'side', auto: true, after: 'c5_mirage', lv: 18, when: (S) => S.has('mirageBought'), dust: 40, gear: 'rich',
       steps: [
         { do: 'go', text: 'Follow Zizi’s map to the old {key}sand temple{/}, south-west of Palm Oasis', at: LOST, r: 6,
           run: async (S) => { await S.say('narrator', 'No oasis here: only an old temple, a lot of sand… and gloom, guarding {key}a chest{/}.'); } },
-        { do: 'camp', text: 'Beat the gloom that guards the chest, at the {key}sand temple{/}', camp: { id: 'c5_lost', at: [LOST[0], LOST[1] - 1], level: 24, foes: ['worm', 'burrower', 'beetle', 'slinger', 'slinger'], n: 5, done: 'The sand temple falls quiet.' } },
+        { do: 'camp', text: 'Beat the gloom that guards the chest, at the {key}sand temple{/}', camp: { id: 'c5_lost', at: [LOST[0], LOST[1] - 1], level: 19, foes: ['worm', 'burrower', 'beetle', 'slinger', 'slinger'], n: 5, done: 'The sand temple falls quiet.' } },
         { do: 'collect', text: 'Open the {key}chest{/} the gloom was guarding, at the sand temple', item: 'Lost treasure', n: 1, spots: [LOST_CHEST], hint: 'A chest, half buried in the sand', verb: 'Open',
           run: async (S) => { await S.say('narrator', 'Inside: stardust, fine gear, and a note: « Told you. Only a LITTLE haunted. Z. »'); } },
       ],
@@ -680,7 +680,7 @@ export const CH5 = {
     c5_mirage_tell: {
       title: 'A Word with Auntie',
       brief: 'Zizi sells treasure maps that smell of trouble. {key}Auntie Saffron{/}, at Palm Oasis, will want to know.',
-      kind: 'side', auto: true, after: 'c5_mirage', lv: 22, when: (S) => S.has('mirageReported'), dust: 60,
+      kind: 'side', auto: true, after: 'c5_mirage', lv: 17, when: (S) => S.has('mirageReported'), dust: 60,
       steps: [
         { do: 'talk', npc: 'saffron', text: 'Tell {key}Auntie Saffron{/}, at Palm Oasis, about Zizi',
           run: async (S) => {
@@ -692,7 +692,7 @@ export const CH5 = {
     c5_chord: {
       title: 'The Forum’s Lost Chord',
       brief: 'Three singing stones stand in the Old Forum. Strike them as in the old song, {key}big, small, middle{/}, for Elder Shellington.',
-      kind: 'side', giver: 'shellington', lv: 24, when: (S) => S.done('c5_clapper'), dust: 40,
+      kind: 'side', giver: 'shellington', lv: 19, when: (S) => S.done('c5_clapper'), dust: 40,
       offer: async (S) => {
         await S.say('shellington', 'In the Old Forum… three stones… used to sing.{p} I would like… to hear them… once more.', { expr: 'neutral', speed: 0.5 });
         await S.say('shellington', 'Strike them… as in the old song:{p} {key}big… small… middle{/}.', { expr: 'love', speed: 0.5 });

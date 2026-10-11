@@ -14,14 +14,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // (in the order it joins a camp) and a brute
 const SITES = [
   { lv: 5, zone: 'deepwood', at: [100, -30], foes: ['gloomling', 'fox', 'rootling', 'gloomling'], brute: 'boar' },
-  { lv: 20, zone: 'marsh', at: [300, 60], foes: ['toad', 'shaman', 'gloomling', 'toad'], brute: 'stormram' },
+  // (the marsh’s gloom, met on the dunes’ sand: a land where level 20 is at home)
+  { lv: 20, zone: 'dunes', at: [-200, 185], foes: ['toad', 'shaman', 'gloomling', 'toad'], brute: 'stormram' },
   { lv: 40, zone: 'scar', at: [1360, 60], foes: ['wisp', 'clockwork', 'bogling', 'yeti'], brute: 'ogre' },
 ];
 // (a boss alone: `run(n, BOSS, true, 2)` — the Frost Colossus and its shield)
 export const BOSS = [{ lv: 40, zone: 'scar', at: [1360, 60], boss: 'colossus' }];
 
 // (like a real hero of that level: every talent point spent, a good weapon, two charms, a rune)
-async function equip(P, p) {
+export async function equip(P, p) {
   const { TALENT } = await import('/src/combat/v4/talents.js');
   const cls = p.cls || 'knight', ids = Object.keys(TALENT).filter((id) => TALENT[id].cls === cls);
   for (let pass = 0; pass < 8; pass++) for (const id of ids) P.progress.onMsg(p, { t: 'talent', id });
@@ -73,7 +74,7 @@ async function camp(ctx, site, brute = false) {
   // (a real camp — encounters.js: two places, one or two more further out, one more for every two
   // heroes around; a brute takes two of them and, from four heroes up, a second one four more; an
   // elite, never a brute, for every four heroes)
-  const places = 2 + Math.min(2, Math.floor(site.lv / 12)) + Math.floor(n / 2), big = brute && site.brute ? (n >= 4 && places >= 6 ? 2 : 1) : 0;
+  const places = 2 + (site.lv >= 10 ? 1 : 0) + (site.lv >= 19 ? 1 : 0) + Math.floor(n / 2), big = brute && site.brute ? (n >= 4 && places >= 6 ? 2 : 1) : 0;
   const types = site.boss ? [site.boss] : Array.from({ length: big }, () => site.brute).concat(Array.from({ length: places - [0, 2, 6][big] }, (_, i) => site.foes[i % site.foes.length]));
   const foes = types.map((type, i) => C.spawn(type, sx - 3 + (i % 6) * 1.6, sz - 3 - Math.floor(i / 6) * 1.6, { level: site.lv }));
   if (!site.boss) foes.filter((e) => !e.def.brute).slice(0, Math.floor(n / 4)).forEach((e) => { makeElite(e); e.level++; });

@@ -11,7 +11,7 @@
 import { t, getAudience, setAudience } from '../i18n.js';
 import { audio } from '../engine/audio.js';
 import { drawText, measure, stripTags } from '../engine/font.js';
-import { questXp } from './levels.js';
+import { questXp, levelOf, midLevel } from './levels.js';
 import { CHAPTERS, QUESTS } from './chapters/index.js';
 import { ZONES } from '../world/big/layout.js';
 import { Murk } from './murk.js';
@@ -26,6 +26,9 @@ import { NPCS } from '../data/npcs.js';
 const GAME_STEPS = new Set(['whack', 'lamps', 'kite', 'net', 'carry', 'rhythm', 'piles', 'seek', 'snap', 'defend', 'chase', 'toss', 'herd', 'tug', 'cook']);
 
 const TALK_R = 1.7;
+// how many main quests each chapter has: they share its levels (levels.js `questXp`)
+const MAINS = {};
+for (const Q of Object.values(QUESTS)) if (Q.kind !== 'side') MAINS[Q.ch] = (MAINS[Q.ch] || 0) + 1;
 const FRESH = () => ({ v: 1, ch: 1, q: {}, f: {}, open: ['valley'], lit: [], dun: {}, got: {}, seen: {} });
 
 export class Saga {
@@ -192,14 +195,20 @@ export class Saga {
     if (Q.dust) bits.push(t('+{n} stardust', { n: Q.dust }));
     return bits.join(' · ');
   }
-  xpOf(Q) { return Q.xp || Math.round(questXp(Q.lv || this.chapter.lv || 1, Q.kind === 'side' ? 'side' : 'main') * (Q.repeat ? 0.3 : 1)); }
+  // what a quest gives — every hero alike: the number on the banner is the one they get —, bent
+  // by where the party stands next to it (the hero in the middle)
+  xpOf(Q) {
+    if (Q.xp) return Q.xp;
+    const lv = Q.lv || this.chapter.lv || 1, own = this.P.players.filter((p) => p.fighter && (p.connected || this.solo)).map((p) => levelOf(p.fighter));
+    return Math.round(questXp(lv, Q.kind === 'side' ? 'side' : 'main', own.length ? midLevel(own) : lv, MAINS[Q.ch]) * (Q.repeat ? 0.3 : 1));
+  }
   plays(id) { return this.st.f['plays:' + id] || 0; }
 
   reward(Q) {
-    const P = this.P, C = P.combat;
+    const P = this.P, C = P.combat, xp = this.xpOf(Q);
     for (const p of P.players) {
       if (!p.connected && !this.solo) continue;
-      if (C && p.fighter) C.gainXp(p, this.xpOf(Q));
+      if (C && p.fighter) C.gainXp(p, xp);
       if (Q.dust && P.progress) { const pr = P.profileOf(p); pr.dust = (pr.dust || 0) + Q.dust; }
       if (Q.gear && P.progress && P.progress.give) P.progress.give(p, { rich: Q.gear === 'rich' });
     }

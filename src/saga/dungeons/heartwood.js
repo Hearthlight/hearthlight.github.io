@@ -11,7 +11,7 @@
 export const HEART_DOOR = [958, 72.6];
 
 export const HEARTWOOD = {
-  id: 'heartwood', name: 'The Heartwood', lv: [35, 37], theme: 'heartwood', music: 'heartwood', slot: 7, ambient: 0.42,
+  id: 'heartwood', name: 'The Heartwood', lv: [30, 32], theme: 'heartwood', music: 'heartwood', slot: 7, ambient: 0.42,
   w: 44, h: 150,
   door: HEART_DOOR,
   start: [22, 144],

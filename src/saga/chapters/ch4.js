@@ -1,5 +1,5 @@
 // Chapter 4 — Mire & Frost. Croakmire, Frostpeak Glacier and the Cloud Isles,
-// levels 15–23. King Croakington’s crown — and the Ember Pearl that keeps the
+// levels 12–16. King Croakington’s crown — and the Ember Pearl that keeps the
 // marsh’s Great Hearth warm — snatched by Crumble on a gloom balloon; the marsh
 // gone cold, the king with a cold; the Gloomstage’s shadow over the glacier and
 // the ice singing back; Captain Wendy’s balloons; Crumble stuck head-first in a
@@ -387,7 +387,7 @@ const frogWant = (S, k) => { const q = S.st.q.c4_choir; return !!q && !q.done &&
 export const CH4 = {
   id: 4, title: 'Mire & Frost',
   recap: 'Three Great Hearths burn again. But Croakmire, the frogs’ marsh, is freezing: someone stole {key}the king’s crown{/}, which keeps its Great Hearth warm. Follow the thief north, onto the glacier and up into the clouds, and bring the crown home.',
-  lv: 17, zones: ['marsh', 'glacier', 'cloud'], opens: ['dunes', 'lagoon', 'sunken'],
+  lv: 14, zones: ['marsh', 'glacier', 'cloud'], opens: ['dunes', 'lagoon', 'sunken'],
   props: [
     { id: 'lilyThrone', at: THRONE, r: 1.1, build: (r3d, S) => buildLilyThrone(r3d, S) },
     { id: 'frostGate', at: [FROST_DOOR[0], FROST_DOOR[1] - 2.2], build: (r3d) => buildFrostGate(r3d) },
@@ -413,28 +413,28 @@ export const CH4 = {
     c4_croak: {
       title: 'The Frog King’s Cold',
       brief: 'King Croakington’s crown was stolen, and his marsh is freezing. First, chase the gloom the thief left on the {key}royal lily pads{/}.',
-      auto: true, lv: 16,
+      auto: true, lv: 13,
       steps: [
         { do: 'go', text: 'Go to {key}Croakton{/}, in the marsh east of the valley', at: CROAK, r: 7, run: croakton },
-        { do: 'camp', text: 'Chase the gloom off the {key}royal lily pads{/}, south-west of the throne', camp: { id: 'c4_lilies', at: LILIES, level: 16, foes: ['toad', 'toad', 'shaman', 'gloomling'], n: 4, done: 'The royal lily pads are clear!' } },
+        { do: 'camp', text: 'Chase the gloom off the {key}royal lily pads{/}, south-west of the throne', camp: { id: 'c4_lilies', at: LILIES, level: 13, foes: ['toad', 'toad', 'shaman', 'gloomling'], n: 4, done: 'The royal lily pads are clear!' } },
         { do: 'talk', npc: 'croakington', text: 'Return to {key}King Croakington{/}, on his throne in Croakton', run: kingDecree },
       ],
     },
     c4_frost: {
       title: 'The Shadow on the Ice',
       brief: 'The thief flew north, to the glacier. Ask at Frostpeak Camp where he went, then free the {key}Balloon Station{/} to follow him.',
-      auto: true, after: 'c4_croak', lv: 18,
+      auto: true, after: 'c4_croak', lv: 14,
       steps: [
         { do: 'go', text: 'Head north to {key}Frostpeak Camp{/}, on the glacier', at: FROSTCAMP, r: 7, run: shadowOnIce },
         { do: 'talk', npc: 'yuki', text: 'Talk to {key}Mama Yuki{/} at the igloos, south-east of the camp', run: yukiTalk },
-        { do: 'camp', text: 'Chase the ice imps off the {key}Balloon Station{/}, far to the east', camp: { id: 'c4_station', at: [STATION[0], STATION[1] + 2], level: 19, foes: ['frostimp', 'frostimp', 'frostimp', 'wisp'], n: 4, done: 'The balloons shake off their ice!' } },
+        { do: 'camp', text: 'Chase the ice imps off the {key}Balloon Station{/}, far to the east', camp: { id: 'c4_station', at: [STATION[0], STATION[1] + 2], level: 15, foes: ['frostimp', 'frostimp', 'frostimp', 'wisp'], n: 4, done: 'The balloons shake off their ice!' } },
         { do: 'talk', npc: 'wendy', text: 'Talk to {key}Captain Wendy{/} at the Balloon Station', run: wendyTalk },
       ],
     },
     c4_cloud: {
       title: 'Crumble in the Clouds',
       brief: 'The thief crashed his balloon on the {key}Cloud Isles{/}. Fly there with Captain Wendy and find him: he knows where the crown is.',
-      auto: true, after: 'c4_frost', lv: 20,
+      auto: true, after: 'c4_frost', lv: 15,
       steps: [
         { do: 'scene', text: 'Fly to the {key}Cloud Isles{/} in Captain Wendy’s balloon', run: balloonFlight },
         { do: 'go', text: 'Find the thief near the {key}Cloud Temple{/}, north-east of Cloud Harbour', at: CRUMBLE, r: 3.5, run: crumbleStuck },
@@ -443,7 +443,7 @@ export const CH4 = {
     c4_halls: {
       title: 'The Frostbell Halls',
       brief: 'Crumble gave the crown to {key}the Frost Tenor{/}, the Duchess’s singer. Climb to his palace of ice, on the glacier, and take it back.',
-      auto: true, after: 'c4_cloud', lv: 21,
+      auto: true, after: 'c4_cloud', lv: 16,
       steps: [
         { do: 'go', text: 'Climb to the {key}Frostbell Halls{/}, north-east of Frostpeak Camp', at: FROST_DOOR, r: 2.4, run: async (S) => { if (S.P.dungeons) await S.P.dungeons.enter('frostbell'); else S.flag('crown'); } },
         { do: 'dungeon', id: 'frostbell', text: 'Take {key}the king’s crown{/} back from {key}the Frost Tenor{/}' },
@@ -452,7 +452,7 @@ export const CH4 = {
     c4_relight: {
       title: 'Croakmire Warms Up',
       brief: 'You have the crown! Bring it back to {key}King Croakington{/}, on his throne in Croakton, to warm the marsh again.',
-      auto: true, after: 'c4_halls', lv: 22,
+      auto: true, after: 'c4_halls', lv: 16,
       steps: [
         { do: 'go', text: 'Bring {key}the crown{/} home to King Croakington, in {key}Croakton{/}', at: KING, r: 3.5, run: crownHome },
       ],
@@ -463,7 +463,7 @@ export const CH4 = {
     c4_hanky: {
       title: 'A Royal Handkerchief',
       brief: 'The king is cold until his crown comes home. {key}Mama Yuki{/}, at the igloos of Frostpeak Camp, knits the warmest scarves: ask her for one.',
-      kind: 'side', giver: 'croakington', lv: 16, when: (S) => S.done('c4_croak'), dust: 30,
+      kind: 'side', giver: 'croakington', lv: 13, when: (S) => S.done('c4_croak'), dust: 30,
       offer: async (S) => {
         await S.say('croakington', 'We need something warm. And something to sneeze into.{p} Not the same thing.', { expr: 'sad' });
         await S.say('croakington', '{key}Mama Yuki{/}, at the glacier camp, knits the warmest scarves. Would you ask her for one?', { expr: 'happy' });
@@ -483,7 +483,7 @@ export const CH4 = {
     c4_choir: {
       title: 'The Royal Choir',
       brief: 'Three frogs of the royal choir hopped off when it snowed. Find them in the reeds around Croakton and bring them back to {key}Sir Newton{/}.',
-      kind: 'side', giver: 'newton', lv: 16, when: (S) => S.done('c4_croak'), dust: 30,
+      kind: 'side', giver: 'newton', lv: 13, when: (S) => S.done('c4_croak'), dust: 30,
       offer: async (S) => {
         await S.say('newton', 'A disaster! Three frogs of the royal choir hopped off in the snow!', { expr: 'worried' });
         await S.say('newton', 'They are humming in {key}the reeds{/} around the village. Bring them home!', { expr: 'happy' });
@@ -501,7 +501,7 @@ export const CH4 = {
     c4_sled: {
       title: 'Downhill Dash',
       brief: 'Tobi dares you to beat him on the {key}Glacier Run{/}, north of Frostpeak Camp: sled from the top, past both flags, to the bottom in ten seconds.',
-      kind: 'side', giver: 'tobi', lv: 18, when: (S) => S.done('c4_frost'), dust: 30,
+      kind: 'side', giver: 'tobi', lv: 14, when: (S) => S.done('c4_frost'), dust: 30,
       offer: async (S) => {
         await S.say('tobi', 'Bet you can’t beat my record! FIVE seconds. Eyes shut. Backwards.', { expr: 'smug' });
         await S.say('tobi', 'Sled down the {key}Glacier Run{/}, past both flags, in {key}ten seconds{/}!', { expr: 'happy' });
@@ -517,7 +517,7 @@ export const CH4 = {
     c4_bells: {
       title: 'The Silent Bells',
       brief: 'The Cloud Temple’s {key}three bells{/} have fallen silent, and the clouds no longer drift. Ring one on each isle for Sister Nimbus.',
-      kind: 'side', giver: 'nimbus', lv: 20, when: (S) => S.has('crumbleFreed'), dust: 30,
+      kind: 'side', giver: 'nimbus', lv: 15, when: (S) => S.has('crumbleFreed'), dust: 30,
       offer: async (S) => {
         await S.say('nimbus', 'The temple’s {key}three bells{/} are silent, and the clouds no longer drift.', { expr: 'sad' });
         await S.say('nimbus', 'One stands on each isle. Would you ring them for me?', { expr: 'neutral' });

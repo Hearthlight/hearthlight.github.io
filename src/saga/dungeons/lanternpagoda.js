@@ -15,7 +15,7 @@ export const ROOF = { x: 20, z: 15 };
 export const PERCHES = [[20, 8.5], [25.5, 9.5], [27.5, 15], [25.5, 20.5], [20, 21.5], [14.5, 20.5], [12.5, 15], [14.5, 9.5]];
 
 export const LANTERNPAGODA = {
-  id: 'lanternpagoda', name: 'The Lantern Pagoda', lv: [31, 33], theme: 'pagoda', music: 'lanternpagoda', slot: 6, ambient: 0.52,
+  id: 'lanternpagoda', name: 'The Lantern Pagoda', lv: [26, 28], theme: 'pagoda', music: 'lanternpagoda', slot: 6, ambient: 0.52,
   w: 40, h: 150,
   door: PAGODA_DOOR,
   start: [20, 144],

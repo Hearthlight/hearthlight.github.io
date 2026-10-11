@@ -1,4 +1,4 @@
-// Chapter 1 — Lights Out. Marigold Valley, levels 1–5.
+// Chapter 1 — Lights Out. Marigold Valley, levels 1–4.
 // The Gloomstage eclipses the sun over the cove, Duchess Gloria snuffs Old
 // Glimmer, and the Murk rolls over the hills. Hollis hands over Nana June's
 // old Lamplighter's Lantern; three embers of Old Glimmer's flame to find, the
@@ -527,7 +527,7 @@ export const CH1 = {
     c1_relight: {
       title: 'Old Glimmer Shines Again',
       brief: 'The lantern holds its three embers. Carry it to {key}Old Glimmer{/} to light the lighthouse again and push back the Murk.',
-      auto: true, after: 'c1_grotto', lv: 5,
+      auto: true, after: 'c1_grotto', lv: 4,
       steps: [
         { do: 'go', text: 'Carry the lantern to {key}Old Glimmer{/}, the lighthouse east of the village', at: [LIGHTHOUSE.x, LIGHTHOUSE.z + 3], r: 3, run: relight },
         { do: 'scene', text: 'Wait for the post at the foot of {key}Old Glimmer{/}', run: perkins },

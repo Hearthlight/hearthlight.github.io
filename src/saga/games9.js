@@ -192,7 +192,7 @@ export const GAMES9 = {
         const n = 1 + Math.floor(heroes.length / 2) + (R.charge > 0.5 ? 1 : 0);
         for (let k = 0; k < n; k++) {
           const a = rand(0, Math.PI * 2), r = (st.r || 8) + 2;
-          const e = C.spawn(st.foes[Math.floor(Math.random() * st.foes.length)], x + Math.cos(a) * r, z + Math.sin(a) * r, { level: st.level || 38, quiet: true });
+          const e = C.spawn(st.foes[Math.floor(Math.random() * st.foes.length)], x + Math.cos(a) * r, z + Math.sin(a) * r, { level: st.level || 36, quiet: true });
           e.saga = true; e.sagaTag = 'defend';
         }
       }

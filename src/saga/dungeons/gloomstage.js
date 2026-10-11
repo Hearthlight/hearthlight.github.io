@@ -11,7 +11,7 @@
 export const STAGE_DOOR = [1350, 99.4];
 
 export const GLOOMSTAGE = {
-  id: 'gloomstage', name: 'The Gloomstage', lv: [39, 40], theme: 'backstage', music: 'gloomstage', slot: 9, ambient: 0.66,
+  id: 'gloomstage', name: 'The Gloomstage', lv: [38, 40], theme: 'backstage', music: 'gloomstage', slot: 9, ambient: 0.66,
   w: 44, h: 182,
   door: STAGE_DOOR,
   start: [22, 175],

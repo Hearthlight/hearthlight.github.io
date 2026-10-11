@@ -14,7 +14,7 @@ export const QUARRY_DOOR = [-223.8, 26.8];
 export const QUARRY_GATE = [-225.4, 26.6];
 
 export const OLDMINE = {
-  id: 'oldmine', name: 'The Old Mine', lv: [13, 15], theme: 'mine', music: 'oldmine', slot: 2,
+  id: 'oldmine', name: 'The Old Mine', lv: [10, 12], theme: 'mine', music: 'oldmine', slot: 2,
   // under the evening sun: red rock, terraced walls
   outdoor: {
     zone: 'canyon', hour: 17.7, floor: 'canyon', rim: 'mesa', woods: 'mesa', cliffs: [1, 2, 4],
