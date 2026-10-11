@@ -401,19 +401,20 @@ export class Hud {
       const b = this.banner;
       const a = b.age < 0.5 ? b.age / 0.5 : b.age > 2.8 ? Math.max(0, (3.6 - b.age) / 0.8) : 1;
       ctx.globalAlpha = a;
-      // long (French) names go on two lines rather than off the screen
-      let sc = 2, title = splitTwo(b.title, W - 38, 2);
-      if (title.some((l) => measure(l, 2) > W - 38)) { sc = 1; title = [fitText(b.title, W - 38)]; }
-      const lh = 19, extra = (title.length - 1) * lh;
-      const sub = b.sub ? fitText(b.sub, W - 38) : '';
-      const tw = Math.min(W - 8, Math.max(...title.map((l) => measure(l, sc)), measure(sub)) + 30);
+      // a short shout (« Go! ») in big letters; anything longer is a line in bold over a smaller
+      // one, on a plate no wider than its words (as on Party’s big screen: party/announce.js)
+      const shout = measure(b.title, 2) <= W * 0.3, sc = shout ? 2 : 1, max = shout ? W - 38 : Math.min(W - 60, 300);
+      const title = (shout ? [b.title] : splitTwo(b.title, max - 10)).map((l) => (measure(l, sc, !shout) > max ? fitText(l, max - 10) : l));
+      const lh = shout ? 19 : 11, sub = b.sub ? fitText(b.sub, max) : '';
+      const tw = Math.min(W - 8, Math.max(...title.map((l) => measure(l, sc, !shout)), measure(sub)) + (shout ? 30 : 22));
+      const th = (shout ? 5 : 6) + title.length * lh + (sub ? 11 : 0) + (shout ? 0 : 2);
       const bx = Math.round(W / 2 - tw / 2), by = 12 + Math.round((1 - a) * -6);
-      ctx.fillStyle = 'rgba(30,20,36,0.55)';
-      ctx.fillRect(bx, by, tw, (sub ? 34 : 24) + extra);
+      ctx.fillStyle = shout ? 'rgba(30,20,36,0.55)' : 'rgba(30,20,36,0.7)';
+      ctx.fillRect(bx, by, tw, th);
       ctx.fillStyle = '#f6d38f';
-      ctx.fillRect(bx + 6, by + (sub ? 30 : 21) + extra, tw - 12, 1);
-      title.forEach((l, i) => drawText(ctx, l, W / 2, by + 4 + i * lh + (sc === 1 ? 4 : 0), { color: '#fff7e6', align: 'center', scale: sc, shadow: '#2a1f33' }));
-      if (sub) drawText(ctx, sub, W / 2, by + 22 + extra, { color: '#f6d38f', align: 'center' });
+      ctx.fillRect(bx + 6, by + th - 3, tw - 12, 1);
+      title.forEach((l, i) => drawText(ctx, l, W / 2, by + 4 + i * lh, { color: '#fff7e6', align: 'center', scale: sc, bold: !shout, shadow: '#2a1f33' }));
+      if (sub) drawText(ctx, sub, W / 2, by + 4 + title.length * lh + (shout ? -1 : 0), { color: '#f6d38f', align: 'center' });
       ctx.globalAlpha = 1;
     }
   }

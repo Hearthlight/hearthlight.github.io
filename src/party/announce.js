@@ -132,21 +132,26 @@ export class Announcer {
       ctx.fillStyle = c.color || '#fff3c4'; ctx.fillRect(R.x, y, 3, ph);
       lines.forEach((l, i) => drawText(ctx, l, R.x + 12, y + 6 + i * 11, { color: '#fff7e6' }));
     } else {
-      // a banner: big letters (two lines for a long name, small ones for a very long one)
-      let sc = 2, title = splitTwo(c.title, W - 44, 2);
-      if (title.some((l) => measure(l, 2) > W - 44)) { sc = 1; title = splitTwo(c.title, W - 44).map((l) => fitText(l, W - 44)); }
-      const subs = c.sub ? wrap(c.sub, W - 60).slice(0, 2) : [];
-      const lh = 9 * sc + 2, tw = Math.max(...title.map((l) => measure(l, sc)), ...subs.map((l) => measure(l)));
-      const pw = Math.min(W - 8, tw + 30), ph = 9 + title.length * lh + (subs.length ? subs.length * 10 + 2 : 0);
-      const R = this.rect = this.place(W, pw, ph, H * 0.2 - 5), y = R.y + rise;
+      // a banner: a short shout (« Go! », « Wave 3 ») in big letters; anything longer — a quest
+      // completed, a place freed, a level gained — is a line in bold over a smaller one, on a
+      // plate no wider than its words (it used to cross the screen in big letters)
+      const shout = isShout(c.title, W), sc = shout ? 2 : 1, max = shout ? W - 44 : Math.min(W - 60, 300);
+      const title = (shout ? [c.title] : splitTwo(c.title, max - 10)).map((l) => (measure(l, sc, !shout) > max ? fitText(l, max - 10) : l));
+      const subs = c.sub ? wrap(c.sub, max).slice(0, 2) : [];
+      const lh = shout ? 20 : 11, tw = Math.max(...title.map((l) => measure(l, sc, !shout)), ...subs.map((l) => measure(l)));
+      const pw = Math.min(W - 8, tw + (shout ? 30 : 22)), ph = (shout ? 9 : 8) + title.length * lh + (subs.length ? subs.length * 10 + 2 : 0);
+      const R = this.rect = this.place(W, pw, ph, shout ? H * 0.2 - 5 : H * 0.15), y = R.y + rise;
       ctx.fillStyle = 'rgba(18,12,24,0.78)'; ctx.fillRect(R.x, y, pw, ph);
       ctx.fillStyle = '#f6d38f'; ctx.fillRect(R.x + 6, y + ph - 3, pw - 12, 1);
-      title.forEach((l, i) => drawText(ctx, l, W / 2, y + 5 + i * lh, { color: '#fff7e6', align: 'center', scale: sc, shadow: '#2a1f33' }));
+      title.forEach((l, i) => drawText(ctx, l, W / 2, y + 5 + i * lh, { color: '#fff7e6', align: 'center', scale: sc, bold: !shout, shadow: '#2a1f33' }));
       subs.forEach((l, i) => drawText(ctx, l, W / 2, y + 6 + title.length * lh + i * 10, { color: '#f6d38f', align: 'center' }));
     }
     ctx.globalAlpha = 1;
   }
 }
+
+// a banner short enough to be shouted in big letters (under a third of the screen’s width)
+export const isShout = (title, W) => measure(title, 2) <= W * 0.3;
 
 // how long a note of this length stays (the time to read it)
 export const noteTime = (text) => clamp(1.5 + visibleLength(text) / 14, 4, 9);
