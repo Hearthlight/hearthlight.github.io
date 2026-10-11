@@ -7,8 +7,9 @@ import { drawText, measure, wrap } from '../engine/font.js';
 import { UI, fitText } from '../ui/ui.js';
 import { CLASSES, CLASS_ORDER } from '../combat/classes.js';
 import { drawClassIcon, drawGearIcon, drawMountIcon, drawPetIcon } from '../combat/icons.js';
-import { TREES, TALENT, ROW_NEED, canLearn, whyNot, pointsFor, picksOf, spent, spentIn, rankOf, valueAt } from '../combat/v4/talents.js';
-import { drawIcon, drawGlyph } from '../combat/v4/icons.js';
+import { TALENT, canLearn, pointsFor, picksOf, spent } from '../combat/v4/talents.js';
+import { drawGlyph } from '../combat/v4/icons.js';
+import { treeLayout, drawTree, drawInfo, drawWhy, pointsTag, pointsTagW, CELL } from '../ui/talentpage.js';
 import { itemName, itemDesc, UPGRADE, ROMAN, LEVEL_COLOR, BAG, itemBorder, itemTag, itemUpgrade, meltValue, isWorn, weaponLines } from '../combat/v3/gear.js';
 import { MOUNTS, MOUNT_ORDER, FOODS, foodIcon } from '../party/mounts.js';
 import { BUDDY_KINDS, BUDDY_ORDER } from '../party/buddies.js';
@@ -77,6 +78,7 @@ export class HeroTab {
 
   // the nearest item that way (straight lines first)
   nav(dir) {
+    if (this.page === 'talents' && this.talNav(dir)) return;
     const cur = this.items.find((i) => i.id === this.focus);
     if (!cur) return;
     const cx = cur.x + cur.w / 2, cy = cur.y + cur.h / 2;
@@ -91,6 +93,31 @@ export class HeroTab {
       if (score < bs) { bs = score; best = it; }
     }
     if (best) this.setFocus(best.id);
+  }
+
+  // the talents’ own arrows: ← → across the branches (a row’s two talents first), ↑ ↓ along a
+  // branch’s rows — its head above the first; past the last branch, the buttons beside the tree
+  talNav(dir) {
+    const L = this.talL, F = this.focus || '', side = dir === 'left' ? -1 : dir === 'right' ? 1 : 0;
+    const cur = L && L.cells.find((c) => 'tal:' + c.T.id === F), head = L && F.startsWith('br:') ? +F.slice(3) : -1;
+    const near = (list, cx) => list.reduce((a, c) => (!a || Math.abs(c.cx - cx) < Math.abs(a.cx - cx) ? c : a), null);
+    if (head >= 0) {
+      const H = L.heads[head + side];
+      if (side && !H) return side < 0;
+      if (side) this.setFocus('br:' + H.b);
+      else if (dir === 'down') this.setFocus('tal:' + near(L.cells.filter((c) => c.b === head && c.T.row === 1), 0).T.id);
+      return side !== 0 || dir === 'down';
+    }
+    if (!cur) return false;
+    if (side) {
+      const to = near(L.cells.filter((c) => c.T.row === cur.T.row && (c.cx - cur.cx) * side > 0), cur.cx);
+      if (to) this.setFocus('tal:' + to.T.id);
+      return !!to || side < 0;
+    }
+    const to = near(L.cells.filter((c) => c.b === cur.b && c.T.row === cur.T.row + (dir === 'up' ? -1 : 1)), cur.cx);
+    if (to) this.setFocus('tal:' + to.T.id);
+    else if (dir === 'up') this.setFocus('br:' + cur.b);
+    return true;
   }
 
   // (m: the mouse, when it's a click — where it landed)
@@ -256,53 +283,36 @@ export class HeroTab {
     help.forEach((l, i) => drawText(ctx, l, A.x, hy + i * 9, { color: '#b8a080' }));
   }
 
-  // ---- talents: three specialisations side by side, five rows each (the
-  // capstone is an ultimate); a row opens with the points spent in its branch
+  // ---- talents: the whole tree on one page (ui/talentpage.js) — the three branches side by
+  // side, five rows each (the capstone an ultimate; a row opens with the points spent in its
+  // branch) — and, beside it, what the one under the cursor does
   drawTalents(ctx, A) {
-    const W = this.wild, f = W.me.fighter, cls = f.clsId, trees = TREES[cls];
+    const W = this.wild, f = W.me.fighter, cls = f.clsId, touch = this.world.input.touchMode;
     const picks = picksOf(this.prof(), cls), pts = this.points();
-    const treeW = Math.floor(A.w * 0.64), colW = Math.floor(treeW / 3);
-    drawText(ctx, fitText(t('{hero} · level {n}', { hero: t(CLASSES[cls].name), n: shownLevel(f.level) }), treeW - 60), A.x, A.y, { color: BROWN });
-    drawText(ctx, t('Points: {n}', { n: pts }), A.x + treeW - 4, A.y, { color: pts ? '#4f955a' : UI.inkSoft, align: 'right' });
-    const top = A.y + 34, rowH = Math.max(22, Math.min(34, Math.floor((A.h - 36) / 5)));
+    const cw = Math.max(62, Math.min(80, Math.floor(A.w * 0.2))), treeW = cw * 3, tw = pointsTagW(pts);
+    drawText(ctx, fitText(t('{hero} · level {n}', { hero: t(CLASSES[cls].name), n: shownLevel(f.level) }), treeW - tw - 6), A.x, A.y + 2, { color: BROWN });
+    pointsTag(ctx, A.x + treeW - tw, A.y - 1, pts);
+    const L = this.talL = treeLayout(cls, A.x, A.y + 15, treeW, A.h - 15, cw);
+    drawTree(ctx, L, { picks, level: f.level, sel: this.selTal, time: this.t });
+    // (a branch’s head under the cursor says what the branch is about)
+    for (const H of L.heads) this.item('br:' + H.b, H.x + 2, H.y + 2, H.w - 3, H.h - 4, null, () => { this.selTal = '#' + H.b; });
     let firstCan = null;
-    trees.forEach((B, b) => {
-      const cx = A.x + b * colW, mid = cx + Math.floor(colW / 2), inB = spentIn(cls, picks, b);
-      // the branch: its icon, name and points
-      this.card(ctx, cx + 2, A.y + 11, colW - 4, 20, inB ? '#fff3c4' : '#efe0c0', '#3b2a22', inB > 0);
-      drawIcon(ctx, B.icon, cx + 3, A.y + 12, { dim: !inB });
-      drawText(ctx, fitText(t(B.name), colW - 30), cx + 24, A.y + 13, { color: BROWN });
-      drawText(ctx, inB + '/15', cx + 24, A.y + 22, { color: inB ? '#4f955a' : '#8a7a70' });
-      const pos = (T) => ({ x: Math.round(mid + (T.col === 0.5 ? 0 : T.col === 0 ? -1 : 1) * 13 - 9), y: top + (T.row - 1) * rowH });
-      for (const T of B.talents) if (T.row > 1) { const q = pos(T); ctx.fillStyle = inB >= ROW_NEED[T.row - 1] ? '#e0a526' : '#c9b89c'; ctx.fillRect(q.x + 8, q.y - (rowH - 18), 2, rowH - 18); }
-      for (let r = 2; r <= 5; r++) if (inB < ROW_NEED[r - 1]) drawText(ctx, String(ROW_NEED[r - 1]), cx + 5, top + (r - 1) * rowH + 5, { color: '#b8a080' });
-      for (const T of B.talents) {
-        const q = pos(T), rk = rankOf(picks, T.id), open = inB >= ROW_NEED[T.row - 1], can = canLearn(cls, picks, T.id, f.level);
-        if (this.selTal === T.id) { ctx.fillStyle = '#b8862a'; ctx.fillRect(q.x - 2, q.y - 2, 22, 22); }
-        if (T.ult) { ctx.fillStyle = rk ? '#ffd66b' : '#c9a77c'; ctx.fillRect(q.x - 1, q.y - 1, 20, 20); }
-        drawIcon(ctx, T.icon, q.x, q.y, { dim: !open || (!rk && !can), rank: rk, max: T.max, glow: can && !rk && Math.floor(this.t * 3) % 2 === 0, t: this.t });
-        this.item('tal:' + T.id, q.x, q.y, 18, 18, () => this.learn(T.id), () => { this.selTal = T.id; });
-        if (can && !firstCan) firstCan = 'tal:' + T.id;
-        if (!this.home && b === 0 && T.row === 1 && T.col === 0) this.home = 'tal:' + T.id;
-      }
-    });
+    for (const c of L.cells) {
+      const id = c.T.id, picked = this.selTal === id;
+      // (a finger picks first, and learns with a second tap — or the button)
+      this.item('tal:' + id, c.x, c.y, 18, CELL, touch && !picked ? null : () => this.learn(id), () => { this.selTal = id; });
+      if (!firstCan && canLearn(cls, picks, id, f.level)) firstCan = 'tal:' + id;
+      if (!this.home) this.home = 'tal:' + id;
+    }
     if (pts && firstCan) this.home = firstCan;
-    // what the selected one does, now and at its next rank
-    const dx = A.x + treeW + 8, dw = A.w - treeW - 8;
-    const T = this.selTal && TALENT[this.selTal];
-    let y = A.y + 12;
-    if (T && T.cls === cls) {
-      const rk = rankOf(picks, T.id), why = whyNot(cls, picks, T.id, f.level);
-      wrap(t(T.name), dw).slice(0, 2).forEach((l) => { drawText(ctx, l, dx, y, { color: T.ult ? '#b8862a' : BROWN }); y += 10; });
-      drawText(ctx, t('Rank {r}/{m}', { r: rk, m: T.max }), dx, y, { color: rk ? '#4f955a' : UI.inkSoft }); y += 12;
-      wrap(t(T.desc, { n: valueAt(T, Math.max(1, rk)) }), dw).slice(0, 9).forEach((l) => { drawText(ctx, l, dx, y, { color: UI.ink }); y += 10; });
-      if (rk > 0 && rk < T.max && T.n) { y += 2; wrap(t('Next rank: {what}', { what: t(T.desc, { n: valueAt(T, rk + 1) }) }), dw).slice(0, 3).forEach((l) => { drawText(ctx, l, dx, y, { color: '#7d4f93' }); y += 10; }); }
-      y += 4;
-      if (!why) this.btn(ctx, 'learn', dx, y, dw, 15, rk ? t('Rank up') : t('Learn it'), () => this.learn(T.id), '#4f955a');
-      else wrap(t(why, { n: ROW_NEED[T.row - 1] }), dw).slice(0, 2).forEach((l, i) => drawText(ctx, l, dx, y + 3 + i * 10, { color: why === 'Fully learned!' ? '#4f955a' : UI.inkSoft }));
-    } else wrap(t('Pick a talent to see what it does. A row opens once enough points sit in its branch; the last one is an ultimate ({key}).', { key: W.keyName('u') }), dw).slice(0, 7).forEach((l, i) => drawText(ctx, l, dx, y + i * 10, { color: UI.inkSoft }));
-    // start again
-    if (spent(picks)) this.btn(ctx, 'reset', dx, A.y + A.h - 15, dw, 15, this.asking('reset') ? t('Press again') : t('Reset talents'), () => this.twice('reset', () => W.progress.onMsg(W.me, { t: 'talentReset' })), this.asking('reset') ? '#c8454f' : '#8a7a98');
+    // what the picked one does, now and at its next rank, over its button (or why not) and
+    // the one that takes every point back — both always in the same place
+    const dx = A.x + treeW + 8, dw = A.w - treeW - 8, ry = A.y + A.h - 15, zh = 34, ay = ry - zh - 5, bh = touch ? 22 : 18;
+    const R = drawInfo(ctx, dx, A.y + 2, dw, ay - A.y - 6, { cls, picks, level: f.level, sel: this.selTal,
+      hint: t('Pick a talent to see what it does. A row opens once enough points sit in its branch; the last one is an ultimate ({key}).', { key: W.keyName('u') }) });
+    if (R && !R.why) this.btn(ctx, 'learn', dx, ay + zh - bh, dw, bh, R.rank ? t('Rank up') : t('Learn it'), () => this.learn(R.T.id), '#4f955a');
+    else if (R) drawWhy(ctx, dx, ay, dw, zh, R);
+    if (spent(picks)) this.btn(ctx, 'reset', dx, ry, dw, 15, this.asking('reset') ? t('Press again') : t('Reset talents'), () => this.twice('reset', () => W.progress.onMsg(W.me, { t: 'talentReset' })), this.asking('reset') ? '#c8454f' : '#8a7a98');
   }
 
   learn(id) {

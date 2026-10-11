@@ -12,8 +12,8 @@ import { MAX_LEN, clean } from '../party/chatfilter.mjs';
 import { LOOK_GROUPS, TREASURE_HATS, randomLook, cleanLook } from '../data/looks.js';
 import { CLASSES, CLASS_ORDER } from '../combat/classes.js';
 import { drawClassIcon, drawGearIcon, drawMountIcon, drawPetIcon } from '../combat/icons.js';
-import { roundIcon, drawIcon, drawGlyph } from '../combat/v4/icons.js';
-import { TREES, TALENT, ROW_NEED, canLearn, whyNot, rankOf, spentIn, valueAt } from '../combat/v4/talents.js';
+import { roundIcon, drawGlyph } from '../combat/v4/icons.js';
+import { treeLayout, drawTree, drawInfo, drawWhy, pointsTag } from '../ui/talentpage.js';
 import { itemName, itemDesc, UPGRADE, ROMAN, LEVEL_COLOR, BAG, itemBorder, itemTag, itemUpgrade, meltValue, isWorn, weaponLines } from '../combat/v3/gear.js';
 import { t, setLang, getLang, detectLang, onLang } from '../i18n.js';
 import { shownLevel, xpBar } from '../saga/levels.js';
@@ -1766,81 +1766,57 @@ function drawMenu() {
 }
 
 // ------------------------------------------------------------------ talents
-// three specialisations (tabs), five rows each: icons with their ranks, the
-// rows still locked, and what the picked talent does now and at its next rank
+// the whole tree on one page (ui/talentpage.js): the three branches side by side, the points
+// left to spend in sight, and what the picked talent does — under the tree on an upright
+// phone, beside it on a phone lying on its side — over a big « Learn it » that never moves
+// (a page too short for the tree and its words, a friend’s at home beside the video: the tree
+// alone, and the words on a sheet laid over the half the picked talent isn’t in)
 function drawTalents() {
-  ctx.fillStyle = 'rgba(15,10,22,0.85)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#1c1428'; ctx.fillRect(0, 0, W, H);
   regions.push({ kind: 'tap', id: 'scrim', x: 0, y: 0, w: W, h: H, fn: () => {} });
-  const P = S.prog, land = W > H;
-  const px = 4, pw = W - 8, py = 22, ph = H - 26;
-  panel(ctx, px, py, pw, ph);
-  if (!P) { drawText(ctx, t('Waiting for the big screen…'), W / 2, py + 40, { color: UI.inkSoft, align: 'center' }); pill(px + 8, py + ph - 22, pw - 16, 16, t('Done'), 'talDone', () => { S.menu = false; }, { color: '#4f955a' }); return; }
-  const cls = CLASSES[P.cls] ? P.cls : 'knight', trees = TREES[cls], picks = P.talents && !Array.isArray(P.talents) ? P.talents : {};
-  drawText(ctx, fitText(t('Talents — {hero}', { hero: t(CLASSES[cls].name) }), pw * 0.62), px + 8, py + 7, { color: INK });
-  drawText(ctx, t('Points: {n}', { n: P.points }), px + pw - 8, py + 7, { color: P.points ? '#4f955a' : UI.inkSoft, align: 'right' });
-  // the specialisations: tabs
-  if (S.talBranch == null) { let best = 0; trees.forEach((B, b) => { if (spentIn(cls, picks, b) > spentIn(cls, picks, best)) best = b; }); S.talBranch = best; }
-  const tabY = py + 19, tabH = 24, tabW = Math.floor((pw - 12) / 3);
-  trees.forEach((B, b) => {
-    const x = px + 6 + b * tabW, on = S.talBranch === b, n = spentIn(cls, picks, b);
-    ctx.fillStyle = on ? '#b8862a' : '#3b2a22'; ctx.fillRect(x + 1, tabY, tabW - 2, tabH);
-    ctx.fillStyle = on ? '#fff3c4' : '#e8d6b4'; ctx.fillRect(x + 2, tabY + 1, tabW - 4, tabH - (on ? 1 : 2));
-    drawIcon(ctx, B.icon, x + 4, tabY + 3, { dim: !on && !n });
-    drawText(ctx, fitText(t(B.name), tabW - 28), x + 25, tabY + 4, { color: on ? INK : '#6a5a50' });
-    drawText(ctx, n + '/15', x + 25, tabY + 14, { color: n ? '#4f955a' : '#8a7a70' });
-    tapArea('talB' + b, x, tabY, tabW, tabH, () => { S.talBranch = b; S.talSel = null; });
-  });
-  const B = trees[S.talBranch], inB = spentIn(cls, picks, S.talBranch);
-  // the tree: five rows
-  const treeW = land ? Math.floor(pw * 0.46) : pw - 12, top = tabY + tabH + 6;
-  const room = (land ? py + ph - 4 : py + ph - 128) - top;
-  const s = room >= 5 * 40 ? 2 : 1, cell = 18 * s, rowH = Math.max(cell + 4, Math.min(cell + 14, Math.floor(room / 5)));
-  const cx0 = px + 6 + Math.floor(treeW / 2);
-  const posOf = (T) => ({ x: Math.round(cx0 + (T.col === 0.5 ? 0 : T.col === 0 ? -1 : 1) * (cell * 0.5 + 10 * s) - cell / 2), y: top + (T.row - 1) * rowH });
-  // connectors first
-  for (const T of B.talents) {
-    if (T.row === 1) continue;
-    const q = posOf(T), open = inB >= ROW_NEED[T.row - 1];
-    ctx.fillStyle = open ? '#e0a526' : '#8a7a70';
-    ctx.fillRect(q.x + cell / 2 - 1, q.y - (rowH - cell), 2, rowH - cell);
+  const P = S.prog, land = W > H && W >= 330, shut = () => { S.menu = false; };
+  // (upright: a title bar, as on the Quest page — on its side the tree keeps the whole height)
+  const py = land ? 2 : 22, sheet = !land && H < 324, y0 = py + (land || sheet ? 3 : 4), y1 = H - (land || sheet ? 5 : 6);
+  panel(ctx, 1, py, W - 2, H - py - 2);
+  const cls = P && CLASSES[P.cls] ? P.cls : 'knight', title = P ? t('Talents — {hero}', { hero: t(CLASSES[cls].name) }) : t('Talents');
+  const head = (x, y, w) => drawText(ctx, measure(title) <= w ? title : fitText(t('Talents'), w), x, y, { color: land ? '#8a5234' : '#fff7e6' });
+  if (!land) {
+    ctx.fillStyle = '#20172a'; ctx.fillRect(0, 0, W, 22);
+    drawGlyph(ctx, 'star', 3, 3, 1);
+    if (!sheet || !P) head(22, 7, W - 50);
+    iconBtn(W - 24, 2, 20, 18, 'close', 'talDone', shut, { color: '#a8483a' });
   }
-  for (let r = 1; r <= 5; r++) {
-    const need = ROW_NEED[r - 1], open = inB >= need, y = top + (r - 1) * rowH;
-    if (!open) drawText(ctx, t('{n} pts', { n: need }), px + 8, y + cell / 2 - 4, { color: '#8a7a70' });
-  }
-  for (const T of B.talents) {
-    const q = posOf(T), r = rankOf(picks, T.id), open = inB >= ROW_NEED[T.row - 1], can = canLearn(cls, picks, T.id, P.level), sel = S.talSel === T.id;
-    if (sel) { ctx.fillStyle = '#fff3a6'; ctx.fillRect(q.x - 2, q.y - 2, cell + 4, cell + 4); }
-    if (T.ult) { ctx.fillStyle = r ? '#ffd66b' : '#b8862a'; ctx.fillRect(q.x - 1, q.y - 1, cell + 2, cell + 2); }
-    drawIcon(ctx, T.icon, q.x, q.y, { s, dim: !open || (!r && !can), rank: r, max: T.max, glow: can && !r && Math.floor(S.t * 3) % 2 === 0, t: S.t });
-    tapArea('tal' + T.id, q.x - 3, q.y - 3, cell + 6, cell + 6, () => { S.talSel = T.id; });
-  }
-  // what the picked talent does
-  const dx = land ? px + treeW + 12 : px + 8, dw = land ? pw - treeW - 20 : pw - 16;
-  const dy = land ? top : top + 5 * rowH + 2;
-  const T = S.talSel && TALENT[S.talSel];
-  if (T && T.cls === cls) {
-    const r = rankOf(picks, T.id);
-    drawText(ctx, fitText(t(T.name), dw - 40), dx, dy, { color: T.ult ? '#b8862a' : '#8a5234' });
-    drawText(ctx, t('Rank {r}/{m}', { r, m: T.max }), dx + dw, dy, { color: r ? '#4f955a' : UI.inkSoft, align: 'right' });
-    const say = (k) => t(T.desc, { n: valueAt(T, k) });
-    const lines = wrap(say(Math.max(1, r)), dw).slice(0, land ? 5 : 4);
-    lines.forEach((l, i) => drawText(ctx, l, dx, dy + 12 + i * 10, { color: INK }));
-    let ly = dy + 14 + lines.length * 10;
-    if (r > 0 && r < T.max && T.n) { const nx = wrap(t('Next rank: {what}', { what: say(r + 1) }), dw).slice(0, 2); nx.forEach((l, i) => drawText(ctx, l, dx, ly + i * 10, { color: '#7d4f93' })); ly += nx.length * 10 + 2; }
-    const why = whyNot(cls, picks, T.id, P.level);
-    if (!why) pill(dx, ly, dw, 18, r ? t('Rank up') : t('Learn it'), 'talLearn', () => { send({ t: 'talent', id: T.id }); buzz([20, 30, 20]); }, { color: '#4f955a' });
-    else wrap(t(why, { n: ROW_NEED[T.row - 1] }), dw).slice(0, 2).forEach((l, i) => drawText(ctx, l, dx, ly + 4 + i * 10, { color: why === 'Fully learned!' ? '#4f955a' : UI.inkSoft }));
-  } else {
-    drawText(ctx, fitText(t(B.name), dw), dx, dy, { color: '#8a5234' });
-    wrap(t(B.desc), dw).slice(0, 2).forEach((l, i) => drawText(ctx, l, dx, dy + 12 + i * 10, { color: INK }));
-    wrap(t('Tap a talent to see what it does'), dw).slice(0, 2).forEach((l, i) => drawText(ctx, l, dx, dy + 36 + i * 10, { color: UI.inkSoft }));
-  }
-  // reset (tap twice) & done (landscape: under the details, the tree keeps the whole height)
+  if (!P) { if (land) iconBtn(W - 27, y0, 20, 18, 'close', 'talDone', shut, { color: '#a8483a' }); drawText(ctx, t('Waiting for the big screen…'), W / 2, py + 40, { color: UI.inkSoft, align: 'center' }); return; }
+  const picks = P.talents && !Array.isArray(P.talents) ? P.talents : {}, any = Object.values(picks).some((n) => n > 0);
+  // on its side: three wide columns, the rest beside them; upright: the columns across the page
+  const cw = land ? Math.max(62, Math.min(92, Math.floor((W - 8) * 0.2))) : Math.min(96, Math.floor((W - 8) / 3));
+  const dx = land ? 4 + cw * 3 + 8 : 8, dw = W - (land ? 7 : 8) - dx, ty = land || sheet ? y0 : y0 + 20;
+  if (land) { head(dx, y0 + 5, dw - 26); iconBtn(W - 27, y0, 20, 18, 'close', 'talDone', shut, { color: '#a8483a' }); }
+  // the points left, and what takes them all back (tap twice) — up in the title bar on a short page
+  const bx = sheet ? 22 : dx, bw = sheet ? W - 50 : dw, by = sheet ? 3 : land ? y0 + 20 : y0, tw = pointsTag(ctx, bx, by, P.points, 16);
   if (S.talReset && S.t > S.talReset) S.talReset = 0;
-  const by = py + ph - 20, bx = land ? dx : px + 8, half = land ? Math.floor((dw - 6) / 2) : Math.floor((pw - 24) / 2);
-  pill(bx, by, half, 16, S.talReset ? t('Tap again') : t('Reset'), 'talReset', () => { if (!S.talReset) { S.talReset = S.t + 3; return; } S.talReset = 0; send({ t: 'talentReset' }); buzz(20); }, { color: S.talReset ? '#c8454f' : '#8a7a98' });
-  pill(bx + half + (land ? 6 : 8), by, half, 16, t('Done'), 'talDone', () => { S.menu = false; }, { color: '#4f955a' });
+  if (any) {
+    const label = S.talReset ? t('Tap again') : t('Reset'), rw = Math.min(bw - tw - 6, Math.max(measure(t('Tap again')), measure(t('Reset'))) + 14);
+    pill(bx + bw - rw, by, rw, 16, fitText(label, rw - 6), 'talReset', () => { if (!S.talReset) { S.talReset = S.t + 3; return; } S.talReset = 0; send({ t: 'talentReset' }); buzz(20); }, { color: S.talReset ? '#c8454f' : '#8a7a98' });
+  }
+  const L = treeLayout(cls, 4, ty, land ? cw * 3 : W - 8, land || sheet ? y1 - ty : Math.max(183, Math.min(232, y1 - ty - 138)), cw);
+  drawTree(ctx, L, { picks, level: P.level, sel: S.talSel, time: S.t });
+  for (const B of L.heads) tapArea('talB' + B.b, B.x, B.y, B.w, B.h, () => { S.talSel = '#' + B.b; });
+  for (const c of L.cells) tapArea('tal' + c.T.id, c.r.x, c.r.y, c.r.w, c.r.h, () => { S.talSel = c.T.id; });
+  // what is picked, and its button — or why not — always in the same place
+  let iy = land ? by + 20 : ty + L.h + 5, bh = y1 - iy >= 170 ? 30 : 26, ay = y1 - bh, aw = dw;
+  if (sheet) {
+    if (S.talSel == null) return;
+    const pick = L.cells.find((c) => c.T.id === S.talSel), sh = Math.min(120, Math.floor((y1 - ty) / 2)), sy = pick && pick.y + 10 > ty + (y1 - ty) / 2 ? ty : y1 - sh;
+    panel(ctx, 2, sy, W - 4, sh);
+    tapArea('talSheet', 2, sy, W - 4, sh, () => {});
+    iy = sy + 5; bh = 26; ay = sy + sh - 5 - bh; aw = dw - 24;
+    iconBtn(dx + dw - 20, ay + 4, 20, 18, 'close', 'talShut', () => { S.talSel = null; }, { color: '#6a5a7a' });
+  }
+  const ih = ay - 4 - iy;
+  const R = drawInfo(ctx, dx, iy, dw, ih, { cls, picks, level: P.level, sel: S.talSel, hint: sheet ? '' : t('Tap a talent to see what it does'), big: ih >= 90 });
+  if (R && !R.why) bigPill(dx, ay, aw, bh, [R.rank ? t('Rank up') : t('Learn it')], 'talLearn', () => { send({ t: 'talent', id: R.T.id }); buzz([20, 30, 20]); }, '#4f955a');
+  else if (R) drawWhy(ctx, dx, ay, aw, bh, R);
 }
 
 // ------------------------------------------------------------------ gear
