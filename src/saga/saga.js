@@ -23,7 +23,7 @@ import { StepGames } from './games7.js';
 import { TeacupLine } from './teacup.js';
 import { NPCS } from '../data/npcs.js';
 
-const GAME_STEPS = new Set(['whack', 'lamps', 'kite', 'net', 'carry', 'rhythm', 'piles', 'seek', 'snap', 'defend', 'chase']);
+const GAME_STEPS = new Set(['whack', 'lamps', 'kite', 'net', 'carry', 'rhythm', 'piles', 'seek', 'snap', 'defend', 'chase', 'toss', 'herd', 'tug', 'cook']);
 
 const TALK_R = 1.7;
 const FRESH = () => ({ v: 1, ch: 1, q: {}, f: {}, open: ['valley'], lit: [], dun: {}, got: {}, seen: {} });

@@ -619,5 +619,20 @@ export const CH3 = {
           } },
       ],
     },
+    // ---- round 12: mini-games (rounds with a score and three ranks: saga/games12.js)
+    c3_herd: {
+      title: 'Fluffhorn Round-Up',
+      brief: 'A storm is coming, and the nomads’ fluffhorns are scattered over the grazing ground. Drive them into {key}the pen{/}, south-west of the yurts.',
+      kind: 'side', repeat: true, giver: 'tuya', lv: 11, when: (S) => S.done('c3_nomads'), dust: 8,
+      offer: async (S) => {
+        await S.say('tuya', 'Storm tonight, and my fluffhorns are all over the grazing ground.', { expr: 'worried' });
+        await S.say('tuya', 'They run from strangers. So {key}walk behind them{/}: they will run into {key}the pen{/}, south-west of here.', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'herd', text: 'Drive the fluffhorns into {key}the pen{/}, on the grazing ground south-west of the yurts', at: [-93.5, 55.4], r: 7, pen: [-86.2, 55.4], n: 6, per: 2, time: 60, model: 'fluffhorn', cry: 'squeak',
+          rule: 'They run away from you: walk behind them, into the pen. {a} whistles.', verb: 'Whistle', hint: 'Walk behind them, towards the pen — whistle and they bolt', goldText: 'A golden fluffhorn! It counts for 3!',
+          run: async (S) => { await S.say('tuya', 'All in before the rain. You herd like a grandmother!', { expr: 'love' }); } },
+      ],
+    },
   },
 };

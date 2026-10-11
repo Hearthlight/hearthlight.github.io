@@ -209,7 +209,7 @@ export async function autoplay({ until = null, maxSteps = 400, side = false, log
       // (walking, not running: straight to the spot)
       await tp(st.back[0], st.back[1]); await D().step(10, 1 / 60);
       await tp(st.at[0], st.at[1]); await D().step(30, 1 / 60);
-    } else if (['whack', 'lamps', 'kite', 'net', 'carry', 'rhythm', 'piles', 'seek', 'snap', 'defend', 'chase'].includes(st.do)) {
+    } else if (['whack', 'lamps', 'kite', 'net', 'carry', 'rhythm', 'piles', 'seek', 'snap', 'defend', 'chase'].includes(st.do) || S.games.runs.has(qid)) {
       // (the mini-games: stand where they’re played a moment — then the bots win them)
       const tg = S.targetOf(qid) || (st.at && { x: st.at[0], z: st.at[1] });
       if (tg) await tp(tg.x, tg.z + 0.5);

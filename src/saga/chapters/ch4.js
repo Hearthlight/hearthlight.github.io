@@ -496,5 +496,22 @@ export const CH4 = {
           } },
       ],
     },
+    // ---- round 12: mini-games (rounds with a score and three ranks: saga/games12.js)
+    c4_concert: {
+      title: 'The Royal Concert',
+      brief: 'The Royal Choir is whole again, and it needs a conductor. {key}Keep the beat{/} for the frogs, in front of the lily throne.',
+      kind: 'side', repeat: true, giver: 'newton', after: 'c4_choir', lv: 16, dust: 15,
+      offer: async (S) => {
+        await S.say('newton', 'The choir is complete! But with no conductor, it is only… ribbiting.', { expr: 'worried' });
+        await S.say('newton', '{key}Keep the beat{/} for them, in front of the throne. His Majesty is listening.', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'rhythm', text: 'Keep the beat for the {key}Royal Choir{/}, in front of the lily throne', at: [300.5, 47.6], r: 6, bpm: 100, need: 0.6,
+          beats: [0, 1, 2, 3, 4, 5, 5.5, 6, 8, 9, 10, 10.5, 11, 12, 13, 13.5, 14, 16, 17, 17.5, 18, 19, 20, 20.5, 21, 22, 23, 24],
+          go: 'The Royal Concert!', fail: 'The frogs lose the tune… From the top!',
+          onHit: (S, n) => { audio.sfx('croak', { volume: 0.4, pitch: [0, 4, 7, 12][n % 4] - 6 }); },
+          run: async (S) => { await S.say('croakington', '{shake}ENCORE!{/}{p} That is a royal order.', { expr: 'happy', hop: true }); } },
+      ],
+    },
   },
 };

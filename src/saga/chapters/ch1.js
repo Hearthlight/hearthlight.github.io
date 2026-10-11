@@ -13,6 +13,7 @@ import { TROUPE_MODELS } from '../../combat/v7/troupe.js';
 import { t } from '../../i18n.js';
 import { audio } from '../../engine/audio.js';
 import { CLASSES } from '../../combat/classes.js';
+import { buildLeafPile } from '../../models/v7/autumn8.js';
 
 // the valley's places for this chapter
 export const PLAZA = { x: 91.5, z: 72.5 };
@@ -496,6 +497,35 @@ export const CH1 = {
           if (S.plays('c1_pelicanrush')) await S.say('perkins', 'AGAIN? You’re making my pelicans look bad. They’ve formed a union.', { expr: 'shock' });
           else await S.say('perkins', 'All seven delivered? Already? I need to sit down.', { expr: 'love' });
         } },
+      ],
+    },
+    // ---- round 12: mini-games (rounds with a score and three ranks: saga/games12.js)
+    c1_tug: {
+      title: 'Buttercup Pulls Back',
+      brief: 'Buttercup, Bram’s cow, has his best rope and thinks it’s a game. Beat her at {key}tug-of-war{/} in Bram’s barnyard.',
+      kind: 'side', repeat: true, giver: 'bram', lv: 3, when: (S) => S.has('ember1'), dust: 8,
+      offer: async (S) => {
+        await S.say('bram', 'Buttercup has my best rope, and she won’t let go.', { expr: 'worried' });
+        await S.say('bram', 'Beat her at {key}tug-of-war{/}, here in my yard. Mind: she cheats.', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'tug', text: 'Beat Buttercup at {key}tug-of-war{/}, in {key}Bram’s barnyard{/}', at: [24.5, 54], side: 1, foe: 'buttercup', time: 60, cry: 'honk',
+          rule: 'Tap {a} fast to pull. When Buttercup digs in, hands off!', hint: 'Pull fast — hands off when she digs in!', lost: 'Buttercup wins. Moo.',
+          run: async (S) => { await S.say('bram', 'She let go! First time since she was a calf.', { expr: 'love' }); } },
+      ],
+    },
+    c1_piles: {
+      title: 'A Whistle in the Leaves',
+      brief: 'Juniper dropped her ranger’s whistle in the leaf piles round her camp. {key}Jump into the piles{/} to find it.',
+      kind: 'side', repeat: true, giver: 'juniper', lv: 3, when: (S) => S.has('ember2'), dust: 15,
+      offer: async (S) => {
+        await S.say('juniper', 'I dropped my {key}ranger’s whistle{/} in the leaf piles. Don’t tell the owls.', { expr: 'worried' });
+        await S.say('juniper', 'Go on: {key}jump into the piles{/} round my camp!', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'piles', text: 'Jump into the {key}leaf piles{/} round Juniper’s camp to find her whistle', piles: [[70, 28.6], [73.2, 29.2], [76.2, 27.9], [79, 29.5], [82, 31.2], [85, 32.9]], find: 4,
+          model: (r3d, i) => { const g = buildLeafPile(r3d, i); g.scale.setScalar(1.5); return g; }, found: 'The whistle!', finds: ['Just leaves.', 'A very cross hedgehog.', 'An acorn. Not a whistle.'],
+          run: async (S) => { await S.say('juniper', 'PHWEEE! Still works. Sorry about your ears.', { expr: 'happy' }); } },
       ],
     },
   },

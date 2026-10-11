@@ -651,5 +651,21 @@ export const CH5 = {
           run: async (S) => { await S.say('shellington', 'I heard it… all the way from here.{p} My mother… sang me that song.', { expr: 'love', speed: 0.5 }); } },
       ],
     },
+    // ---- round 12: mini-games (rounds with a score and three ranks: saga/games12.js)
+    c5_coconuts: {
+      title: 'Auntie’s Coconut Shy',
+      brief: 'Auntie Saffron has set up a coconut shy on the dunes south of Palm Oasis. {key}Throw coconuts{/} at the gloom boards — but never at Humphrey’s portrait.',
+      kind: 'side', repeat: true, giver: 'saffron', lv: 22, when: (S) => S.done('c5_oasis'), dust: 8,
+      offer: async (S) => {
+        await S.say('saffron', 'Three throws for a coin!{p} …For you? Free. I am getting soft.', { expr: 'smug' });
+        await S.say('saffron', 'Knock down the {key}gloom boards{/}, on the dunes {key}south of the oasis{/}. Hit Humphrey’s portrait, and you pay.', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'toss', text: 'Knock down the {key}gloom boards{/} at Saffron’s coconut shy, south of Palm Oasis', at: [-150, 187], w: 9, time: 45, friend: 'camel', shot: 'coconut', cry: 'honk', puff: '#e9cf9b',
+          every: 0.7, up: 0.85, friends: 0.2, ranks: [12, 22, 32],
+          rule: 'Stand in front of a board and press {a}. Gloom: 1, gold: 3 — never Humphrey!', verb: 'Throw', hint: 'Line up with a board, then throw — not at Humphrey!', oops: 'Not Humphrey! −2',
+          run: async (S) => { await S.say('saffron', 'What an arm! I would hire you, if I paid anyone.', { expr: 'love' }); } },
+      ],
+    },
   },
 };

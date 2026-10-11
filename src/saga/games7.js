@@ -22,6 +22,7 @@ import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { GAMES8 } from './games8.js';
 import { GAMES9 } from './games9.js';
+import { GAMES12 } from './games12.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -68,8 +69,8 @@ export class StepGames {
   targetOf(qid) { const R = this.runs.get(qid); return R && GAMES[R.st.do].target ? GAMES[R.st.do].target(this, R) : null; }
   drawLabels(ctx, v) { for (const R of this.runs.values()) if (GAMES[R.st.do].draw) GAMES[R.st.do].draw(this, R, ctx, v); }
   drawUi(ctx, W, H) { for (const R of this.runs.values()) if (GAMES[R.st.do].drawUi) GAMES[R.st.do].drawUi(this, R, ctx, W, H); }
-  // (the harness: done at once)
-  bot(qid) { const R = this.runs.get(qid); if (R) this.win(R); }
+  // (the harness: done at once — or the way the kind itself says: a round played to its result)
+  bot(qid) { const R = this.runs.get(qid), f = R && GAMES[R.st.do].bot; if (f) f(this, R); else if (R) this.win(R); }
 }
 
 // a little bar over someone’s head (lantern oil, a kite string’s pull)
@@ -380,6 +381,6 @@ const GAMES = {
     },
   },
 };
-// (chapter 8's: fireflies, jars, the beat)
-Object.assign(GAMES, GAMES8, GAMES9);
+// (chapter 8's: fireflies, jars, the beat — chapter 9's — and the rounds of games12.js)
+Object.assign(GAMES, GAMES8, GAMES9, GAMES12);
 void drawText;

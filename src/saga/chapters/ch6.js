@@ -542,5 +542,20 @@ export const CH6 = {
           } },
       ],
     },
+    // ---- round 12: mini-games (rounds with a score and three ranks: saga/games12.js)
+    c6_dango: {
+      title: 'Granny’s Dango',
+      brief: 'Granny Mochi’s bathers come out of the pool hungry. Thread her {key}dango{/} on the skewer in the order shown, at her stall south-east of the Hot Springs.',
+      kind: 'side', repeat: true, giver: 'mochi', lv: 27, when: (S) => S.done('c6_tow'), dust: 8,
+      offer: async (S) => {
+        await S.say('mochi', 'A hot bath makes them hungry. And I have only two hands!', { expr: 'worried' });
+        await S.say('mochi', 'Thread my {key}dango{/} for me, at the stall {key}south-east of the pool{/}. In the right order, mind!', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'cook', text: 'Thread {key}dango{/} in the right order at Granny Mochi’s stall, south-east of the Hot Springs', at: [412.5, 79.2], r: 8, crates: [[407.6, 80.6], [412.5, 83.6], [417.4, 80.6]], time: 60,
+          rule: 'Take a dango at its crate and put it on the skewer — in the order shown.', verb: 'Take', putVerb: 'Thread it', hint: 'Bring the dango the skewer asks for next', wrong: 'Not that one yet!',
+          run: async (S) => { await S.say('mochi', 'Not one out of order! You may lick the spoon.', { expr: 'love' }); } },
+      ],
+    },
   },
 };

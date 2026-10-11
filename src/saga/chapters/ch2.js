@@ -12,6 +12,7 @@ import { buildSickTree, buildRootDoor, buildLampPost } from '../../models/v7/pro
 import { ROOTWAY, ROOTWAY_DOOR, FALLS } from '../dungeons/rootway.js';
 import { buildBarkbeard } from '../../combat/v7/woods.js';
 import { audio } from '../../engine/audio.js';
+import { buildLanternBug } from '../../models/v7/games12.js';
 
 // the woods’ places
 const CAMP = { x: 97, z: -20 };                          // the foresters’ camp (its tents by the waystone)
@@ -400,6 +401,34 @@ export const CH2 = {
       },
       steps: CAIRNS.map(([x, z], k) => ({ do: 'go', text: ['Stack the {key}first cairn{/}, on the road east of the mills', 'Stack the {key}second cairn{/}, north-east of the lake', 'Stack the {key}last cairn{/}, far east along the road'][k], at: [x, z + 1.2], r: 2,
         run: async (S) => { S.P.world.fx.emit('sparkle', x, 1, z, 10, { color: '#e8d6b4' }); audio.sfx('place', { volume: 0.7 }); } })),
+    },
+    // ---- round 12: mini-games (rounds with a score and three ranks: saga/games12.js)
+    c2_range: {
+      title: 'Flour Fight',
+      brief: 'The mills turn again, and Barley has painted gloom faces on old mill boards. {key}Throw flour bags{/} at them on Breezy Hill — but never at a hen.',
+      kind: 'side', repeat: true, giver: 'barley', lv: 9, when: (S) => S.done('c2_mills'), dust: 8,
+      offer: async (S) => {
+        await S.say('barley', 'I painted {key}gloom faces{/} on old mill boards. Come and throw flour bags at them!', { expr: 'happy' });
+        await S.say('barley', 'My range is {key}west of the high mill{/}. And don’t hit the hens: they hold grudges.', { expr: 'worried' });
+      },
+      steps: [
+        { do: 'toss', text: 'Knock down the {key}gloom boards{/} at Barley’s range, west of the high mill', at: [48.5, -116.8], w: 9, time: 45, friend: 'hen', shot: 'sack', cry: 'cluck', puff: '#fff7e6',
+          rule: 'Stand in front of a board and press {a}. Gloom: 1, gold: 3 — never the hens!', verb: 'Throw', hint: 'Line up with a board, then throw — not at the hens!', oops: 'Not the hen! −2',
+          run: async (S) => { await S.say('barley', 'Flour everywhere! Best day the hill has had in years.', { expr: 'love' }); } },
+      ],
+    },
+    c2_fireflies: {
+      title: 'Lights for Tansy',
+      brief: 'Tansy has lantern jars and nothing to put in them. {key}Net fireflies{/} for her in the glade by the foresters’ camp, when they glow.',
+      kind: 'side', repeat: true, giver: 'tansy', lv: 6, when: (S) => S.done('c2_road'), dust: 15,
+      offer: async (S) => {
+        await S.say('tansy', 'A Lamplighter needs light. I have jars… and no fireflies.', { expr: 'sad' });
+        await S.say('tansy', '{key}Net some{/} for me, in the glade {key}by the camp{/}? Swing when they glow!', { expr: 'happy' });
+      },
+      steps: [
+        { do: 'net', text: 'Net {key}fireflies{/} when they glow, in the glade by the foresters’ camp', at: [100, -24.5], r: 5, n: 6, per: 2, flies: 11, model: buildLanternBug,
+          run: async (S) => { await S.say('tansy', 'Look at them blink! This one is called Hoo-hoo.', { expr: 'love' }); } },
+      ],
     },
   },
 };
