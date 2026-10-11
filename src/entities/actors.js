@@ -81,7 +81,7 @@ export class Player {
     if (this.squash > 0) this.squash = Math.max(0, this.squash - dt * 7);
     this.model.root.position.set(this.pos.x, (this.baseY || 0) + this.jumpY, this.pos.z);
     this.model.setAir(this.jumpY);
-    this.model.update(dt, { moving: this.moving && !this.airborne && !this.sliding && !this.down, speed: this.running ? 1 : 0.45, dir: this.moving && !this.down ? this.dir : null, expr: this.expr, armPose: this.armPose, armPoseL: this.armPoseL, air: this.airborne && !this.down ? this.jumpV : null, squash: this.squash, slide: this.sliding, down: this.down || this.sleeping, sleep: this.sleeping, lean: this.lean, sit: this.sitting });
+    this.model.update(dt, { moving: this.moving && !this.airborne && !this.sliding && !this.down, speed: this.running ? 1 : 0.45, dir: this.moving && !this.down ? this.dir : null, expr: this.expr, armPose: this.armPose, armPoseL: this.armPoseL, air: this.airborne && !this.down ? this.jumpV : null, squash: this.squash, slide: this.sliding, down: this.down || this.sleeping, sleep: this.sleeping, lean: this.lean, sit: this.sitting, pose: this.pose });
   }
 
   face(x, z) {
@@ -204,7 +204,7 @@ export class Npc {
       talking: this.talking && this.speaking, mood: this.mood,
       expr: this.forceExpr || null,
       air: this.jumpY > 0 || this.jumpV > 0 ? this.jumpV : null, squash: this.squash,
-      sit, lean,
+      sit, lean, pose: this.pose,
       // (sawing strokes, loaves set out, a sip of coffee now and then, a net held up to mend)
       armPose: act === 'fish' ? -0.9 : act === 'guitar' ? -0.8 : act === 'festival' ? -1.2 : act === 'bench' && this.id === 'mabel' ? -0.9
         : act === 'saw' ? -0.8 + Math.sin(clk * 8) * 0.32 : act === 'bread' ? -1.15 + Math.sin(clk * 1.7) * 0.14

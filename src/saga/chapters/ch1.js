@@ -46,9 +46,11 @@ async function lightsOut(S) {
     await st.wait(1.2);
     st.heroesEmote('question');
     await dark;
+    const A = st.act;
+    A.play('hollis', 'look');
     await st.say('hollis', 'Hm? It’s gone all dark!', { expr: 'worried' });
     st.hop('pip');
-    await st.say('pip', 'Mister Mayor…{p} there’s a {shake}THEATRE{/} in the sky.', { expr: 'shock', emote: 'exclaim' });
+    await st.say('pip', 'Mister Mayor…{p} there’s a {shake}THEATRE{/} in the sky.', { expr: 'shock', emote: 'exclaim', beats: [() => { A.play('pip', 'behold'); A.react('heroes', 'gasp', { from: [SHIP.x - 8, SHIP.z - 12] }); }] });
     // the Gloomstage comes down out of the clouds over Old Glimmer
     const ship = st.prop('ship', buildGloomstage(P.r3d, { fx: (x, y, z) => P.world.fx.emit('smoke', x, y, z, 1, { color: '#6a4a8e' }) }), SHIP.x + 26, SHIP.y + 12, SHIP.z - 20);
     void ship;
@@ -60,27 +62,44 @@ async function lightsOut(S) {
     await glide;
     st.mark('ship');
     st.shake(0.4);
-    // Crumble, in the spotlight
+    // Crumble, up through a trapdoor into his spotlight: he bows, and presents…
     const bx = SHIP.x + BALCONY.x, by = SHIP.y + BALCONY.y, bz = SHIP.z + BALCONY.z;
-    st.actor('crumble', bx - 1.2, bz, { face: { x: 0, z: 1 } }).n.seatY = by;
+    st.actor('crumble', bx - 1.2, bz, { face: { x: 0, z: 1 }, hidden: true }).n.seatY = by;
     st.punch(32);
     await st.cam(bx, bz - by + 0.6, { dur: 0.8 });
+    await A.trap('crumble', bx - 1.2, bz, { face: { x: 0, z: 1 }, door: false });
+    A.spot('herald', 'crumble', { r: 0.9, h: 6, dim: 0, pool: false });
     st.sfx('fanfare', { volume: 0.7 });
-    st.hop('crumble');
-    await st.say('crumble', 'LADIES AND GENTLEMEN!{p} The greatest diva of all time: {key}Duchess Gloria Gloomsworth{/}!', { shake: 1, expr: 'happy' });
-    // Her Radiance
-    const d = st.actor('duchess', bx + 0.6, bz, { face: { x: 0, z: 1 } });
+    A.play('crumble', 'bow');
+    await st.say('crumble', 'LADIES AND GENTLEMEN!{p} The greatest diva of all time: {key}Duchess Gloria Gloomsworth{/}!', { shake: 1, expr: 'happy', beats: [() => A.play('crumble', 'present')] });
+    // Her Radiance: a star’s lift under the one spotlight, her fan in hand — and she sings
+    const d = st.actor('duchess', bx + 0.6, bz, { face: { x: 0, z: 1 }, hidden: true });
     d.n.seatY = by;
+    A.give('duchess', 'fan');
+    A.spotOff('herald', true);
+    A.spot('diva', 'duchess', { r: 1.1, h: 7, dim: 0, pool: false });
     st.flash('#f4eaff', 0.3);
     st.sfx('chime', { volume: 0.8 });
+    await A.trap('duchess', bx + 0.6, bz, { face: { x: 0, z: 1 }, lift: 1 });
+    A.play('duchess', 'sing'); A.play('crumble', 'applaud');
     await st.say('duchess', '♪ Oh, Marigold Coooove… ♪', { expr: 'smug', speed: 0.6 });
+    A.rest('crumble'); A.play('duchess', 'fist');
     await st.say('duchess', 'Thirty years ago, this dreary little cove {shake}booed{/} me off its stage!', { expr: 'angry' });
+    // (the word nobody says: she freezes, he hides his head)
+    A.play('duchess', 'gasp'); A.play('crumble', 'cower');
     await st.say('rosa', 'There was a hen, I think.', { expr: 'neutral' });
     st.shake(0.7);
+    A.push('duchess', { mul: 1.5 }); A.play('duchess', 'tantrum');
     await st.say('duchess', '{big}WE DO NOT SPEAK OF THE HEN!{/}', { shake: 1.5, expr: 'angry' });
-    await st.say('duchess', 'So I shall put out every light in the world…{p} until only {wave}my{/} spotlight is left!', { expr: 'smug' });
-    await st.say('duchess', 'And I’ll start with your lighthouse.{p} Crumble! The Snuffer!', { expr: 'angry' });
+    await A.pull();
+    A.rest('crumble'); A.play('duchess', 'flourish');
+    await st.say('duchess', 'So I shall put out every light in the world…{p} until only {wave}my{/} spotlight is left!', { expr: 'smug', beats: [() => { A.play('duchess', 'behold'); A.face('duchess', 'happy'); }] });
+    A.play('duchess', 'point', { mirror: true });
+    await st.say('duchess', 'And I’ll start with your lighthouse.{p} Crumble! The Snuffer!', { expr: 'angry', beats: [() => { A.play('duchess', 'shoo', { mirror: true }); A.play('crumble', 'gasp'); }] });
+    A.play('crumble', 'salute');
     await st.say('crumble', 'At once, Your Gloominess!', { expr: 'happy', hop: true });
+    A.trapOut('crumble', { beat: 0.12 });
+    A.play('duchess', 'proud');
     // the Grand Snuffer comes down on Old Glimmer
     st.punch(st.basePpu());
     await st.cam(LIGHTHOUSE.x, LIGHTHOUSE.z - 11, { dur: 0.9 });
@@ -107,7 +126,10 @@ async function lightsOut(S) {
     st.mark('murk');
     await st.wait(0.4);
     await st.cam(bx, bz - by + 0.6, { dur: 1, ppu: st.basePpu() });
-    await st.say('duchess', 'Enjoy the intermission, darlings!{p} Mwah!', { expr: 'happy' });
+    A.play('duchess', 'curtsy');
+    await st.say('duchess', 'Enjoy the intermission, darlings!{p} Mwah!', { expr: 'happy', beats: [() => A.play('duchess', 'kiss')] });
+    // (her spotlight snaps off: gone)
+    A.spotOff('diva');
     st.hide('duchess'); st.hide('crumble');
     st.sfx('whoosh', { volume: 0.7 });
     await st.move('ship', { x: SHIP.x + 60, y: SHIP.y + 16, z: SHIP.z - 70 }, 4, { ease: 'lin' });
@@ -116,7 +138,9 @@ async function lightsOut(S) {
     await st.cam(PLAZA.x, PLAZA.z, { dur: 1.2 });
     await st.title('Lights Out', 'Chapter 1');
     // (what just happened, said plainly — then the order: come and talk to Hollis)
+    A.play('hollis', 'slump');
     await st.say('hollis', 'She put out {key}Old Glimmer{/}… our lighthouse.', { expr: 'sad' });
+    A.rest('hollis');
     await st.say('hollis', 'And the {key}gloom{/} is creeping in with the purple Murk.', { expr: 'worried' });
     st.heroesFace(PLAZA.x + 1.6, PLAZA.z - 1.4);
     await st.say('hollis', 'June left me something for a day like this. It’s for you: {key}come and talk to me{/}!', { expr: 'happy' });
@@ -147,33 +171,62 @@ async function theLantern(S) {
 // ------------------------------------------------------------------ the Understudies' first audition, on the beach
 async function understudies(S) {
   await S.scene(async (st) => {
-    const [x, z] = BEACH;
-    S.P.gatherAt(x, z - 2.4, 1.6);
-    st.actor('minnow', x + 0.2, z + 1.2, { face: { x: 0, z: -1 } });
-    st.actor('fidget', x - 1.5, z + 1.5, { face: { x: 0.4, z: -1 } });
-    st.actor('brick', x + 1.9, z + 1.6, { face: { x: -0.3, z: -1 } });
-    await st.cam(x, z, { dur: 0, ppu: st.basePpu() * 2 });
-    st.heroesFace(x, z + 1.4);
-    await st.say('minnow', 'HALT, villagers! We are the Duchess’s next great villains…', { expr: 'smug', hop: true });
-    st.hop('minnow'); st.hop('fidget', 0.1); st.hop('brick', 0.2);
+    const [x, z] = BEACH, A = st.act, TRIO = ['fidget', 'minnow', 'brick'];
+    // (the heroes downstage, their backs to us: the public — the act plays upstage, to them and to us)
+    S.P.gatherAt(x, z + 1.9, 1.3);
+    const at = { fidget: [x - 1.7, z - 0.9], minnow: [x + 0.2, z - 1.2], brick: [x + 2.1, z - 0.9] };
+    TRIO.forEach((id, i) => st.actor(id, x + 10.6 + i * 1.9, z - 1.1, { face: { x: -1, z: 0 } }));
+    await st.cam(x, z + 0.1, { dur: 0, ppu: st.basePpu() * 2 });
+    A.keylight([x, z - 1]);
+    st.heroesFace(x + 8, z - 1.1);
+    // they march on from the wings, in step, and turn to their public
+    A.all(TRIO, 'march');
+    st.sfx('fanfare', { volume: 0.4, pitch: 5 });
+    await Promise.all(TRIO.map((id) => st.walk(id, at[id][0], at[id][1], { speed: 7 })));
+    for (const id of TRIO) st.face(id, at[id][0], z + 6);
+    st.heroesFace(x, z - 1.2);
+    A.rest(TRIO); A.play('minnow', 'stomp');
+    await st.say('minnow', 'HALT, villagers! We are the Duchess’s next great villains…', { expr: 'smug' });
+    // the team pose: Minnow in the middle, the others presenting him — Brick the wrong way round first
+    A.troupe(['minnow', 'fidget', 'brick'], ['vee', 'present', 'present'], { flub: 1, lag: 0.1 });
     await st.say('fidget', '{big}THE UNDERSTUDIES!{/}', { expr: 'happy' });
     st.sfx('boing', { volume: 0.7 });
-    st.emote('fidget', 'sweat'); st.emote('brick', 'dots');
+    st.emote('fidget', 'sweat');
+    A.play('fidget', 'shrug'); A.play('minnow', 'facepalm');
     await st.say('fidget', 'Well… she hasn’t hired us yet.', { expr: 'worried' });
+    A.rest('brick'); A.play('minnow', 'fist');
     await st.say('minnow', 'She will after this! Brick, {key}the ember{/}!', { expr: 'angry' });
-    await st.say('minnow', 'Behold…{p} {wave}THE JUGGLING ACT!{/}', { expr: 'smug' });
-    for (let k = 0; k < 3; k++) { st.hop('brick', k * 0.3); st.sfx('boing', { volume: 0.4, pitch: k * 3 }); }
+    A.give('brick', 'ember'); A.play('brick', 'behold');
+    A.play('minnow', 'flourish');
+    await st.say('minnow', 'Behold…{p} {wave}THE JUGGLING ACT!{/}', { expr: 'smug', beats: [() => { A.give('brick', null); A.juggle('brick', ['#ffd66b', '#f4a4b6', '#9fdcff']); A.play('brick', 'juggle'); A.play('minnow', 'present'); A.play('fidget', 'applaud'); st.sfx('boing', { volume: 0.4, pitch: 3 }); }] });
     await st.wait(1.2);
+    // the ember gets away: three heads follow it east
     st.sfx('whoosh', { volume: 0.6 });
+    A.toss('brick', 0, x + 13, z + 2, { up: 3.5, dur: 0.9 });
+    A.rest(['minnow', 'fidget']);
+    for (const id of TRIO) st.face(id, x + 14, at[id][1] + 0.4);
+    st.heroesFace(x + 14, z);
     await st.say('narrator', 'The ember flies off… and rolls into a crack in the rocks, east of the beach.');
+    A.juggle('brick', null); A.rest('brick');
+    A.play('fidget', 'think');
     await st.say('fidget', 'Was that part of the act?', { expr: 'worried' });
+    st.face('brick', at.brick[0], z + 6);
+    A.push('brick', { mul: 1.5 }); A.play('brick', 'slump');
     await st.say('brick', 'No.', { expr: 'sad' });
+    await A.pull();
+    A.play('minnow', 'gasp');
     await st.say('minnow', '{shake}AFTER IT!{/}', { expr: 'shock', shake: 1 });
-    st.walk('minnow', GROTTO_DOOR[0], GROTTO_DOOR[1], { run: true });
-    st.walk('fidget', GROTTO_DOOR[0] - 0.8, GROTTO_DOOR[1], { run: true });
-    await st.walk('brick', GROTTO_DOOR[0] + 0.8, GROTTO_DOOR[1], { run: true });
+    // exeunt in a panic — and Fidget finds the one rock on the beach
+    A.all(TRIO, 'panic');
+    st.walk('minnow', x + 13, z + 0.6, { run: true });
+    st.walk('brick', x + 13.6, z + 1.4, { speed: 3.8 });
+    await st.walk('fidget', x + 4.4, z + 0.2, { speed: 5.4 });
+    await A.play('fidget', 'trip');
     st.heroesEmote('dots');
-    await st.wait(0.4);
+    await A.play('fidget', 'getup');
+    A.play('fidget', 'panic');
+    await st.walk('fidget', x + 13, z + 0.2, { speed: 6.4 });
+    for (const id of TRIO) st.hide(id);
     // (the scene ends on the order: where the ember went, and to follow)
     await st.say('narrator', 'Follow them into the rocks {key}under Old Glimmer{/}!');
   });
@@ -246,13 +299,18 @@ R('stage').run = async (S, d, r) => {
   if (G3) d.setGate(G3, false);
   const c = mid(d, r);
   await S.scene(async (st) => {
+    const A = st.act;
     st.actor('minnow', c.x, c.z - 4.2, { face: { x: 0, z: 1 } });
     st.actor('fidget', c.x - 2.2, c.z - 3.6, { face: { x: 0.2, z: 1 } });
     st.actor('brick', c.x + 2.4, c.z - 3.5, { face: { x: -0.2, z: 1 } });
-    await st.cam(c.x, c.z - 1.5, { dur: 0.9 });
+    await st.cam(c.x, c.z - 3, { dur: 0.9, ppu: st.basePpu() * 2 });
+    // their own spotlight snaps on; a bow, and the three of them juggle (one after the other)
+    A.spot('act', [c.x, c.z - 3.8], { r: 3.6, h: 8, dim: 0, pool: false });
     st.sfx('fanfare', { volume: 0.5, pitch: -5 });
-    await st.say('minnow', 'WELCOME to the Understudies’ audition!{p} {wave}THE JUGGLING ACT!{/}', { expr: 'happy', hop: true });
-    await st.say('minnow', 'And YOU are our volunteers! This won’t hurt!{p} Much!', { expr: 'smug' });
+    A.play('minnow', 'bow');
+    await st.say('minnow', 'WELCOME to the Understudies’ audition!{p} {wave}THE JUGGLING ACT!{/}', { expr: 'happy', beats: [() => { for (const [i, id] of ['minnow', 'fidget', 'brick'].entries()) A.after(i * 0.25, () => { A.juggle(id); A.play(id, 'juggle'); }); }] });
+    A.juggle('minnow', null); A.play('minnow', 'stomp');
+    await st.say('minnow', 'And YOU are our volunteers! This won’t hurt!{p} Much!', { expr: 'smug', beats: [() => { A.face('minnow', 'happy'); A.play('minnow', 'laugh'); A.react('heroes', 'recoil', { from: [c.x, c.z - 4.2], step: 0.35 }); }] });
     await st.title('The Understudies', 'their Juggling Act', 2.2);
   });
   // the show: they fight as a trio (one bar for the three)
@@ -270,19 +328,31 @@ R('stage').tick = (S, d, r) => {
     await S.P.wait(1.4);
     for (const e of r.foes) if (e.fading > 0) { e.fading = 0; e.remove(); }
     await S.scene(async (st) => {
-      st.actor('minnow', c.x - 1, c.z - 6, { face: { x: 0, z: 1 } });
-      st.actor('fidget', c.x - 3, c.z - 5.6, { face: { x: 0.3, z: 1 } });
-      st.actor('brick', c.x + 1.4, c.z - 5.8, { face: { x: -0.3, z: 1 } });
-      await st.cam(c.x, c.z - 3, { dur: 0.7 });
-      st.emote('brick', 'dots'); st.emote('fidget', 'sweat');
-      await st.say('minnow', 'That…{p} was a dress rehearsal.', { expr: 'sad' });
+      const A = st.act;
+      // (downstage, where there is room to lie: flat out, all three — Minnow picks himself up first,
+      // and his dignity a beat later)
+      st.actor('minnow', c.x - 1, c.z - 5.5, { face: { x: 0, z: 1 } });
+      st.actor('fidget', c.x - 3, c.z - 4.2, { face: { x: 0.3, z: 1 } });
+      st.actor('brick', c.x + 1.4, c.z - 3.9, { face: { x: -0.3, z: 1 } });
+      A.play('minnow', 'prone'); A.play('fidget', 'out'); A.play('brick', 'out');
+      A.spot('act', [c.x - 0.8, c.z - 5], { r: 3.8, h: 8, dim: 0, pool: false, quiet: true });
+      await st.cam(c.x - 0.8, c.z - 4.6, { dur: 0.7, ppu: st.basePpu() * 2 });
+      st.emote('brick', 'star'); st.emote('fidget', 'sweat');
+      A.play('minnow', 'getup');
+      await st.say('minnow', 'That…{p} was a dress rehearsal.', { expr: 'sad', beats: [() => { A.play('minnow', 'proud'); A.face('minnow', 'smug'); }] });
+      A.play('fidget', 'rise').then(() => { A.give('fidget', 'ember'); A.play('fidget', 'behold'); });
       await st.say('fidget', 'Quick! {key}The ember{/}, to Mister Crumble!', { expr: 'cry' });
+      A.play('minnow', 'behold'); A.play('brick', 'rise', { delay: 0.5 });
       await st.say('minnow', 'Understudies — {shake}EXIT STAGE LEFT!{/}', { expr: 'angry', shake: 0.6 });
       const G4 = d.gate('g4');
       if (G4) d.setGate(G4, true);
       const up = { x: d.ox + 24, z: d.oz + 30 };
+      // two of them bolt; Brick comes round, looks for the others, and lumbers after
+      A.play('minnow', 'panic'); A.play('fidget', 'panic');
       st.walk('minnow', up.x - 1, up.z, { run: true, via: [[c.x - 1, c.z - 8.5]] });
       st.walk('fidget', up.x, up.z, { run: true, via: [[c.x, c.z - 8.5]] });
+      await A.play('brick', 'look', { rate: 2 });
+      A.play('brick', 'panic');
       await st.walk('brick', up.x + 1, up.z, { run: true, via: [[c.x + 1, c.z - 8.5]] });
     });
     audio.jingle('questDone');
@@ -299,20 +369,31 @@ R('lair').run = async (S, d, r) => {
   r.boss = e;
   C.bounds = { x: c.x, z: c.z + 2.5, rx: r.w / 2 - 2, rz: r.h / 2 - 1.5 };
   await S.scene(async (st) => {
+    const A = st.act, bot = A.bot(e.obj);
     await st.cam(c.x, c.z + 0.5, { dur: 0.9 });
     st.sfx('thud', { volume: 0.8 }); st.shake(0.5);
-    await st.say('crumble', 'HALT, heroes! You have reached…{p} {big}THE BOSS ROOM!{/}', { shake: 1 });
+    await st.say('crumble', 'HALT, heroes! You have reached…{p} {big}THE BOSS ROOM!{/}', { shake: 1, beats: [() => { bot.stomp(); A.react('heroes', 'recoil', { from: [c.x, c.z], step: 0.4 }); }] });
+    // (it does what he says, as he says it)
+    A.after(0.9, () => bot.snuff()); A.after(2, () => bot.stomp());
     await st.say('crumble', 'Behold the SNUFFBOT 3000! It snuffs! It stomps!', { expr: 'happy' });
-    st.actor('minnow', c.x - 3, c.z + 6, { face: { x: 0.4, z: -1 } });
-    st.actor('brick', c.x - 1.4, c.z + 6.3, { face: { x: 0.2, z: -1 } });
+    // Minnow and Brick run in from the side, the ember held high
+    st.actor('minnow', c.x - 6.4, c.z + 4.6, { face: { x: 1, z: -0.4 } });
+    st.actor('brick', c.x - 7.6, c.z + 5.4, { face: { x: 1, z: -0.4 } });
+    A.give('minnow', 'ember'); A.play('minnow', 'behold');
+    st.walk('minnow', c.x - 3.6, c.z + 2.4, { run: true });
+    await st.walk('brick', c.x - 4.6, c.z + 3.6, { run: true });
+    st.face('minnow', c.x, c.z + 1.6); st.face('brick', c.x, c.z + 2.6);
+    A.play('brick', 'beg');
     await st.say('minnow', 'Mister Crumble! We brought {key}the ember{/}! Can we be in the show?', { expr: 'happy', hop: true });
-    await st.say('crumble', 'Splendid! Into the Snuffbot it goes.{p} Now shoo: this is a SOLO.', { expr: 'smug' });
+    // the Snuffbot helps itself — and waves them off
+    bot.snuff().then(() => { A.give('minnow', null); A.rest('minnow'); st.flash('#ffd66b', 0.3); st.sfx('pickup', { volume: 0.6 }); });
+    await st.say('crumble', 'Splendid! Into the Snuffbot it goes.{p} Now shoo: this is a SOLO.', { expr: 'smug', beats: [() => { bot.shoo(); A.play('minnow', 'recoil'); }] });
+    A.play('brick', 'slump');
     await st.say('brick', 'Aw.', { expr: 'sad' });
     st.walk('minnow', c.x - 4, c.z + 12, { run: true });
-    await st.walk('brick', c.x - 2, c.z + 12, { run: true });
+    await st.walk('brick', c.x - 2, c.z + 12, { speed: 3.6 });
     st.hide('minnow'); st.hide('brick');
-    st.flash('#ffd66b', 0.3);
-    await st.say('crumble', 'Snuffbot…{p} {shake}SNUFF THEM!{/}', { expr: 'angry', shake: 1 });
+    await st.say('crumble', 'Snuffbot…{p} {shake}SNUFF THEM!{/}', { expr: 'angry', shake: 1, beats: [() => { bot.stomp(); bot.puff(8); }] });
     await st.title('Crumble’s Snuffbot 3000', 'the boss of the Glimmer Grotto', 2.2);
   });
   e.state = 'chase'; e.timer = 1.2;
@@ -336,13 +417,17 @@ R('lair').tick = (S, d, r) => {
     d.anims.push((tm) => { if (Math.random() < 0.08) S.P.world.fx.emit('smoke', bx + (Math.random() - 0.5), 1.2, bz, 1, { color: '#6a6070' }); void tm; });
     d.lights.push({ x: bx, y: 3.4, z: bz + 1.4, color: '#ffe0b0', power: 1.4, dist: 8 });
     await S.scene(async (st) => {
-      const a = st.actor('crumble', bx, bz, { face: { x: 0, z: 1 } });
+      const A = st.act, a = st.actor('crumble', bx, bz, { face: { x: 0, z: 1 }, hidden: true });
       a.n.seatY = 1.1;
       await st.cam(bx, bz + 0.5, { dur: 0.6, ppu: st.basePpu() * 2 });
+      // he pops out of the wreck in a puff of soot: a fist — then, at the pause, begging
       st.sfx('boing', { volume: 0.8 });
-      await st.say('crumble', 'The Duchess will hear about this!{p} …Please don’t tell her.', { expr: 'cry', emote: 'sweat' });
-      st.sfx('whoosh', { volume: 0.7 });
-      for (let k = 0; k < 20; k++) { a.n.seatY = 1.1 + k * 0.45; await st.wait(0.05); }
+      await A.trap('crumble', bx, bz, { face: { x: 0, z: 1 }, color: '#6a6070', door: false });
+      A.spot('herald', 'crumble', { r: 1.1, h: 7, dim: 0, pool: false, quiet: true });
+      A.play('crumble', 'fist');
+      await st.say('crumble', 'The Duchess will hear about this!{p} …Please don’t tell her.', { expr: 'angry', emote: 'sweat', beats: [() => { A.play('crumble', 'beg'); A.face('crumble', 'cry'); }] });
+      // (a rope from the flies hauls him off)
+      await A.ropeOut('crumble', { h: 9 });
       st.hide('crumble');
       st.fx('sparkle', c.x, 1.2, c.z + 1, 20, { color: '#ffd66b' });
       await st.say('narrator', 'The {key}last ember{/} rolls out of the wreck and under the back door. After it!');

@@ -22,6 +22,7 @@ const HW = 12, HH = 11, HD = 12;
 const HZ = HD / 2;
 const ZS = HD / 8; // depth scale vs. the original 8-px-deep head (for hand-placed tufts)
 const HEAD_FLAT = 0.45;
+const HIP = 7;   // where the upper body bends (px from the ground)
 
 // A box with rounded edges & corners that keeps BoxGeometry's six face groups
 // and UVs, so painted faces still land where they should.
@@ -352,13 +353,19 @@ export class CharModel {
     const shirtBackM = this.mat({ map: T('shirtB' + L.top + L.topColor + (L.topColor2 || ''), () => shirtBack(L, 8)) });
     const shirtTop = this.mat({ color: tc.l });
     const shirtUnder = this.mat({ color: tc.d });
-    this.torso = box(8, 5, 5, [shirtSide, shirtSide, shirtTop, shirtUnder, front, shirtBackM], 0, 9.5, 0);
+    // (everything above the hips hangs from one pivot there, so a scene’s actor can bow — applyPose)
+    const upper = new THREE.Group();
+    upper.position.set(0, HIP * P, 0);
+    body.add(upper);
+    this.upper = upper;
+    const up = (o) => { o.position.y -= HIP * P; upper.add(o); return o; };
+    this.torso = up(box(8, 5, 5, [shirtSide, shirtSide, shirtTop, shirtUnder, front, shirtBackM], 0, 9.5, 0));
     if (L.top === 'coat' || L.top === 'apron') {
       // long coat / apron hem
       box(8.4, 2.2, 5.4, this.mat({ color: L.top === 'apron' ? '#fbf6ea' : tc.m }), 0, 6.4, L.top === 'apron' ? 0.3 : 0);
     }
-    if (L.top === 'hoodie') box(6, 3, 2, this.mat({ color: tc.d }), 0, 11.5, -3.2);
-    if (L.acc === 'scarf') box(9, 2, 6, this.mat({ color: t2.m }), 0, 12, 0);
+    if (L.top === 'hoodie') up(box(6, 3, 2, this.mat({ color: tc.d }), 0, 11.5, -3.2));
+    if (L.acc === 'scarf') up(box(9, 2, 6, this.mat({ color: t2.m }), 0, 12, 0));
 
     // arms (pivot at shoulders y=12)
     this.arms = [];
@@ -366,7 +373,7 @@ export class CharModel {
     for (const sx of [-5, 5]) {
       const pivot = new THREE.Group();
       pivot.position.set(sx * P, 12 * P, 0);
-      body.add(pivot);
+      up(pivot);
       box(2, 4, 3, sleeve, 0, -2, 0, pivot);
       box(2, 1.2, 2.6, mSkin, 0, -4.6, 0, pivot);
       this.arms.push(pivot);
@@ -376,7 +383,7 @@ export class CharModel {
     // the flattening follows the camera rather than the character's facing
     const neck = new THREE.Group();
     neck.position.set(0, 12 * P, 0);
-    body.add(neck);
+    up(neck);
     this.unspin = new THREE.Group();
     const flat = new THREE.Group();
     flat.scale.z = HEAD_FLAT;
@@ -1122,6 +1129,35 @@ export class CharModel {
     this.faceMat.map = this.faceTex[expr] || this.faceTex.neutral;
   }
 
+  // A pose of the stage’s acting vocabulary, over the frame’s own: a0 / a1 the arms ([forward,
+  // outward], radians — a0 is on the screen’s left when the actor faces us), l0 / l1 the legs
+  // (forward), bend / twist / tilt the upper body at the hips, lean / roll / turn the whole
+  // body from the feet, x / y its place (tiles), sq a squash, hx / hy / hz the head (nod, turn,
+  // tilt), flat 0..1 on the back (−1: on the face). null: back to the model’s own.
+  applyPose(ps) {
+    const b = this.body, u = this.upper, h = this.head, A = this.arms, L = this.legs;
+    if (!ps) {
+      this.posed = false;
+      b.rotation.y = 0; b.rotation.z = 0; b.position.x = 0; u.rotation.set(0, 0, 0); h.rotation.x = 0; h.rotation.y = 0;
+      return;
+    }
+    this.posed = true;
+    if (ps.a0) { A[0].rotation.x = -ps.a0[0]; A[0].rotation.z = -ps.a0[1]; }
+    if (ps.a1) { A[1].rotation.x = -ps.a1[0]; A[1].rotation.z = ps.a1[1]; }
+    if (ps.l0 !== undefined) L[0].rotation.x = -ps.l0;
+    if (ps.l1 !== undefined) L[1].rotation.x = -ps.l1;
+    const f = ps.flat || 0, turn = ps.turn || 0, tw = ps.twist || 0, sq = ps.sq || 0;
+    b.rotation.x += (ps.lean || 0) - f * Math.PI / 2;
+    b.rotation.z = ps.roll || 0; b.rotation.y = turn;
+    b.position.x = ps.x || 0; b.position.y += (ps.y || 0) + Math.abs(f) * 0.2;
+    if (sq) { b.scale.x *= 1 + sq * 0.14; b.scale.z *= 1 + sq * 0.14; b.scale.y *= 1 - sq * 0.2; }
+    u.rotation.set(ps.bend || 0, tw, ps.tilt || 0);
+    h.rotation.x = ps.hx || 0; h.rotation.z += ps.hz || 0; h.rotation.y = 0;
+    // (the head stays flattened along the camera’s depth whichever way the body has turned)
+    const F = this.facing + turn + tw;
+    this.unspin.rotation.y = -F; this.spin.rotation.y = F + (ps.hy || 0);
+  }
+
   // state: { moving: bool, speed: 0..1 (walk=0.5, run=1), dir: {x,z}, talking: bool }
   update(dt, state = {}) {
     if (state.dir && (state.dir.x || state.dir.z)) this.targetFacing = Math.atan2(state.dir.x, state.dir.z);
@@ -1183,6 +1219,10 @@ export class CharModel {
     if (!moving) this.head.rotation.z = Math.sin(t * 1.3 + this.root.id) * 0.03;
     else this.head.rotation.z = 0;
     this.head.position.y = !moving ? Math.round(Math.sin(t * 2.2 + this.root.id) * 0.5) * 0.4 * P : 0;
+
+    // a scene’s acting (saga/acting.js): a whole pose laid over this frame’s — nobody else passes one
+    if (state.pose) this.applyPose(state.pose);
+    else if (this.posed) this.applyPose(null);
 
     // face: blinking & talking
     if (state.expr) { this.setExpression(state.expr); return; }

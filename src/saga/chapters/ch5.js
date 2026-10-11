@@ -149,34 +149,54 @@ async function nestTalk(S) {
   await S.say('shellington', 'And under the Bell… sleeps the {key}Great Hearth{/}… of the South.', { expr: 'worried', speed: 0.5 });
 }
 
+// the Understudies in their swim caps (and out of them again: their models are kept)
+const TRIO = ['minnow', 'fidget', 'brick'];
+function swimCaps(st, on) {
+  for (const [i, id] of TRIO.entries()) { const a = st.actorOf(id), m = a && a.n.model; if (m && m.setLook) m.setLook(on ? { ...a.n.def.look, hat: 'swimcap', hatColor: ['pink', 'sky', 'mustard'][i] } : a.n.def.look); }
+}
 async function waterBallet(S) {
   await S.scene(async (st) => {
-    const P = S.P, [bx, bz] = BALLET;
-    await st.cam(bx - 4, bz + 1, { dur: 1, ppu: st.basePpu() });
+    const [bx, bz] = BALLET, A = st.act, Y = -0.55, N = {};
+    await st.cam(bx, bz + 0.4, { dur: 1, ppu: st.basePpu() * 2 });
     st.music('villain');
-    const cap = { minnow: '#f4a4b6', fidget: '#9fdcff', brick: '#fff3a6' };
-    for (const [i, id] of ['minnow', 'fidget', 'brick'].entries()) {
-      const a = st.actor(id, bx - 1.5 + i * 1.5, bz, { face: { x: -1, z: 0.3 } });
-      if (a && a.n && a.n.model && a.n.model.setLook) a.n.model.setLook({ ...a.n.def.look, hat: 'swimcap', hatColor: ['pink', 'sky', 'mustard'][i] });
-      if (a && a.n) a.n.seatY = -0.55;
-      void cap;
-    }
-    for (let k = 0; k < 12; k++) st.fx('water', bx - 3 + Math.random() * 6, 0.3, bz - 1.5 + Math.random() * 3, 2);
-    await st.say('minnow', 'Understudies! Positions! And a-one, and a-two, and…{p} LIFT!', { expr: 'happy' });
-    st.hop('minnow');
-    st.sfx('splash', { volume: 0.7 });
-    for (let k = 0; k < 16; k++) st.fx('splash', bx + Math.random() * 2 - 1, 0.4, bz + Math.random() - 0.5, 1);
-    await st.say('brick', 'Brick is doing… the deep part.', { expr: 'sleepy' });
-    const b = st.actorOf('brick');
-    if (b && b.n) b.n.seatY = -1.4;
-    st.sfx('water', { volume: 0.6 });
-    await st.say('fidget', 'Minnow! The Duchess said GUARD the temple. This is a WATER BALLET!', { expr: 'angry' });
-    st.emote('fidget', 'exclaim');
-    await st.say('minnow', 'The Wick Brigade! With the lantern! Understudies: exit… stage…{p} DOWN!', { expr: 'shock', hop: true });
-    st.sfx('splash', { volume: 0.9, pitch: -4 });
-    for (const id of ['minnow', 'fidget', 'brick']) { const a = st.actorOf(id); if (a && a.n) a.n.seatY = -2.2; st.fx('splash', bx, 0.4, bz, 10); }
-    await st.wait(0.6);
-    for (const id of ['minnow', 'fidget', 'brick']) st.hide(id);
+    for (const [i, id] of TRIO.entries()) { N[id] = st.actor(id, bx - 1.5 + i * 1.5, bz, { face: { x: 0, z: 1 } }).n; N[id].seatY = Y; }
+    // (up and down in the water, with the splash that goes with it)
+    const dip = (id, y, dur = 0.3, delay = 0) => { const n = N[id], y0 = n.seatY; return A.tw(dur, (e) => { n.seatY = y0 + (y - y0) * e; }, () => st.fx('splash', n.pos.x, 0.4, n.pos.z, 8), delay); };
+    swimCaps(st, true);
+    try {
+      for (let k = 0; k < 12; k++) st.fx('water', bx - 3 + Math.random() * 6, 0.3, bz - 1.5 + Math.random() * 3, 2);
+      // the routine: arms up in a row, a turn each in canon, Minnow beating time…
+      A.all(TRIO, 'vee', { lag: 0.2 });
+      A.after(0.7, () => A.troupe(TRIO, 'twirl', { lag: 0.3 })).then(() => A.play('minnow', 'conduct'));
+      await st.say('minnow', 'Understudies! Positions! And a-one, and a-two, and…{p} LIFT!', { expr: 'happy', beats: [() => {
+        // …and the lift: Brick goes under, and up comes Minnow on his head
+        st.sfx('splash', { volume: 0.7 });
+        dip('brick', -1.5, 0.25);
+        A.glide('brick', bx - 1.5, bz + 0.1, 0.3);
+        dip('minnow', 0.75, 0.45, 0.35);
+        A.play('minnow', 'vee'); A.play('fidget', 'present', { mirror: true });
+      }] });
+      A.extra('bubbles', () => { if (Math.random() < 0.25) st.fx('water', N.brick.pos.x + (Math.random() - 0.5) * 0.6, 0.3, bz + 0.3, 1); });
+      await st.say('brick', 'Brick is doing… the deep part.', { expr: 'sleepy' });
+      st.sfx('water', { volume: 0.6 });
+      // (Fidget thrashes the water; Minnow wobbles on his perch, and comes down)
+      A.play('fidget', 'tantrum');
+      for (const k of [0.3, 0.8, 1.3]) A.after(k, () => st.fx('splash', N.fidget.pos.x, 0.4, bz + 0.3, 6));
+      A.play('minnow', 'wobble').then(() => { dip('minnow', Y, 0.3); A.endExtra('bubbles'); A.glide('brick', bx + 1.5, bz, 0.4); dip('brick', Y, 0.4, 0.3); });
+      await st.say('fidget', 'Minnow! The Duchess said GUARD the temple. This is a WATER BALLET!', { expr: 'angry' });
+      st.emote('fidget', 'exclaim');
+      A.play('minnow', 'gasp');
+      await st.say('minnow', 'The Wick Brigade! With the lantern! Understudies: exit… stage…{p} DOWN!', { expr: 'shock', beats: [() => {
+        // they hold their noses and go under one by one — Brick’s hand waves goodbye
+        st.sfx('splash', { volume: 0.9, pitch: -4 });
+        A.play('minnow', 'think'); A.play('fidget', 'think');
+        dip('minnow', -2.2, 0.35); dip('fidget', -2.2, 0.35, 0.25);
+        A.play('brick', 'behold'); dip('brick', -1.3, 0.3, 0.5);
+      }] });
+      await A.play('brick', 'wave', { delay: 0.5 });
+      await dip('brick', -2.2, 0.3);
+      for (const id of TRIO) st.hide(id);
+    } finally { swimCaps(st, false); }
     st.music(null);
     await st.say('snap', 'they swam off to the Sunken Bell Temple! the big one with the dome!', { expr: 'shock', speed: 1.8 });
     await st.say('shellington', 'The clapper… fell into the {key}Old Forum{/}.{p} Ask {key}Tariq{/}… to take you there.', { expr: 'neutral', speed: 0.5 });
@@ -235,14 +255,23 @@ async function snuffedAgain(S) {
     st.music('villain');
     await st.fade(0, 0.6);
     st.mark('setback');
-    await st.say('croakington', 'Hm? Who blocks our sun?{p} …Oh no.', { expr: 'shock' });
+    const A = st.act;
+    A.play('croakington', 'look');
+    await st.say('croakington', 'Hm? Who blocks our sun?{p} …Oh no.', { expr: 'neutral', beats: [() => { A.play('croakington', 'gasp'); A.face('croakington', 'shock'); }] });
+    // Her Radiance rises on her balcony, in her spotlight, fan in hand
     const bx = SX + BALCONY.x * 0.8, by = SY + BALCONY.y * 0.8, bz = SZ + BALCONY.z * 0.8;
-    st.actor('duchess', bx, bz, { face: { x: 0, z: 1 } }).n.seatY = by;
-    await st.cam(bx, bz - by + 2.5, { dur: 0.8 });
+    st.actor('duchess', bx, bz, { face: { x: 0, z: 1 }, hidden: true }).n.seatY = by;
+    A.give('duchess', 'fan');
+    A.spot('diva', 'duchess', { r: 1, h: 6, dim: 0, pool: false });
+    await st.cam(bx, bz - by + 0.9, { dur: 0, ppu: st.basePpu() * 2 });
+    st.sfx('select', { volume: 0.3, pitch: 4 });
+    await A.trap('duchess', bx, bz, { face: { x: 0, z: 1 }, lift: 0.8 });
+    A.play('duchess', 'flourish').then(() => A.play('duchess', 'proud'));
     await st.say('duchess', 'Every Hearth they light, I shall simply {key}snuff again{/}. Did I not SAY so, darlings?', { expr: 'smug' });
+    A.play('duchess', 'stomp').then(() => A.play('duchess', 'point', { mirror: true }));
     await st.say('duchess', 'Crumble! The Snuffer!', { expr: 'angry' });
     // the Grand Snuffer comes down on the lily throne
-    await st.cam(THRONE[0], THRONE[1] - 8, { dur: 0.8 });
+    await st.cam(THRONE[0], THRONE[1] - 8, { dur: 0.8, ppu: st.basePpu() });
     st.prop('snuffer', buildSnuffer(P.r3d), THRONE[0], 16, THRONE[1] + 0.2);
     st.sfx('chain', { volume: 0.6 });
     await st.move('snuffer', { y: 4.2 }, 1.8);
@@ -256,7 +285,9 @@ async function snuffedAgain(S) {
     await st.lights(0.5, 0.6, 1.4);
     await st.move('snuffer', { y: 16 }, 1.4);
     st.dropProp('snuffer');
-    await st.say('croakington', 'Achoo.{p} …We are cold again.', { expr: 'sad' });
+    A.play('croakington', 'duck', { rate: 2 });
+    await st.say('croakington', 'Achoo.{p} …We are cold again.', { expr: 'sad', beats: [() => A.play('croakington', 'shiver')] });
+    A.spotOff('diva', true);
     st.hide('duchess');
     await st.move('ship', { x: SX + 40, y: SY + 10, z: SZ - 30 }, 3.2, { ease: 'lin' });
     st.dropProp('ship');
@@ -310,10 +341,15 @@ R('swimmers').run = async (S, d, r) => {
   r.pool = pool; r.routineT = 3;
   C.bounds = { x: c.x, z: c.z + 1, rx: r.w / 2 - 1.5, rz: r.h / 2 - 1 };
   await S.scene(async (st) => {
+    // (the fight’s own swimmers play it: Minnow, Fidget, Brick)
+    const A = st.act, SW = pool.members.map((q, i) => A.rig('sw' + i, q.obj).id);
     await st.cam(c.x, c.z + 2, { dur: 0.8 });
     st.sfx('splash', { volume: 0.7 });
+    A.play('sw0', 'gasp').then(() => A.troupe(SW, 'vee', { lag: 0.2 }));
     await st.say('minnow', 'The Wick Brigade! In OUR pool! Understudies: the routine!', { expr: 'shock' });
+    A.rest(['sw0', 'sw2']); A.play('sw1', 'behold');
     await st.say('fidget', 'Rule one: in the water, nobody can touch us. Rule two: nobody ever {key}drains the pool{/}. Rule three…', { expr: 'smug' });
+    A.play('sw2', 'shrug'); A.play('sw1', 'facepalm', { delay: 0.7 });
     await st.say('brick', 'Brick forgot rule three.', { expr: 'sleepy' });
     st.mark('swimmers');
     await st.title('The Synchronised Swimmers', 'the Understudies, in swim caps', 2.2);
@@ -338,16 +374,30 @@ R('swimmers').tick = (S, d, r, dt) => {
       const c = mid(d, r, -1), horn = buildGloomophone(S.P.r3d);
       horn.scale.setScalar(1.5);
       st.prop('horn', horn, c.x, -2, c.z - 3);
-      await st.cam(c.x, c.z - 1, { dur: 0.7 });
-      st.move('horn', { y: 0 }, 0.6);
-      st.sfx('boom', { volume: 0.6, pitch: -8 });
-      await st.wait(0.6);
-      st.fx('note', c.x, 2.6, c.z - 2.4, 8);
-      st.mark('gloomophone5');
-      await st.say('duchess', 'I asked for GUARDS.{p} You gave me… a WATER BALLET.', { expr: 'angry' });
-      await st.say('duchess', 'Never mind. My {key}Kraken{/} will deal with the Wick Brigade. Mwah!', { expr: 'smug' });
-      st.dropProp('horn');
-      st.sfx('poof', { volume: 0.6 });
+      // (the three of them, dripping, at the bottom of their pool)
+      const A = st.act;
+      TRIO.forEach((id, i) => st.actor(id, c.x - 2.2 + i * 2.2, c.z - 0.4, { face: { x: 0, z: 1 } }));
+      swimCaps(st, true);
+      try {
+        A.play('minnow', 'slump'); A.play('fidget', 'shiver'); A.play('brick', 'out');
+        await st.cam(c.x, c.z - 1, { dur: 0.7 });
+        st.move('horn', { y: 0 }, 0.6);
+        st.sfx('boom', { volume: 0.6, pitch: -8 });
+        await st.wait(0.6);
+        // her voice bulges the horn: they duck — and at « a WATER BALLET », they wish they were smaller
+        st.fx('note', c.x, 2.6, c.z - 2.4, 8); A.swell('horn', 1.35);
+        st.mark('gloomophone5');
+        A.play('minnow', 'duck'); A.play('fidget', 'duck', { delay: 0.1 }); A.play('brick', 'rise', { delay: 0.3 });
+        await st.say('duchess', 'I asked for GUARDS.{p} You gave me… a WATER BALLET.', { expr: 'angry', beats: [() => { st.fx('note', c.x, 2.6, c.z - 2.4, 8); A.swell('horn', 1.55, 0.6); st.shake(0.3); A.all(TRIO, 'cower', { lag: 0.12 }); }] });
+        A.react('heroes', 'recoil', { from: [c.x, c.z - 3], step: 0.3 });
+        await st.say('duchess', 'Never mind. My {key}Kraken{/} will deal with the Wick Brigade. Mwah!', { expr: 'smug' });
+        st.fx('heart', c.x, 2.6, c.z - 2.4, 2);
+        st.sfx('poof', { volume: 0.6 });
+        await st.move('horn', { y: -2.2 }, 0.35);
+        st.dropProp('horn');
+        // (and they go the way the horn went: down three trapdoors, one after the other)
+        await A.trapOut(TRIO, { lag: 0.18, beat: 0.2 });
+      } finally { swimCaps(st, false); }
       await st.say('narrator', 'Past the far wall, something very large stirs. The way on is open.');
       const G = d.gate('g6');
       if (G) d.setGate(G, true);

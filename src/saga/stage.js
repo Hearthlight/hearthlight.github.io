@@ -11,6 +11,7 @@ import { drawText, measure } from '../engine/font.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
 import { ctl, device } from '../ui/ui.js';
+import { Acting } from './acting.js';
 
 const ease = (k) => (k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k));
 const BAR = 0.11;                        // the black bars' height (of the screen)
@@ -32,6 +33,7 @@ export class Stage {
     this.trip = null;                    // the heroes aboard a craft, while a scene takes them somewhere (aboard.js)
     this.t = 0;
     this.skipHold = 0;
+    this.act = new Acting(this);         // what the actors do: gestures, entrances, spotlights (acting.js)
   }
 
   get solo() { return !!this.P.solo; }
@@ -79,6 +81,7 @@ export class Stage {
     this.walks = [];
     for (const w of this.waits) w.res();
     this.waits = [];
+    this.act.clear();
     if (this.trip) this.trip.end();
     this.releaseActors();
     for (const [k, pr] of [...this.props]) { if (pr.tw) { const w = pr.tw; for (const ax of ['x', 'y', 'z']) if (w.to[ax] !== undefined) pr.obj.position[ax] = w.to[ax]; pr.tw = null; w.res(); } if (!pr.keep) this.dropProp(k); }
@@ -101,6 +104,7 @@ export class Stage {
     this.waits = [];
     for (const w of this.walks) this.arrive(w);
     this.walks = [];
+    this.act.finish();
     if (this.tw) { this.cv.x = this.tw.tx; this.cv.z = this.tw.tz; this.tw.res(); this.tw = null; this.applyCam(); }
     if (this.skyTw) { this.skyTw.step(1e9); const r = this.skyTw.res; this.skyTw = null; r(); }
     for (const pr of this.props.values()) if (pr.tw) { const w = pr.tw; for (const ax of ['x', 'y', 'z']) if (w.to[ax] !== undefined) pr.obj.position[ax] = w.to[ax]; if (w.to.ry !== undefined) pr.obj.rotation.y = w.to.ry; if (w.to.s !== undefined) pr.obj.scale.setScalar(w.to.s); pr.tw = null; w.res(); }
@@ -123,7 +127,7 @@ export class Stage {
     this.barK = Math.max(0, Math.min(1, this.barK + (on ? dt : -dt) * 2.8));
     if (this.card) { this.card.t += dt; if (this.card.t > this.card.dur) { const c = this.card; this.card = null; if (c.res) c.res(); } }
     this.flashes = this.flashes.filter((f) => (f.t += dt) < f.dur);
-    if (!this.active) return;
+    if (!this.active) { this.act.update(dt); return; }
     // (while a scene holds everything, the big effects still play)
     const C = this.P.combat;
     if (C && C.vfx) C.vfx.update(dt);
@@ -141,6 +145,7 @@ export class Stage {
     }
     if (this.cv) this.applyCam();
     if (this.skyTw && this.skyTw.step(dt)) { const r = this.skyTw.res; this.skyTw = null; r(); }
+    this.act.update(dt);
     // the props (their own little animations, and their moves)
     for (const pr of this.props.values()) {
       const o = pr.obj;
@@ -213,13 +218,14 @@ export class Stage {
   get vfx() { return this.P.combat ? this.P.combat.vfx : null; }
   fx(kind, x, y, z, n, o) { if (!this.skipping) this.world.fx.emit(kind, x, y, z, n, o); }
 
-  // a line of dialogue (the dialogue box translates it); opts: expr, vars, shake, speed, emote, auto
+  // a line of dialogue (the dialogue box translates it); opts: expr, vars, shake, speed, emote, auto,
+  // beats: [fn, …] — what happens at each of the line’s {p} pauses (acting.js), all done by its end
   say(who, text, opts = {}) {
-    if (this.skipping) return Promise.resolve();
-    const a = this.actorOf(who);
+    if (this.skipping) { for (const f of opts.beats || []) f(); return Promise.resolve(); }
+    const a = this.actorOf(who), over = opts.beats ? this.act.beats(opts.beats) : null;
     if (a && a.n) { if (opts.emote) a.n.setEmote(opts.emote, 1.6); if (opts.hop) a.n.hop(); a.n.forceExpr = opts.expr && opts.expr !== 'talk' ? opts.expr : null; }
     if (opts.shake) this.shake(0.25 * opts.shake);
-    return this.dialogue.say(who, text, { ...opts, auto: opts.auto }).then((r) => { if (a && a.n) a.n.forceExpr = null; return r; });
+    return this.dialogue.say(who, text, { ...opts, auto: opts.auto }).then((r) => { if (over) over(); if (a && a.n) a.n.forceExpr = null; return r; });
   }
 
   // ------------------------------------------------------------------ actors
@@ -337,7 +343,7 @@ export class Stage {
     const L = this.P.lighting;
     if (!L) return Promise.resolve();
     if (this.skipping || dur <= 0) { L.gloom = gloom; if (drain !== null) L.drain = drain; return Promise.resolve(); }
-    const g0 = L.gloom, d0 = L.drain;
+    const g0 = this.act.baseGloom(L), d0 = L.drain;
     return new Promise((res) => {
       const w = { t: 0, dur, res: null };
       const step = (dt) => { w.t += dt; const k = ease(w.t / dur); L.gloom = g0 + (gloom - g0) * k; if (drain !== null) L.drain = d0 + (drain - d0) * k; return w.t >= dur; };

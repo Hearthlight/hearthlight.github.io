@@ -218,11 +218,24 @@ async function broadcast(S) {
     const halo = K.noCast(K.put(g, K.ball(6, 14, 10), K.light('#8a5ab8', 0.12), 0, 0, -0.5));
     halo.scale.set(1, 1, 0.2);
     st.prop('face', g, bx, 10, bz + 4);
-    for (let k = 0; k <= 20; k++) { if (g.userData.face) g.userData.face.material.opacity = k / 20 * 0.95; await st.wait(0.04); }
+    // (her face acts: it changes with her mood, flickers while she tests it, swells when she shouts)
+    const A = st.act, fm = g.userData.face;
+    const mood = (ex, k = 1.08) => {
+      const cv = fm && (P.portraitOf ? P.portraitOf('duchess', ex) : P.world.portraitOf ? P.world.portraitOf('duchess', ex) : null);
+      if (!cv) return;
+      const tx = new THREE.CanvasTexture(cv); tx.magFilter = THREE.NearestFilter; tx.minFilter = THREE.NearestFilter;
+      fm.material.map = tx; fm.material.needsUpdate = true;
+      A.swell(g, k, 0.35);
+    };
+    for (let k = 0; k <= 20; k++) { if (fm) fm.material.opacity = k / 20 * 0.95; await st.wait(0.04); }
     st.mark('broadcast');
-    await st.say('duchess', 'Testing, testing… is this thing on?{p}Of COURSE it’s on. It’s MINE.', { expr: 'smug' });
+    mood('worried', 1);
+    A.extra('flicker', (T) => { if (fm) fm.material.opacity = Math.sin(T * 31) > 0.3 ? 0.5 : 0.95; g.rotation.z = Math.sin(T * 23) * 0.03; }, () => { if (fm) fm.material.opacity = 0.95; g.rotation.z = 0; });
+    await st.say('duchess', 'Testing, testing… is this thing on?{p}Of COURSE it’s on. It’s MINE.', { expr: 'worried', beats: [() => { A.endExtra('flicker'); mood('smug', 1.18); A.face('duchess', 'smug'); }] });
+    mood('happy');
     await st.say('duchess', 'Good evening, Dawnlands! Tonight, a little rehearsal of my {key}Umbral Spotlight{/}.', { expr: 'happy' });
-    await st.say('duchess', 'ONE light, on ME. Darkness for everyone else, for ever.{p} Lights… OFF!', { expr: 'angry', shake: 1 });
+    mood('smug');
+    await st.say('duchess', 'ONE light, on ME. Darkness for everyone else, for ever.{p} Lights… OFF!', { expr: 'smug', shake: 1, beats: [() => { mood('angry', 1.3); A.face('duchess', 'angry'); st.shake(0.5); }] });
     // a beam of darkness sweeps the town: every lamp it touches goes out
     const beam = new THREE.Mesh(new THREE.ConeGeometry(3.2, 12, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x1a0a2a, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
     const bg = new THREE.Group(); beam.position.y = 6; bg.add(beam);
@@ -237,6 +250,7 @@ async function broadcast(S) {
       await st.wait(0.05);
     }
     st.dropProp('umbral');
+    mood('smug');
     await st.say('duchess', 'Mmm. Not dark enough yet. Back to rehearsals!', { expr: 'smug' });
     for (let k = 20; k >= 0; k--) { if (g.userData.face) g.userData.face.material.opacity = k / 20 * 0.85; await st.wait(0.03); }
     st.dropProp('face');
@@ -265,16 +279,27 @@ async function broadcast(S) {
 async function mimesMeet(S) {
   const P = S.P, C = P.combat, [x, z] = MIMES;
   await S.scene(async (st) => {
+    const A = st.act, MIMES3 = ['mminnow', 'mfidget', 'mbrick'];
     P.gatherAt(x, z + 5.5, 1.3);
-    await st.cam(x, z + 1.5, { dur: 0.6, ppu: st.basePpu() });
+    await st.cam(x, z + 0.4, { dur: 0.6, ppu: st.basePpu() * 2 });
     st.actor('mminnow', x - 1.8, z - 0.6, { face: { x: 0, z: 1 } });
     st.actor('mfidget', x, z - 1, { face: { x: 0, z: 1 } });
     st.actor('mbrick', x + 2, z - 0.6, { face: { x: 0, z: 1 } });
+    st.heroesFace(x, z - 1);
+    A.keylight([x, z - 0.8]);
+    // (the wall that isn’t there: three pairs of hands on it, feeling along it together)
+    A.all(MIMES3, 'mime', { lag: 0.15 });
     await st.say('narrator', 'Three mimes block the Pilgrims’ Way: the Duchess’s Understudies, in white faces and berets.');
     st.emote('mminnow', 'dots', 1.4);
-    await st.say('mminnow', 'We are MIMES now! The Duchess said it would stop us TALKING!', { expr: 'angry', hop: true });
+    // Minnow can’t keep it in: the other two stop, and look at him
+    A.play('mminnow', 'tantrum');
+    A.play('mfidget', 'look', { rate: 1.4, mirror: true }); A.play('mbrick', 'look', { rate: 1.4, mirror: true, delay: 0.15 });
+    await st.say('mminnow', 'We are MIMES now! The Duchess said it would stop us TALKING!', { expr: 'angry' });
+    // (a finger to the lips; he claps both hands over his mouth)
+    A.play('mfidget', 'think'); A.play('mminnow', 'hush', { delay: 0.5 }); st.emote('mminnow', 'sweat', 1.4);
     await st.say('mfidget', 'Minnow.', { expr: 'neutral' });
     st.mark('mimes');
+    A.all(MIMES3, 'mime', { lag: 0.15 });
     await st.say('narrator', 'Fidget mimes a wall, right across the road. To pass, beat {key}the Mime Troupe{/}!');
     await st.title('The Mime Troupe', 'Silent, but deadly', 2.2);
     for (const id of ['mminnow', 'mfidget', 'mbrick']) st.hide(id);
@@ -310,16 +335,30 @@ async function mimesBeaten(S) {
   if (C) C.bounds = null;
   for (const p of P.players) p.mimeBoxed = null;
   await S.scene(async (st) => {
-    await st.cam(x, z + 1, { dur: 0.6, ppu: st.basePpu() });
+    const A = st.act;
+    // (the fight’s fallen doubles make way for the actors, and the heroes for the stage)
+    if (C) for (const q of C.enemies) if (q.sagaTag === 'mimes' && !q.alive && q.fading > 0) { q.fading = 0; q.remove(); }
+    P.gatherAt(x, z + 2.8, 1);
+    st.heroesFace(x, z - 1);
+    A.keylight([x, z - 0.8]);
+    await st.cam(x, z + 0.2, { dur: 0.6, ppu: st.basePpu() * 2 });
     st.actor('mminnow', x - 1.8, z - 0.6, { face: { x: 0, z: 1 } });
     st.actor('mfidget', x, z - 1, { face: { x: 0, z: 1 } });
     st.actor('mbrick', x + 2, z - 0.6, { face: { x: 0, z: 1 } });
+    // (two of them flat out; Fidget, on his knees, waves a real white flag)
+    A.play('mminnow', 'prone'); A.play('mbrick', 'out');
+    A.give('mfidget', 'flag'); A.play('mfidget', 'signal');
     await st.say('mfidget', '(Fidget mimes a white flag.)', { expr: 'sad' });
+    A.play('mminnow', 'getup').then(() => A.play('mminnow', 'sob'));
     await st.say('mminnow', 'We LOST. Out LOUD.', { expr: 'cry' });
     st.mark('mimesBeaten');
+    A.give('mfidget', null); A.play('mfidget', 'slump'); A.play('mbrick', 'rise');
     await st.say('mfidget', 'We’re not going back to the Gloomstage tonight. The Duchess would only make us mimes AGAIN.', { expr: 'sad' });
-    for (const id of ['mminnow', 'mfidget', 'mbrick']) st.walk(id, x - 14, z + 6, { speed: 3 });
-    await st.wait(1.6);
+    // they trudge off, heads down; Brick turns back for a little wave
+    A.play('mminnow', 'slump');
+    for (const id of ['mminnow', 'mfidget']) st.walk(id, x - 14, z + 6, { speed: 3 });
+    A.play('mbrick', 'wave').then(() => { A.play('mbrick', 'slump'); st.walk('mbrick', x - 14, z + 6.6, { speed: 3.6 }); });
+    await st.wait(1.9);
     for (const id of ['mminnow', 'mfidget', 'mbrick']) st.hide(id);
     await st.say('narrator', 'The road is open: on to the {key}Dawn Monastery{/}, to the north!');
   });
@@ -519,6 +558,7 @@ async function festival(S) {
     st.actor('mfidget', 757.6, 63.6, { face: { x: 0, z: -1 } });
     st.actor('mbrick', 759, 63.6, { face: { x: 0, z: -1 } });
     for (const id of ['mminnow', 'mfidget', 'mbrick']) { const a = st.actorOf(id); if (a && a.n) a.n.seatY = 0.2; }
+    st.act.all(['mminnow', 'mfidget', 'mbrick'], 'sit');
     st.mark('pier');
     await st.say('narrator', 'At the end of the pier, three mimes sit and watch the lanterns go up. Nobody invited them.');
     await st.cam(x, z, { dur: 1.2 });

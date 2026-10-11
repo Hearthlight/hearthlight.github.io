@@ -177,6 +177,10 @@ async function flashback(S) {
     // (who we are looking at, and when — before anything happens)
     await st.say('narrator', 'The Starfall Festival, thirty years ago. On the stage: {key}Gloria, aged sixteen{/} — the future Duchess.');
     st.sfx('tone', { volume: 0.6, pitch: 7 });
+    // (her first spotlight; she sings arms wide)
+    const A = st.act;
+    A.spot('young', 'gloria', { r: 1.4, h: 8, dim: 0.3 });
+    A.play('gloria', 'sing');
     for (let k = 0; k < 4; k++) { st.fx('note', x + (Math.random() - 0.5) * 2, 2.6, z - 1, 1); await st.wait(0.3); }
     await st.say('gloria', '♪ Laaa… la-la-LAAA… ♪', { expr: 'happy' });
     st.mark('young');
@@ -186,13 +190,16 @@ async function flashback(S) {
     st.prop('hen', hen.root, x + 3, 0.5, z - 1.2);
     st.sfx('cluck', { volume: 0.9 });
     await st.move('hen', { x: x + 0.6, z: z - 1 }, 1.4);
-    await st.say('gloria', '♪ LAAA— ♪{p}…a… hen?', { expr: 'shock' });
-    // (the laughter)
+    await st.say('gloria', '♪ LAAA— ♪{p}…a… hen?', { expr: 'happy', beats: [() => { A.play('gloria', 'gasp').then(() => A.play('gloria', 'shiver')); A.face('gloria', 'shock'); }] });
+    // (the laughter: one, then all of them)
     st.sfx('cheer', { volume: 0.8, pitch: 6 });
     for (const a of crowd) if (a && a.n) a.n.hop();
+    A.react(crowd, 'laugh', { lag: 0.12, quiet: true });
     st.mark('laughter');
     await st.say('narrator', 'Somebody laughed. Then the whole cove laughed: it was a very funny hen.');
+    A.play('gloria', 'hush');
     await st.say('gloria', '…', { expr: 'cry' });
+    A.play('gloria', 'sob'); A.spotOff('young');
     await st.say('narrator', 'Nobody meant any harm. But she was sixteen, and it was her very first aria.');
     st.walk('gloria', x - 7, z - 3, { speed: 4 });
     await st.wait(1.2);
@@ -249,7 +256,8 @@ async function testFired(S) {
     st.dropProp('beam');
     st.actor('tock', x - 2.4, z + 1.2, { face: { x: 1, z: -0.3 } });
     await st.say('tock', 'IT WORKS! I haven’t been this happy since I fixed the sundial!', { expr: 'love', hop: true });
-    st.actor('fidget', x + 2.6, z + 1.4, { face: { x: -1, z: -0.3 } });
+    st.actor('fidget', x + 2.6, z + 1.4, { face: { x: -0.5, z: 1 } });
+    st.act.play('fidget', 'behold', { hold: 2.4 });
     await st.say('fidget', 'The Duchess keeps her Spotlight at the very top of the Gloomstage. One clear shot would put it out.', { expr: 'worried' });
     await st.say('tock', 'Then I’m bringing it! Meet us at the {key}Aurora Camp{/}, on the tundra {key}west of here{/}.', { expr: 'smug' });
   });
@@ -261,7 +269,7 @@ async function auroraCamp(S) {
     const P = S.P, [x, z] = CAMP;
     await st.fade(1, 0.6);
     if (P.state) P.state.hour = 22;
-    P.gatherAt(x, z + 2, 1.3);
+    P.gatherAt(x - 1, z + 3.6, 1.3);
     const aur = buildAurora(P.r3d, 44);
     st.prop('aurora', aur, x, 0, z - 14);
     await st.cam(x, z - 2, { dur: 0, ppu: Math.max(8, Math.round(st.basePpu() * 0.75)) });
@@ -269,18 +277,28 @@ async function auroraCamp(S) {
     st.music('tundra');
     await st.fade(0, 1.2);
     st.mark('aurora');
+    // (they watch the lights; whoever speaks turns round to us)
+    const A = st.act;
+    A.keylight([x - 1, z]);
+    await st.cam(x - 1.2, z + 0.7, { dur: 0.9, ppu: st.basePpu() * 2 });
+    st.face('minnow', x - 3, z + 6); A.play('minnow', 'behold');
     await st.say('minnow', 'The plan: backstage, a {key}trapdoor{/} goes straight up to her Spotlight. One shot from the cannon, and it goes out.', { expr: 'neutral' });
+    A.rest('minnow'); st.face('brick', x, z + 6); A.play('brick', 'ears');
     await st.say('brick', 'We hid up there during her warm-ups. Very long. Very loud.', { expr: 'worried' });
+    A.rest('brick'); st.face('minnow', x - 3, z - 20); st.face('brick', x, z - 20);
     // (the Gloomstage, far off, against the aurora)
     const ship = buildGloomstage(P.r3d);
     ship.scale.setScalar(0.6);
     st.prop('ship', ship, x + 18, 9, z - 20);
     // (framed where a thing that high shows up: its z less its height)
-    await st.cam(x + 16, z - 20 - 9 + 4, { dur: 2 });
+    await st.cam(x + 16, z - 20 - 9 + 4, { dur: 2, ppu: Math.max(8, Math.round(st.basePpu() * 0.75)) });
     st.mark('scar');
     await st.say('narrator', 'Far off, over a black scar in the land, hangs the Gloomstage: every window lit, every seat empty.');
-    await st.cam(x, z - 2, { dur: 1.2 });
+    await st.cam(x - 1.2, z + 0.5, { dur: 1.2, ppu: st.basePpu() * 2 });
+    // (Fidget sits down in the snow; Brick comes and sits beside him)
+    A.play('fidget', 'sit');
     await st.say('fidget', '…Does the Duchess know? That her mother waited for her, all this time?', { expr: 'sad' });
+    A.glide('brick', x - 0.6, z + 0.3, 0.8).then(() => A.play('brick', 'sit'));
     await st.say('brick', 'Brick thinks everybody should know when somebody keeps the tea warm for them.', { expr: 'sad' });
     await st.title('Tomorrow night: the Grand Finale', 'The Murk rolls back from the Umbral Scar', 3.6);
     S.openZones(['scar']);

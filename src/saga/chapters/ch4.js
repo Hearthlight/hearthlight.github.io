@@ -63,7 +63,7 @@ async function kingDecree(S) {
 // ------------------------------------------------------------------ the shadow on the ice
 async function shadowOnIce(S) {
   await S.scene(async (st) => {
-    const P = S.P, [x, z] = FROSTCAMP;
+    const P = S.P, [x, z] = FROSTCAMP, A = st.act;
     P.gatherAt(x + 2, z + 2, 1.5);
     await st.cam(x + 4, z - 5, { dur: 0, ppu: Math.max(8, st.basePpu() / 2) });
     // the Gloomstage sails in over the camp and stops there, its great shadow on the snow
@@ -79,18 +79,31 @@ async function shadowOnIce(S) {
     st.move('shade', { x: SX, z: SZ + 4 }, 4.5);
     await st.wait(1.4);
     st.heroesEmote('exclaim');
+    A.react('heroes', 'gasp', { from: [SX, SZ + 4] });
     for (let k = 0; k < 24; k++) st.fx('sparkle', x - 8 + Math.random() * 16, 4, z - 6 + Math.random() * 10, 1, { color: '#c8a8ff' });
     st.mark('shadowOnIce');
     await st.say('narrator', 'A huge shadow slides over Frostpeak Camp: the Gloomstage, the Duchess’s flying theatre!');
     await arrive;
-    // Her Radiance on the balcony, practising her scales
+    // Her Radiance on the balcony, practising her scales in her own spotlight: she hasn’t seen us yet
     const bx = SX + BALCONY.x * s, by = SY + BALCONY.y * s, bz = SZ + BALCONY.z * s;
     st.actor('duchess', bx, bz, { face: { x: 0, z: 1 } }).n.seatY = by;
-    await st.cam(bx, bz - by + 2.5, { dur: 1, ppu: st.basePpu() });
+    A.give('duchess', 'fan');
+    A.spot('diva', 'duchess', { r: 1, h: 6, dim: 0, pool: false });
+    A.play('duchess', 'sing');
+    await st.wait(0.4);
+    await st.cam(bx, bz - by + 0.9, { dur: 0, ppu: st.basePpu() * 2 });
+    st.sfx('select', { volume: 0.3, pitch: 4 });
     st.mark('balcony');
-    await st.say('duchess', '♪ Mi-mi-mi-miiii… ♪{p} Oh! The Wick Brigade, down in the snow!', { expr: 'happy' });
+    await st.say('duchess', '♪ Mi-mi-mi-miiii… ♪{p} Oh! The Wick Brigade, down in the snow!', { expr: 'happy', beats: [() => { A.play('duchess', 'gasp').then(() => A.play('duchess', 'wave')); }] });
+    // (a flick of her fan: more snow)
+    A.play('duchess', 'flourish');
+    for (let k = 0; k < 16; k++) st.fx('sparkle', bx - 3 + Math.random() * 6, by + 1 + Math.random() * 3, bz + 0.6, 1, { color: '#ffffff' });
     await st.say('duchess', 'Do you like my weather? I ordered it specially.', { expr: 'smug' });
-    await st.say('duchess', 'Do come up to the Frostbell Halls, darlings. My leading man is longing for an audience.{p} Ha! Ha-ha! {shake}HA!{/}', { expr: 'happy' });
+    A.play('duchess', 'curtsy');
+    await st.say('duchess', 'Do come up to the Frostbell Halls, darlings. My leading man is longing for an audience.{p} Ha! Ha-ha! {shake}HA!{/}', { expr: 'happy', beats: [() => { A.play('duchess', 'laugh'); st.shake(0.3); }] });
+    // (a pirouette, and her light goes out)
+    await A.play('duchess', 'twirl');
+    A.spotOff('diva');
     st.hide('duchess');
     // and away it sails, north-west, towards the peaks
     st.sfx('whoosh', { volume: 0.5, pitch: -14 });
@@ -182,20 +195,31 @@ async function crumbleStuck(S) {
     st.sfx('poof', { volume: 0.9 });
     st.fx('smoke', x, 1, z, 20, { color: '#ffffff' });
     st.dropProp('puff');
+    const A = st.act;
+    st.cam(x + 2.4, z + 1.6, { dur: 0.3, ppu: st.basePpu() * 2 });
     st.actor('crumble', x, z + 0.5, { face: { x: 0, z: 1 } });
-    st.hop('crumble'); st.emote('crumble', 'exclaim');
+    st.emote('crumble', 'exclaim');
     st.mark('crumbleFreed');
-    await st.say('crumble', 'FREE! Thank you, kind stran— {shake}LAMP-LICKERS!{/}', { expr: 'shock' });
+    // (a cheer — and then he sees who pulled him out)
+    A.play('crumble', 'cheer').then(() => { A.play('crumble', 'recoil'); A.face('crumble', 'shock'); });
+    await st.say('crumble', 'FREE! Thank you, kind stran— {shake}LAMP-LICKERS!{/}', { expr: 'happy' });
+    A.play('crumble', 'proud');
     await st.say('crumble', 'The crown? Too late! {key}The Frost Tenor{/} has it: Her Radiance’s leading man, in his Frostbell Halls!', { expr: 'smug' });
     const K = kit(P.r3d), um = new THREE.Group();
     K.put(um, K.box(0.04, 1, 0.04), K.c('#3a3844'), 0, 0.5, 0);
     const top = K.put(um, K.ball(0.55, 10, 6), K.c('#c8383e'), 0, 1.05, 0); top.scale.y = 0.4;
-    st.prop('umbrella', um, x, 1.1, z + 0.5);
+    // a bow to his rescuers; then, the umbrella held high, he steps off the cloud and sinks out of
+    // sight under it (he is still there to be seen, all the way down)
+    const gy = A.ground(st.actorOf('crumble').n);
+    st.prop('umbrella', um, x, gy + 1.1, z + 0.5);
+    await A.play('crumble', 'bow', { rate: 1.6 });
+    A.play('crumble', 'behold');
     st.walk('crumble', x + 3, z + 1, { speed: 2 });
-    st.move('umbrella', { x: x + 3 }, 1.4);
-    await st.wait(1.4);
-    st.hide('crumble');
-    st.move('umbrella', { x: x + 8, y: -4, z: z + 4 }, 2.4);
+    st.move('umbrella', { x: x + 3, z: z + 1 }, 1.5);
+    await st.wait(1.5);
+    A.play('crumble', 'hang');
+    A.glide('crumble', x + 8, z + 4.5, 2.4, { y: gy - 4 }).then(() => st.hide('crumble'));
+    st.move('umbrella', { x: x + 8, y: gy - 2.9, z: z + 4.5 }, 2.4);
     await st.say('narrator', 'He opens a tiny umbrella, steps off the cloud and floats away.{p} Very slowly. With great dignity.');
     await st.say('narrator', 'Back to the glacier! Climb to the {key}Frostbell Halls{/}, {key}north-east{/} of Frostpeak Camp.');
   });

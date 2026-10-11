@@ -148,14 +148,28 @@ async function understudiesUninvited(S) {
     await st.cam(x, z - 1, { dur: 0.6, ppu: st.basePpu() });
     const swan = buildSwanPedalo(P.r3d);
     st.prop('swan', swan, x + 4, 0, z + 2.6);
-    for (const [i, id] of ['minnow', 'fidget', 'brick'].entries()) { const a = st.actor(id, x + 3.2 + i * 0.8, z + 2.6, { face: { x: -1, z: -0.2 } }); if (a && a.n) a.n.seatY = 0.55; }
+    const A = st.act, TRIO = ['minnow', 'fidget', 'brick'];
+    for (const [i, id] of TRIO.entries()) { const a = st.actor(id, x + 3.2 + i * 0.8, z + 2.6, { face: { x: -0.5, z: 1 } }); if (a && a.n) a.n.seatY = 0.55; }
+    A.play('minnow', 'sulk'); A.play('fidget', 'slump'); A.play('brick', 'slump');
+    A.keylight([x + 4, z + 2.6, 0.55]);
     await st.say('barnaby', 'Winners: the lantern folk. Losers: the Understudies. The {key}propeller{/} goes to Captain Wendy.', { expr: 'smug' });
+    // (in close on the swan: a fist, a brave chin — and the air goes out of him)
+    await st.cam(x + 4, z + 2.3, { dur: 0.7, ppu: st.basePpu() * 2 });
+    A.play('minnow', 'fist').then(() => A.play('minnow', 'proud'));
     await st.say('minnow', 'We weren’t even TRYING! We’re saving our strength for the Duchess’s Debut.', { expr: 'sad' });
+    A.play('fidget', 'no'); A.play('minnow', 'slump', { delay: 0.9 });
     await st.say('fidget', 'Minnow… She didn’t invite us. Understudies don’t get tickets.', { expr: 'cry' });
+    // (Brick shows what he practised: two claps, for nobody)
+    A.play('brick', 'applaud', { rate: 0.4 }); A.after(1.9, () => A.play('brick', 'slump'));
     await st.say('brick', 'Brick practised clapping. For weeks.', { expr: 'sad' });
     st.mark('uninvited');
+    A.play('fidget', 'slump'); A.play('brick', 'slump');
     await st.say('narrator', 'Nobody says a word. The swan creaks gently on the water.');
+    A.play('minnow', 'fist').then(() => A.play('minnow', 'proud'));
+    A.after(2.3, () => A.play('brick', 'nod'));
     await st.say('minnow', 'Well, we don’t CARE! One day we’ll have our own debut. With snacks.', { expr: 'angry' });
+    // (they pedal off; Brick waves goodbye)
+    A.rest(['minnow', 'fidget']); A.play('brick', 'wave');
     st.sfx('water', { volume: 0.5 });
     st.move('swan', { x: x + 30, z: z + 14 }, 6, { ease: 'lin' });
     for (const id of ['minnow', 'fidget', 'brick']) st.walk(id, x + 30, z + 14, { speed: 5 });
@@ -220,9 +234,13 @@ R('snuffbot').run = async (S, d, r) => {
   r.boss = e; pose(e);
   C.bounds = { x: c.x, z: c.z, rx: r.w / 2 - 1.5, rz: r.h / 2 - 1 };
   await S.scene(async (st) => {
+    const A = st.act, bot = A.bot(e.obj);
     await st.cam(c.x, c.z - 2, { dur: 0.8 });
     st.sfx('slam', { volume: 0.7 });
+    bot.stomp(); A.after(1.1, () => bot.snuff());
     await st.say('crumble', 'Ta-daaa! The Snuffbot MARK TWO! NO weaknesses this time!', { expr: 'smug' });
+    // (the vents breathe under it: it hops from one foot to the other)
+    for (const k of [0.5, 1.3, 2.1]) A.after(k, () => { st.fx('smoke', e.x + (Math.random() - 0.5), 0.4, e.z + 0.6, 8, { color: '#ffb070' }); st.sfx('steam', { volume: 0.5 }); bot.hop(); });
     await st.say('crumble', '…Why is the floor breathing? Nobody told me the floor BREATHES.', { expr: 'worried' });
     st.mark('snuffbot2');
     await st.title('Snuffbot Mk II', 'Crumble’s finest work (so far)', 2.2);
@@ -284,12 +302,24 @@ R('debut').run = async (S, d, r) => {
   e.onShoo = () => { if (r.hen) r.hen.flee = true; };
   r.sendHen = sendHen;
   await S.scene(async (st) => {
+    // (the boss’s own model plays her: her back to the house, until her light finds her)
+    const A = st.act;
+    A.rig('diva', e.obj);
+    e.obj.rotation.y = Math.PI;
     await st.cam(c.x, c.z - 4, { dur: 1 });
     st.music('villain');
     st.sfx('fanfare', { volume: 0.7 });
+    A.after(1.2, () => {
+      A.spot('diva', [e.x, e.z], { r: 2.2, h: 10, dim: 0.45 });
+      A.tw(0.5, (k) => { e.obj.rotation.y = Math.PI * (1 + k); }, () => { e.obj.rotation.y = 0; A.play('diva', 'proud'); }, 0.25);
+    });
     await st.say('narrator', 'Footlights. A hush. One spotlight — and there she is at last: {key}the Duchess{/}, on her own stage.');
     st.mark('debut');
-    await st.say('duchess', 'Welcome to the night of nights: my DEBUT!{p} …Where is my audience? Only YOU, with that LANTERN?', { expr: 'angry' });
+    // her welcome, sung arms wide — then she looks for her public, and finds only us
+    A.play('diva', 'aria');
+    await st.say('duchess', 'Welcome to the night of nights: my DEBUT!{p} …Where is my audience? Only YOU, with that LANTERN?', { expr: 'happy', beats: [() => { A.face('diva', 'angry', 'duchess'); A.play('diva', 'look').then(() => A.play('diva', 'fist')); }] });
+    A.play('diva', 'shoo').then(() => A.play('diva', 'proud'));
+    A.after(2.6, () => { A.play('diva', 'behold'); st.flash('#fff4c8', 0.3); A.react('heroes', 'recoil', { from: [e.x, e.z], step: 0.4 }); });
     await st.say('duchess', 'No matter. You shall sit in the dark and watch ME, for ever. Curtain UP!', { expr: 'smug' });
     await st.title('Duchess Gloria Gloomsworth', 'in her Debut', 2.6);
   });
@@ -333,9 +363,12 @@ R('debut').tick = (S, d, r, dt) => {
   (async () => {
     await S.P.wait(0.8);
     await S.scene(async (st) => {
-      const c = mid(d, r);
+      const c = mid(d, r), A = st.act;
+      // (beaten, a hand to her brow — and at the pause, a finger in the air: she is not done)
+      A.rig('diva', e.obj);
+      A.play('diva', 'swoon');
       await st.cam(c.x, c.z - 3, { dur: 0.7 });
-      await st.say('duchess', 'This… is not… the END.{p} This is merely… the INTERVAL!', { expr: 'angry', shake: 1 });
+      await st.say('duchess', 'This… is not… the END.{p} This is merely… the INTERVAL!', { expr: 'cry', shake: 1, beats: [() => { A.play('diva', 'behold'); A.face('diva', 'angry', 'duchess'); }] });
       st.sfx('whoosh', { volume: 0.8, pitch: -10 });
       st.flash('#2a1640', 0.4);
       // (up she goes, and the ship lifts away east)
@@ -344,6 +377,7 @@ R('debut').tick = (S, d, r, dt) => {
       // (a rope from the hull; up she goes, still singing; then the ship lifts away east)
       const rope = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1, 0.06), new THREE.MeshBasicMaterial({ color: 0xd9c090 }));
       d.root.add(rope);
+      A.play('diva', 'hang');
       for (let k = 0; k < 24; k++) {
         if (e.obj) { e.obj.position.y += 0.45; const top = (ship ? ship.position.y : 13) - 1, bot = e.obj.position.y + 3.2; rope.scale.y = Math.max(0.1, top - bot); rope.position.set(e.x - d.ox, (top + bot) / 2, e.z - d.oz); }
         if (k % 6 === 0) st.fx('note', e.x, (e.obj ? e.obj.position.y : 3) + 3, e.z, 2);

@@ -41,22 +41,38 @@ async function bigTop(S) {
   await S.scene(async (st) => {
     const P = S.P;
     P.gatherAt(RING_LANE[0], RING_LANE[1] + 1.5, 1.6);
-    const [sx, sz] = STAGE;
+    const [sx, sz] = STAGE, Ac = st.act, TRIO = ['minnow', 'fidget', 'brick'];
+    // (up on the boards, behind the house curtain)
     st.actor('minnow', sx, sz + 0.2, { face: { x: 0, z: 1 } });
     st.actor('fidget', sx - 2.2, sz + 0.5, { face: { x: 0.3, z: 1 } });
     st.actor('brick', sx + 2.3, sz + 0.5, { face: { x: -0.3, z: 1 } });
+    const gy = Ac.ground(st.actorOf('minnow').n) + 0.5;
+    for (const id of TRIO) st.actorOf(id).n.seatY = gy;
+    const drape = Ac.curtain('house', sx, gy, sz + 1.25, { w: 6, h: 2.7 });
     await st.cam(BIGTOP[0], BIGTOP[1], { dur: 0, ppu: st.basePpu() });
     await st.say('narrator', 'The Festival Ring is packed. Somebody has pitched a striped big top on the sand… and rolled in a giant cannon.');
     await st.cam(sx, sz + 2, { dur: 1.4 });
+    // a drum roll, the curtain parts on their tableau, and a spotlight finds it
     for (let k = 0; k < 8; k++) { st.sfx('tick', { volume: 0.5, pitch: k }); await st.wait(0.07); }
     st.music('bigtop');
+    drape.open(0.6);
+    Ac.spot('act', [sx, sz + 0.4, gy], { r: 2.8, h: 8, dim: 0.3, pool: false });
+    Ac.troupe(TRIO, ['vee', 'present', 'present'], { flub: 1, lag: 0.1, delay: 0.3 });
     st.sfx('cheer', { volume: 0.7 });
-    st.hop('minnow');
+    Ac.push([sx, sz + 0.4, gy], { mul: 2, dur: 0.5, dz: 0.5 });
+    await st.wait(0.9);
+    Ac.play('minnow', 'flourish');
     await st.say('minnow', 'LADIES! GENTLEMEN! The Understudies present… {big}THE HUMAN CANNONBALL!{/}', { expr: 'smug', shake: 1 });
+    Ac.rest(['minnow', 'fidget']); Ac.play('brick', 'flex');
     st.hop('brick');
     await st.say('brick', 'Brick… is cannonball.', { expr: 'happy' });
     st.heroesFace(sx, sz);
+    Ac.play('fidget', 'shrug');
     await st.say('fidget', 'And you, in the audience: you are {key}part of the act{/}. Sorry.', { expr: 'neutral' });
+    // (three stamps for three words — and Brick marches off to his cannon)
+    Ac.pull(0.4);
+    Ac.play('minnow', 'tantrum'); Ac.play('fidget', 'ears');
+    Ac.after(0.9, () => { Ac.play('brick', 'salute').then(() => { st.face('brick', sx - 6, sz + 0.9); Ac.play('brick', 'march'); Ac.glide('brick', sx - 3.6, sz + 0.9, 2.2, { lin: true }); }); });
     await st.say('minnow', '{shake}FIRE… THE… BRICK!{/}', { expr: 'angry', shake: 1 });
     st.sfx('boom', { volume: 0.8 }); st.shake(0.4);
     st.mark('bigTop');
@@ -92,15 +108,23 @@ function ensureAct(S) {
 
 async function afterAct(S) {
   await S.scene(async (st) => {
-    const P = S.P, [sx, sz] = STAGE;
+    const P = S.P, [sx, sz] = STAGE, Ac = st.act, TRIO = ['minnow', 'fidget', 'brick'];
     P.gatherAt(A.x, A.z + 1.5, 1.6);
     st.actor('minnow', sx - 1.2, sz + 3, { face: { x: 0, z: 1 } });
     st.actor('fidget', sx + 0.4, sz + 3.3, { face: { x: -0.4, z: 1 } });
     st.actor('brick', sx + 2, sz + 3.1, { face: { x: -0.3, z: 1 } });
+    // (the act is over — its fallen fighters make way for the actors: two of them flat out, Minnow
+    // on his feet, just)
+    if (P.combat) for (const q of P.combat.enemies) if (q.sagaTag === 'cannonball' && !q.alive && q.fading > 0) { q.fading = 0; q.remove(); }
+    Ac.play('fidget', 'out'); Ac.play('brick', 'prone'); Ac.play('minnow', 'wobble');
     await st.cam(A.x, A.z - 2, { dur: 0.8 });
     st.sfx('page', { volume: 0.7 });
+    st.fx('leaf', sx - 1.2, 1.4, sz + 3.2, 1, { color: '#fbf6ec' });
     await st.say('narrator', 'A note falls out of Minnow’s costume.');
+    Ac.play('minnow', 'think');
     await st.say('narrator', '“Understudies — after the act, carry {key}the Steppe’s Hearthstone{/} to Foreman Grubb, at {key}the Old Mine{/}. — Her Radiance, the Duchess”');
+    Ac.play('minnow', 'gasp');
+    Ac.play('fidget', 'rise'); Ac.play('brick', 'getup', { delay: 0.3 });
     await st.say('minnow', 'The Hearthstone? …That big stone we dug up under the Ring!', { expr: 'worried' });
     // where the Steppe’s Great Hearth burned: a cold, empty hollow under the star
     await st.cam(A.x, A.z, { dur: 0.9 });
@@ -119,22 +143,36 @@ async function afterAct(S) {
     st.flash('#6a3a8e', 0.25);
     await st.wait(0.6);
     const blare = (n = 8) => { st.fx('note', hx, 2.6, hz + 0.6, n); st.fx('smoke', hx, 2.4, hz + 0.4, 3, { color: '#6a4a8e' }); };
-    blare(10);
+    // (her voice bulges the horn; the three of them jump to attention — one late)
+    blare(10); Ac.swell('horn', 1.35);
     st.mark('gloomophone');
+    Ac.troupe(TRIO, 'salute', { flub: 1 });
     await st.say('duchess', '{big}UNDERSTUDIES!{/}', { shake: 1 });
-    for (const id of ['minnow', 'fidget', 'brick']) st.emote(id, 'exclaim');
-    blare();
+    for (const id of TRIO) st.emote(id, 'exclaim');
+    blare(); Ac.swell('horn', 1.2);
+    Ac.play('minnow', 'beg'); Ac.play('fidget', 'cower'); Ac.play('brick', 'slump', { delay: 1.6 });
     await st.say('duchess', 'I asked for a SPECTACLE. I got… a brick in a bucket.', { expr: 'angry' });
-    blare();
+    // (the horn swings round to the heroes)
+    blare(); st.move('horn', { ry: 0.5 }, 0.4);
+    Ac.react('heroes', 'recoil', { from: [hx, hz], step: 0.4 });
     await st.say('duchess', 'Ah. The Lamp-lickers. Light all the flames you like: I shall snuff them all again.', { expr: 'smug' });
-    blare(12);
+    blare(12); st.move('horn', { ry: 0 }, 0.3); Ac.swell('horn', 1.5, 0.6); st.shake(0.4);
+    Ac.troupe(TRIO, 'duck', { lag: 0.08 });
     await st.say('duchess', 'Understudies! The Hearthstone. {key}To the mine{/}. NOW!', { expr: 'angry' });
-    st.dropProp('horn');
     st.sfx('poof', { volume: 0.6 });
+    await st.move('horn', { y: -2.4 }, 0.35);
+    st.dropProp('horn');
+    Ac.play('minnow', 'point', { mirror: true });
     await st.say('minnow', 'Understudies! Exit… stage… WEST!', { expr: 'shock', hop: true });
-    for (const id of ['minnow', 'fidget', 'brick']) st.walk(id, A.x - A.rx - 3, A.z, { speed: 7 });
-    await st.wait(1.3);
-    for (const id of ['minnow', 'fidget', 'brick']) st.hide(id);
+    // two run west; Brick runs east, looks about him, and thunders after them
+    Ac.play('minnow', 'panic'); Ac.play('fidget', 'panic'); Ac.play('brick', 'panic');
+    for (const id of ['minnow', 'fidget']) st.walk(id, A.x - A.rx - 3, A.z, { speed: 7 });
+    await st.walk('brick', sx + 4, sz + 3.2, { speed: 6 });
+    await Ac.play('brick', 'look', { rate: 2 });
+    Ac.play('brick', 'panic');
+    st.walk('brick', A.x - A.rx - 3, A.z + 0.6, { speed: 9 });
+    await st.wait(1);
+    for (const id of TRIO) st.hide(id);
     // Grandmother Tuya, down from the stands
     st.actor('tuya', A.x + 5, A.z - 3, { face: { x: -1, z: 0.5 } });
     st.walk('tuya', A.x + 2, A.z + 0.2, { speed: 2 });

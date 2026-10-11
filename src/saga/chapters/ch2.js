@@ -91,13 +91,26 @@ async function theWind(S) {
     st.shake(0.3);
     for (let k = 0; k < 16; k++) st.fx('leaf', 50 + Math.random() * 20, 2 + Math.random() * 2, -110 + Math.random() * 12, 1);
     await st.cam(FALLS.x - 3, FALLS.z + 1, { dur: 1.8, ppu: st.basePpu() });
-    // Crumble, swept off the hill by the mills’ wind, blown right past
-    const c = st.actor('crumble', FALLS.x - 22, FALLS.z - 4, { face: { x: 1, z: 0 } });
-    c.n.seatY = 4.5;
-    st.walk('crumble', FALLS.x + 20, FALLS.z - 8, { speed: 9 });
-    await st.say('crumble', 'Operation Wind-Down has… wound…{p} {shake}DOWNNN!{/}', { expr: 'shock', shake: 1 });
+    // Crumble, swept off the hill by the mills’ wind: he tumbles in on a gust of leaves, paddles
+    // against it in mid-air to say his piece — and the wind wins
+    const A = st.act, c = st.actor('crumble', FALLS.x - 27, FALLS.z + 1.4, { face: { x: 1, z: 0 } });
+    c.n.seatY = 3.4;
+    A.play('crumble', 'tumble');
+    A.extra('gust', () => { if (!c.n.hidden && Math.random() < 0.45) st.fx('leaf', c.n.pos.x - 0.6, 3.2 + Math.random() * 1.8, c.n.pos.z, 1); });
+    st.sfx('gust', { volume: 0.6 });
+    A.glide('crumble', FALLS.x - 6, FALLS.z + 1.4, 1.7, { lin: true });
+    await st.say('crumble', 'Operation Wind-Down has… wound…{p} {shake}DOWNNN!{/}', { expr: 'shock', shake: 1, beats: [() => { st.sfx('gust', { volume: 0.5, pitch: 5 }); A.tw(0.6, (e) => { c.n.seatY = 3.4 + Math.sin(e * Math.PI) * 1.3; }, () => { c.n.seatY = 3.4; }); }] });
+    st.face('crumble', FALLS.x - 6, FALLS.z + 8);
+    A.play('crumble', 'swim');
+    A.glide('crumble', FALLS.x - 1.5, FALLS.z + 1.4, 4, { lin: true });
+    A.push([FALLS.x - 3.6, FALLS.z + 1.4, 3.4], { mul: 2, dur: 0.4, dz: -0.9 });
     await st.say('crumble', 'You’ll never wake the old tree! The Duchess put him to sleep FOR EVER!', { expr: 'worried' });
+    await A.pull(0.25);
+    A.play('crumble', 'tumble');
+    st.sfx('whoosh', { volume: 0.7, pitch: 8 });
+    await A.glide('crumble', FALLS.x + 21, FALLS.z - 2, 0.9, { y: 7 });
     st.hide('crumble');
+    st.fx('sparkle', FALLS.x + 12, 9, FALLS.z - 2, 6, { color: '#fff3c4' });
     st.sfx('boing', { volume: 0.6 });
     S.flag('millsTurn');
     st.flash('#e8f4ff', 0.3);

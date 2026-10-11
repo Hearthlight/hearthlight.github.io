@@ -43,29 +43,43 @@ async function fired(S) {
     const ship = buildGloomstage(P.r3d, { fx: (sx, sy, sz) => P.world.fx.emit('smoke', sx, sy, sz, 1, { color: '#6a4a8e' }) });
     ship.scale.setScalar(s);
     st.prop('ship', ship, SX, SY, SZ);
-    const bx = SX + BALCONY.x * s, by = SY + BALCONY.y * s, bz = SZ + BALCONY.z * s;
-    st.actor('duchess', bx, bz, { face: { x: 0, z: 1 } }).n.seatY = by;
-    TRIO.forEach((id, i) => { const a = st.actor(id, bx - 1.4 + i * 0.7, bz + 0.3, { face: { x: 0, z: 1 } }); a.n.seatY = by; });
-    await st.cam(bx, bz - by + 2, { dur: 0, ppu: st.basePpu() });
+    const bx = SX + BALCONY.x * s, by = SY + BALCONY.y * s, bz = SZ + BALCONY.z * s, A = st.act;
+    // (in close on her balcony: the old Understudies on one side of her, room for the new on the other)
+    st.actor('duchess', bx + 0.05, bz - 0.4, { face: { x: 0, z: 1 } }).n.seatY = by;
+    [['brick', -1.3, -0.35], ['fidget', -0.95, 0.38], ['minnow', -0.3, 0.2]].forEach(([id, dx, dz]) => { st.actor(id, bx + dx, bz + dz, { face: { x: 0.4, z: 1 } }).n.seatY = by; });
+    A.give('duchess', 'fan');
+    A.spot('diva', 'duchess', { r: 1, h: 6, dim: 0, pool: false });
+    await st.cam(bx, bz - by + 0.9, { dur: 0, ppu: st.basePpu() * 2 });
     st.music('villain');
     st.mark('fired');
+    A.play('duchess', 'flourish').then(() => A.play('duchess', 'present'));
     await st.say('duchess', 'Darlings! Meet my NEW Understudies.', { expr: 'happy' });
-    // (three cardboard cut-outs rise on the balcony)
-    const cuts = TRIO.map((w, i) => { const c = buildCutout(P.r3d, w); st.prop('cut' + i, c, bx + 0.6 + i * 0.55, by - 1.2, bz + 0.2); return 'cut' + i; });
+    // (three cardboard cut-outs rise on the balcony: three heads turn)
+    const cuts = TRIO.map((w, i) => { const c = buildCutout(P.r3d, w); st.prop('cut' + i, c, bx + 0.5 + i * 0.5, by - 1.2, bz + 0.3); return 'cut' + i; });
     st.sfx('tone', { volume: 0.6, pitch: 7 });
     for (const [i, k] of cuts.entries()) st.move(k, { y: by }, 0.5 + i * 0.15);
+    A.all(TRIO, 'look', { lag: 0.12 });
     await st.wait(0.8);
+    A.play('duchess', 'proud');
     await st.say('duchess', 'They never TALK. And they never lose to children with a lantern.', { expr: 'smug' });
+    A.play('minnow', 'point'); A.play('fidget', 'gasp');
     await st.say('minnow', 'Those are… made of CARDBOARD.', { expr: 'shock' });
-    await st.say('duchess', 'And better than you already.{p}Minnow, Fidget, Brick: {key}you’re FIRED{/}.', { expr: 'angry', shake: 1 });
+    A.rest(['minnow', 'fidget']); A.play('duchess', 'shoo', { mirror: true });
+    await st.say('duchess', 'And better than you already.{p}Minnow, Fidget, Brick: {key}you’re FIRED{/}.', { expr: 'smug', shake: 1, beats: [() => { A.face('duchess', 'angry'); A.play('duchess', 'point', { mirror: true }); A.troupe(TRIO, 'gasp', { lag: 0.12 }); }] });
+    A.play('fidget', 'beg'); A.play('minnow', 'slump'); A.play('brick', 'slump');
     await st.say('fidget', 'But… where do we go?', { expr: 'sad' });
+    A.play('duchess', 'curtsy');
     await st.say('duchess', 'Down, darling. Down is a direction.', { expr: 'smug' });
-    // (a lever, a trapdoor, a long way down)
+    // (a stamp of her heel, three trapdoors, a long way down: one, two — and Brick, who takes a moment)
     st.sfx('unlock', { volume: 0.8, pitch: -6 });
-    st.sfx('whoosh', { volume: 0.8, pitch: -8 });
-    for (let k = 0; k < 16; k++) { for (const id of TRIO) { const a = st.actorOf(id); if (a) a.n.seatY = Math.max(0, by - k * 0.9); } await st.wait(0.04); }
+    A.play('duchess', 'stomp');
+    await A.trapOut(['minnow', 'fidget'], { lag: 0.25, beat: 0.25 });
+    await A.trapOut('brick', { beat: 0.7 });
     for (const id of TRIO) st.hide(id);
     st.mark('tumble');
+    // (she turns to her new troupe: one of them falls flat on its face)
+    A.play('duchess', 'proud');
+    A.after(0.7, () => { const c = st.propOf('cut1'); if (c) A.tw(0.45, (k) => { c.rotation.x = k * k * 1.5; }, () => { st.sfx('bonk', { volume: 0.5 }); A.play('duchess', 'facepalm'); st.move('cut1', { y: by - 14 }, 0.9, { ease: 'lin' }); }); });
     await st.say('narrator', 'The three Understudies fall a very long way, through a great many leaves.');
     await st.title('Autumn & Roots', 'Chapter 8');
     for (const k of cuts) st.dropProp(k);
@@ -85,24 +99,40 @@ async function marrowTalk(S) {
 // ------------------------------------------------------------------ the pumpkin patch
 async function patchTalk(S) {
   await S.scene(async (st) => {
-    const P = S.P, [x, z] = PATCH;
+    const P = S.P, [x, z] = PATCH, A = st.act;
     P.gatherAt(x - 3, z + 1.5, 1.2);
-    await st.cam(x, z, { dur: 0.6, ppu: st.basePpu() });
+    await st.cam(x - 0.9, z + 0.4, { dur: 0.6, ppu: st.basePpu() * 2 });
     TRIO.forEach((id, i) => { const a = st.actor(id, x - 0.8 + i * 0.9, z - 0.4, { face: { x: -0.5, z: 1 } }); a.n.seatY = 0.05; });
     for (const [i, [dx, dz]] of [[-1.8, 0.6], [1.9, 0.3], [-1.2, -1.4], [1.4, -1.5], [0.2, 1.1]].entries()) st.prop('pk' + i, buildPumpkin(P.r3d, { s: 0.9 + (i % 2) * 0.3 }), x + dx, 0, z + dz);
+    // (where they fell: heads down among the pumpkins — and one of them on Brick’s head)
+    A.play('minnow', 'sulk'); A.play('fidget', 'slump'); A.play('brick', 'slump');
+    A.keylight([x, z - 0.2]);
+    st.prop('pkHat', buildPumpkin(P.r3d, { s: 0.85 }), x + 1, 1.45, z - 0.4);
     st.mark('patch');
     await st.say('minnow', 'Go on. Laugh. The Duchess fired us. For CARDBOARD.', { expr: 'sad' });
     st.heroesEmote('dots', 1.6);
+    A.play('minnow', 'sob');
     await st.say('minnow', '…We’ve nowhere to go. We only ever wanted somewhere people CLAP.', { expr: 'sad' });
+    A.play('minnow', 'slump'); A.play('fidget', 'think');
     await st.say('fidget', 'Listen. The Duchess needs one last light: {key}the Heartlight{/}, inside the Great Tree.', { expr: 'worried' });
+    A.after(2.6, () => A.play('fidget', 'beg'));
     await st.say('fidget', 'The {key}Moth Queen{/} is in there, drinking it. We’ll help you stop her… if you’ll have us.', { expr: 'neutral' });
+    // (Brick takes the pumpkin off his head, and holds it up for all to see)
+    A.play('brick', 'flex'); st.move('pkHat', { y: 2.65 }, 0.4); st.sfx('boing', { volume: 0.4 });
     await st.say('brick', 'Brick is good at lifting.', { expr: 'happy' });
+    // (Minnow, up on a pumpkin — for as long as the pumpkin lets him)
+    A.glide('minnow', x - 1.8, z + 0.55, 0.3, { y: 0.5 }); A.play('minnow', 'proud');
     await st.say('minnow', 'And I’m good at being in charge.', { expr: 'smug' });
+    A.play('fidget', 'no');
+    A.after(0.4, () => A.play('minnow', 'wobble').then(() => { A.glide('minnow', x - 1.8, z + 1.35, 0.25, { y: 0.05 }); return A.play('minnow', 'trip'); }));
     await st.say('fidget', 'He isn’t.', { expr: 'neutral' });
     st.sfx('chime', { volume: 0.8, pitch: 7 });
     st.heroesEmote('heart', 2);
     await st.title('The Understudies join you', 'Minnow, Fidget & Brick', 2.6);
+    A.play('minnow', 'getup'); A.rest('brick'); st.move('pkHat', { x: x + 2, y: 0, z: z + 1 }, 0.5);
+    A.play('fidget', 'behold');
     await st.say('fidget', 'First we need {key}fireflies{/}: moths can’t eat their light.', { expr: 'happy' });
+    A.play('fidget', 'point');
     await st.say('fidget', 'Go and see {key}Old Mo{/} in {key}Stiltwater{/}, on the coast to the south-east.', { expr: 'neutral' });
     for (let i = 0; i < 5; i++) st.dropProp('pk' + i);
   });
@@ -133,29 +163,43 @@ async function festivalLit(S) {
     for (const [hx, hz] of HOOKS) st.fx('sparkle', hx + 0.36, 2, hz, 8, { color: '#e8ff8a' });
     await st.say('narrator', 'One by one the jars glow, and the moths wheel away, sulking, into the dark.');
     st.actor('marrow', x, z, { face: { x: 0, z: 1 } });
-    st.actor('minnow', x + 2.4, z + 1.2, { face: { x: -1, z: 0 } });
+    st.actor('minnow', x + 2.4, z + 1.2, { face: { x: -0.7, z: 0.7 } });
+    // (hat in hand — then three balls in the air, to show what he means)
+    st.act.play('minnow', 'beg');
+    st.act.after(1.8, () => { st.act.juggle('minnow'); st.act.play('minnow', 'juggle'); });
     await st.say('minnow', 'Mayor… now there’s light, could we do our act? With juggling?', { expr: 'worried' });
+    st.act.juggle('minnow', null); st.act.play('minnow', 'cheer');
     await st.say('marrow', 'An ACT? …Absolutely! Come to {key}the stage{/} and {key}keep the beat{/} for them!', { expr: 'love', hop: true });
     st.hide('minnow');
   });
 }
 async function applause(S) {
   await S.scene(async (st) => {
-    const P = S.P, [x, z] = STAGE;
-    await st.cam(x, z + 1.5, { dur: 0.6, ppu: st.basePpu() });
+    const P = S.P, [x, z] = STAGE, A = st.act;
+    await st.cam(x, z + 1, { dur: 0.6, ppu: st.basePpu() * 2 });
     TRIO.forEach((id, i) => { const a = st.actor(id, x - 1.2 + i * 1.2, z + 0.2, { face: { x: 0, z: 1 } }); a.n.seatY = 0.5; });
     st.sfx('cheer', { volume: 0.9 });
     for (let k = 0; k < 12; k++) st.fx('heart', x - 4 + Math.random() * 8, 1.5, z + 3 + Math.random() * 3, 1);
     st.heroesEmote('heart', 2);
+    // (a spotlight of their own, at last, and their bow: together — nearly)
+    A.spot('act', [x, z + 0.2, 0.5], { r: 2.6, h: 8, dim: 0.25 });
+    A.troupe(['fidget', 'minnow', 'brick'], 'bow', { flub: 1 });
+    A.react('heroes', 'applaud');
     st.mark('applause');
     await st.say('narrator', 'All of Harvestholm claps, for a long, long time.');
-    await st.say('brick', 'Brick heard clapping.{p}For Brick.', { expr: 'cry' });
+    A.push('brick', { mul: 1.5 }); A.play('brick', 'think');
+    await st.say('brick', 'Brick heard clapping.{p}For Brick.', { expr: 'happy', beats: [() => { A.play('brick', 'hush'); A.face('brick', 'cry'); }] });
+    await A.pull();
+    A.play('minnow', 'facepalm').then(() => A.play('minnow', 'proud'));
     await st.say('minnow', 'I’m not crying, you’re crying. It’s the leaves.', { expr: 'love' });
+    A.rest('brick'); A.play('fidget', 'bow');
     await st.say('fidget', '…Thank you. Really.', { expr: 'happy' });
     // (and the next morning)
     await st.fade(1, 0.8);
+    A.spotOff('act', true); A.rest(TRIO); A.rest('heroes');
     if (P.state && (P.state.hour > 18 || P.state.hour < 6)) { if (P.state.hour > 18) P.state.day = (P.state.day || 1) + 1; P.state.hour = 8; }
     await st.fade(0, 0.8);
+    A.play('fidget', 'point');
     await st.say('fidget', 'Morning! Take the road north-east to {key}Rootholm{/}, under the Great Tree. {key}The Warden{/} there knows the way in.', { expr: 'neutral' });
   });
 }
@@ -242,13 +286,27 @@ async function heartRelit(S) {
     st.sfx('snap', { volume: 1 });
     st.shake(0.8);
     st.move('siph', { y: -8 }, 1.2);
-    const bx = SX + BALCONY.x * s, by = SY + BALCONY.y * s, bz = SZ + BALCONY.z * s;
-    st.actor('duchess', bx, bz, { face: { x: 0, z: 1 } }).n.seatY = by;
-    await st.cam(bx, bz - by + 2, { dur: 1, ppu: st.basePpu() });
+    const bx = SX + BALCONY.x * s, by = SY + BALCONY.y * s, bz = SZ + BALCONY.z * s, A = st.act;
+    st.actor('duchess', bx - 0.3, bz - 0.5, { face: { x: 0, z: 1 } }).n.seatY = by;
+    // (her cardboard Understudies are still at her side — one of them, not for long)
+    TRIO.forEach((w, i) => st.prop('cut' + i, buildCutout(P.r3d, w), bx + 0.5 + i * 0.5, by, bz + 0.3));
+    A.spot('diva', 'duchess', { r: 1, h: 6, dim: 0, pool: false });
+    await st.wait(0.5);
+    await st.cam(bx, bz - by + 0.9, { dur: 0, ppu: st.basePpu() * 2 });
+    st.sfx('select', { volume: 0.3, pitch: 4 });
     st.mark('straw');
+    // she rushes to the rail: a tantrum that knocks her new troupe flat
+    A.glide('duchess', bx - 0.3, bz + 0.1, 0.3); A.play('duchess', 'tantrum');
+    A.after(0.9, () => { const c = st.propOf('cut0'); if (c) A.tw(0.4, (k) => { c.rotation.x = k * k * 1.5; }, () => st.sfx('bonk', { volume: 0.5 })); });
     await st.say('duchess', 'My straw! You broke my STRAW!', { expr: 'angry', shake: 1 });
-    await st.say('duchess', 'Keep your twig! My Grand Finale awaits at {key}the Umbral Scar{/}, beyond a whole moor full of GHOSTS.{p}Toodle-oo!', { expr: 'smug' });
+    A.play('duchess', 'fist').then(() => A.play('duchess', 'flourish'));
+    await st.say('duchess', 'Keep your twig! My Grand Finale awaits at {key}the Umbral Scar{/}, beyond a whole moor full of GHOSTS.{p}Toodle-oo!', { expr: 'smug', beats: [() => { A.face('duchess', 'happy'); A.play('duchess', 'wave'); }] });
+    // (a pirouette, and her light goes out)
+    await A.play('duchess', 'twirl');
+    A.spotOff('diva');
     st.hide('duchess');
+    for (let i = 0; i < 3; i++) st.dropProp('cut' + i);
+    st.cam(bx, bz - by + 2, { dur: 0.5, ppu: st.basePpu() });
     st.sfx('whoosh', { volume: 0.7, pitch: -10 });
     await st.move('ship', { x: SX + 40, y: SY + 4, z: SZ - 20 }, 3.5);
     st.dropProp('ship'); st.dropProp('siph');
@@ -256,8 +314,10 @@ async function heartRelit(S) {
     if (S.P.murk) S.P.murk.pulse(-1);
     await st.cam(ASHBY[0] + 1, ASHBY[1] + 1.5, { dur: 1, ppu: st.basePpu() });
     st.actor('ashby', ASHBY[0], ASHBY[1], { face: { x: 0.3, z: 1 } });
-    TRIO.forEach((id, i) => st.actor(id, ASHBY[0] + 2.6 + i * 0.8, ASHBY[1] + 3.4, { face: { x: -0.4, z: -1 } }));
-    await st.say('brick', 'Brick is not afraid of ghosts.{p}…Brick is a little afraid of ghosts.', { expr: 'worried' });
+    TRIO.forEach((id, i) => st.actor(id, ASHBY[0] + 2.6 + i * 0.8, ASHBY[1] + 3.4, { face: { x: -0.3, z: 1 } }));
+    A.play('brick', 'flex');
+    await st.say('brick', 'Brick is not afraid of ghosts.{p}…Brick is a little afraid of ghosts.', { expr: 'happy', beats: [() => { A.play('brick', 'shiver'); A.face('brick', 'worried'); }] });
+    A.play('fidget', 'point');
     await st.say('fidget', 'The only road to the Scar crosses {key}Hollowmoor{/}, the moor east of here. We know the way backstage.', { expr: 'worried' });
     await st.title('The Heartlight burns again', 'The Murk rolls back from Hollowmoor, Prism Springs, Cogsworth and the Aurora Tundra', 3.6);
   });
