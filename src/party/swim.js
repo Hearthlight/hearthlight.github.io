@@ -66,11 +66,15 @@ export class Swim {
   post(p, dt) {
     const a = p.actor, w = this.party.world, fx = w.fx;
     const foam = this.foam.get(p.slot);
+    // (taken out of the water while everything was held — a scene put them down on a quay: `pre`
+    // had no say, and a swimmer left as one would ride the currents’ rectangles over dry land)
+    if (p.swimming && !this.isWater(a.pos.x, a.pos.z)) { p.swimming = false; this.leave(p); }
     if (!p.swimming) { if (foam) foam.visible = false; return; }
-    // currents & whirlpools
-    const flow = this.flowAt(a.pos.x, a.pos.z);
+    // currents & whirlpools (none while a scene or a talk holds everyone still)
+    const P = this.party, held = P.busy > 0 || !!P.cinematic || !!P.vote || !!(P.dialogue && P.dialogue.active);
+    const flow = held ? null : this.flowAt(a.pos.x, a.pos.z);
     if (flow) w.overCol.move(a.pos, flow.x * 2.1 * dt, flow.z * 2.1 * dt, a.radius, true);
-    for (const wp of this.whirlpools()) {
+    for (const wp of held ? [] : this.whirlpools()) {
       const dx = a.pos.x - wp.x, dz = a.pos.z - wp.z, d = Math.hypot(dx, dz);
       if (d > wp.r) continue;
       const k = 1 - d / wp.r;

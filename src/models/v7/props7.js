@@ -447,6 +447,7 @@ export function buildAirship(r3d) {
   const prop = K.grp(body, 0, 4.4, -3.3);
   for (const r of [0, Math.PI / 2]) K.put(prop, K.box(0.14, 1.4, 0.06), K.c('#6a4a34'), 0, 0, 0, 0, 0, r);
   g.userData.anim = (t) => { prop.rotation.z = t * 16; body.position.y = Math.sin(t * 1.3) * 0.12; body.rotation.z = Math.sin(t * 0.9) * 0.03; };
+  g.userData.body = body;                                  // (what bobs: whoever is aboard bobs with it — saga/aboard.js)
   return g;
 }
 

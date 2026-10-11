@@ -29,6 +29,7 @@ export class Stage {
     this.walks = [];
     this.actors = new Map();             // id → { n, solo villager?, spawned? }
     this.props = new Map();              // key → { obj, tw, keep } (the Gloomstage, the Snuffer…)
+    this.trip = null;                    // the heroes aboard a craft, while a scene takes them somewhere (aboard.js)
     this.t = 0;
     this.skipHold = 0;
   }
@@ -78,6 +79,7 @@ export class Stage {
     this.walks = [];
     for (const w of this.waits) w.res();
     this.waits = [];
+    if (this.trip) this.trip.end();
     this.releaseActors();
     for (const [k, pr] of [...this.props]) { if (pr.tw) { const w = pr.tw; for (const ax of ['x', 'y', 'z']) if (w.to[ax] !== undefined) pr.obj.position[ax] = w.to[ax]; pr.tw = null; w.res(); } if (!pr.keep) this.dropProp(k); }
     if (this.skyTw) { this.skyTw.step(1e9); const r = this.skyTw.res; this.skyTw = null; r(); }
@@ -153,6 +155,7 @@ export class Stage {
       }
       if (o.userData.anim) o.userData.anim(this.t, dt);
     }
+    if (this.trip) this.trip.update(dt);
     // the walks
     for (const w of this.walks) if (!w.n.path || !w.n.path.length) { this.arrive(w); w.done = true; }
     this.walks = this.walks.filter((w) => !w.done);
@@ -344,6 +347,7 @@ export class Stage {
 
   // ------------------------------------------------------------------ drawing (over the world, under the dialogue box)
   draw(ctx, W, H) {
+    if (this.trip) this.trip.draw(ctx, W);
     for (const f of this.flashes) {
       ctx.globalAlpha = Math.max(0, 1 - f.t / f.dur) * 0.85;
       ctx.fillStyle = f.color; ctx.fillRect(0, 0, W, H);

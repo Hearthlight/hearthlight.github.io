@@ -20,6 +20,7 @@ import { DAWN_MODELS } from '../../combat/v7/dawn.js';
 import { kit, THREE } from '../../models/v7/kit.js';
 import { audio } from '../../engine/audio.js';
 import { t } from '../../i18n.js';
+import { aboard, TEACUP } from '../aboard.js';
 
 // the chapter’s places
 export const MAST_W = [475, 215.5];                          // the Teacup’s mast on Lighthouse Isle
@@ -43,9 +44,6 @@ const BLANCHE = [803, 228.5];                                // at the Saltworks
 const REFLECT = [[770, 238], [812, 255], [786, 210]];
 const FESTIVAL = [782, 63];
 
-const hide = (P, on) => { for (const p of P.players) { p.away = on; p.hidden = on; if (p.actor) p.actor.hidden = on; } };
-// (the camera rides with a flying prop — it aims where a thing that high shows up)
-const ride = (st, obj, dy = 0.6) => { const a0 = obj.userData.anim; obj.userData.anim = (tm, dt) => { if (a0) a0(tm, dt); if (st.cv && !st.tw) { st.cv.x = obj.position.x; st.cv.z = obj.position.z - obj.position.y + dy; } }; };
 const eyeOf = (P) => { const q = P.big && P.big.pois && P.big.pois.list.find((o) => o.kind === 'whale_eye'); return q && q.built ? q.built.obj : null; };
 const lampOut = (S, i) => !!S.st.f['lpOut' + i];
 
@@ -60,13 +58,17 @@ async function crossing(S) {
     const P = S.P, K = kit(P.r3d);
     const ship = buildAirship(P.r3d);
     st.prop('teacup', ship, MAST_W[0], 1.3, MAST_W[1] - 3.7);
-    hide(P, true);
-    await st.cam(MAST_W[0], MAST_W[1] + 1, { dur: 0.6, ppu: st.basePpu() });
+    // (the moored Teacup is this very ship; everybody aboard, perched on her saucer, Wendy too)
+    const moored = S.props && S.props.get('teacupW');
+    if (moored) moored.obj.visible = false;
+    const trip = aboard(st);
+    trip.crew(ship, 'wendy', TEACUP); trip.seat(ship, TEACUP);
+    await st.cam(MAST_W[0], MAST_W[1] - 3.6, { dur: 0.6, ppu: st.basePpu() });
     st.sfx('whoosh', { volume: 0.6 });
+    trip.cheer();
     await st.move('teacup', { y: 7 }, 1.4);
     // (out over the Wide Sea, the camera riding along, high)
-    const prop0 = ship.userData.anim;
-    ride(st, ship);
+    trip.ride(ship);
     st.cv.ppu = Math.max(8, Math.round(st.basePpu() / 16) * 8); st.applyCam();
     st.music('whale');
     const [wx, wz] = [WHALE_LAND[0] - 10, WHALE_LAND[1] + 8];
@@ -76,13 +78,14 @@ async function crossing(S) {
     await st.say('wendy', 'An island that isn’t on any chart… with an inn. We’re landing!', { expr: 'neutral' });
     await fly;
     st.cv.ppu = st.basePpu(); st.applyCam();
-    ship.userData.anim = prop0;
+    trip.ride(null);
     await st.move('teacup', { x: WHALE_LAND[0], y: 0.3, z: WHALE_LAND[1] - 1.5 }, 2);
     st.sfx('thud', { volume: 0.7 });
     st.shake(0.3);
     // (on the grass of her back: the inn, and its keeper)
-    hide(P, false);
-    P.gatherAt(WHALE_LAND[0] + 2, WHALE_LAND[1] + 1.5, 1.2);
+    trip.land(WHALE_LAND[0] + 2.4, WHALE_LAND[1] + 1.6, { crew: false });
+    if (moored) moored.obj.visible = true;
+    st.mark('whaleBack');
     st.actor('wendy', WHALE_LAND[0] - 1.8, WHALE_LAND[1] + 0.8, { face: { x: 0.5, z: 1 } });
     await st.cam(WHALE_LAND[0] + 2, WHALE_LAND[1] + 0.5, { dur: 0.6 });
     st.actor('bess', BESS[0] + 1.5, BESS[1] - 1, { face: { x: -1, z: 0.5 } });
@@ -120,9 +123,10 @@ async function spout(S) {
     if (eye) eye.userData.open = 1;
     await st.say('bellows', 'Ohhhh… that’s the spot.{p} Now hold on: I’ll blow you over the Murk.', { expr: 'happy', speed: 0.5 });
     // (everyone in the Teacup, the Teacup over the blowhole)
-    hide(P, true);
+    const trip = aboard(st);                             // (the heroes on her saucer: saga/aboard.js)
     const ship = buildAirship(P.r3d), sp = buildSpout(P.r3d);
     st.prop('teacup', ship, BLOWHOLE[0], 0.3, BLOWHOLE[1]);
+    trip.crew(ship, 'wendy', TEACUP); trip.seat(ship, TEACUP);
     st.prop('spout', sp, BLOWHOLE[0], 0, BLOWHOLE[1]);
     await st.cam(BLOWHOLE[0], BLOWHOLE[1] - 1, { dur: 0.8 });
     await st.say('wendy', 'Why are we parked on her blowhole?{p} …Oh. Hold on to your—', { expr: 'shock' });
@@ -138,29 +142,29 @@ async function spout(S) {
       if (k === 18) st.mark('spout');
       await st.wait(0.06);
     }
-    ride(st, ship, 0.6);
+    trip.ride(ship);
     for (let k = 0; k <= 12; k++) { ship.position.y += 0.6; await st.wait(0.05); }
     await st.say('narrator', 'Grandmother Bellows blows. Her spout lifts the Teacup clean over the wall of Murk.');
     await st.fade(1, 0.6);
     st.dropProp('spout');
     // (down into Lantern Bay, in the dark)
     S.flag('teacupAt', 'east'); S.flag('teacupLine');
-    st.dropProp('teacup');
-    const ship2 = buildAirship(P.r3d);
-    st.prop('teacup2', ship2, MAST_E[0] - 14, 12, MAST_E[1] + 6);
+    trip.ride(null);
+    ship.position.set(MAST_E[0] - 14, 12, MAST_E[1] + 6);
     await st.cam(MAST_E[0] - 6, MAST_E[1], { dur: 0 });
     await st.lights(0.85, null, 0);
     await st.fade(0, 0.8);
     st.music('harbor');
-    await st.move('teacup2', { x: MAST_E[0], y: 1.3, z: MAST_E[1] - 3.7 }, 3);
-    st.dropProp('teacup2');
-    hide(P, false);
-    P.gatherAt(LP_LAND[0], LP_LAND[1], 1.2);
+    await st.move('teacup', { x: MAST_E[0], y: 1.3, z: MAST_E[1] - 3.7 }, 3);
+    // (everybody out by the mast; the Teacup stays at her mooring — the chapter’s own takes her
+    // place the frame this scene ends)
+    trip.land(LP_LAND[0], LP_LAND[1] - 1.4, { crew: false });
     st.actor('wendy', WENDY_E[0], WENDY_E[1], { face: { x: 0.4, z: 1 } });
     await st.cam(LP_LAND[0], LP_LAND[1] - 3, { dur: 0.8 });
     st.mark('lanternport');
     await st.say('wendy', '{key}Lanternport{/}. Not one lamp lit… but there are candles behind the shutters.', { expr: 'sad' });
     await st.say('wendy', 'I’ll moor her. You, {key}relight the street lamps{/}, from the quay up to the hall.', { expr: 'worried' });
+    S.syncT = 0;
   });
 }
 

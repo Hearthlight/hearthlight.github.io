@@ -768,8 +768,9 @@ export class ExploreAct {
         if (this.nearestDist(d.x, d.z) < 7) this.world.fx.emit('sparkle', d.x + rand(-0.15, 0.15), 0.12, d.z + rand(-0.1, 0.1), 2, { color: '#ffe89a' });
       }
     }
-    // A near a chest, a glint, the gong or a villager does that instead of swinging
-    if (!P.busy && !P.dialogue.active && !P.vote && !this.overlay) {
+    // A near a chest, a glint, the gong or a villager does that instead of swinging (not while a
+    // scene plays: an A hammered to turn its pages rings no bell between two lines)
+    if (!P.busy && !P.dialogue.active && !P.vote && !this.overlay && !P.cinematic) {
       for (const p of P.players) {
         if (!p.connected || !p.input.pressed('a')) continue;
         const th = this.nearThing(p);

@@ -14,6 +14,7 @@ import { buildVehicle } from '../../party/vehicles.js';
 import { FROSTBELL, FROST_DOOR } from '../dungeons/frostbell.js';
 import { kit, THREE } from '../../models/v7/kit.js';
 import { audio } from '../../engine/audio.js';
+import { aboard, afloat, BASKET } from '../aboard.js';
 
 // the chapter’s places
 const CROAK = [296, 44];                                    // Croakton’s waystone
@@ -118,42 +119,53 @@ async function wendyTalk(S) {
 // ------------------------------------------------------------------ the balloon over the clouds
 async function balloonFlight(S) {
   const P = S.P;
-  const heroes = P.players.filter((p) => p.connected || P.solo);
-  const hide = (p, on) => { p.away = on; p.hidden = on; if (p.actor) p.actor.hidden = on; };
+  // (the station’s own balloon is the one that flies: put away while the scene has it)
+  const own = P.vehicles && P.vehicles.list.find((v) => v.kind === 'balloon');
   try {
     await S.scene(async (st) => {
-      const b = buildVehicle(P.r3d, 'balloon');
-      // (Nibs on the basket’s rim, and Wendy at the burner)
-      const K = kit(P.r3d), nibs = K.grp(b, 0.7, 0.9, 0.6);
+      P.gatherAt(DOCK1[0] + 1.5, DOCK1[1] + 2.5, 1.2);
+      await st.cam(DOCK1[0], DOCK1[1] + 1, { dur: 0, ppu: st.basePpu() });
+      // everybody in the basket (a bigger one for a big party), Wendy at the burner
+      const trip = aboard(st), model = buildVehicle(P.r3d, 'balloon'), b = afloat(model, { scale: BASKET.scale(trip.heroes.length), bob: 0.04 });
+      // (Nibs on the basket’s rim)
+      const K = kit(P.r3d), nibs = K.grp(model, 0.7, 0.9, 0.6);
       K.put(nibs, K.ball(0.18, 8, 6), K.c('#f4f0ec'), 0, 0.15, 0).scale.set(1, 0.9, 1.3);
       K.put(nibs, K.box(0.08, 0.06, 0.24), K.c('#f2c14e'), 0, 0.18, 0.24);
       K.put(nibs, K.box(0.5, 0.04, 0.16), K.c('#3a3844'), 0, 0.2, -0.05);
+      if (own) own.obj.visible = false;
       st.prop('balloon', b, DOCK1[0], 0, DOCK1[1]);
-      P.gatherAt(DOCK1[0] + 1.5, DOCK1[1] + 2.5, 1.2);
-      await st.cam(DOCK1[0], DOCK1[1] + 1, { dur: 0, ppu: st.basePpu() });
-      for (const p of heroes) hide(p, true);
+      trip.crew(b, 'wendy', BASKET);
+      trip.seat(b, BASKET, { hop: true });
+      await trip.settled();
       st.sfx('whoosh', { volume: 0.6 });
       st.fx('smoke', DOCK1[0], 2, DOCK1[1], 10, { color: '#f4f0ec' });
-      const a0 = b.userData.anim;
-      b.userData.anim = (tt, dt) => { if (a0) a0(tt, dt); if (st.cv && !st.tw) { st.cv.x = b.position.x; st.cv.z = b.position.z - b.position.y * 0.4; } };
+      trip.ride(b, { dz: -1.2 });
+      trip.cheer();
       st.music('clouds');
       await st.move('balloon', { y: 6 }, 1.6);
       st.mark('balloonFlight');
       await st.move('balloon', { x: (DOCK1[0] + DOCK2[0]) / 2, z: DOCK1[1] - 6, y: 8 }, 2.6, { ease: 'lin' });
       await st.move('balloon', { x: DOCK2[0], z: DOCK2[1], y: 5 }, 2.4, { ease: 'lin' });
       await st.move('balloon', { y: 0 }, 1.3);
-      heroes.forEach((p, i) => {
-        const x = DOCK2[0] + 1.2 + (i % 3) * 1.1, z = DOCK2[1] + 2.2 + Math.floor(i / 3) * 1.1;
-        if (P.solo) P.gatherAt(x, z); else p.actor.pos = { x, z };
-        hide(p, false);
-      });
-      if (!P.solo && P.cam) P.cam.snap(P.camPlayers());
+      trip.ride(null);
       st.sfx('thud', { volume: 0.5 });
+      // (a few steps from the dock: whoever waits on it calls the balloon back)
+      trip.land(DOCK2[0] + 3.6, DOCK2[1] + 5, { face: [DOCK2[0], DOCK2[1]] });
+      st.cam(DOCK2[0] + 1.8, DOCK2[1] + 2.2, { dur: 0.5 });
+      await trip.settled();
+      st.mark('cloudHarbour');
       await st.say('wendy', 'Cloud Harbour! Mind the gap.{p} The gap is the sky.', { expr: 'happy' });
+      // (and off she floats, back to her station: the balloon comes when somebody waits on a dock)
+      st.sfx('whoosh', { volume: 0.4 });
+      const up = st.move('balloon', { y: 7 }, 1.6);
       await st.say('wendy', 'Look for your thief near the {key}Cloud Temple{/}, {key}to the north-east{/}.', { expr: 'happy' });
+      await up;
+      await st.move('balloon', { x: DOCK2[0] - 15, z: DOCK2[1] + 3, y: 9 }, 2, { ease: 'lin' });
       st.dropProp('balloon');
     }, { bars: true });
-  } finally { for (const p of heroes) hide(p, false); }
+  } finally {
+    if (own) { const d = own.route ? own.route.findIndex((q) => Math.hypot(q.x - DOCK1[0], q.z - DOCK1[1]) < 6) : -1; if (d >= 0 && !own.flying) { own.x = own.route[d].x; own.z = own.route[d].z; own.at = d; P.vehicles.place(own); } own.obj.visible = true; }
+  }
 }
 
 // ------------------------------------------------------------------ Crumble in a cloud

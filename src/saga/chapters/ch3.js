@@ -14,6 +14,7 @@ import { CANYON_MODELS } from '../../combat/v7/canyon.js';
 import { OLDMINE, QUARRY_DOOR, QUARRY_GATE } from '../dungeons/oldmine.js';
 import { ARENA_SITE } from '../../world/big/layout.js';
 import { audio } from '../../engine/audio.js';
+import { aboard, CART } from '../aboard.js';
 
 // the chapter’s places
 const A = ARENA_SITE;
@@ -190,9 +191,9 @@ async function theChase(S) {
   const P = S.P;
   const rail = (P.big && P.big.map.rails && P.big.map.rails[0] && P.big.map.rails[0].pts) || [[-214, 28], [-208, 42], [-200, 54], [-194, 64], [-196, 76], [-200, 86]];
   const up = [...rail].reverse();                      // from the Gulch up to the mine
+  const end = up.length - 1;                           // (the line’s end, in the yard: Grubb alone goes on into the mine)
   up.push([MINE[0], MINE[1] + 2.5]);
-  const heroes = P.players.filter((p) => p.connected || P.solo);
-  const hide = (p, on) => { p.away = on; p.hidden = on; if (p.actor) p.actor.hidden = on; };
+  let trip = null;
   try {
     await S.scene(async (st) => {
       const [x0, z0] = up[0];
@@ -212,24 +213,28 @@ async function theChase(S) {
       st.hide('grubb');
       for (let i = 0; i < 2; i++) st.dropProp('mole' + i);
       st.sfx('whoosh', { volume: 0.7 });
-      // the heroes grab the town’s carts, one each (up to four), and give chase
-      const carts = heroes.slice(0, 4).map((p, i) => { const o = buildOreCart(P.r3d); st.prop('cart' + i, o, x0, 0, z0 + 3 + i * 1.9); return o; });
-      for (const p of heroes) hide(p, true);
+      // the heroes grab the town’s carts and give chase: one each — two to a cart past four
+      trip = aboard(st);
+      const n = trip.heroes.length, two = n > 4 ? 2 : 1;
+      const carts = Array.from({ length: Math.ceil(n / two) }, (_, i) => { const o = buildOreCart(P.r3d); st.prop('cart' + i, o, x0, 0, z0 + 3 + i * 1.9); trip.seat(o, CART, { max: two, hop: true }); return o; });
+      await trip.settled();
       st.music('battle');
-      // everyone rides up the line; the camera rides the first hero’s cart
-      const ride = async (key, o, delay, speed) => {
+      // everyone rides up the line (each cart stops behind the one before, at the line’s end);
+      // the camera rides the first hero’s cart
+      const ride = async (key, o, delay, speed, last = up.length - 1, back = 0) => {
         await st.wait(delay);
         let px = o.position.x, pz = o.position.z;
-        for (let i = 1; i < up.length; i++) {
-          const [x, z] = up[i], L = Math.hypot(x - px, z - pz);
+        for (let i = 1; i <= last; i++) {
+          let [x, z] = up[i];
+          if (i === last && back) { const [ax, az] = up[i - 1], l = Math.hypot(x - ax, z - az) || 1; x -= ((x - ax) / l) * back; z -= ((z - az) / l) * back; }
+          const L = Math.hypot(x - px, z - pz);
           o.rotation.y = Math.atan2(x - px, z - pz);
           await st.move(key, { x, z }, L / speed, { ease: 'lin' });
           if (o.userData.roll) o.userData.roll(L);
           px = x; pz = z;
         }
       };
-      const lead = carts[0];
-      if (lead) { const a0 = lead.userData.anim; lead.userData.anim = (tt, dt) => { if (a0) a0(tt, dt); if (st.cv && !st.tw) { st.cv.x = lead.position.x; st.cv.z = lead.position.z - 1; } }; }
+      trip.ride(carts[0], { dz: -1, ky: 0 });
       const booms = (async () => {
         for (const gap of [1.4, 1.8, 1.8]) {
           await st.wait(gap);
@@ -243,7 +248,8 @@ async function theChase(S) {
         }
       })();
       st.mark('cartChase');
-      await Promise.all([ride('grubbCart', cart, 0, 11), ...carts.map((o, i) => ride('cart' + i, o, 0.9 + i * 0.35, 10.5)), booms]);
+      await Promise.all([ride('grubbCart', cart, 0, 11), ...carts.map((o, i) => ride('cart' + i, o, 0.9 + i * 0.35, 10.5, end, i * 2.1)), booms]);
+      trip.ride(null);
       // the mine’s mouth, blown shut behind him
       st.dropProp('grubbCart');
       st.sfx('boom', { volume: 1 }); st.shake(0.9); st.flash('#fff0d0', 0.4);
@@ -251,14 +257,9 @@ async function theChase(S) {
       st.fx('dust', MINE[0], 1, MINE[1] + 2, 40, { color: '#b8704a' });
       if (st.vfx) st.vfx.shockwave(MINE[0], MINE[1] + 2, { r: 4, color: '#c88a5a', life: 0.6, wall: 1 });
       await st.wait(0.8);
-      // (everyone out, at the yard)
-      heroes.forEach((p, i) => {
-        const x = YARD[0] + (i % 3) * 1.1 - 1.1, z = YARD[1] + Math.floor(i / 3) * 1.1;
-        if (P.solo) P.gatherAt(x, z); else p.actor.pos = { x, z };
-        hide(p, false);
-      });
-      for (let i = 0; i < carts.length; i++) st.dropProp('cart' + i);
-      if (!P.solo && P.cam) P.cam.snap(P.camPlayers());
+      // (everyone out, at the yard, beside the carts)
+      trip.land(YARD[0] + 2, YARD[1] + 0.6, { face: [MINE[0], MINE[1] + 2] });
+      st.mark('yard');
       await st.cam(YARD[0], YARD[1] - 2, { dur: 0.6 });
       st.music(null);
       await st.say('narrator', 'Grubb has blown the tunnel shut behind him. From under the rubble: “Ha-HA! Go home!”');
@@ -268,7 +269,7 @@ async function theChase(S) {
       await st.say('hazel', 'Oh my, a real ore cart chase! I am Professor Hazel.', { expr: 'love' });
       await st.say('hazel', 'I have mapped this whole canyon: there is {key}another way in{/}. Come and see!', { expr: 'happy' });
     }, { bars: true });
-  } finally { for (const p of heroes) hide(p, false); }
+  } finally { if (trip) trip.end(); }
 }
 async function hazelTalk(S) {
   await S.say('hazel', 'Long before the mine, the Lamplighters dug a quarry here. Its old road is behind that gate.', { expr: 'happy' });

@@ -2,6 +2,9 @@
 // postal caps, a mail satchel, and a beak pouch you ride in (a hero peeks
 // out). Local frame: feet on the ground at the origin, beak towards +z.
 // `userData.anim(t, dt)` flaps or glides by `userData.mode`: sit, fly or glide.
+// `rider`: a colour — a little head of that colour in the pouch — or `true`: the beak
+// held open over a roomy pouch, and `userData.seat` where a passenger sits in it
+// (saga/aboard.js puts the hero there).
 
 import { kit, THREE } from './kit.js';
 
@@ -28,12 +31,13 @@ export function buildPelican(r3d, { rider = null, cap = true } = {}) {
     K.noCast(K.put(head, K.box(0.06, 0.06, 0.02), gold, 0, 0.24, 0.16));
   }
   // the great beak, and the pouch under it (someone might be riding in it)
-  const bk = K.grp(head, 0, -0.02, 0.18);
-  K.put(bk, K.box(0.14, 0.07, 1.0), beak, 0, 0.04, 0.5).rotation.x = 0.08;
-  K.put(bk, K.box(0.04, 0.05, 0.14), K.c('#d8883a'), 0, 0.02, 1.02);
+  const bk = K.grp(head, 0, -0.02, 0.18), carry = rider === true, top = K.grp(bk);
+  K.put(top, K.box(0.14, 0.07, 1.0), beak, 0, 0.04, 0.5).rotation.x = 0.08;
+  K.put(top, K.box(0.04, 0.05, 0.14), K.c('#d8883a'), 0, 0.02, 1.02);
   const pch = K.grp(bk, 0, -0.14, 0.42);
-  K.put(pch, K.ball(0.26, 10, 6), pouch, 0, 0, 0).scale.set(0.8, rider ? 1.05 : 0.6, 1.6);
-  if (rider) {
+  K.put(pch, K.ball(0.26, 10, 6), pouch, 0, 0, 0).scale.set(carry ? 1.3 : 0.8, carry ? 1.3 : rider ? 1.05 : 0.6, carry ? 1.75 : 1.6);
+  if (carry) { top.rotation.x = -0.66; g.userData.seat = K.grp(pch, 0, -0.04, 0.02); }
+  else if (rider) {
     const hd = K.grp(pch, 0, 0.2, 0.05);
     K.put(hd, K.ball(0.16, 8, 6), K.c(rider), 0, 0, 0);
     for (const s of [-1, 1]) K.put(hd, K.ball(0.03, 4, 3), black, s * 0.06, 0.02, 0.14);

@@ -22,6 +22,7 @@ import { ghostify } from './ch9.js';
 import { audio } from '../../engine/audio.js';
 import { kit, THREE } from '../../models/v7/kit.js';
 import { t } from '../../i18n.js';
+import { aboard, TEACUP } from '../aboard.js';
 
 // the chapter’s places
 const CAMP = [1341, 103.5];                                  // the edge of the Scar, where everyone waits
@@ -36,7 +37,6 @@ const LIGHTHOUSE = [130.5, 88];
 const GREAT_TREE = [958, 64];
 const LANTERNPORT = [782, 60];
 
-const hide = (P, on) => { for (const p of P.players) { p.away = on; p.hidden = on; if (p.actor) p.actor.hidden = on; } };
 const R = (id) => GLOOMSTAGE.rooms.find((r) => r.id === id);
 const mid = (d, r, dz = 0) => ({ x: d.ox + r.x + r.w / 2, z: d.oz + r.z + r.h / 2 + dz });
 const pose = (e) => { e.spawnT = 0; e.obj.scale.setScalar(1); e.obj.position.set(e.x, e.y, e.z); if (e.shadow) e.shadow.position.set(e.x, 0.02, e.z); };
@@ -97,8 +97,6 @@ async function wendyTalk(S) {
 async function boarding(S) {
   const P = S.P;
   P.busy++;
-  const heroes = P.players.filter((p) => p.connected || P.solo);
-  for (const p of heroes) { if (p.mount && P.mounts) P.mounts.dismount(p, true); if (p.vehicle && P.vehicles) P.vehicles.leave(p, true); }
   try {
     await S.scene(async (st) => {
       S.syncProps();
@@ -107,13 +105,15 @@ async function boarding(S) {
       for (const [k, [bx, bz, ph]] of [[-9, 5, 0.6], [9, 3, 2.8], [0, -4, 1.7]].entries()) { const b = buildSearchBeam(P.r3d, { len: 20, r: 3, speed: 0.7, phase: ph, swing: 1.2 }); b.userData.k = k; st.prop('sb' + k, b, SHIP[0] + bx, SHIP_Y + 1, SHIP[1] + bz); }
       const cup = buildAirship(P.r3d);
       st.prop('cup', cup, CUP[0], 0.2, CUP[1]);
-      hide(P, true);
-      await st.cam(CUP[0], CUP[1] - 1, { dur: 0.4, ppu: st.basePpu() });
+      // (everybody on her saucer, Wendy too — they stay aboard until the stage door’s fade)
+      const trip = aboard(st);
+      trip.crew(cup, 'wendy', TEACUP); trip.seat(cup, TEACUP);
+      await st.cam(CUP[0], CUP[1] - 2, { dur: 0.4, ppu: st.basePpu() });
       st.sfx('whoosh', { volume: 0.7 });
+      trip.cheer();
       await st.move('cup', { y: 5 }, 1.1);
       // (the camera rides along, a little behind)
-      const a0 = cup.userData.anim;
-      cup.userData.anim = (tm, dt) => { if (a0) a0(tm, dt); if (st.cv && !st.tw) { st.cv.x = cup.position.x + 4; st.cv.z = cup.position.z - cup.position.y - 3; } };
+      trip.ride(cup, { dx: 4, dz: -3 });
       st.cv.ppu = Math.max(8, Math.round(st.basePpu() / 16) * 8); st.applyCam();
       await st.say('wendy', 'Hold onto your saucers!', { expr: 'happy', auto: 1.2 });
       await st.move('cup', { x: CUP[0] + 14, y: 8, z: CUP[1] - 5 }, 1.8, { ease: 'lin' });
@@ -124,7 +124,7 @@ async function boarding(S) {
       await st.move('cup', { x: CUP[0] + 22, y: 10, z: CUP[1] - 14, ry: 0.7 }, 1.2);
       await st.move('cup', { x: CUP[0] + 30, y: 10.5, z: CUP[1] - 10, ry: -0.4 }, 1.2);
       await st.move('cup', { x: SHIP[0] - 7.5, y: SHIP_Y + 0.4, z: SHIP[1] + 3.6, ry: 0 }, 1.6);
-      cup.userData.anim = a0;
+      trip.ride(null);
       st.sfx('thud', { volume: 0.6 });
       await st.cam(SHIP[0] - 4, SHIP[1] + 1 - SHIP_Y, { dur: 0.8 });
       st.mark('boarding');
@@ -132,7 +132,6 @@ async function boarding(S) {
       await st.fade(1, 0.5);
     }, { bars: true });
   } finally {
-    hide(P, false);
     const parked = propOf(S, 'teacupScar');
     if (parked) parked.visible = true;
     P.busy = Math.max(0, P.busy - 1);

@@ -14,6 +14,7 @@ import '../cast.js';
 import { buildCamel, buildHatchling, buildSingingStone, buildAirship, buildGloomophone } from '../../models/v7/props7.js';
 import { buildGloomstage, buildSnuffer, BALCONY } from '../../models/v7/gloomstage.js';
 import { buildVehicle } from '../../party/vehicles.js';
+import { aboard, afloat, ROWBOAT } from '../aboard.js';
 import { SUNKENBELL, SUNKEN_DOOR } from '../dungeons/sunkenbell.js';
 import { swimRoutine } from '../../combat/v7/troupe.js';
 import { kit, THREE } from '../../models/v7/kit.js';
@@ -102,30 +103,32 @@ async function springClear(S) {
 }
 
 // ------------------------------------------------------------------ Tariq’s boat
-// a ride in the glass-bottomed boat: the heroes aboard (off stage), Tariq at the oars,
-// gliding in over the water to the landing, the camera following
-const hideHeroes = (S, on) => { for (const p of S.P.players) { p.away = on; p.hidden = on; if (p.actor) p.actor.hidden = on; } };
+// a ride in the glass-bottomed boat: the heroes aboard (a longer boat for a bigger party), Tariq
+// at the oars, gliding in over the water to the landing, the camera with them; everybody out on
+// the dry ground nearest `land`
 async function boatRide(S, st, from, to, land) {
   const P = S.P;
   await st.fade(1, 0.5);
-  hideHeroes(S, true);
-  P.gatherAt(land[0], land[1], 1.1);
-  hideHeroes(S, true);
-  const boat = buildVehicle(P.r3d, 'rowboat'), ry = Math.atan2(to[0] - from[0], to[1] - from[1]);
-  boat.rotation.y = ry;
+  const trip = aboard(st);
+  const boat = afloat(buildVehicle(P.r3d, 'rowboat'), { scale: ROWBOAT.scale(trip.heroes.length), bob: 0.03, sway: 0.035, rate: 2.2 });
+  boat.rotation.y = Math.atan2(to[0] - from[0], to[1] - from[1]);
   st.prop('boat', boat, from[0], 0, from[1]);
-  await st.cam(from[0], from[1], { dur: 0, ppu: st.basePpu() });
+  trip.crew(boat, 'tariq', ROWBOAT); trip.oars(boat);
+  trip.seat(boat, ROWBOAT);
+  trip.ride(boat, { dz: 0.4, ky: 0 });
+  await st.cam(from[0], from[1] + 0.4, { dur: 0, ppu: st.basePpu() });
   await st.fade(0, 0.5);
   st.sfx('water', { volume: 0.5 });
-  const go = st.move('boat', { x: to[0], z: to[1] }, 3.4);
-  await st.cam(to[0], to[1], { dur: 3.4 });
-  await go;
+  st.mark('boatRide');
+  await st.move('boat', { x: to[0], z: to[1] }, 4.4);
+  trip.ride(null); trip.oars(null);
   st.sfx('thud', { volume: 0.4 });
   st.shake(0.15);
-  hideHeroes(S, false);
-  for (const p of P.players) P.world.fx.emit('splash', p.pos.x, 0.3, p.pos.z, 6);
-  st.actor('tariq', to[0], to[1], { face: { x: land[0] - to[0], z: land[1] - to[1] } }).n.seatY = 0.3;
-  await st.cam(land[0], land[1], { dur: 0.5 });
+  P.world.fx.emit('splash', to[0], 0.2, to[1], 8);
+  trip.land(land[0], land[1], { face: to });
+  st.mark('boatLanding');
+  await st.cam((land[0] + to[0]) / 2, (land[1] + to[1]) / 2, { dur: 0.5 });
+  await trip.settled();
 }
 
 // ------------------------------------------------------------------ the lagoon
@@ -422,7 +425,7 @@ R('chamber').take = async (S, d, r) => {
 async function southRelit(S) {
   await S.scene(async (st) => {
     const P = S.P, [x, z] = ISLET;
-    P.gatherAt(x, z + 0.8, 1.1);
+    P.gatherAt(x, z - 1.6, 1.1);                     // (on the islet’s beach: z + 0.8 is the sea)
     await st.cam(x, z - 1, { dur: 0, ppu: st.basePpu() });
     st.sfx('bell', { volume: 1, pitch: -14 });
     await st.wait(0.6);
@@ -509,7 +512,7 @@ export const CH5 = {
     { id: 'saffron', at: SAFFRON, face: { x: -1, z: 0.3 }, when: (S) => S.done('c4_relight'),
       lines: ['My grandmother used to say: when the Sunken Bell rings, the fish come home.', 'Humphrey sends his regards. Loudly, at three in the morning.'] },
     // (he waits by his boat at the oasis until you’ve boarded it for the Turtle Nest)
-    { id: 'tariq', at: (S) => (!S.done('c5_oasis') || !(S.done('c5_lagoon') || (S.st.q.c5_lagoon && S.st.q.c5_lagoon.s >= 1)) ? TARIQ_OASIS : S.done('c5_clapper') || (S.st.q.c5_clapper && S.st.q.c5_clapper.s >= 1) ? (S.done('c5_temple') || (S.st.q.c5_temple && S.st.q.c5_temple.s >= 1) ? [ISLET[0] + 2.4, ISLET[1] + 1.2] : TARIQ_FORUM) : TARIQ_NEST),
+    { id: 'tariq', at: (S) => (!S.done('c5_oasis') || !(S.done('c5_lagoon') || (S.st.q.c5_lagoon && S.st.q.c5_lagoon.s >= 1)) ? TARIQ_OASIS : S.done('c5_clapper') || (S.st.q.c5_clapper && S.st.q.c5_clapper.s >= 1) ? (S.done('c5_temple') || (S.st.q.c5_temple && S.st.q.c5_temple.s >= 1) ? [ISLET[0] + 2.4, ISLET[1] - 0.9] : TARIQ_FORUM) : TARIQ_NEST),
       face: { x: -0.6, z: 1 }, when: (S) => S.done('c5_storm'),
       lines: ['With a glass-bottomed boat, I’m the first to know when the sea goes dark.', 'Auntie says the boat is « nearly free ». I never ask what « nearly » means.'] },
     { id: 'shellington', at: SHELLINGTON, face: { x: -0.3, z: 1 }, when: (S) => S.done('c5_oasis'),

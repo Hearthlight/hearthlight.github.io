@@ -8,15 +8,18 @@ import { buildAirship } from '../models/v7/props7.js';
 import { MAST_W, MAST_E } from './chapters/ch7.js';
 import { audio } from '../engine/audio.js';
 import { t } from '../i18n.js';
+import { aboard, TEACUP } from './aboard.js';
 
-const MASTS = [
-  { id: 'west', x: MAST_W[0], z: MAST_W[1], name: 'Lighthouse Isle' },
-  { id: 'east', x: MAST_E[0], z: MAST_E[1], name: 'Lanternport' },
+// (`land`: where her passengers get down, from the mast — the open ground beside it, clear of
+// the mast’s bell)
+export const MASTS = [
+  { id: 'west', x: MAST_W[0], z: MAST_W[1], name: 'Lighthouse Isle', land: [-4.8, 1.6] },
+  { id: 'east', x: MAST_E[0], z: MAST_E[1], name: 'Lanternport', land: [5.2, -2.6] },
 ];
 const WHALE = [602, 60];
 
 export class TeacupLine {
-  constructor(P, saga) { this.P = P; this.S = saga; this.flying = false; }
+  constructor(P, saga) { this.P = P; this.S = saga; this.flying = false; this.masts = MASTS; }
   get open() { return this.S.has('teacupLine'); }
   heroes() { const P = this.P; return P.players.filter((p) => p.connected || P.solo); }
 
@@ -45,40 +48,38 @@ export class TeacupLine {
     if (this.flying || !S.stage) return;
     this.flying = true;
     P.busy++;
-    const heroes = this.heroes();
-    for (const p of heroes) { if (p.mount && P.mounts) P.mounts.dismount(p, true); if (p.vehicle && P.vehicles) P.vehicles.leave(p, true); }
     try {
       await S.scene(async (st) => {
+        // (she leaves her mooring and takes the other one: the moored Teacup is this very ship)
         const ship = buildAirship(P.r3d);
-        S.flag('teacupAt', 'flying');
-        st.prop('teacup', ship, from.x - 0.4, 3.4, from.z + 1.6);
-        for (const p of heroes) { p.away = true; p.hidden = true; if (p.actor) p.actor.hidden = true; }
-        await st.cam(from.x, from.z + 1, { dur: 0.4, ppu: st.basePpu() });
+        S.flag('teacupAt', 'flying'); S.syncProps();
+        st.prop('teacup', ship, from.x, 1.3, from.z - 3.7);
+        // everybody aboard, perched on her saucer, Wendy too
+        const trip = aboard(st, this.heroes());
+        trip.crew(ship, 'wendy', TEACUP); trip.seat(ship, TEACUP);
+        await st.cam(from.x, from.z - 4.2, { dur: 0.4, ppu: st.basePpu() });
         st.sfx('whoosh', { volume: 0.7 });
-        await st.move('teacup', { y: 8 }, 1.2);
+        trip.cheer();
+        await st.move('teacup', { y: 8 }, 1.4);
         // (the camera rides along, high above)
-        const a0 = ship.userData.anim;
-        ship.userData.anim = (tm, dt) => { if (a0) a0(tm, dt); if (st.cv && !st.tw) { st.cv.x = ship.position.x; st.cv.z = ship.position.z - ship.position.y + 0.6; } };
+        trip.ride(ship);
         st.cv.ppu = Math.max(8, Math.round(st.basePpu() / 16) * 8); st.applyCam();
         st.mark('teacupFlight');
         await st.move('teacup', { x: WHALE[0], z: WHALE[1] }, 3.4, { ease: 'lin' });
-        await st.move('teacup', { x: to.x - 0.4, z: to.z + 1.6 }, 3.4, { ease: 'lin' });
-        ship.userData.anim = a0;
+        await st.move('teacup', { x: to.x, z: to.z - 3.7 }, 3.4, { ease: 'lin' });
         st.cv.ppu = st.basePpu(); st.applyCam();
-        await st.move('teacup', { y: 3.4 }, 1.2);
-        heroes.forEach((p, i) => {
-          const x = to.x + 1.5 + (i % 4) * 0.8, z = to.z + 2.4 + Math.floor(i / 4) * 0.8;
-          if (P.solo) P.gatherAt(x, z); else p.actor.pos = { x, z };
-          p.away = false; p.hidden = false; if (p.actor) p.actor.hidden = false;
-          P.world.fx.emit('dust', x, 0.2, z, 6);
-        });
-        if (!P.solo && P.cam) P.cam.snap(P.camPlayers());
+        await st.move('teacup', { y: 1.3 }, 1.4);
+        trip.ride(null);
         st.sfx('thud', { volume: 0.5 });
-        await st.wait(0.3);
+        const [lx, lz] = to.land || [2.2, -1.2];
+        trip.land(to.x + lx, to.z + lz);
+        st.cam(to.x + lx / 2, to.z + lz / 2 - 1, { dur: 0.5 });
+        st.mark('teacupLanding');
+        await trip.settled();
+        await st.wait(0.4);
       }, { bars: false });
     } finally {
-      for (const p of heroes) { p.away = false; p.hidden = false; if (p.actor) p.actor.hidden = false; }
-      S.flag('teacupAt', to.id);
+      S.flag('teacupAt', to.id); S.syncProps();
       P.busy = Math.max(0, P.busy - 1);
       this.flying = false;
     }

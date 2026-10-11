@@ -520,10 +520,11 @@ export function buildVehicle(r3d, kind, look = 0) {
   } else if (kind === 'balloon') {
     B(1.6, 0.8, 1.6, M(0xb8864a), 0, 0.4, 0);
     B(1.7, 0.1, 1.7, M(0x8a5a2a), 0, 0.82, 0);
-    const env = new THREE.Group(); env.position.y = 4.2; g.add(env);
+    // (the envelope rides high on long ropes: from the south, whoever is in the basket shows under it)
+    const env = new THREE.Group(); env.position.y = 5.5; g.add(env);
     const cols = [0xef6479, 0xfff3c4, 0x5aa8f2, 0xfff3c4, 0xf4c542, 0xfff3c4, 0x62c46c, 0xfff3c4];
     cols.forEach((c, i) => { const seg = new THREE.Mesh(new THREE.SphereGeometry(1.8, 8, 10, (i / 8) * Math.PI * 2, Math.PI * 2 / 8), toon(r3d, { color: c, key: 'veh-bal' + c })); seg.scale.set(1, 1.2, 1); seg.castShadow = true; env.add(seg); });
-    for (const sx of [-0.75, 0.75]) for (const sz of [-0.75, 0.75]) { const r = B(0.03, 2.4, 0.03, M(0xd9c090), sx, 2.1, sz); r.rotation.z = -sx * 0.2; r.rotation.x = sz * 0.2; }
+    for (const sx of [-0.75, 0.75]) for (const sz of [-0.75, 0.75]) { const r = B(0.03, 3.6, 0.03, M(0xd9c090), sx * 1.1, 2.7, sz * 1.1); r.rotation.z = -sx * 0.13; r.rotation.x = sz * 0.13; }
     const flame = B(0.25, 0.4, 0.25, M(0xffb040, 0xff9030), 0, 1.9, 0);
     g.userData.flame = flame;
   } else if (kind === 'zipline') {

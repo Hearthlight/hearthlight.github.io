@@ -16,6 +16,7 @@ import { FORGEHEART, FORGE_DOOR } from '../dungeons/forgeheart.js';
 import { kit, THREE } from '../../models/v7/kit.js';
 import { audio } from '../../engine/audio.js';
 import { t } from '../../i18n.js';
+import { aboard, TEACUP } from '../aboard.js';
 
 // the chapter’s places
 const SKY = [400, 118];                                      // over the sea, flying east towards Emberpeak
@@ -42,10 +43,10 @@ const KING = [302, 45.6], THRONE = [302, 43.4];
 async function flak(S) {
   await S.scene(async (st) => {
     const P = S.P, [x, z] = SKY;
-    const hide = (on) => { for (const p of P.players) { p.away = on; p.hidden = on; if (p.actor) p.actor.hidden = on; } };
-    hide(true);
+    const trip = aboard(st);                             // (the heroes aboard, on her saucer: saga/aboard.js)
     const ship = buildAirship(P.r3d);
     st.prop('teacup', ship, x - 10, 6, z + 4);
+    trip.crew(ship, 'wendy', TEACUP); trip.seat(ship, TEACUP);
     const stage = buildGloomstage(P.r3d);
     stage.scale.setScalar(0.7);
     st.prop('gloomstage', stage, x + 16, 10, z - 16);
@@ -80,10 +81,10 @@ async function flak(S) {
     const tp = st.propOf('teacup');
     await st.fade(1, 0.6);
     st.dropProp('teacup'); st.dropProp('gloomstage'); st.dropProp('beam');
-    P.gatherAt(CRASH[0], CRASH[1], 1.2);
-    hide(false);
+    trip.land(CRASH[0] + 1.8, CRASH[1] - 0.2, { face: WENDY6, hop: 0 });
     st.prop('envelope', buildTornEnvelope(P.r3d), ENVELOPE[0], 0, ENVELOPE[1]);
     st.actor('wendy', WENDY6[0], WENDY6[1], { face: { x: -0.4, z: 1 } });
+    st.mark('crash');
     await st.cam(CRASH[0] - 1, CRASH[1] + 1, { dur: 0, ppu: st.basePpu() });
     st.sfx('thud', { volume: 1 });
     st.shake(1.2);
