@@ -130,7 +130,7 @@ export class SplitCam {
     this.n = { x: 1, z: 0 };       // smoothed split direction
     this.roomOf = null;            // (members) → the room frame they're all in (rooms.js)
     this.bossNear = null;          // (x, z) → a boss close by (party.js), for the view to lean its way
-    this.style = 'groups';         // how the screen splits: `seats` (fixed places) or `groups`
+    this.style = 'groups';         // `together` (one picture, never split), or how it splits: `seats` (fixed places), `groups`
     this.homes = new Map();        // fixed places: player → their cell (kept for the session)
     this.grid = null;              // …in a grid of [cols, rows]
     this.kept = new Map();         // …the cell of each seat that had one (a phone that comes back)
@@ -571,6 +571,7 @@ export class SplitCam {
 // back on 16 at the new scale. 'auto' zooms out a little as the party
 // spreads, in again when it gathers, and leaves splitting to the SplitCam.
 const AUTO_RANGE = [34, 100];   // tiles across the screen Auto may use
+const TOGETHER_FAR = 72;        // (all together) the widest picture a second step out may give
 
 export class Zoom {
   constructor(party) {
@@ -623,12 +624,27 @@ export class Zoom {
     this.mode = lv[i].ws;
   }
 
+  // the levels Auto may use (far → close): the screen’s own, one closer, one further — and, when
+  // the party stays in one picture, a second one further while the heroes still read (TOGETHER_FAR)
+  autoLevels() {
+    const normal = this.normal(), one = this.party.cam.style === 'together';
+    return this.levels().filter((l) => l.ws === normal || (Math.abs(l.ws - normal) <= 1 && l.tiles >= AUTO_RANGE[0] && l.tiles <= AUTO_RANGE[1]) || (one && normal - l.ws === 2 && l.tiles <= TOGETHER_FAR));
+  }
+
+  // (all together) how far apart the party may stand, in tiles: what one picture holds at the
+  // furthest zoom it may use — the lobby’s, beside its join card
+  reach() {
+    const d = this.display, P = this.party, lv = this.autoLevels();
+    const ws = this.mode !== 'auto' ? this.mode : P.phase === 'lobby' || !lv.length ? this.normal() : lv[0].ws;
+    const w = d.devW / ws - (P.cam.inset || 0) * ((this.ws || ws) / ws), h = d.devH / ws;
+    return { w: w / 16 - MARGIN.x * 2, h: h / 16 - MARGIN.top - MARGIN.bottom };
+  }
+
   // Auto: the closest level (within AUTO_RANGE) where everyone fits, zooming
   // in only after the party has fitted comfortably for a moment
   auto(dt, players) {
     const P = this.party, cam = P.cam, d = this.display;
-    const normal = this.normal();
-    const lv = this.levels().filter((l) => l.ws === normal || (Math.abs(l.ws - normal) <= 1 && l.tiles >= AUTO_RANGE[0] && l.tiles <= AUTO_RANGE[1]));
+    const normal = this.normal(), lv = this.autoLevels();
     if (!lv.length || !players.length) return normal;
     // everyone in the same room: come in close (as close as the room allows)
     const R = cam.roomOf && cam.roomOf(players);
@@ -639,8 +655,10 @@ export class Zoom {
     }
     const fits = (ws, k) => cam.fitsOne(players, d.devW / ws, d.devH / ws, 16, k);
     const far = lv[0].ws;
+    // (all together: the picture never splits — as far out as it goes, and the party is held there)
+    if (cam.style === 'together') { this.split = false; if (!fits(far, 1)) { this.inT = 0; return far; } }
     // too spread even when zoomed out: let the SplitCam split at a normal scale
-    if (this.split ? !fits(far, 0.85) : !fits(far, 1)) {
+    else if (this.split ? !fits(far, 0.85) : !fits(far, 1)) {
       this.split = true;
       this.inT = 0;
       // (small pictures — three groups or more, the fixed places of three players or more —
@@ -667,7 +685,7 @@ export class Zoom {
     const lv = this.levels();
     let want = P.phase === 'lobby' && this.mode === 'auto' ? this.normal() : this.mode === 'auto' ? this.auto(dt, players) : this.mode;
     want = Math.max(lv[0].ws, Math.min(lv[lv.length - 1].ws, want));
-    P.cam.forceSingle = this.mode === 'auto' && P.phase !== 'lobby' && !this.split;
+    P.cam.forceSingle = P.cam.style === 'together' || (this.mode === 'auto' && P.phase !== 'lobby' && !this.split);
     if (!this.ws) { this.ws = want; this.target = want; d.setWorldScale(want); P.cam.ppu = 16; return; }
     if (want !== this.target && !this.anim) this.go(want);
     const A = this.anim;

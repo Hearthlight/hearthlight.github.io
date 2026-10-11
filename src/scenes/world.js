@@ -1976,9 +1976,11 @@ export class World {
     if (W && W.me.mount) W.mounts.dismount(W.me, true);
     const B = W && W.combat && W.combat.bounds, col = this.maps[this.mapId].collision, room = this.mapId === 'overworld' ? 40 : 8;
     const ok = B ? (x, z) => ((x - B.x) / B.rx) ** 2 + ((z - B.z) / B.rz) ** 2 < 0.9 : null;
-    // (really stuck: the nearest open ground; seemingly free but still asking: somewhere safe)
-    const stuck = !(W && W.afloat()) && stuckAt(col, p.pos.x, p.pos.z, { ok, room });
-    let s = stuck || B ? findUnstuck(col, p.pos.x, p.pos.z, { ok, room }) : null;
+    // (really stuck: the nearest open ground; seemingly free but still asking: somewhere safe —
+    // in a dungeon, its own open floor or its way in: nobody is sent out of it)
+    const inDun = W && W.dungeons && W.dungeons.heroIn(W.me);
+    const stuck = !inDun && !(W && W.afloat()) && stuckAt(col, p.pos.x, p.pos.z, { ok, room });
+    let s = inDun ? W.dungeons.unstickSpot(W.me) : stuck || B ? findUnstuck(col, p.pos.x, p.pos.z, { ok, room }) : null;
     if (!s && W) s = W.safeSpot();
     if (!s && this.mapId !== 'overworld') { const d = INTERIORS[this.mapId]; s = { x: d.door + 0.5, z: d.d - 1.2 }; }
     if (!s) return false;

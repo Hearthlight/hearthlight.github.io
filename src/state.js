@@ -155,7 +155,7 @@ export function deleteSave() {
   try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
 }
 
-export const DEFAULT_SETTINGS = { master: 0.8, music: 0.7, sfx: 0.8, ambient: 0.6, daySpeed: 1, zoom: 0, textSpeed: 1, hud: 'full', adventure: 'normal', lang: null, rumble: true, chat: 'free', split: 'seats', partyMap: false };
+export const DEFAULT_SETTINGS = { master: 0.8, music: 0.7, sfx: 0.8, ambient: 0.6, daySpeed: 1, zoom: 0, textSpeed: 1, hud: 'full', adventure: 'normal', lang: null, rumble: true, chat: 'free', camera: 'together', partyGoal: 'auto', partyMap: false };
 
 export function loadSettings() {
   let st;
@@ -166,6 +166,10 @@ export function loadSettings() {
     // (the minimap switched off, before there were displays: the compact one)
     if (old.minimap === false && !old.hud) st.hud = 'compact';
     delete st.minimap;
+    // (the split screen’s style, before the big screen could keep everyone in one picture: only a
+    // style somebody chose is kept)
+    if (!old.camera && old.split === 'groups') st.camera = 'groups';
+    delete st.split;
   } catch (e) {
     st = { ...DEFAULT_SETTINGS };
   }

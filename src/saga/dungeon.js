@@ -79,6 +79,34 @@ export class Dungeons {
   }
   heroIn(p) { return !!this.cur && this.inside(p.pos.x, p.pos.z); }
 
+  // « Get unstuck » inside a dungeon never leaves it: beside a friend (one who is in a locked
+  // fight first, else the nearest) or, alone, the nearest open floor — the way in when there is
+  // none. `all` (the host unsticks everyone): only who is away from the others moves. Returns
+  // where to stand, or null when there is nothing to do.
+  unstickSpot(p, all = false) {
+    const d = this.cur, P = this.P;
+    if (!d || !this.heroIn(p)) return null;
+    const free = (x, z) => !this.blocked(x, z, 0.38);
+    const around = (cx, cz, r0) => {
+      for (let r = r0; r <= 6; r += 0.6) for (let k = 0; k < 10; k++) {
+        const a = (k / 10) * Math.PI * 2 + r, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+        if (free(x, z)) return { x, z };
+      }
+      return null;
+    };
+    const roomOf = (q) => d.rooms.find((r) => { const lx = q.pos.x - d.ox, lz = q.pos.z - d.oz; return lx >= r.x && lz >= r.z && lx < r.x + r.w && lz < r.z + r.h; });
+    const dist = (q) => Math.hypot(q.pos.x - p.pos.x, q.pos.z - p.pos.z);
+    const friends = P.players.filter((q) => q !== p && q.connected && this.heroIn(q));
+    const anchor = friends.find((q) => { const r = roomOf(q); return r && r.state === 'fight'; }) || friends.sort((a, b) => dist(a) - dist(b))[0];
+    if (anchor) {
+      const r = roomOf(anchor);
+      if (all && ((r && r === roomOf(p)) || dist(anchor) < 6)) return null;
+      return around(anchor.pos.x, anchor.pos.z, 0.9) || { x: anchor.pos.x, z: anchor.pos.z };
+    }
+    if (free(p.pos.x, p.pos.z)) return all ? null : d.startSpot(0, 1);
+    return around(p.pos.x, p.pos.z, 0.6) || d.startSpot(0, 1);
+  }
+
   // ------------------------------------------------------------------ in & out
   async enter(id) {
     const P = this.P, def = DUNGEONS[id];
@@ -714,6 +742,32 @@ class Dungeon {
     return out;
   }
 
+  // a room about to lock its doors: nobody stays outside — whoever lags behind in the corridors
+  // hops in beside the ones already there (a puff where they stood, a sparkle where they land)
+  gatherIn(r, inside) {
+    const P = this.P, lead = inside[0];
+    if (!lead || P.solo) return;
+    const late = P.players.filter((p) => p.connected && !inside.includes(p) && this.D.inside(p.pos.x, p.pos.z));
+    late.forEach((p, i) => {
+      const a = p.actor;
+      let s = null;
+      for (let k = 0; k < 18 && !s; k++) {
+        const ang = ((i + k * 0.37) / Math.max(1, late.length)) * Math.PI * 2, rr = 0.9 + Math.floor(k / 6) * 0.6;
+        const x = Math.max(this.ox + r.x + 1.6, Math.min(this.ox + r.x + r.w - 1.6, lead.pos.x + Math.cos(ang) * rr));
+        const z = Math.max(this.oz + r.z + 1.6, Math.min(this.oz + r.z + r.h - 1.6, lead.pos.z + Math.sin(ang) * rr));
+        if (!this.D.blocked(x, z, 0.35)) s = { x, z };
+      }
+      if (!s) s = { x: lead.pos.x, z: lead.pos.z };
+      P.world.fx.emit('smoke', a.pos.x, 0.6, a.pos.z, 6);
+      a.pos = { x: s.x, z: s.z };
+      a.vel = { x: 0, z: 0 }; a.jumpY = 0; a.jumpV = 0;
+      P.world.fx.emit('sparkle', s.x, 1.2, s.z, 10, { color: p.color });
+      if (p.stuckWatch) p.stuckWatch.reset();
+      p.stuckOffer = false;
+    });
+    if (late.length) audio.sfx('poof', { volume: 0.5 });
+  }
+
   // the gates a room locks while its fight lasts
   lockRoom(r, on) {
     for (const G of this.gates) if ((G.room === r.id || G.from === r.id) && !G.keepOpen) this.setGate(G, on ? false : true);
@@ -769,6 +823,7 @@ const ROOM_KINDS = {
     const C = d.P.combat;
     if (r.state === 'idle' && inside.length && C) {
       r.state = 'fight';
+      d.gatherIn(r, inside);
       d.lockRoom(r, true);
       r.foes = d.spawnIn(r, r.foes0 || r.foesList || [], {});
       d.P.toast(t(r.shout || 'The gloom stirs!'), '#b88cf0');

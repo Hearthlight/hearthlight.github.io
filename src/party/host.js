@@ -22,12 +22,16 @@ export const DIFFS = {
   heroic: { name: 'Heroic', hp: 1.7, dmg: 1.8, speed: 1.12 },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'heroic'];
-// how the big screen splits when the party spreads out (the Settings’ Split screen; camera.js)
+// how the big screen keeps up with the party (the Settings’ Big screen; camera.js): one picture
+  // for everyone — it zooms out, then nobody walks further away —, or a screen that splits
 export const SPLITS = {
+  together: { name: 'All together', sub: 'one picture for everyone: it zooms out, then nobody can walk further away' },
   seats: { name: 'Fixed places', sub: 'everyone keeps their own place on the screen, always the same' },
   groups: { name: 'By groups', sub: 'the screen is cut around the groups, as they come and go' },
 };
-export const splitOf = (st) => (st.split === 'groups' ? 'groups' : 'seats');
+const SPLIT_ORDER = ['together', 'seats', 'groups'];
+export const splitOf = (st) => (SPLITS[st.camera] ? st.camera : 'together');
+export const nextSplit = (st, dir = 1) => SPLIT_ORDER[(SPLIT_ORDER.indexOf(splitOf(st)) + (dir < 0 ? -1 : 1) + SPLIT_ORDER.length) % SPLIT_ORDER.length];
 const ACTS = [
   { id: 'explore', label: 'The Adventure', color: '#ffd66b' },
   { id: 'story', label: 'The Starfall Festival', color: '#8fd67a' },
@@ -151,7 +155,8 @@ export class Host {
     const camera = [
       { id: 'zoom', kind: 'choice', label: 'Zoom', value: Z.describe(), bar: [lv.findIndex((l) => l.ws === zoomWs), lv.length], auto: Z.mode === 'auto' },
       { id: 'zauto', kind: 'button', label: Z.mode === 'auto' ? 'Auto zoom is on' : 'Back to auto zoom', hot: Z.mode === 'auto' },
-      { id: 'split', kind: 'choice', label: 'Split screen', value: t(SPLITS[splitOf(P.game.settings)].name), sub: SPLITS[splitOf(P.game.settings)].sub },
+      { id: 'split', kind: 'choice', label: 'Big screen', value: t(SPLITS[splitOf(P.game.settings)].name), bar: [SPLIT_ORDER.indexOf(splitOf(P.game.settings)), SPLIT_ORDER.length], sub: SPLITS[splitOf(P.game.settings)].sub },
+      { id: 'goal', kind: 'choice', label: 'Objective on screen', value: t(P.game.settings.partyGoal === 'always' ? 'Always' : 'When it changes'), sub: 'every phone has it: its Quest page' },
     ];
     if (P.big) camera.push({ id: 'map', kind: 'button', label: P.bigMapOpen ? 'Hide the world map' : 'Show the world map' });
     camera.push({ id: 'minimap', kind: 'choice', label: 'Minimap', value: t(P.mapShown() ? 'Shown' : 'Hidden'), sub: 'in a corner of the big screen · every phone has the map' });
@@ -214,11 +219,12 @@ export class Host {
     if (id === 'zoom') { if (dir) Z.step(dir > 0 ? 1 : -1); else Z.set('auto'); Z.flashT = 1.8; P.note = null; this.opts.zoom = Z.mode; this.saveOpts(); return; }
     if (id === 'zauto') { Z.set('auto'); Z.flashT = 1.8; P.note = null; this.opts.zoom = 'auto'; this.saveOpts(); return; }
     if (id === 'split') {
-      g.settings.split = splitOf(g.settings) === 'seats' ? 'groups' : 'seats';
+      g.settings.camera = nextSplit(g.settings, dir);
       saveSettings(g.settings);
-      P.toast(t('Split screen: {mode}', { mode: t(SPLITS[g.settings.split].name) }), '#8fd6e0');
+      P.toast(t('Big screen: {mode}', { mode: t(SPLITS[g.settings.camera].name) }), '#8fd6e0');
       return;
     }
+    if (id === 'goal') { g.settings.partyGoal = g.settings.partyGoal === 'always' ? 'auto' : 'always'; saveSettings(g.settings); this.sentKey = ''; return; }
     if (id === 'map') { P.bigMapOpen = !P.bigMapOpen; return; }
     if (id === 'hud') { P.cycleHud(dir || 1); return; }
     if (id === 'minimap') { P.toggleMap(); return; }

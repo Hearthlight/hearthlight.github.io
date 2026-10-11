@@ -8,6 +8,11 @@ export const READING11_IT = {
   'Minimap shown': 'Minimappa visibile',
   'Minimap hidden': 'Minimappa nascosta',
   'in a corner of the big screen · every phone has the map': 'in un angolo dello schermo grande · ogni telefono ha la mappa',
+  // (the objective on the big screen: there when it changes, or always — the host menu’s row)
+  'Objective on screen': 'Obiettivo sullo schermo',
+  'Always': 'Sempre',
+  'When it changes': 'Quando cambia',
+  'every phone has it: its Quest page': 'ogni telefono ce l’ha: la sua pagina Missione',
   __group: {
   },
 };

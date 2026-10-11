@@ -159,15 +159,20 @@ python3 tools/devserver.py 8765        # static files + /__shot + /__lan + /ws p
   chapter a `recap` (the story so far): `Saga.card(p)` gives them, with the checklist of steps and
   where to go, to the objective card, the journals and the phone's Quest page. In French the
   enemies are « les Ombres » (the gloom, « l’Ombre »), never a word that sounds like the weather.
-- **Party's big screen stays calm**: the objective card never leaves (small at rest, wide for a
-  few seconds when the step changes); banners, title cards and long notes go one at a time through
+- **Party's big screen stays calm**: the objective card comes, small, when the step changes, and
+  goes — a phone has it always (it stays only for a party without phones, or when asked:
+  `settings.partyGoal`, `P.goalStays()`); banners, title cards and long notes go one at a time through
   `P.lane` (`src/party/announce.js`: `showBanner(title, sub, { keep })`, never drawn over the
   dialogue box); toasts are three at most; a page of dialogue stays its reading time before
   anyone's A turns it (`PartyDialogue` — the bots and `debug.skip` wait it out). `settings.hud`
   (full · compact · minimal) rules it as it does the solo HUD, the corner's minimap shows only
-  when the party asks (`settings.partyMap`), and the split screen keeps every player in their own
-  place (`settings.split`: `'seats'`, or `'groups'` for the old way; `tools/splittest.js` sets the
-  situations up and prints the camera's layout).
+  when the party asks (`settings.partyMap`). The camera (`settings.camera`) keeps everyone in one
+  picture by default (`'together'`): the zoom goes out, then `Party.tether` takes back the step
+  that would lead a hero out of it (an invisible wall), a house's door brings the others in, and
+  a hero out of reach all the same is put back beside them (`regroup`); `'seats'` splits the
+  screen with every player in their own place, `'groups'` the old way (`tools/splittest.js` sets
+  the situations up and prints the camera's layout). A dungeon's fight room takes everyone in
+  before it locks (`Dungeon.gatherIn`), and « Get unstuck » never leaves a dungeon.
 - **The title** has two buttons, Play and Settings. Play asks what (`game.experiences`: the story,
   and any other way to play a mode adds — `{ id, name(), sub(), solo(), multi() }`, the words as
   functions; with only one, the step is skipped), then who (solo, or together: Party Mode), then,

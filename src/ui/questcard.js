@@ -98,7 +98,7 @@ export function drawRows(ctx, rows, x, y, lh = 10) {
 // minimal display: the step alone, on one row; 2, a boss’s bar to keep clear of: that row even
 // when the goal changes). `room`: the width it may take (a player’s menu is open beside it).
 export function trackerLayout(o, W, mini = 0, room = W) {
-  const big = o.t < o.secs && mini < 2, key = [big, mini, W, room, o.title, o.text, o.brief, o.sub, o.extra].join('|');
+  const big = o.t < o.secs && mini < 2 && !o.small, key = [big, mini, W, room, o.title, o.text, o.brief, o.sub, o.extra, o.small].join('|');
   if (o.lay && o.lay.key === key) return o.lay;
   const max = Math.min(room, Math.round(W * 0.5)), rows = [], step = (w, n) => wrapTail(o.text, o.tail, w, n);
   let w, top = 6;
@@ -118,6 +118,8 @@ export function trackerLayout(o, W, mini = 0, room = W) {
     w = Math.max(tw, measure(title) + 10) + 18;
     rows.push({ text: title, color: '#8a5234', star: true, h: 10 });
     for (const l of step(w - 18, 2)) rows.push({ text: l, color: UI.ink, h: 10 });
+    // (a small card that came for a change: who is still awaited, when the step waits for everyone)
+    if (o.small && o.sub && o.t < o.secs) { w = Math.max(w, Math.min(rest, measure(o.sub) + 18)); rows.push({ text: fitRich(o.sub, w - 18), color: '#a8754e', h: 10 }); }
   }
   const h = top + rows.reduce((a, r) => a + r.h + (r.gap || 0), 0) + 2;
   return (o.lay = { key, big, w, h, top, rows });

@@ -253,10 +253,13 @@ export function keyHint(ctx, x, y, key, label, { center = true, dark = true } = 
 
 // Speech/thought bubble with short text, pointing down at (x, y)
 // (wrapW: longer lines wrap onto a few rows)
-export function bubble(ctx, x, y, text, { color = '#3b2a2e', bg = '#fff7e6', wrapW = 0 } = {}) {
+// (`within`: [left, right] — the bubble slides to stay between them, its tail under the speaker)
+export function bubble(ctx, x, y, text, { color = '#3b2a2e', bg = '#fff7e6', wrapW = 0, within = null } = {}) {
   const lines = wrapW && measure(text) > wrapW ? wrap(text, wrapW) : [text];
   const w = Math.max(...lines.map((l) => measure(l))) + 8, h = 3 + lines.length * 10;
-  const bx = Math.round(x - w / 2), by = Math.round(y - h - 4);
+  let bx = Math.round(x - w / 2);
+  if (within) bx = Math.max(within[0], Math.min(within[1] - w, bx));
+  const by = Math.round(y - h - 4);
   ctx.fillStyle = 'rgba(20,14,28,0.3)';
   ctx.fillRect(bx + 1, by + 2, w, h);
   ctx.fillStyle = '#5a3b2a';

@@ -144,7 +144,8 @@ export class Rooms {
     return null;
   }
 
-  enter(p, d) {
+  // (`follow`: a friend brought along — all together, one picture: the others come in too)
+  enter(p, d, follow = false) {
     const P = this.P, R = this.get(d.room), a = p.actor, def = R.def;
     p.roomExit = { x: d.x, z: d.z + 0.3, key: d.key };
     a.pos = { x: R.ox + def.door + 0.5, z: R.oz + def.d - 0.55 };
@@ -153,13 +154,21 @@ export class Rooms {
     p.doorPush = 0;
     R.t = P.t;
     this.keeper(R);
+    if (follow) { this.bringBuddy(p); return; }
     audio.sfx('door');
     P.toast(t('{name} went into {place}', { name: p.name, place: t(def.name) }), p.color);
     P.buzz(p, 20);
     this.bringBuddy(p);
+    if (P.together && P.together()) for (const q of P.mainG || []) {
+      if (q === p || !q.connected || !q.actor || this.inside(q)) continue;
+      if (q.sleeping && P.camp) P.camp.wake(q);
+      if (q.mount && P.mounts) P.mounts.dismount(q, true);
+      if (q.vehicle && P.vehicles) P.vehicles.leave(q, true);
+      this.enter(q, d, true);
+    }
   }
 
-  leave(p) {
+  leave(p, follow = false) {
     const P = this.P, a = p.actor, R = this.inside(p);
     if (p.sleeping && P.camp) P.camp.wake(p);
     const e = p.roomExit || (R ? this.exitFor(R) : P.spawnPoint(p.slot));
@@ -167,8 +176,10 @@ export class Rooms {
     a.vel = { x: 0, z: 0 }; a.jumpY = 0; a.jumpV = 0;
     a.dir = { x: 0, z: 1 }; a.model.facing = a.model.targetFacing = 0;
     p.roomExit = null; p.doorPush = 0;
-    audio.sfx('door');
+    if (!follow) audio.sfx('door');
     this.bringBuddy(p);
+    // (all together: who is in the same room comes out too)
+    if (!follow && R && P.together && P.together()) for (const q of P.mainG || []) if (q !== p && q.connected && q.actor && this.inside(q) === R) this.leave(q, true);
   }
 
   // the room's keeper at the counter (unless they're out and about)

@@ -191,7 +191,7 @@ export function drawSpeech(ctx, p, x, y, time, out = null) {
 
 // several bubbles at once (and emotes: { icon }): nearer the bottom first, each one nudged up off
 // the ones it would cover
-export function drawBubbles(ctx, list, wrapW = 120, time = 0) {
+export function drawBubbles(ctx, list, wrapW = 120, time = 0, within = null) {
   const boxes = [];
   list.sort((a, b) => b.y - a.y);
   for (const b of list) {
@@ -204,7 +204,7 @@ export function drawBubbles(ctx, list, wrapW = 120, time = 0) {
       y = hit.y - hit.h - 2;
     }
     boxes.push({ x: b.x, y, w, h });
-    if (b.icon) drawEmote(ctx, b.x, y, b.icon, time); else bubble(ctx, b.x, y, b.text, { wrapW });
+    if (b.icon) drawEmote(ctx, b.x, y, b.icon, time); else bubble(ctx, b.x, y, b.text, { wrapW, within });
   }
 }
 

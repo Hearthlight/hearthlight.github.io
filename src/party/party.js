@@ -9,7 +9,7 @@ import { PartyNet } from './net.js';
 import { RemoteHost } from './remote-host.js';
 import { RemoteInput, KeyInput, PadInput, KEY_LAYOUTS } from './inputs.js';
 import { TvMenus, keyOf } from './tvmenu.js';
-import { SplitCam, Zoom } from './camera.js';
+import { SplitCam, Zoom, clusterize } from './camera.js';
 import { drawPlates } from './plates.js';
 import { Host, crown, copyText, splitOf } from './host.js';
 import { BigWorld } from '../world/big/bigworld.js';
@@ -79,6 +79,8 @@ export const LOBBY = { x: POINTS.fountain[0], z: POINTS.fountain[1] + 3.6 };
 // under their hero for these (the special move is X's everyday job too — `x` left undefined)
 const EVERYDAY = { a: ['Attack', 'Release!', 'Wave', 'Next', 'Continue'], b: ['Jump', 'Hop'], y: ['Dodge', 'Whistle'] };
 const TOASTS = 3;                        // notes on screen at once (party.toast)
+// (all together) rides on a rail or in the sky: the invisible wall leaves them alone
+const RAILS = new Set(['zipline', 'minecart', 'sled', 'balloon', 'glider']);
 
 // The shared dialogue box: anyone’s A shows the whole page at once, then it stays the time it
 // takes to read it — eight friends hammering A for a fight never lose a line unread. An answer
@@ -487,23 +489,32 @@ export class Party {
 
   // "Get unstuck" (the phone’s menu, or the host’s for everyone): stuck inside
   // something or in a little pocket → the nearest open ground; seemingly free
-  // but still asking (a ledge, an island…) → the nearest waystone. `all`: only
-  // the ones really stuck move.
+  // but still asking (a ledge, an island…) → the nearest waystone. In a dungeon nobody is sent
+  // out of it: beside a friend, the one in a locked fight first (saga/dungeon.js `unstickSpot`).
+  // `all`: only the ones really stuck move.
   unstick(p, all = false) {
     if (!p || !p.actor || this.busy || (p.fighter && p.fighter.down)) return;
     if (this.rooms && this.rooms.inside(p)) { if (!all) this.rooms.leave(p); return; }
     const a = p.actor, col = this.world.overCol, B = this.combat && this.combat.bounds;
-    const inRing = B ? (x, z) => ((x - B.x) / B.rx) ** 2 + ((z - B.z) / B.rz) ** 2 < 0.9 : null;
-    const stuck = !p.swimming && !p.vehicle && stuckAt(col, a.pos.x, a.pos.z, { ok: inRing });
-    if (!stuck && all) return;
-    if (p.vehicle && this.vehicles) this.vehicles.leave(p, true);
-    if (p.mount && this.mounts) this.mounts.dismount(p, true);
-    let s = stuck || B ? findUnstuck(col, a.pos.x, a.pos.z, { ok: inRing }) : null;
-    if (!s) {
-      const T = this.travel, stones = T ? T.attuned() : [];
-      let best = null, bd = 1e9;
-      for (const st of stones) { const d = Math.hypot(st.x - a.pos.x, st.z - a.pos.z); if (d < bd) { bd = d; best = st; } }
-      s = best ? best.land || (best.land = T.openNear(best.x, best.z, 2.2, 9)) : this.spawnPoint(p.slot);
+    let s;
+    if (this.dungeons && this.dungeons.heroIn(p)) {
+      s = this.dungeons.unstickSpot(p, all);
+      if (!s) return;
+    } else {
+      const inRing = B ? (x, z) => ((x - B.x) / B.rx) ** 2 + ((z - B.z) / B.rz) ** 2 < 0.9 : null;
+      const stuck = !p.swimming && !p.vehicle && stuckAt(col, a.pos.x, a.pos.z, { ok: inRing });
+      if (!stuck && all) return;
+      if (p.vehicle && this.vehicles) this.vehicles.leave(p, true);
+      if (p.mount && this.mounts) this.mounts.dismount(p, true);
+      s = stuck || B ? findUnstuck(col, a.pos.x, a.pos.z, { ok: inRing }) : null;
+      // (all together: not to a waystone far from everyone — back beside the others)
+      if (!s && this.together() && (this.mainG || []).some((q) => q !== p && q.connected)) { this.regroup(p); if (p.stuckWatch) p.stuckWatch.reset(); return; }
+      if (!s) {
+        const T = this.travel, stones = T ? T.attuned() : [];
+        let best = null, bd = 1e9;
+        for (const st of stones) { const d = Math.hypot(st.x - a.pos.x, st.z - a.pos.z); if (d < bd) { bd = d; best = st; } }
+        s = best ? best.land || (best.land = T.openNear(best.x, best.z, 2.2, 9)) : this.spawnPoint(p.slot);
+      }
     }
     this.world.fx.emit('smoke', a.pos.x, 0.6, a.pos.z, 8);
     a.pos = { x: s.x, z: s.z };
@@ -838,7 +849,7 @@ export class Party {
     if (o && o.text === text && o.sub === sub && o.extra === extra && o.title === (m.title || '') && o.brief === (m.brief || '') && o.t < o.secs - 0.5) { o.secs = Math.max(o.secs, o.t + secs); return; }
     // (a card that was there already opens where it is: only a new one slides in)
     const there = !!o && (o.stay || o.t < o.secs);
-    this.obj = { text, sub, extra, title: m.title || '', brief: m.brief || '', tail: m.tail || '', stay: !!m.stay, t: o && o.text === text && o.t < o.secs ? Math.min(o.t, 0.3) : 0, secs, on: there && m.stay ? Math.max(o.on, 0.3) : 0, aw: there ? o.aw : 0, ah: there ? o.ah : 0 };
+    this.obj = { text, sub, extra, title: m.title || '', brief: m.brief || '', tail: m.tail || '', stay: !!m.stay, small: !!m.small, t: o && o.text === text && o.t < o.secs ? Math.min(o.t, 0.3) : 0, secs, on: there && m.stay ? Math.max(o.on, 0.3) : 0, aw: there ? o.aw : 0, ah: there ? o.ah : 0 };
   }
 
   // A note in the right-hand column: three on screen at most (the next ones wait their turn),
@@ -1040,6 +1051,8 @@ export class Party {
     const frozenAll = this.busy > 0 || this.dialogue.active || this.cinematic || !!this.vote;
     const sdt = this.combat && this.combat.hitstop > 0 ? 0 : dt;
     if (this.combat) this.combat.preActors(sdt);
+    // (all together: where everyone stood, and their rides — the invisible wall takes a step back there)
+    const stood = this.together() ? this.players.map((p) => [p, p.actor.pos.x, p.actor.pos.z, p.vehicle ? [p.vehicle, p.vehicle.x, p.vehicle.z] : null]) : null;
     if (this.vehicles && !frozenAll) this.vehicles.update(sdt);
     if (this.phase !== 'lobby') this.guides.update(dt);
     for (const p of this.players) {
@@ -1069,6 +1082,7 @@ export class Party {
       if (p.portraitDue > 0 && (p.portraitDue -= dt) <= 0) this.sendPortrait(p);
     }
     this.separatePlayers(col);
+    if (stood) this.tether(stood, dt);
     // (a hero pushing and going nowhere, or boxed in: « Get unstuck » comes forward — stuck.js)
     const roam = this.exploring() && this.phase !== 'lobby';
     for (const p of this.players) {
@@ -1137,17 +1151,94 @@ export class Party {
     this.updateCamera(dt);
   }
 
+  // ---- all together (`settings.camera`, the default): one picture for everyone, never a split
+  together() { return splitOf(this.settings) === 'together'; }
+
+  // the ones the picture follows: everyone — or, when somebody is out of reach all the same (a
+  // ride that went far…), the bigger group, the first seat’s among equals; the others are `strays`
+  mainGroup(cp) {
+    const R = this.zoom.reach();
+    const cl = cp.length > 1 ? clusterize(cp, R.w, R.h) : [{ members: cp }];
+    const first = (c) => Math.min(...c.members.map((p) => p.slot));
+    cl.sort((a, b) => b.members.length - a.members.length || first(a) - first(b));
+    this.mainG = cl.length ? cl[0].members : cp;
+    this.strays = cp.filter((p) => !this.mainG.includes(p));
+    return this.mainG;
+  }
+
+  // Nobody walks out of the picture: past what the furthest zoom holds, a step that would take a
+  // hero further from the others is not taken — an invisible wall (a step back towards them
+  // always is taken; a boat stops there too; a rail or the sky carries on). Who is out of reach
+  // anyway is brought back beside the others after a moment.
+  tether(stood, dt) {
+    const main = this.mainG || [], R = this.zoom.reach(), lw = (R.w - 1.6) * 0.97, lh = (R.h - 3.2) * 0.97;
+    const span = (skip, x, z) => {
+      let x0 = x, x1 = x, z0 = z, z1 = z;
+      for (const q of main) { if (q === skip) continue; const a = q.actor.pos; x0 = Math.min(x0, a.x); x1 = Math.max(x1, a.x); z0 = Math.min(z0, a.z); z1 = Math.max(z1, a.z); }
+      return [x1 - x0, z1 - z0];
+    };
+    const stopped = new Set();
+    if (main.length > 1 && !this.cinematic) for (const [p, ox, oz, ride] of stood) {
+      if (!main.includes(p) || !p.connected) continue;
+      const a = p.actor.pos;
+      if ((a.x === ox && a.z === oz) || (p.vehicle && RAILS.has(p.vehicle.kind))) { p.wallT = 0; continue; }
+      const [w0, h0] = span(p, ox, oz), [w1, h1] = span(p, a.x, a.z);
+      const bx = w1 > lw && w1 > w0 + 1e-4, bz = h1 > lh && h1 > h0 + 1e-4;
+      if (!bx && !bz) { p.wallT = 0; continue; }
+      if (p.vehicle && ride && ride[0] === p.vehicle) {
+        // (the whole ride stops where it was, its riders with it)
+        const v = ride[0];
+        if (!stopped.has(v)) { stopped.add(v); v.x = ride[1]; v.z = ride[2]; v.speed = 0; this.vehicles.place(v); this.vehicles.seat(v, 0); }
+      } else { if (bx) a.x = ox; if (bz) a.z = oz; }
+      // (a word over the hero who pushes against it, now and then)
+      p.wallT = (p.wallT || 0) + dt;
+      if (p.wallT > 0.35 && this.t - (p.wallSaid || -99) > 7) { p.wallSaid = this.t; p.say(t('Wait for the others!'), 1.6); this.buzz(p, 15); }
+    }
+    for (const p of this.strays || []) {
+      if (!p.connected || p.vehicle || p.dive || this.busy || this.cinematic || this.dialogue.active) { p.strayT = 0; continue; }
+      p.strayT = (p.strayT || 0) + dt;
+      if (p.strayT > 2) { p.strayT = 0; this.regroup(p); }
+    }
+  }
+
+  // a hero out of everyone's reach comes back beside the nearest of the others
+  regroup(p) {
+    const main = (this.mainG || []).filter((q) => q !== p && q.connected && q.actor), a = p.actor;
+    if (!main.length || !a) return;
+    const d = (q) => Math.hypot(q.pos.x - a.pos.x, q.pos.z - a.pos.z), near = main.sort((u, v) => d(u) - d(v))[0];
+    if (p.mount && this.mounts) this.mounts.dismount(p, true);
+    const col = this.world.overCol;
+    let s = null;
+    for (let r = 1; r <= 5 && !s; r += 0.7) for (let k = 0; k < 10 && !s; k++) {
+      const ang = (k / 10) * Math.PI * 2 + r, x = near.pos.x + Math.cos(ang) * r, z = near.pos.z + Math.sin(ang) * r;
+      if (!col.blocked(x, z, 0.35)) s = { x, z };
+    }
+    s = s || { x: near.pos.x, z: near.pos.z };
+    this.world.fx.emit('smoke', a.pos.x, 0.6, a.pos.z, 8);
+    a.pos = { x: s.x, z: s.z };
+    a.vel = { x: 0, z: 0 }; a.jumpY = 0; a.jumpV = 0;
+    // (in a house or a dungeon with them: the same way out)
+    p.roomExit = near.roomExit ? { ...near.roomExit } : null;
+    p.dungeonExit = near.dungeonExit ? { ...near.dungeonExit } : null;
+    this.world.fx.emit('sparkle', s.x, 1.2, s.z, 14, { color: p.color });
+    audio.sfx('poof', { volume: 0.5 });
+    if (p.stuckWatch) p.stuckWatch.reset();
+    p.stuckOffer = false;
+    this.toast(t('{name} is back with the others', { name: p.name }), p.color);
+  }
+
   // camera & zoom (in the lobby, look past the join card on the left)
   updateCamera(dt) {
-    const cp = this.camPlayers();
+    this.cam.style = splitOf(this.settings);            // (the Settings’ Big screen: all together, fixed places, or by groups)
+    // (the lobby’s join card: the heroes share the screen beside it)
+    this.cam.inset = this.phase === 'lobby' ? this.display.uiToWorld(Math.min(196, Math.round(this.display.w * 0.38)) + 12, 0).x : 0;
+    let cp = this.camPlayers();
+    if (this.together()) cp = this.mainGroup(cp); else { this.mainG = null; this.strays = null; }
     this.zoom.update(dt, cp);
     const card = Math.min(170, Math.round(this.display.w * 0.34)) + 12;
     const tv = this.tvmenus.shiftTiles();
     this.cam.shift = this.phase === 'lobby' ? { x: -((card * this.display.scale) / this.display.wscale) / 2 / this.cam.ppu, z: 0.6 } : tv ? { x: -tv, z: 0 } : null;
     this.cam.focus = this.phase !== 'lobby' && this.act && this.act.camFocus ? this.act.camFocus() : null;
-    this.cam.style = splitOf(this.settings);            // (the Settings’ Split screen: fixed places, or by groups)
-    // (the lobby’s join card: fixed places share the screen beside it)
-    this.cam.inset = this.phase === 'lobby' ? this.display.uiToWorld(Math.min(196, Math.round(this.display.w * 0.38)) + 12, 0).x : 0;
     if (cp.length) this.cam.update(dt, cp);
     else this.cam.update(dt, [{ pos: LOBBY, vel: { x: 0, z: 0 } }]);
     // each friend at home: a camera of their own (a scene's camera is everyone's)
@@ -1777,9 +1868,9 @@ export class Party {
       else drawSpeech(ctx, p, g.x, g.y - 11, now, speech);
     }
     // (what the players say & show: bubbles and emotes side by side, nudged apart — src/ui/chat.js)
-    drawBubbles(ctx, speech, 120, now);
+    drawBubbles(ctx, speech, 120, now, [2, this.display.w - 2]);     // (a hero at the screen’s edge keeps their words on it)
     // villagers’ words go on top of the crowd’s name tags
-    for (const b of said) bubble(ctx, b.x, b.y, b.text, { wrapW: 150 });
+    for (const b of said) bubble(ctx, b.x, b.y, b.text, { wrapW: 150, within: [2, this.display.w - 2] });
     // (a hero who seems stuck: how to get out, over their head)
     // (two heroes stuck side by side: their bubbles stack rather than overlap)
     const stuckSays = [];
@@ -2209,6 +2300,12 @@ export class Party {
     drawGlyph(ctx, 'map', R.x + 3, R.y + 2, 1);
     ctx.globalAlpha = 1;
   }
+
+  // does the objective stay on the big screen? When the party asks for it (`settings.partyGoal`),
+  // or when nobody holds a phone: a phone has it always, with its Quest page and the way there.
+  // Otherwise the card comes when the step changes, small, and goes (`goalBig`: the wide card)
+  goalStays() { return this.settings.partyGoal === 'always' || !this.players.some((p) => p.connected && p.kind === 'phone'); }
+  goalBig() { return this.settings.partyGoal === 'always'; }
 
   // what the objective card says right now, laid out — the tracker on one row in the minimal
   // display, and whenever a boss’s bar is up (the bar sits right under it); beside a player’s

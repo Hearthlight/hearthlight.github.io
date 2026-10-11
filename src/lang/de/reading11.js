@@ -8,6 +8,11 @@ export const READING11_DE = {
   'Minimap shown': 'Minikarte an',
   'Minimap hidden': 'Minikarte aus',
   'in a corner of the big screen · every phone has the map': 'in einer Ecke des großen Bildschirms · jedes Handy hat die Karte',
+  // (the objective on the big screen: there when it changes, or always — the host menu’s row)
+  'Objective on screen': 'Ziel auf dem Bildschirm',
+  'Always': 'Immer',
+  'When it changes': 'Wenn es sich ändert',
+  'every phone has it: its Quest page': 'jedes Handy hat es: seine Quest-Seite',
   __group: {
   },
 };

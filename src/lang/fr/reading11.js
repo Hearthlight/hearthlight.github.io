@@ -8,6 +8,11 @@ export const READING11_FR = {
   'Minimap shown': 'Mini-carte affichée',
   'Minimap hidden': 'Mini-carte masquée',
   'in a corner of the big screen · every phone has the map': 'dans un coin du grand écran · chaque téléphone a la carte',
+  // (the objective on the big screen: there when it changes, or always — the host menu’s row)
+  'Objective on screen': 'Objectif à l’écran',
+  'Always': 'Toujours',
+  'When it changes': 'Quand il change',
+  'every phone has it: its Quest page': 'chaque téléphone l’a : sa page Quête',
   __group: {
   },
 };

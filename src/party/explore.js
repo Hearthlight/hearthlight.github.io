@@ -802,15 +802,17 @@ export class ExploreAct {
       : `${t(area)} · ${timeLabel(s.hour)}`;
     const relics = this.relics.length ? t('Relics: {list}', { list: this.relics.map((r) => t(BLESSINGS[r].name)).join(', ') }) : '';
     const so = this.saga && this.saga.objective();
-    const key = (so ? so.id + ':' + so.step : this.objective) + '|' + (G ? G.here : '') + '|' + this.relics.length;
+    // (the card stays only where it is wanted — party.js `goalStays` —, small unless asked for big)
+    const stay = P.goalStays(), wide = P.goalBig(), meet = G && G.total > 1;
+    const key = (so ? so.id + ':' + so.step : this.objective) + '|' + (G ? G.here : '') + '|' + this.relics.length + '|' + stay + wide;
     this.areaT = (this.areaT || 0) - dt;
     // (cardArea is the place the card last showed: a new one waits for areaT, it isn’t forgotten)
     const o = P.obj, brief = so && so.id !== this.cardQuest ? so.brief : '';
     const tail = so ? so.tail : '';
-    const show = (secs, why = '') => P.showObjective(this.objective, sub, secs, relics, { stay: true, title: so ? so.title : '', brief: why, tail });
-    if (key !== this.cardKey || !o) { show(brief ? 11 : 7, brief); this.cardKey = key; this.cardQuest = so ? so.id : null; this.areaT = 20; this.cardArea = area; }
-    else if (area !== this.cardArea && this.areaT <= 0) { show(5); this.areaT = 20; this.cardArea = area; }
-    else { o.text = this.objective; o.tail = tail; if (o.t < o.secs) o.sub = sub; }
+    const show = (secs, why = '') => P.showObjective(this.objective, wide || meet ? sub : '', secs, wide ? relics : '', { stay, small: !wide, title: so ? so.title : '', brief: wide ? why : '', tail });
+    if (key !== this.cardKey || !o) { show(wide && brief ? 11 : wide ? 7 : 6, brief); this.cardKey = key; this.cardQuest = so ? so.id : null; this.areaT = 20; this.cardArea = area; }
+    else if (wide && area !== this.cardArea && this.areaT <= 0) { show(5); this.areaT = 20; this.cardArea = area; }
+    else { o.text = this.objective; o.tail = tail; if (o.t < o.secs && (wide || meet)) o.sub = sub; }
   }
 
   progressText() {
