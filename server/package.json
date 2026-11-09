@@ -14,7 +14,7 @@
     "node": ">=22"
   },
   "dependencies": {
-    "mmdb-lib": "^3.0.3",
+    "mmdb-lib": "^3.0.4",
     "ws": "^8.18.0"
   }
 }
